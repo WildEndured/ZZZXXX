@@ -283,16 +283,18 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
+  // Нижняя точка торса (с учетом его высоты)
+  const torsoBottomY = torsoCenterY + torsoRY;
+
   // --- Таз ---
-  // Высота таза = ширина торса (torsoRX * 2)
-  // Ширина таза = высоте таза
+  // Высота и ширина таза = ширина торса (torsoRX * 2)
   const pelvisSide = torsoRX * 2; 
   
   const pelvisR = parseFloat(ui.pelvisR.value) || 0.2;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
   
-  // Начинаем таз от конца торса (subs1[3]), добавляем небольшой отступ
-  const pelvisTopY = torsoBotY;
+  // Таз начинается строго от низа торса
+  const pelvisTopY = torsoBottomY;
   const pelvisCx = cx + pelvisX * pelvisSide;
   
   const pelvisXPos = pelvisCx - pelvisSide / 2;
@@ -312,9 +314,8 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Таз (Скругленный квадрат)
+  // 2. Таз (Скругленный квадрат, привязан к низу торса)
   ctx.beginPath();
-  // Рисуем прямоугольник вручную через дуги, чтобы не зависеть от поддержки roundRect
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisSide - cornerRadius, pelvisYPos);
   ctx.quadraticCurveTo(pelvisXPos + pelvisSide, pelvisYPos, pelvisXPos + pelvisSide, pelvisYPos + cornerRadius);
