@@ -68,7 +68,8 @@
     <label><span class="row">Высота угла (B) <span class="val" id="vJawB">0.50</span></span><input type="range" id="jawB" min="0" max="1" step="0.01" value="0.5"></label>
 
     <h3>Шея (s4 - s5)</h3>
-    <label><span class="row">Ширина шеи <span class="val" id="vNeckW">0.40</span></span><input type="range" id="neckW" min="0.1" max="0.8" step="0.01" value="0.4"></label>
+    <label><span class="row">Ширина шеи у торса <span class="val" id="vNeckW">0.40</span></span><input type="range" id="neckW" min="0.1" max="0.8" step="0.01" value="0.4"></label>
+    <label><span class="row">Наклон от челюсти <span class="val" id="vNeckSlope">0.50</span></span><input type="range" id="neckSlope" min="0" max="1" step="0.01" value="0.5"></label>
     <label><span class="row">Смещение по X <span class="val" id="vNeckX">0.00</span></span><input type="range" id="neckX" min="-0.5" max="0.5" step="0.01" value="0"></label>
 
     <button id="resetBtn" class="sec">Сбросить</button>
@@ -91,7 +92,7 @@ const ui = {
   skullH: document.getElementById('skullH'), skullW: document.getElementById('skullW'), skullX: document.getElementById('skullX'),
   chinY: document.getElementById('chinY'), chinW: document.getElementById('chinW'), chinR: document.getElementById('chinR'),
   jawY: document.getElementById('jawY'), jawW: document.getElementById('jawW'), jawB: document.getElementById('jawB'),
-  neckW: document.getElementById('neckW'), neckX: document.getElementById('neckX')
+  neckW: document.getElementById('neckW'), neckSlope: document.getElementById('neckSlope'), neckX: document.getElementById('neckX')
 };
 
 const vals = {
@@ -99,7 +100,7 @@ const vals = {
   vSkullH: document.getElementById('vSkullH'), vSkullW: document.getElementById('vSkullW'), vSkullX: document.getElementById('vSkullX'),
   vChinY: document.getElementById('vChinY'), vChinW: document.getElementById('vChinW'), vChinR: document.getElementById('vChinR'),
   vJawY: document.getElementById('vJawY'), vJawW: document.getElementById('vJawW'), vJawB: document.getElementById('vJawB'),
-  vNeckW: document.getElementById('vNeckW'), vNeckX: document.getElementById('vNeckX')
+  vNeckW: document.getElementById('vNeckW'), vNeckSlope: document.getElementById('vNeckSlope'), vNeckX: document.getElementById('vNeckX')
 };
 
 function draw() {
@@ -115,7 +116,6 @@ function draw() {
   const headLines = [];
   for (let i = 0; i <= n; i++) headLines.push(i * headStep);
 
-  // Подсекции: s0=0, s1=headStep/5, s2=2*headStep/5, s3=3*headStep/5, s4=4*headStep/5, s5=headStep
   const subs = [];
   for (let i = 0; i <= 5; i++) subs.push((headStep / 5) * i);
 
@@ -145,11 +145,10 @@ function draw() {
   }
 
   /* ---------- Построение ---------- */
-  // Макушка на s0, низ черепа на s3.
   const skullTopBase = subs[0]; 
   const skullBotBase = subs[3]; 
   const baseR = (skullBotBase - skullTopBase) / 2;
-  const skullCyBase  = skullTopBase + baseR; // Центр на s1.5
+  const skullCyBase  = skullTopBase + baseR; 
 
   const skullH = parseFloat(ui.skullH.value) || 1;
   const skullW = parseFloat(ui.skullW.value) || 1;
@@ -162,7 +161,7 @@ function draw() {
 
   const skullBottom = cy + rY;
 
-  // Подбородок на линии s4
+  // Подбородок
   const chinBaseY = subs[4];
   const chinYOffset = parseFloat(ui.chinY.value) || 0;
   const chinCenterY = chinBaseY + chinYOffset * (headStep / 5);
@@ -201,44 +200,54 @@ function draw() {
     chinRight = { x: cx + chinHalfW, y: chinCenterY };
   }
 
-  // Шея (от s4 до s5)
+  // Шея
   const neckWParam = parseFloat(ui.neckW.value) || 0.4;
+  const neckSlopeParam = parseFloat(ui.neckSlope.value) || 0.5;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
-  const neckHalfW = rX * neckWParam;
-  const neckCx = cx + neckXParam * rX; // Смещение шеи относительно центра головы
-  const neckTopY = chinCenterY;        // Верх шеи на уровне подбородка
-  const neckBotY = subs[5];            // Низ шеи на границе s5
+  
+  const neckBotHalfW = rX * neckWParam;
+  const neckBotCx = cx + neckXParam * rX;
+  const neckBotY = subs[5]; // Опора на s5
+
+  // Верх шеи цепляется за углы челюсти (точки B)
+  // Ползунок наклона определяет, насколько далеко от центра B будут точки крепления шеи.
+  // 0 = берем сами углы B, 1 = берем ширину низа шеи.
+  const neckTopLeftX = cornerLeft.x + (neckBotCx - neckBotHalfW - cornerLeft.x) * neckSlopeParam;
+  const neckTopRightX = cornerRight.x + (neckBotCx + neckBotHalfW - cornerRight.x) * neckSlopeParam;
+  const neckTopY = jawCornerY; // Начинаем ровно от излома челюсти (B)
 
   /* ---------- Рисование ---------- */
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // Шея (рисуем ПОД головой, чтобы она уходила за подбородок)
+  // 1. Шея (рисуем ПЕРВОЙ, чтобы челюсть перекрыла стык)
   ctx.beginPath();
-  ctx.moveTo(neckCx - neckHalfW, neckTopY);
-  ctx.lineTo(neckCx - neckHalfW, neckBotY);
-  ctx.moveTo(neckCx + neckHalfW, neckTopY);
-  ctx.lineTo(neckCx + neckHalfW, neckBotY);
+  // Левая линия шеи
+  ctx.moveTo(neckTopLeftX, neckTopY);
+  ctx.lineTo(neckBotCx - neckBotHalfW, neckBotY);
+  // Правая линия шеи
+  ctx.moveTo(neckTopRightX, neckTopY);
+  ctx.lineTo(neckBotCx + neckBotHalfW, neckBotY);
   ctx.stroke();
 
-  // Череп
+  // 2. Череп
   ctx.beginPath(); ctx.ellipse(cx, cy, rX, rY, 0, 0, Math.PI * 2); ctx.stroke();
 
-  // Левая челюсть (A -> B -> C)
+  // 3. Левая челюсть (A -> B -> C)
   ctx.beginPath();
   ctx.moveTo(attachLeft.x, attachLeft.y);
   ctx.lineTo(cornerLeft.x, cornerLeft.y);
   ctx.lineTo(chinHalfW < 1.5 ? cx : chinLeft.x, chinHalfW < 1.5 ? chinCenterY : chinLeft.y);
   ctx.stroke();
 
-  // Правая челюсть (A -> B -> C)
+  // 4. Правая челюсть (A -> B -> C)
   ctx.beginPath();
   ctx.moveTo(attachRight.x, attachRight.y);
   ctx.lineTo(cornerRight.x, cornerRight.y);
   ctx.lineTo(chinHalfW < 1.5 ? cx : chinRight.x, chinHalfW < 1.5 ? chinCenterY : chinRight.y);
   ctx.stroke();
 
-  // Подбородок
+  // 5. Подбородок
   if (chinHalfW < 1.5) {
     ctx.beginPath(); ctx.arc(cx, chinCenterY, Math.max(3, lw), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
   } else {
@@ -252,6 +261,8 @@ function draw() {
   // Точки узлов
   ctx.fillStyle = 'rgba(255,100,100,0.6)';
   ctx.beginPath(); ctx.arc(attachLeft.x, attachLeft.y, 8, 0, Math.PI * 2); ctx.arc(attachRight.x, attachRight.y, 8, 0, Math.PI * 2); ctx.fill();
+  
+  // Зеленые точки теперь показывают стык челюсти и шеи
   ctx.fillStyle = 'rgba(100,255,100,0.6)';
   ctx.beginPath(); ctx.arc(cornerLeft.x, cornerLeft.y, 8, 0, Math.PI * 2); ctx.arc(cornerRight.x, cornerRight.y, 8, 0, Math.PI * 2); ctx.fill();
 
@@ -272,6 +283,7 @@ function updateLabels() {
   vals.vJawW.textContent   = parseFloat(ui.jawW.value).toFixed(2);
   vals.vJawB.textContent   = parseFloat(ui.jawB.value).toFixed(2);
   vals.vNeckW.textContent  = parseFloat(ui.neckW.value).toFixed(2);
+  vals.vNeckSlope.textContent = parseFloat(ui.neckSlope.value).toFixed(2);
   vals.vNeckX.textContent  = parseFloat(ui.neckX.value).toFixed(2);
 }
 
@@ -282,7 +294,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.skullH.value = 1; ui.skullW.value = 1; ui.skullX.value = 0;
   ui.chinY.value = 0; ui.chinW.value = 0; ui.chinR.value = 0.3;
   ui.jawY.value = 0.6; ui.jawW.value = 0.85; ui.jawB.value = 0.5;
-  ui.neckW.value = 0.4; ui.neckX.value = 0;
+  ui.neckW.value = 0.4; ui.neckSlope.value = 0.5; ui.neckX.value = 0;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
 });
