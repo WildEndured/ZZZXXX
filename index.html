@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс и Таз (Динамические подсекции)</title>
+<title>Голова, Торс, Таз и Плечи (Динамические подсекции)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -87,6 +87,10 @@
     <label><span class="row">Сужение сверху <span class="val" id="vTorsoTop">0.60</span></span><input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60"></label>
     <label><span class="row">Сужение снизу <span class="val" id="vTorsoBot">0.80</span></span><input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80"></label>
 
+    <h3>Плечи (Круги)</h3>
+    <label><span class="row">Радиус плеча <span class="val" id="vShoulderR">1.00</span></span><input type="range" id="shoulderR" min="0.2" max="2.0" step="0.01" value="1.00"></label>
+    <label><span class="row">Смещение по Y <span class="val" id="vShoulderY">0.00</span></span><input type="range" id="shoulderY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+
     <h3>Таз (Прямоугольник)</h3>
     <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
     <label><span class="row">Смещение по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
@@ -118,6 +122,7 @@ const ui = {
   neckW: document.getElementById('neckW'), neckX: document.getElementById('neckX'),
   torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
   torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
+  shoulderR: document.getElementById('shoulderR'), shoulderY: document.getElementById('shoulderY'),
   pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX')
 };
 
@@ -130,6 +135,7 @@ const vals = {
   vNeckW: document.getElementById('vNeckW'), vNeckX: document.getElementById('vNeckX'),
   vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
+  vShoulderR: document.getElementById('vShoulderR'), vShoulderY: document.getElementById('vShoulderY'),
   vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX')
 };
 
@@ -265,9 +271,29 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
-  // Верх и низ яйца
   const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
+
+  // --- Расчет плеч ---
+  const shoulderRParam = parseFloat(ui.shoulderR.value) || 1.0;
+  const shoulderYParam = parseFloat(ui.shoulderY.value) || 0;
+  
+  // Высота 1-й подсекции торса
+  const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
+  
+  // Центр плеча по Y: на границе 1-й подсекции + смещение
+  const shoulderCy = torsoTopActualY + torsoSubStep + (shoulderYParam * torsoSubStep);
+  
+  // Радиус плеча: базово половина подсекции * на ползунок
+  const shoulderRadius = (torsoSubStep / 2) * shoulderRParam;
+
+  // Центры плеч по X: примыкают к краям торса на этой высоте
+  // Находим ширину торса на высоте shoulderCy (приблизительно по формуле эллипса)
+  const dyNorm = (shoulderCy - torsoCenterY) / torsoRY;
+  const torsoWidthAtShoulder = torsoRX * Math.sqrt(Math.max(0, 1 - dyNorm * dyNorm));
+  
+  const shoulderLeftCx = torsoCx - torsoWidthAtShoulder;
+  const shoulderRightCx = torsoCx + torsoWidthAtShoulder;
 
   // --- Расчет таза ---
   const torsoWidth = torsoRX * 2;
@@ -299,9 +325,7 @@ function draw() {
     ctx.lineWidth = 2; 
     ctx.setLineDash([10, 15]);
 
-    // 1. Подсекции ГОЛОВЫ (5 частей от макушки до подбородка)
-    // Верхняя точка: skullTop
-    // Нижняя точка: chinCenterY
+    // 1. Голова (5 частей)
     const headTopSubY = skullTop;
     const headBotSubY = chinCenterY;
     const headSubCount = 5;
@@ -314,20 +338,20 @@ function draw() {
     }
     ctx.stroke();
 
-    // 2. Подсекции ТОРСА (3 части от верха яйца до низа яйца)
+    // 2. Торс (3 части)
     const torsoTopSubY = torsoTopActualY;
     const torsoBotSubY = torsoBottomY;
     const torsoSubCount = 3;
-    const torsoSubStep = (torsoBotSubY - torsoTopSubY) / torsoSubCount;
+    const torsoSubStepDraw = (torsoBotSubY - torsoTopSubY) / torsoSubCount;
 
     ctx.beginPath();
     for (let i = 1; i < torsoSubCount; i++) {
-      const y = torsoTopSubY + torsoSubStep * i;
+      const y = torsoTopSubY + torsoSubStepDraw * i;
       ctx.moveTo(0, y); ctx.lineTo(W, y);
     }
     ctx.stroke();
 
-    // 3. Подсекции ТАЗА (2 части от верха таза до низа таза)
+    // 3. Таз (2 части)
     const pelvisTopSubY = pelvisYPos;
     const pelvisBotSubY = pelvisBottomY;
     const pelvisSubCount = 2;
@@ -349,7 +373,16 @@ function draw() {
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // 1. Торс (Яйцо)
+  // 1. Плечи (рисуем до торса, чтобы они уходили под него)
+  ctx.beginPath();
+  ctx.arc(shoulderLeftCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(shoulderRightCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 2. Торс (Яйцо)
   ctx.beginPath();
   ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
   ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
@@ -358,7 +391,7 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Таз (Скругленный прямоугольник)
+  // 3. Таз (Скругленный прямоугольник)
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
@@ -371,7 +404,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 3. Шея (с обрезкой)
+  // 4. Шея (с обрезкой)
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
@@ -398,7 +431,7 @@ function draw() {
   ctx.stroke();
   ctx.restore(); 
 
-  // 4. Контуры головы
+  // 5. Контуры головы
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
@@ -451,6 +484,8 @@ function updateLabels() {
   vals.vTorsoX.textContent = parseFloat(ui.torsoX.value).toFixed(2);
   vals.vTorsoTop.textContent = parseFloat(ui.torsoTop.value).toFixed(2);
   vals.vTorsoBot.textContent = parseFloat(ui.torsoBot.value).toFixed(2);
+  vals.vShoulderR.textContent = parseFloat(ui.shoulderR.value).toFixed(2);
+  vals.vShoulderY.textContent = parseFloat(ui.shoulderY.value).toFixed(2);
   vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
   vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
 }
@@ -465,6 +500,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.neckW.value = 0.30; ui.neckX.value = 0.00;
   ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
+  ui.shoulderR.value = 1.00; ui.shoulderY.value = 0.00;
   ui.pelvisR.value = 0.20; ui.pelvisX.value = 0.00;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
