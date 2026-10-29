@@ -154,6 +154,8 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 
 function draw() {
   const W = canvasW, H = canvasH;
+  
+  // Очищаем холст (делаем белым)
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
@@ -181,7 +183,7 @@ function draw() {
 
   const cx = W / 2; 
 
-  // 2. Сетка (рисуем ПОД фигурами, но ПОВЕРХ подложки)
+  // 2. Сетка
   if (ui.showHeads.checked) {
     ctx.save();
     ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
@@ -260,7 +262,7 @@ function draw() {
   const neckHalfW = rX * neckWParam;
   const neckCx = headCx + neckXParam * rX;
   
-  const neckTopY = cy; // Верх шеи на уровне центра черепа (зайдет под маску)
+  const neckTopY = cy; // Заходит в череп до уровня центра
   const neckBotY = headLines[1]; 
 
   // --- Расчеты торса ---
@@ -294,29 +296,18 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Шея (Прямоугольник, заходит высоко в голову)
-  ctx.beginPath();
-  ctx.moveTo(neckCx - neckHalfW, neckTopY);
-  ctx.lineTo(neckCx - neckHalfW, neckBotY);
-  ctx.lineTo(neckCx + neckHalfW, neckBotY);
-  ctx.lineTo(neckCx + neckHalfW, neckTopY);
-  ctx.stroke();
-
-  // 3. ИСПОЛЬЗУЕМ ОБРЕЗКУ (Clipping) для шеи
-  // Создаем путь головы, чтобы вырезать шею внутри нее
+  // 2. ИСПОЛЬЗУЕМ ОБРЕЗКУ (Clip) для шеи
+  // Включаем режим сохранения пути
   ctx.save();
   
-  // Настраиваем режим "вырезания" (стирает пиксели, не закрашивая фон)
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fillStyle = '#000'; // Цвет не важен, важна альфа (непрозрачность)
-
-  // 3.1 Вырезаем круг
+  // Создаем путь "Весь холст МИНУС голова"
   ctx.beginPath();
+  ctx.rect(0, 0, W, H); // Огромный внешний прямоугольник
+  
+  // Добавляем в путь череп
   ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // 3.2 Вырезаем челюсть
-  ctx.beginPath();
+  
+  // Добавляем в путь челюсть
   ctx.moveTo(attachLeft.x, attachLeft.y);
   ctx.lineTo(cornerLeft.x, cornerLeft.y);
   if (chinHalfW < 1.5) {
@@ -329,11 +320,23 @@ function draw() {
   }
   ctx.lineTo(attachRight.x, attachRight.y);
   ctx.closePath();
-  ctx.fill();
 
-  ctx.restore(); // Возвращаем обычный режим рисования
+  // Применяем обрезку с правилом "чёт-нечет"
+  // Это разрешит рисовать только СНАРУЖИ головы, но внутри холста
+  ctx.clip('evenodd');
 
-  // 4. Контуры головы (рисуем ПОВЕРХ всего, чтобы они не стерлись)
+  // Рисуем шею. Всё, что попадает внутрь головы, будет проигнорировано холстом.
+  ctx.beginPath();
+  ctx.moveTo(neckCx - neckHalfW, neckTopY);
+  ctx.lineTo(neckCx - neckHalfW, neckBotY);
+  ctx.lineTo(neckCx + neckHalfW, neckBotY);
+  ctx.lineTo(neckCx + neckHalfW, neckTopY);
+  ctx.stroke();
+
+  // Убираем обрезку для остальных элементов
+  ctx.restore();
+
+  // 3. Контуры головы (рисуем ПОВЕРХ всего)
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
