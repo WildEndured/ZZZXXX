@@ -283,23 +283,29 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
-  // Нижняя точка торса (с учетом его высоты)
   const torsoBottomY = torsoCenterY + torsoRY;
 
   // --- Таз ---
-  // Высота и ширина таза = ширина торса (torsoRX * 2)
-  const pelvisSide = torsoRX * 2; 
+  // Правило: Ширина таза = Высота торса, Высота таза = Ширина торса
+  const torsoWidth = torsoRX * 2;
+  const torsoHeight = torsoRY * 2;
+
+  const pelvisW = torsoHeight; // Ширина таза = высоте торса
+  const pelvisH = torsoWidth;  // Высота таза = ширине торса
   
   const pelvisR = parseFloat(ui.pelvisR.value) || 0.2;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
   
   // Таз начинается строго от низа торса
   const pelvisTopY = torsoBottomY;
-  const pelvisCx = cx + pelvisX * pelvisSide;
+  const pelvisCx = torsoCx + pelvisX * pelvisW; // Привязываем к центру торса
   
-  const pelvisXPos = pelvisCx - pelvisSide / 2;
+  const pelvisXPos = pelvisCx - pelvisW / 2;
   const pelvisYPos = pelvisTopY;
-  const cornerRadius = pelvisSide * pelvisR;
+  
+  // Радиус скругления берем от меньшей стороны, чтобы не ломалось
+  const maxRadius = Math.min(pelvisW, pelvisH) / 2;
+  const cornerRadius = maxRadius * pelvisR;
 
   /* ---------- Отрисовка ---------- */
   ctx.save();
@@ -314,15 +320,15 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Таз (Скругленный квадрат, привязан к низу торса)
+  // 2. Таз (Скругленный прямоугольник, привязан к низу торса)
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
-  ctx.lineTo(pelvisXPos + pelvisSide - cornerRadius, pelvisYPos);
-  ctx.quadraticCurveTo(pelvisXPos + pelvisSide, pelvisYPos, pelvisXPos + pelvisSide, pelvisYPos + cornerRadius);
-  ctx.lineTo(pelvisXPos + pelvisSide, pelvisYPos + pelvisSide - cornerRadius);
-  ctx.quadraticCurveTo(pelvisXPos + pelvisSide, pelvisYPos + pelvisSide, pelvisXPos + pelvisSide - cornerRadius, pelvisYPos + pelvisSide);
-  ctx.lineTo(pelvisXPos + cornerRadius, pelvisYPos + pelvisSide);
-  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisSide, pelvisXPos, pelvisYPos + pelvisSide - cornerRadius);
+  ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
+  ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos, pelvisXPos + pelvisW, pelvisYPos + cornerRadius);
+  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH - cornerRadius);
+  ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH, pelvisXPos + pelvisW - cornerRadius, pelvisYPos + pelvisH);
+  ctx.lineTo(pelvisXPos + cornerRadius, pelvisYPos + pelvisH);
+  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisH, pelvisXPos, pelvisYPos + pelvisH - cornerRadius);
   ctx.lineTo(pelvisXPos, pelvisYPos + cornerRadius);
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
