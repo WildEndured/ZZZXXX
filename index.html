@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс, Таз и Плечи (Исправлено)</title>
+<title>Голова, Торс, Таз и Плечи (Исправленные трапеции)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -93,7 +93,7 @@
     
     <h3>Трапеции</h3>
     <label><span class="row">Смещение трапеции по X <span class="val" id="vTrapX">0.20</span></span><input type="range" id="trapX" min="0" max="1" step="0.01" value="0.20"></label>
-    <label><span class="row">Высота крепления к шее <span class="val" id="vTrapY">0.00</span></span><input type="range" id="trapY" min="-1" max="1" step="0.01" value="0.00"></label>
+    <label><span class="row">Высота крепления к шее <span class="val" id="vTrapY">0.00</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.00"></label>
 
     <h3>Таз (Прямоугольник)</h3>
     <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
@@ -297,9 +297,9 @@ function draw() {
   const shoulderLeftCx = torsoCx - torsoWidthAtShoulder - shoulderRadius;
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
-  // Основание шеи для трапеции
-  // trapYParam двигает эту точку по шее. 0 - базовое положение, -1 - выше, 1 - ниже.
-  const neckBaseY = (neckBotY - (headStep * 0.1)) - (trapYParam * shoulderRadius);
+  // Основание шеи для трапеции (двигаем по боковой линии шеи)
+  // trapYParam = 0 (низ шеи) ... 1 (верх шеи, у челюсти)
+  const neckBaseY = neckBotY - (neckBotY - neckTopY) * trapYParam;
   const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
