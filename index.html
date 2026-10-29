@@ -97,7 +97,6 @@
 </div>
 
 <script>
-// Базовая высота всегда 4096. Ширина может меняться под подложку.
 let canvasW = 4096;
 const canvasH = 4096;
 let refImage = null;
@@ -128,7 +127,6 @@ const vals = {
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot')
 };
 
-/* Загрузка подложки */
 document.getElementById('uploadBtn').addEventListener('click', () => {
   document.getElementById('fileInput').click();
 });
@@ -141,7 +139,6 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     const img = new Image();
     img.onload = () => {
       refImage = img;
-      // Подгоняем ширину холста под пропорции картинки, сохраняя высоту 4096
       const ratio = img.width / img.height;
       canvasW = Math.round(canvasH * ratio);
       
@@ -160,7 +157,7 @@ function draw() {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // 1. Отрисовка подложки
+  // 1. Подложка
   if (refImage && ui.showRef.checked) {
     ctx.save();
     ctx.globalAlpha = parseFloat(ui.refOp.value) || 0.5;
@@ -182,9 +179,9 @@ function draw() {
   const subs1 = [];
   for (let i = 0; i <= 3; i++) subs1.push(headLines[1] + (headStep / 3) * i);
 
-  const cx = W / 2; // Центр холста теперь динамический
+  const cx = W / 2; 
 
-  /* ---------- Сетка ---------- */
+  // 2. Сетка (рисуем ПОД фигурами, но ПОВЕРХ подложки)
   if (ui.showHeads.checked) {
     ctx.save();
     ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
@@ -204,7 +201,7 @@ function draw() {
     ctx.restore();
   }
 
-  /* ---------- Голова ---------- */
+  // --- Расчеты головы ---
   const skullTopBase = subs0[0]; 
   const skullBotBase = subs0[3]; 
   const baseR = (skullBotBase - skullTopBase) / 2;
@@ -216,9 +213,8 @@ function draw() {
 
   const rY = baseR * skullH;
   const rX = baseR * skullW;
-  const headCx = cx + skullX * rX; // Отдельный центр для головы
+  const headCx = cx + skullX * rX; 
   const cy = skullCyBase;
-
   const skullBottom = cy + rY;
 
   const chinBaseY = subs0[4];
@@ -258,16 +254,16 @@ function draw() {
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  /* ---------- Шея ---------- */
+  // --- Расчеты шеи ---
   const neckWParam = parseFloat(ui.neckW.value) || 0.3;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
   const neckHalfW = rX * neckWParam;
   const neckCx = headCx + neckXParam * rX;
   
-  const neckTopY = cy; // Верх шеи прячем под круг
+  const neckTopY = cy; // Верх шеи на уровне центра черепа (зайдет под маску)
   const neckBotY = headLines[1]; 
 
-  /* ---------- Торс ---------- */
+  // --- Расчеты торса ---
   const tH = parseFloat(ui.torsoH.value) || 1;
   const tW = parseFloat(ui.torsoW.value) || 1;
   const tX = parseFloat(ui.torsoX.value) || 0;
@@ -285,11 +281,11 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
-  /* ---------- Отрисовка ---------- */
+  /* ---------- Отрисовка фигур ---------- */
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // 1. Торс
+  // 1. Торс (Яйцо)
   ctx.beginPath();
   ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
   ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
@@ -298,28 +294,28 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Шея (рисуем только часть, которая ниже челюсти, чтобы не торчала за ушами)
+  // 2. Шея (Прямоугольник, заходит высоко в голову)
   ctx.beginPath();
-  // Левая линия шеи начинается от самой нижней точки челюсти (или от подбородка, если он шире)
-  // Чтобы точно перекрыть, начинаем от точки B (угол челюсти).
-  const jawLowestY = Math.max(cornerLeft.y, chinCenterY); 
-  
-  ctx.moveTo(neckCx - neckHalfW, jawLowestY);
+  ctx.moveTo(neckCx - neckHalfW, neckTopY);
   ctx.lineTo(neckCx - neckHalfW, neckBotY);
   ctx.lineTo(neckCx + neckHalfW, neckBotY);
-  ctx.lineTo(neckCx + neckHalfW, jawLowestY);
+  ctx.lineTo(neckCx + neckHalfW, neckTopY);
   ctx.stroke();
 
-  // 3. Маска головы (БЕЛАЯ ЗАЛИВКА, которая стирает шею)
+  // 3. ИСПОЛЬЗУЕМ ОБРЕЗКУ (Clipping) для шеи
+  // Создаем путь головы, чтобы вырезать шею внутри нее
   ctx.save();
-  ctx.fillStyle = '#ffffff';
   
-  // Заливаем круг
+  // Настраиваем режим "вырезания" (стирает пиксели, не закрашивая фон)
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = '#000'; // Цвет не важен, важна альфа (непрозрачность)
+
+  // 3.1 Вырезаем круг
   ctx.beginPath();
   ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Заливаем область челюсти
+  // 3.2 Вырезаем челюсть
   ctx.beginPath();
   ctx.moveTo(attachLeft.x, attachLeft.y);
   ctx.lineTo(cornerLeft.x, cornerLeft.y);
@@ -334,9 +330,10 @@ function draw() {
   ctx.lineTo(attachRight.x, attachRight.y);
   ctx.closePath();
   ctx.fill();
-  ctx.restore();
 
-  // 4. Контуры головы (рисуем ПОВЕРХ маски)
+  ctx.restore(); // Возвращаем обычный режим рисования
+
+  // 4. Контуры головы (рисуем ПОВЕРХ всего, чтобы они не стерлись)
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
@@ -369,7 +366,7 @@ function draw() {
   }
   ctx.restore();
 
-  ctx.restore(); // Возврат общего контекста
+  ctx.restore(); 
   updateLabels();
 }
 
@@ -416,7 +413,6 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   link.click();
 });
 
-// Инициализация размеров при старте
 canvas.width = canvasW;
 canvas.height = canvasH;
 draw();
