@@ -127,6 +127,7 @@ function draw() {
     ctx.save();
     ctx.strokeStyle = 'rgba(100,150,255,0.45)'; ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
     ctx.beginPath();
+    // Рисуем s1, s2, s3, s4
     for (let i = 1; i <= 4; i++) { ctx.moveTo(0, subs[i]); ctx.lineTo(W, subs[i]); }
     ctx.stroke();
     ctx.restore();
@@ -139,11 +140,14 @@ function draw() {
   }
 
   /* ---------- Построение ---------- */
-  // Круг занимает от s1 до s3. Центр на s2.
-  const skullTopBase = subs[1];
-  const skullCyBase  = subs[2];
-  const skullBotBase = subs[3];
+  // Макушка на s0, низ черепа на s3. 
+  // Значит высота черепа = subs[3] - subs[0] = 3 * headStep / 5.
+  const skullTopBase = subs[0]; // 0
+  const skullBotBase = subs[3]; 
   const baseR = (skullBotBase - skullTopBase) / 2;
+
+  // Центр всегда посередине между макушкой и низом (на s1.5)
+  const skullCyBase  = skullTopBase + baseR;
 
   const skullH = parseFloat(ui.skullH.value) || 1;
   const skullW = parseFloat(ui.skullW.value) || 1;
@@ -228,7 +232,7 @@ function draw() {
     ctx.stroke();
   }
 
-  // Вспомогательные точки на сочленениях
+  // Точки узлов
   ctx.fillStyle = 'rgba(255,100,100,0.6)';
   ctx.beginPath(); ctx.arc(attachLeft.x, attachLeft.y, 8, 0, Math.PI * 2); ctx.arc(attachRight.x, attachRight.y, 8, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(100,255,100,0.6)';
