@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова и Торс Loomis — 4096×4096 @300dpi</title>
+<title>Голова, Торс и Таз Loomis — 4096×4096 @300dpi</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -87,6 +87,10 @@
     <label><span class="row">Сужение сверху <span class="val" id="vTorsoTop">0.60</span></span><input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60"></label>
     <label><span class="row">Сужение снизу <span class="val" id="vTorsoBot">0.80</span></span><input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80"></label>
 
+    <h3>Таз (Прямоугольник)</h3>
+    <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
+    <label><span class="row">Смещение по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+
     <button id="resetBtn" class="sec">Сбросить ползунки</button>
     <button id="downloadBtn">Скачать PNG</button>
   </div>
@@ -113,7 +117,8 @@ const ui = {
   jawY: document.getElementById('jawY'), jawW: document.getElementById('jawW'), jawB: document.getElementById('jawB'),
   neckW: document.getElementById('neckW'), neckX: document.getElementById('neckX'),
   torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
-  torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot')
+  torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
+  pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX')
 };
 
 const vals = {
@@ -124,7 +129,8 @@ const vals = {
   vJawY: document.getElementById('vJawY'), vJawW: document.getElementById('vJawW'), vJawB: document.getElementById('vJawB'),
   vNeckW: document.getElementById('vNeckW'), vNeckX: document.getElementById('vNeckX'),
   vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
-  vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot')
+  vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
+  vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX')
 };
 
 document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -157,7 +163,6 @@ function draw() {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // 1. Подложка
   if (refImage && ui.showRef.checked) {
     ctx.save();
     ctx.globalAlpha = parseFloat(ui.refOp.value) || 0.5;
@@ -179,9 +184,12 @@ function draw() {
   const subs1 = [];
   for (let i = 0; i <= 3; i++) subs1.push(headLines[1] + (headStep / 3) * i);
 
+  const subs2 = [];
+  for (let i = 0; i <= 3; i++) subs2.push(headLines[2] + (headStep / 3) * i);
+
   const cx = W / 2; 
 
-  // 2. Сетка
+  // Сетка
   if (ui.showHeads.checked) {
     ctx.save();
     ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
@@ -197,11 +205,12 @@ function draw() {
     ctx.beginPath();
     for (let i = 1; i <= 4; i++) { ctx.moveTo(0, subs0[i]); ctx.lineTo(W, subs0[i]); }
     for (let i = 1; i <= 2; i++) { ctx.moveTo(0, subs1[i]); ctx.lineTo(W, subs1[i]); }
+    for (let i = 1; i <= 2; i++) { ctx.moveTo(0, subs2[i]); ctx.lineTo(W, subs2[i]); }
     ctx.stroke();
     ctx.restore();
   }
 
-  // --- Расчеты головы ---
+  // --- Голова ---
   const skullTopBase = subs0[0]; 
   const skullBotBase = subs0[3]; 
   const baseR = (skullBotBase - skullTopBase) / 2;
@@ -233,17 +242,11 @@ function draw() {
   const jawBParam = parseFloat(ui.jawB.value) || 0.73;
 
   const attachDx = Math.sqrt(Math.max(0, 1 - Math.pow((jawAttachY - cy) / rY, 2)));
-  const attachLeftX  = headCx - rX * attachDx;
-  const attachRightX = headCx + rX * attachDx;
-  const attachLeft  = { x: attachLeftX,  y: jawAttachY };
-  const attachRight = { x: attachRightX, y: jawAttachY };
+  const attachLeft  = { x: headCx - rX * attachDx, y: jawAttachY };
+  const attachRight = { x: headCx + rX * attachDx, y: jawAttachY };
 
-  const jawCornerLeftX = headCx - rX * jawWParam;
-  const jawCornerRightX = headCx + rX * jawWParam;
-  const jawCornerY = jawAttachY + (chinCenterY - jawAttachY) * jawBParam;
-  
-  const cornerLeft  = { x: jawCornerLeftX,  y: jawCornerY };
-  const cornerRight = { x: jawCornerRightX, y: jawCornerY };
+  const cornerLeft  = { x: headCx - rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
+  const cornerRight = { x: headCx + rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
 
   let chinLeft, chinRight;
   if (chinHalfW < 1.5) {
@@ -254,16 +257,15 @@ function draw() {
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  // --- Расчеты шеи ---
+  // --- Шея ---
   const neckWParam = parseFloat(ui.neckW.value) || 0.3;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
   const neckHalfW = rX * neckWParam;
   const neckCx = headCx + neckXParam * rX;
-  
   const neckTopY = chinCenterY - (headStep / 10); 
   const neckBotY = headLines[1]; 
 
-  // --- Расчеты торса ---
+  // --- Торс ---
   const tH = parseFloat(ui.torsoH.value) || 0.85;
   const tW = parseFloat(ui.torsoW.value) || 1.5;
   const tX = parseFloat(ui.torsoX.value) || 0;
@@ -281,7 +283,23 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
-  /* ---------- Отрисовка фигур ---------- */
+  // --- Таз ---
+  // Высота таза = ширина торса (torsoRX * 2)
+  // Ширина таза = высоте таза
+  const pelvisSide = torsoRX * 2; 
+  
+  const pelvisR = parseFloat(ui.pelvisR.value) || 0.2;
+  const pelvisX = parseFloat(ui.pelvisX.value) || 0;
+  
+  // Начинаем таз от конца торса (subs1[3]), добавляем небольшой отступ
+  const pelvisTopY = torsoBotY;
+  const pelvisCx = cx + pelvisX * pelvisSide;
+  
+  const pelvisXPos = pelvisCx - pelvisSide / 2;
+  const pelvisYPos = pelvisTopY;
+  const cornerRadius = pelvisSide * pelvisR;
+
+  /* ---------- Отрисовка ---------- */
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
@@ -294,14 +312,25 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Шея (с использованием Clip)
+  // 2. Таз (Скругленный квадрат)
+  ctx.beginPath();
+  // Рисуем прямоугольник вручную через дуги, чтобы не зависеть от поддержки roundRect
+  ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
+  ctx.lineTo(pelvisXPos + pelvisSide - cornerRadius, pelvisYPos);
+  ctx.quadraticCurveTo(pelvisXPos + pelvisSide, pelvisYPos, pelvisXPos + pelvisSide, pelvisYPos + cornerRadius);
+  ctx.lineTo(pelvisXPos + pelvisSide, pelvisYPos + pelvisSide - cornerRadius);
+  ctx.quadraticCurveTo(pelvisXPos + pelvisSide, pelvisYPos + pelvisSide, pelvisXPos + pelvisSide - cornerRadius, pelvisYPos + pelvisSide);
+  ctx.lineTo(pelvisXPos + cornerRadius, pelvisYPos + pelvisSide);
+  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisSide, pelvisXPos, pelvisYPos + pelvisSide - cornerRadius);
+  ctx.lineTo(pelvisXPos, pelvisYPos + cornerRadius);
+  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
+  ctx.stroke();
+
+  // 3. Шея (с обрезкой)
   ctx.save();
-  
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
-  
   ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
-  
   ctx.moveTo(attachLeft.x, attachLeft.y);
   ctx.lineTo(cornerLeft.x, cornerLeft.y);
   if (chinHalfW < 1.5) {
@@ -314,7 +343,6 @@ function draw() {
   }
   ctx.lineTo(attachRight.x, attachRight.y);
   ctx.closePath();
-
   ctx.clip('evenodd');
 
   ctx.beginPath();
@@ -323,10 +351,9 @@ function draw() {
   ctx.lineTo(neckCx + neckHalfW, neckBotY);
   ctx.lineTo(neckCx + neckHalfW, neckTopY);
   ctx.stroke();
-
   ctx.restore(); 
 
-  // 3. Контуры головы
+  // 4. Контуры головы
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
@@ -379,6 +406,8 @@ function updateLabels() {
   vals.vTorsoX.textContent = parseFloat(ui.torsoX.value).toFixed(2);
   vals.vTorsoTop.textContent = parseFloat(ui.torsoTop.value).toFixed(2);
   vals.vTorsoBot.textContent = parseFloat(ui.torsoBot.value).toFixed(2);
+  vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
+  vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
 }
 
 Object.values(ui).forEach(el => { el.addEventListener('input', draw); el.addEventListener('change', draw); });
@@ -391,13 +420,14 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.neckW.value = 0.30; ui.neckX.value = 0.00;
   ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
+  ui.pelvisR.value = 0.20; ui.pelvisX.value = 0.00;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
 });
 
 document.getElementById('downloadBtn').addEventListener('click', () => {
   const link = document.createElement('a');
-  link.download = `head_torso_${canvasW}x${canvasH}.png`;
+  link.download = `body_${canvasW}x${canvasH}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 });
