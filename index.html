@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Холст 4096×4096 — деление на головы</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1e1e1e; color: #eee;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .panel {
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    background: #2a2a2a; padding: 12px 16px; border-radius: 10px;
+  }
+  .panel label { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+  input[type="number"] {
+    width: 70px; padding: 4px 8px; border-radius: 6px; border: 1px solid #555;
+    background: #1a1a1a; color: #fff; font-size: 14px;
+  }
+  input[type="color"] { width: 42px; height: 30px; border: none; background: none; cursor: pointer; }
+  button {
+    padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+    background: #4a90d9; color: #fff; font-size: 14px;
+  }
+  button:hover { background: #5aa0e9; }
+  button.sec { background: #444; }
+  button.sec:hover { background: #555; }
+  .stage {
+    max-width: 95vw; max-height: 78vh; overflow: auto;
+    border: 1px solid #444; border-radius: 8px; background: #000;
+  }
+  canvas { display: block; max-width: 100%; height: auto; }
+  .info { font-size: 13px; opacity: 0.8; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <label>Рост в головах:
+    <input type="number" id="heads" value="8" min="1" max="20" step="0.1">
+  </label>
+  <label>Цвет линий:
+    <input type="color" id="lineColor" value="#ff3b3b">
+  </label>
+  <label>Толщина:
+    <input type="number" id="lineWidth" value="6" min="1" max="40" step="1">
+  </label>
+  <button id="drawBtn">Перерисовать</button>
+  <button id="clearBtn" class="sec">Очистить</button>
+  <button id="downloadBtn" class="sec">Скачать PNG</button>
+</div>
+
+<div class="info">
+  Холст физически: <b>4096 × 4096 px</b> при <b>300 DPI</b>
+  (физический размер ≈ 34.69 × 34.69 см / 13.65 × 13.65 дюймов)
+</div>
+
+<div class="stage">
+  <canvas id="cv" width="4096" height="4096"></canvas>
+</div>
+
+<script>
+/* ============================================================
+   Холст 4096x4096 px, 300 DPI
+   Логическая система координат = пиксели холста.
+   Физический размер = px / DPI = 4096/300 ≈ 13.653 дюйма ≈ 34.69 см
+   ============================================================ */
+
+const DPI = 300;
+const SIZE = 4096;
+
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+
+/* ---------- Базовая инициализация ---------- */
+function initCanvas() {
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  // Белый фон
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  // Информация о DPI (метаданные — для UI/инфо)
+  canvas.dataset.dpi = DPI;
+}
+
+/* ============================================================
+   Деление холста на n равных частей по вертикали (головы).
+   n — рост фигуры в головах.
+   Возвращает массив Y-координат горизонтальных линий (включая 0 и SIZE).
+   ============================================================ */
+function getHeadLines(n) {
+  const lines = [];
+  const step = SIZE / n;
+  for (let i = 0; i <= n; i++) {
+    lines.push(Math.round(i * step));
+  }
+  return lines;
+}
+
+/* ---------- Отрисовка ---------- */
+function draw(n, color, width) {
+  // Перерисовываем фон (чистый холст)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const lines = getHeadLines(n);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.setLineDash([]);
+
+  // Горизонтальные линии
+  ctx.beginPath();
+  for (const y of lines) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(SIZE, y);
+  }
+  ctx.stroke();
+
+  // Тонкие пунктирные линии для наглядности (необязательно)
+  ctx.restore();
+
+  // Подписи номеров голов
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = `bold ${Math.max(24, SIZE / (n * 10))}px system-ui, sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  const pad = SIZE * 0.01;
+  for (let i = 1; i < lines.length - 1; i++) {
+    const yTop = lines[i];
+    const yBot = lines[i + 1];
+    ctx.fillText(String(i), pad, (yTop + yBot) / 2);
+  }
+  ctx.restore();
+
+  // Вспомогательная рамка
+  ctx.save();
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, SIZE - 2, SIZE - 2);
+  ctx.restore();
+}
+
+/* ---------- UI ---------- */
+const headsInput = document.getElementById('heads');
+const colorInput = document.getElementById('lineColor');
+const widthInput = document.getElementById('lineWidth');
+const drawBtn = document.getElementById('drawBtn');
+const clearBtn = document.getElementById('clearBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+
+function redraw() {
+  let n = parseFloat(headsInput.value);
+  if (!isFinite(n) || n <= 0) n = 1;
+  n = Math.min(n, 100);
+  headsInput.value = n;
+
+  const color = colorInput.value;
+  const width = Math.max(1, parseInt(widthInput.value) || 1);
+
+  draw(n, color, width);
+}
+
+drawBtn.addEventListener('click', redraw);
+headsInput.addEventListener('input', redraw);
+colorInput.addEventListener('input', redraw);
+widthInput.addEventListener('input', redraw);
+
+clearBtn.addEventListener('click', () => {
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+});
+
+downloadBtn.addEventListener('click', () => {
+  // Сохраняем PNG (4096x4096)
+  const link = document.createElement('a');
+  link.download = `canvas_4096_${headsInput.value}heads.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+/* ---------- Старт ---------- */
+initCanvas();
+redraw();
+</script>
+</body>
+</html>
