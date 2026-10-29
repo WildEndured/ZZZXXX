@@ -203,8 +203,10 @@ function draw() {
   const neckHalfW = rX * neckWParam;
   const neckCx = cx + neckXParam * rX;
   
-  // Верх шеи заводим высоко (внутрь черепа)
-  const neckTopY = cy - rY; 
+  // Верх шеи начинается ровно от центра круга (cy). 
+  // Этого достаточно, чтобы маска черепа перекрыла верх шеи, 
+  // и она не торчала выше макушки.
+  const neckTopY = cy; 
   const neckBotY = subs[5]; 
 
   /* ---------- 1. Рисуем шею (с запасом вверх) ---------- */
@@ -246,7 +248,6 @@ function draw() {
   }
   
   ctx.lineTo(attachRight.x, attachRight.y);
-  // Замыкаем контур по дуге черепа, чтобы маска была монолитной
   ctx.closePath(); 
   ctx.fill();
   ctx.restore();
