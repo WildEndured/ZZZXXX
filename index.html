@@ -290,17 +290,18 @@ function draw() {
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
   // --- Ключицы и Трапеции ---
-  // Точка основания шеи (где крепятся ключицы)
+  // Точки основания шеи
   const neckBaseY = neckBotY - (headStep * 0.1); 
   const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
-  // Точки на плечах (верхняя и внутренняя)
-  const shoulderTopLeft = { x: shoulderLeftCx + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
-  const shoulderTopRight = { x: shoulderRightCx - shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
-  
-  const shoulderInnerLeft = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
-  const shoulderInnerRight = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
+  // Точка на плече для трапеции (верхняя часть)
+  const trapLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
+  const trapRightAttach = { x: shoulderRightCx - shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
+
+  // Точка на плече для ключицы (внутренняя часть)
+  const clavLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
+  const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
 
   // --- Таз ---
   const torsoWidth = torsoRX * 2;
@@ -383,28 +384,25 @@ function draw() {
   ctx.arc(shoulderRightCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 2. Трапеции (верхняя линия от шеи к плечу) и Ключицы (нижняя линия)
-  // Левая сторона
+  // 2. Трапеции (от плеча к шее)
   ctx.beginPath();
-  ctx.moveTo(neckBaseLeftX, neckBaseY);
-  // Линия трапеции к верхней части плеча
-  ctx.lineTo(shoulderTopLeft.x, shoulderTopLeft.y);
-  // Внутренняя линия плеча (ключица) к шее
-  ctx.moveTo(neckBaseLeftX, neckBaseY + shoulderRadius * 0.4);
-  ctx.lineTo(shoulderInnerLeft.x, shoulderInnerLeft.y);
+  ctx.moveTo(trapLeftAttach.x, trapLeftAttach.y);
+  ctx.lineTo(neckBaseLeftX, neckBaseY);
+  ctx.moveTo(trapRightAttach.x, trapRightAttach.y);
+  ctx.lineTo(neckBaseRightX, neckBaseY);
   ctx.stroke();
 
-  // Правая сторона
+  // 3. Ключицы (от плеча к центру торса)
   ctx.beginPath();
-  ctx.moveTo(neckBaseRightX, neckBaseY);
-  // Линия трапеции к верхней части плеча
-  ctx.lineTo(shoulderTopRight.x, shoulderTopRight.y);
-  // Внутренняя линия плеча (ключица) к шее
-  ctx.moveTo(neckBaseRightX, neckBaseY + shoulderRadius * 0.4);
-  ctx.lineTo(shoulderInnerRight.x, shoulderInnerRight.y);
+  ctx.moveTo(clavLeftAttach.x, clavLeftAttach.y);
+  // Идем к центру торса (чуть выше его середины)
+  ctx.lineTo(torsoCx - neckHalfW * 0.5, neckBaseY + shoulderRadius * 0.3);
+  
+  ctx.moveTo(clavRightAttach.x, clavRightAttach.y);
+  ctx.lineTo(torsoCx + neckHalfW * 0.5, neckBaseY + shoulderRadius * 0.3);
   ctx.stroke();
 
-  // 3. Торс (Яйцо)
+  // 4. Торс (Яйцо)
   ctx.beginPath();
   ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
   ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
@@ -413,7 +411,7 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 4. Таз
+  // 5. Таз
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
@@ -426,7 +424,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 5. Шея (с обрезкой)
+  // 6. Шея (с обрезкой)
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
@@ -453,7 +451,7 @@ function draw() {
   ctx.stroke();
   ctx.restore(); 
 
-  // 6. Голова
+  // 7. Голова
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
