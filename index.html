@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс, Таз и Плечи (Loomis-style)</title>
+<title>Голова, Торс, Таз и Плечи (Исправлено)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -93,7 +93,7 @@
     
     <h3>Трапеции</h3>
     <label><span class="row">Смещение трапеции по X <span class="val" id="vTrapX">0.20</span></span><input type="range" id="trapX" min="0" max="1" step="0.01" value="0.20"></label>
-    <label><span class="row">Высота крепления трапеции <span class="val" id="vTrapY">0.00</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.00"></label>
+    <label><span class="row">Высота крепления к шее <span class="val" id="vTrapY">0.00</span></span><input type="range" id="trapY" min="-1" max="1" step="0.01" value="0.00"></label>
 
     <h3>Таз (Прямоугольник)</h3>
     <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
@@ -298,28 +298,24 @@ function draw() {
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
   // Основание шеи для трапеции
-  const neckBaseY = neckBotY - (headStep * 0.1); 
+  // trapYParam двигает эту точку по шее. 0 - базовое положение, -1 - выше, 1 - ниже.
+  const neckBaseY = (neckBotY - (headStep * 0.1)) - (trapYParam * shoulderRadius);
   const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
   // Точки крепления трапеции на плече (на верхней дуге)
   // trapXParam = 0 (внутренний край) ... 1 (внешний край)
-  // trapYParam = 0 (верхушка круга) ... 1 (опускаем вниз по дуге)
-  
-  // Угол для левого плеча: от 90 градусов (верх) в сторону 180 (лево)
-  const leftAngle = Math.PI / 2 + (Math.PI / 2) * trapXParam + (Math.PI / 4) * trapYParam;
+  const leftAngle = Math.PI / 2 + (Math.PI / 2) * trapXParam;
   const trapAttachLeftX = shoulderLeftCx + Math.cos(leftAngle) * shoulderRadius;
   const trapAttachLeftY = shoulderCy + Math.sin(leftAngle) * shoulderRadius;
 
-  // Угол для правого плеча: от 90 градусов (верх) в сторону 0 (право)
-  const rightAngle = Math.PI / 2 - (Math.PI / 2) * trapXParam + (Math.PI / 4) * trapYParam;
+  const rightAngle = Math.PI / 2 - (Math.PI / 2) * trapXParam;
   const trapAttachRightX = shoulderRightCx + Math.cos(rightAngle) * shoulderRadius;
   const trapAttachRightY = shoulderCy + Math.sin(rightAngle) * shoulderRadius;
 
-  // Точки крепления ключицы (внутри плечевого сустава)
+  // Точки крепления ключицы
   const clavLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
   const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
-
   const clavTorsoAttachY = torsoTopActualY + torsoRY * 0.2;
 
   // --- Таз ---
