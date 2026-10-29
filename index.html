@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс, Таз и Плечи (Исправленные трапеции)</title>
+<title>Голова, Торс, Таз и Плечи (Откат)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -93,7 +93,6 @@
     
     <h3>Трапеции</h3>
     <label><span class="row">Смещение трапеции по X <span class="val" id="vTrapX">0.20</span></span><input type="range" id="trapX" min="0" max="1" step="0.01" value="0.20"></label>
-    <label><span class="row">Высота крепления к шее <span class="val" id="vTrapY">0.00</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.00"></label>
 
     <h3>Таз (Прямоугольник)</h3>
     <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
@@ -127,7 +126,7 @@ const ui = {
   torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
   torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
   shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'),
-  trapX: document.getElementById('trapX'), trapY: document.getElementById('trapY'),
+  trapX: document.getElementById('trapX'),
   pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX')
 };
 
@@ -141,7 +140,7 @@ const vals = {
   vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
   vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'),
-  vTrapX: document.getElementById('vTrapX'), vTrapY: document.getElementById('vTrapY'),
+  vTrapX: document.getElementById('vTrapX'),
   vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX')
 };
 
@@ -284,7 +283,6 @@ function draw() {
   const shoulderYParam = parseFloat(ui.shoulderY.value) || 0;
   const clavYParam = parseFloat(ui.clavY.value) || 0.80;
   const trapXParam = parseFloat(ui.trapX.value) || 0.20;
-  const trapYParam = parseFloat(ui.trapY.value) || 0.00;
   
   const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
   
@@ -297,9 +295,8 @@ function draw() {
   const shoulderLeftCx = torsoCx - torsoWidthAtShoulder - shoulderRadius;
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
-  // Основание шеи для трапеции (двигаем по боковой линии шеи)
-  // trapYParam = 0 (низ шеи) ... 1 (верх шеи, у челюсти)
-  const neckBaseY = neckBotY - (neckBotY - neckTopY) * trapYParam;
+  // Основание шеи для трапеции (фиксировано на низах шеи)
+  const neckBaseY = neckBotY - (headStep * 0.1); 
   const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
@@ -520,7 +517,6 @@ function updateLabels() {
   vals.vShoulderY.textContent = parseFloat(ui.shoulderY.value).toFixed(2);
   vals.vClavY.textContent = parseFloat(ui.clavY.value).toFixed(2);
   vals.vTrapX.textContent = parseFloat(ui.trapX.value).toFixed(2);
-  vals.vTrapY.textContent = parseFloat(ui.trapY.value).toFixed(2);
   vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
   vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
 }
@@ -536,7 +532,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
   ui.shoulderY.value = 0.00; ui.clavY.value = 0.80;
-  ui.trapX.value = 0.20; ui.trapY.value = 0.00;
+  ui.trapX.value = 0.20;
   ui.pelvisR.value = 0.20; ui.pelvisX.value = 0.00;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
