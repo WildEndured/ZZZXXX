@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс, Таз и Плечи (Loomis-style)</title>
+<title>Голова, Торс, Таз и Плечи (Исправленные ключицы)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -290,18 +290,21 @@ function draw() {
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
   // --- Ключицы и Трапеции ---
-  // Точки основания шеи
+  // Точки основания шеи для трапеции (сзади)
   const neckBaseY = neckBotY - (headStep * 0.1); 
   const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
-  // Точка на плече для трапеции (верхняя часть)
+  // Точка на плече для трапеции (верхняя внутренняя часть)
   const trapLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
   const trapRightAttach = { x: shoulderRightCx - shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
 
   // Точка на плече для ключицы (внутренняя часть)
   const clavLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
   const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
+
+  // Точка крепления ключиц на торсе (по центру торса, чуть ниже шеи)
+  const clavTorsoAttachY = torsoTopActualY + torsoRY * 0.2;
 
   // --- Таз ---
   const torsoWidth = torsoRX * 2;
@@ -384,7 +387,7 @@ function draw() {
   ctx.arc(shoulderRightCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
   ctx.stroke();
 
-  // 2. Трапеции (от плеча к шее)
+  // 2. Трапеции (от плеча вверх к шее)
   ctx.beginPath();
   ctx.moveTo(trapLeftAttach.x, trapLeftAttach.y);
   ctx.lineTo(neckBaseLeftX, neckBaseY);
@@ -392,14 +395,13 @@ function draw() {
   ctx.lineTo(neckBaseRightX, neckBaseY);
   ctx.stroke();
 
-  // 3. Ключицы (от плеча к центру торса)
+  // 3. Ключицы (от плеча внутрь торса к грудине)
   ctx.beginPath();
   ctx.moveTo(clavLeftAttach.x, clavLeftAttach.y);
-  // Идем к центру торса (чуть выше его середины)
-  ctx.lineTo(torsoCx - neckHalfW * 0.5, neckBaseY + shoulderRadius * 0.3);
+  ctx.lineTo(torsoCx, clavTorsoAttachY); // Точка на торсе по центру
   
   ctx.moveTo(clavRightAttach.x, clavRightAttach.y);
-  ctx.lineTo(torsoCx + neckHalfW * 0.5, neckBaseY + shoulderRadius * 0.3);
+  ctx.lineTo(torsoCx, clavTorsoAttachY);
   ctx.stroke();
 
   // 4. Торс (Яйцо)
