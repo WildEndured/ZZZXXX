@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова по пропорциям — 4096×4096 @300dpi</title>
+<title>Голова Loomis — 4096×4096 @300dpi</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -76,7 +76,7 @@
       <input type="checkbox" id="showHeads" checked> Показывать линии голов
     </label>
     <label class="chk">
-      <input type="checkbox" id="showSub" checked> Показывать подсекции секции 0
+      <input type="checkbox" id="showSub" checked> Показывать подсекции
     </label>
 
     <h3>Череп (круг)</h3>
@@ -93,7 +93,7 @@
       <input type="range" id="skullX" min="-0.5" max="0.5" step="0.01" value="0">
     </label>
 
-    <h3>Подбородок</h3>
+    <h3>Подбородок (C)</h3>
     <label>
       <span class="row">Высота подбородка <span class="val" id="vChinY">0.00</span></span>
       <input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0">
@@ -107,18 +107,18 @@
       <input type="range" id="chinR" min="0" max="1" step="0.01" value="0.3">
     </label>
 
-    <h3>Челюсть</h3>
+    <h3>Челюсть (A-B-C)</h3>
     <label>
-      <span class="row">Высота крепления <span class="val" id="vJawY">0.60</span></span>
+      <span class="row">Высота крепления (A) <span class="val" id="vJawY">0.60</span></span>
       <input type="range" id="jawY" min="0" max="1" step="0.01" value="0.6">
     </label>
     <label>
-      <span class="row">Угол изгиба <span class="val" id="vJawBend">0.30</span></span>
-      <input type="range" id="jawBend" min="0" max="1" step="0.01" value="0.3">
+      <span class="row">Ширина угла (B) <span class="val" id="vJawW">0.85</span></span>
+      <input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.85">
     </label>
     <label>
-      <span class="row">Ширина угла <span class="val" id="vJawW">0.85</span></span>
-      <input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.85">
+      <span class="row">Высота угла (B) <span class="val" id="vJawB">0.50</span></span>
+      <input type="range" id="jawB" min="0" max="1" step="0.01" value="0.5">
     </label>
 
     <button id="resetBtn" class="sec">Сбросить ползунки</button>
@@ -131,36 +131,27 @@
 </div>
 
 <script>
-/* ============================================================
-   ХОЛСТ: 4096×4096 px @ 300 DPI
-   ============================================================ */
-const DPI = 300;
 const SIZE = 4096;
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 
-/* ---------- Параметры (читаются из UI) ---------- */
 const ui = {
   heads:    document.getElementById('heads'),
   lineColor:document.getElementById('lineColor'),
   lineWidth:document.getElementById('lineWidth'),
   showHeads:document.getElementById('showHeads'),
   showSub:  document.getElementById('showSub'),
-
   skullH:   document.getElementById('skullH'),
   skullW:   document.getElementById('skullW'),
   skullX:   document.getElementById('skullX'),
-
   chinY:    document.getElementById('chinY'),
   chinW:    document.getElementById('chinW'),
   chinR:    document.getElementById('chinR'),
-
   jawY:     document.getElementById('jawY'),
-  jawBend:  document.getElementById('jawBend'),
   jawW:     document.getElementById('jawW'),
+  jawB:     document.getElementById('jawB'),
 };
 
-/* Отображение значений */
 const vals = {
   vHeads:  document.getElementById('vHeads'),
   vWidth:  document.getElementById('vWidth'),
@@ -171,39 +162,10 @@ const vals = {
   vChinW:  document.getElementById('vChinW'),
   vChinR:  document.getElementById('vChinR'),
   vJawY:   document.getElementById('vJawY'),
-  vJawBend:document.getElementById('vJawBend'),
   vJawW:   document.getElementById('vJawW'),
+  vJawB:   document.getElementById('vJawB'),
 };
 
-/* ============================================================
-   ГЕОМЕТРИЯ
-   ============================================================ */
-
-/**
- * Возвращает линии голов (горизонтальные y-координаты).
- * headStep = SIZE / n
- */
-function getHeadLines(n) {
-  const step = SIZE / n;
-  const lines = [];
-  for (let i = 0; i <= n; i++) lines.push(i * step);
-  return lines;
-}
-
-/**
- * Подсекции секции 0.
- * Секция 0 — от y=0 до y=headStep (первая "голова" сверху).
- * Делим на 5 равных частей. Возвращает массив y координат подсекций 0..5.
- */
-function getSubSections(headStep) {
-  const subs = [];
-  for (let i = 0; i <= 5; i++) subs.push((headStep / 5) * i);
-  return subs;
-}
-
-/* ============================================================
-   ОТРИСОВКА
-   ============================================================ */
 function draw() {
   const W = SIZE, H = SIZE;
   ctx.fillStyle = '#ffffff';
@@ -214,8 +176,15 @@ function draw() {
   const lw = parseInt(ui.lineWidth.value) || 5;
 
   const headStep = H / n;
-  const headLines = getHeadLines(n);
-  const subs = getSubSections(headStep); // [0 .. headStep], 6 точек
+  const headLines = [];
+  for (let i = 0; i <= n; i++) headLines.push(i * headStep);
+
+  // 5 подсекций секции 0
+  const subs = [];
+  for (let i = 0; i <= 5; i++) subs.push((headStep / 5) * i);
+
+  // СДВИГ ВСЕЙ ГОЛОВЫ ВВЕРХ НА ОДНУ ПОДСЕКЦИЮ (чтобы макушка была на s2)
+  const shiftY = - (headStep / 5);
 
   /* ---------- 1. Линии голов ---------- */
   if (ui.showHeads.checked) {
@@ -231,7 +200,6 @@ function draw() {
     ctx.stroke();
     ctx.restore();
 
-    // подписи голов
     ctx.save();
     ctx.fillStyle = '#888';
     ctx.font = `bold ${Math.max(20, SIZE / (n * 14))}px system-ui, sans-serif`;
@@ -251,14 +219,14 @@ function draw() {
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 12]);
     ctx.beginPath();
-    for (let i = 1; i < subs.length - 1; i++) {
+    // Рисуем все подсекции от s1 до s5
+    for (let i = 1; i <= 5; i++) {
       ctx.moveTo(0, subs[i]);
       ctx.lineTo(W, subs[i]);
     }
     ctx.stroke();
     ctx.restore();
 
-    // подписи подсекций
     ctx.save();
     ctx.fillStyle = 'rgba(100,150,255,0.8)';
     ctx.font = `bold ${Math.max(18, SIZE / (n * 20))}px system-ui, sans-serif`;
@@ -271,65 +239,74 @@ function draw() {
   }
 
   /* ============================================================
-     Параметры построения
+     Параметры построения (со сдвигом ВВЕРХ на 1 подсекцию)
      ============================================================ */
 
   // --- Круг (череп) ---
-  // Верх круга: подсекция 1  => subs[1]
-  // Центр:      подсекция 2  => subs[2]
-  // Низ:        подсекция 3  => subs[3]
-  // Базовая высота = subs[3] - subs[1]
-  const baseH = subs[3] - subs[1];        // = 2 * headStep/5
-  const baseCY = subs[2];                 // центр по Y
-  const baseR = baseH / 2;                // базовый радиус
+  // С учетом сдвига вверх: верх на s2, центр на s3, низ на s4
+  const skullTopBase = subs[2] + shiftY;
+  const skullCyBase  = subs[3] + shiftY;
+  const skullBotBase = subs[4] + shiftY;
+  
+  const baseR = (skullBotBase - skullTopBase) / 2;
 
   const skullH = parseFloat(ui.skullH.value) || 1;
   const skullW = parseFloat(ui.skullW.value) || 1;
   const skullX = parseFloat(ui.skullX.value) || 0;
 
-  // Радиусы с учётом ползунков
-  const rY = baseR * skullH;              // вертикальный радиус
-  const rX = baseR * skullW;              // горизонтальный радиус
-  const cx = W / 2 + skullX * rX;         // центр по X (+ смещение)
-  const cy = baseCY;                      // центр по Y фиксирован на подсекции 2
+  const rY = baseR * skullH;
+  const rX = baseR * skullW;
+  const cx = W / 2 + skullX * rX;
+  const cy = skullCyBase;
 
-  // Верх и низ круга (для соединения челюсти)
-  const skullTop    = cy - rY;
   const skullBottom = cy + rY;
-  const skullLeft   = cx - rX;
-  const skullRight  = cx + rX;
+  const skullTop = cy - rY;
 
-  // --- Подбородок ---
-  // Базовая линия подбородка: подсекция 4 => subs[4]
-  const chinBaseY = subs[4];
+  // --- Подбородок (C) ---
+  // С учетом сдвига вверх подбородок на s5 (был на s6 за границей, теперь ровно внизу)
+  const chinBaseY = subs[5] + shiftY; 
   const chinYOffset = parseFloat(ui.chinY.value) || 0;
   const chinCenterY = chinBaseY + chinYOffset * headStep * 0.2;
 
   const chinWParam = parseFloat(ui.chinW.value) || 0;
   const chinRParam = parseFloat(ui.chinR.value) || 0;
 
-  // Ширина подбородка: 0 = точка, 1 = ширина ~ половины круга
   const chinHalfW = chinWParam * rX * 0.7;
-  // Округлость: 0 = острый угол, 1 = дуга
   const chinRound = chinRParam * chinHalfW;
 
-  // Точки подбородка (левая и правая)
-  const chinLeft  = { x: cx - chinHalfW, y: chinCenterY };
-  const chinRight = { x: cx + chinHalfW, y: chinCenterY };
-
-  // --- Челюсть ---
-  // Высота крепления: 0 = у низа круга, 1 = у центра круга
+  // --- Челюсть (A-B-C) ---
   const jawYParam = parseFloat(ui.jawY.value) || 0.6;
   const jawAttachY = skullBottom - (skullBottom - cy) * jawYParam;
-  // Ширина угла: насколько широко челюсть отходит от круга
-  const jawWParam = parseFloat(ui.jawW.value) || 0.85;
-  const jawCornerX = cx + rX * jawWParam; // X угла челюсти
-  const jawCornerY = jawAttachY;          // Y угла челюсти
 
-  // Угол изгиба: 0 = прямая, 1 = сильный изгиб наружу/вниз
-  const jawBendParam = parseFloat(ui.jawBend.value) || 0.3;
-  // контрольная точка для квадратичной кривой
-  const bendOut = jawBendParam * rX * 0.15;
+  const jawWParam = parseFloat(ui.jawW.value) || 0.85;
+  const jawBParam = parseFloat(ui.jawB.value) || 0.5;
+
+  // Точки крепления на черепе (A)
+  const attachDx = Math.sqrt(Math.max(0, 1 - Math.pow((jawAttachY - cy) / rY, 2)));
+  const attachLeftX  = cx - rX * attachDx;
+  const attachRightX = cx + rX * attachDx;
+  const attachLeft  = { x: attachLeftX,  y: jawAttachY };
+  const attachRight = { x: attachRightX, y: jawAttachY };
+
+  // Углы челюсти (B)
+  const jawCornerLeftX = cx - rX * jawWParam;
+  const jawCornerRightX = cx + rX * jawWParam;
+  // Высота угла B: интерполируется между A и C
+  const jawCornerY = jawAttachY + (chinCenterY - jawAttachY) * jawBParam;
+  
+  const cornerLeft  = { x: jawCornerLeftX,  y: jawCornerY };
+  const cornerRight = { x: jawCornerRightX, y: jawCornerY };
+
+  // Точки подбородка
+  // Если ширина = 0, то рисуем точку. Если > 0, линию.
+  let chinLeft, chinRight;
+  if (chinHalfW < 1.5) {
+    chinLeft = { x: cx, y: chinCenterY };
+    chinRight = { x: cx, y: chinCenterY };
+  } else {
+    chinLeft  = { x: cx - chinHalfW, y: chinCenterY };
+    chinRight = { x: cx + chinHalfW, y: chinCenterY };
+  }
 
   /* ============================================================
      РИСОВАНИЕ ФИГУРЫ
@@ -345,36 +322,34 @@ function draw() {
   ctx.ellipse(cx, cy, rX, rY, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // --- Левая сторона челюсти ---
-  // От точки крепления на круге (слева) -> угол челюсти (слева) -> левый подбородок
-  // Точка крепления на круге слева: на высоте jawAttachY
-  const attachDx = Math.sqrt(Math.max(0, 1 - Math.pow((jawAttachY - cy) / rY, 2)));
-  const attachLeftX  = cx - rX * attachDx;
-  const attachRightX = cx + rX * attachDx;
-
-  // ЛЕВАЯ челюсть
+  // --- ЛЕВАЯ ЧЕЛЮСТЬ (A -> B -> C) ---
   ctx.beginPath();
-  ctx.moveTo(attachLeftX, jawAttachY);
-  // Угол челюсти слева
-  const cornerLeftX = cx - jawCornerX + cx; // симметрия: 2*cx - jawCornerX
-  const jawCornerLeftX = 2 * cx - jawCornerX;
-  // Кривая к левому подбородку с контролем изгиба
-  ctx.quadraticCurveTo(
-    jawCornerLeftX - bendOut, jawCornerY + (chinCenterY - jawCornerY) * 0.35,
-    chinLeft.x, chinLeft.y
-  );
+  ctx.moveTo(attachLeft.x, attachLeft.y);
+  // Прямая линия A -> B (боковая линия челюсти)
+  ctx.lineTo(cornerLeft.x, cornerLeft.y);
+  // Линия B -> C (к подбородку)
+  if (chinHalfW < 1.5) {
+    // Если подбородок точка, ведем к центру низа
+    ctx.lineTo(cx, chinCenterY);
+  } else {
+    ctx.lineTo(chinLeft.x, chinLeft.y);
+  }
   ctx.stroke();
 
-  // ПРАВАЯ челюсть
+  // --- ПРАВАЯ ЧЕЛЮСТЬ (A -> B -> C) ---
   ctx.beginPath();
-  ctx.moveTo(attachRightX, jawAttachY);
-  ctx.quadraticCurveTo(
-    jawCornerX + bendOut, jawCornerY + (chinCenterY - jawCornerY) * 0.35,
-    chinRight.x, chinRight.y
-  );
+  ctx.moveTo(attachRight.x, attachRight.y);
+  // Прямая линия A -> B
+  ctx.lineTo(cornerRight.x, cornerRight.y);
+  // Линия B -> C
+  if (chinHalfW < 1.5) {
+    ctx.lineTo(cx, chinCenterY);
+  } else {
+    ctx.lineTo(chinRight.x, chinRight.y);
+  }
   ctx.stroke();
 
-  // --- Подбородок ---
+  // --- ПОДБОРОДОК (C) ---
   if (chinHalfW < 1.5) {
     // Точка (как у Амине)
     ctx.beginPath();
@@ -384,29 +359,34 @@ function draw() {
   } else {
     // Линия или дуга
     ctx.beginPath();
+    ctx.moveTo(chinLeft.x, chinLeft.y);
     if (chinRound < 1) {
-      // прямая линия
-      ctx.moveTo(chinLeft.x, chinLeft.y);
+      // Прямая линия
       ctx.lineTo(chinRight.x, chinRight.y);
     } else {
-      // дуга
-      const bulge = (chinRound / chinHalfW) * chinHalfW * 0.6;
-      ctx.moveTo(chinLeft.x, chinLeft.y);
+      // Дуга (изгиб вниз)
+      const bulge = (chinRound / chinHalfW) * chinHalfW * 0.8;
       ctx.quadraticCurveTo(cx, chinCenterY + bulge, chinRight.x, chinRight.y);
     }
     ctx.stroke();
   }
 
-  // --- Точки крепления (для отладки) ---
+  // --- Точки крепления (визуализация узлов A и B) ---
   ctx.fillStyle = 'rgba(255,100,100,0.6)';
   ctx.beginPath();
-  ctx.arc(attachLeftX, jawAttachY, 6, 0, Math.PI * 2);
-  ctx.arc(attachRightX, jawAttachY, 6, 0, Math.PI * 2);
+  ctx.arc(attachLeft.x, attachLeft.y, 8, 0, Math.PI * 2);
+  ctx.arc(attachRight.x, attachRight.y, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(100,255,100,0.6)';
+  ctx.beginPath();
+  ctx.arc(cornerLeft.x, cornerLeft.y, 8, 0, Math.PI * 2);
+  ctx.arc(cornerRight.x, cornerRight.y, 8, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.restore();
 
-  /* ---------- Вспомогательная рамка ---------- */
+  // Вспомогательная рамка
   ctx.save();
   ctx.strokeStyle = '#999';
   ctx.lineWidth = 2;
@@ -416,7 +396,6 @@ function draw() {
   updateLabels();
 }
 
-/* ---------- Обновление цифр у ползунков ---------- */
 function updateLabels() {
   vals.vHeads.textContent  = parseFloat(ui.heads.value).toFixed(1);
   vals.vWidth.textContent  = ui.lineWidth.value;
@@ -427,11 +406,10 @@ function updateLabels() {
   vals.vChinW.textContent  = parseFloat(ui.chinW.value).toFixed(2);
   vals.vChinR.textContent  = parseFloat(ui.chinR.value).toFixed(2);
   vals.vJawY.textContent   = parseFloat(ui.jawY.value).toFixed(2);
-  vals.vJawBend.textContent= parseFloat(ui.jawBend.value).toFixed(2);
   vals.vJawW.textContent   = parseFloat(ui.jawW.value).toFixed(2);
+  vals.vJawB.textContent   = parseFloat(ui.jawB.value).toFixed(2);
 }
 
-/* ---------- События ---------- */
 Object.values(ui).forEach(el => {
   el.addEventListener('input', draw);
   el.addEventListener('change', draw);
@@ -447,8 +425,8 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.chinW.value = 0;
   ui.chinR.value = 0.3;
   ui.jawY.value = 0.6;
-  ui.jawBend.value = 0.3;
   ui.jawW.value = 0.85;
+  ui.jawB.value = 0.5;
   ui.showHeads.checked = true;
   ui.showSub.checked = true;
   draw();
@@ -461,7 +439,6 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   link.click();
 });
 
-/* ---------- Старт ---------- */
 draw();
 </script>
 </body>
