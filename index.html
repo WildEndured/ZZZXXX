@@ -57,7 +57,7 @@
     <label><span class="row">Ширина <span class="val" id="vSkullW">1.00</span></span><input type="range" id="skullW" min="0.5" max="1.6" step="0.01" value="1.0"></label>
     <label><span class="row">Смещение по X <span class="val" id="vSkullX">0.00</span></span><input type="range" id="skullX" min="-0.5" max="0.5" step="0.01" value="0"></label>
 
-    <h3>Подбородок (Точка C)</h3>
+    <h3>Подбородок (C)</h3>
     <label><span class="row">Высота <span class="val" id="vChinY">0.00</span></span><input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0"></label>
     <label><span class="row">Ширина <span class="val" id="vChinW">0.00</span></span><input type="range" id="chinW" min="0" max="1" step="0.01" value="0"></label>
     <label><span class="row">Округлость <span class="val" id="vChinR">0.30</span></span><input type="range" id="chinR" min="0" max="1" step="0.01" value="0.3"></label>
@@ -109,11 +109,9 @@ function draw() {
   const headLines = [];
   for (let i = 0; i <= n; i++) headLines.push(i * headStep);
 
+  // Подсекции: s0=0, s1=headStep/5, s2=2*headStep/5, s3=3*headStep/5, s4=4*headStep/5, s5=headStep
   const subs = [];
   for (let i = 0; i <= 5; i++) subs.push((headStep / 5) * i);
-
-  // ГЛАВНОЕ ИЗМЕНЕНИЕ: Сдвиг ВСЕЙ головы вверх ровно на 1 подсекцию
-  const shiftY = - (headStep / 5);
 
   /* ---------- Сетка ---------- */
   if (ui.showHeads.checked) {
@@ -129,22 +127,22 @@ function draw() {
     ctx.save();
     ctx.strokeStyle = 'rgba(100,150,255,0.45)'; ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
     ctx.beginPath();
-    for (let i = 1; i <= 5; i++) { ctx.moveTo(0, subs[i]); ctx.lineTo(W, subs[i]); }
+    for (let i = 1; i <= 4; i++) { ctx.moveTo(0, subs[i]); ctx.lineTo(W, subs[i]); }
     ctx.stroke();
     ctx.restore();
 
     ctx.save();
     ctx.fillStyle = 'rgba(100,150,255,0.8)'; ctx.font = `bold ${Math.max(18, SIZE / (n * 20))}px system-ui, sans-serif`;
     ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
-    for (let i = 1; i <= 5; i++) ctx.fillText('s' + i, W - 20, subs[i] - 6);
+    for (let i = 1; i <= 4; i++) ctx.fillText('s' + i, W - 20, subs[i] - 6);
     ctx.restore();
   }
 
   /* ---------- Построение ---------- */
-  // Круг привязан к s1 (верх), s2 (центр), s3 (низ) + СДВИГ
-  const skullTopBase = subs[1] + shiftY;
-  const skullCyBase  = subs[2] + shiftY;
-  const skullBotBase = subs[3] + shiftY;
+  // Круг занимает от s1 до s3. Центр на s2.
+  const skullTopBase = subs[1];
+  const skullCyBase  = subs[2];
+  const skullBotBase = subs[3];
   const baseR = (skullBotBase - skullTopBase) / 2;
 
   const skullH = parseFloat(ui.skullH.value) || 1;
@@ -158,10 +156,10 @@ function draw() {
 
   const skullBottom = cy + rY;
 
-  // Подбородок привязан к s4 + СДВИГ
-  const chinBaseY = subs[4] + shiftY;
+  // Подбородок ровно на линии s4
+  const chinBaseY = subs[4];
   const chinYOffset = parseFloat(ui.chinY.value) || 0;
-  const chinCenterY = chinBaseY + chinYOffset * headStep * 0.2;
+  const chinCenterY = chinBaseY + chinYOffset * (headStep / 5);
 
   const chinWParam = parseFloat(ui.chinW.value) || 0;
   const chinRParam = parseFloat(ui.chinR.value) || 0;
@@ -230,7 +228,7 @@ function draw() {
     ctx.stroke();
   }
 
-  // Точки узлов
+  // Вспомогательные точки на сочленениях
   ctx.fillStyle = 'rgba(255,100,100,0.6)';
   ctx.beginPath(); ctx.arc(attachLeft.x, attachLeft.y, 8, 0, Math.PI * 2); ctx.arc(attachRight.x, attachRight.y, 8, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(100,255,100,0.6)';
