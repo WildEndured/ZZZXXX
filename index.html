@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Голова, Торс и Таз Loomis — 4096×4096 @300dpi</title>
+<title>Голова, Торс и Таз (Динамические подсекции)</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -58,8 +58,8 @@
       <span class="row">Толщина линий <span class="val" id="vWidth">5</span></span>
       <input type="range" id="lineWidth" min="1" max="30" step="1" value="5">
     </label>
-    <label class="chk"><input type="checkbox" id="showHeads" checked> Показывать линии голов</label>
-    <label class="chk"><input type="checkbox" id="showSub" checked> Показывать подсекции</label>
+    <label class="chk"><input type="checkbox" id="showHeads" checked> Показывать секции</label>
+    <label class="chk"><input type="checkbox" id="showSub" checked> Показывать подсекции фигур</label>
 
     <h3>Череп (Круг)</h3>
     <label><span class="row">Высота <span class="val" id="vSkullH">1.00</span></span><input type="range" id="skullH" min="0.3" max="1.6" step="0.01" value="1.0"></label>
@@ -178,18 +178,9 @@ function draw() {
   const headLines = [];
   for (let i = 0; i <= n; i++) headLines.push(i * headStep);
 
-  const subs0 = [];
-  for (let i = 0; i <= 5; i++) subs0.push((headStep / 5) * i);
-  
-  const subs1 = [];
-  for (let i = 0; i <= 3; i++) subs1.push(headLines[1] + (headStep / 3) * i);
-
-  const subs2 = [];
-  for (let i = 0; i <= 3; i++) subs2.push(headLines[2] + (headStep / 3) * i);
-
   const cx = W / 2; 
 
-  // Сетка
+  // Сетка секций
   if (ui.showHeads.checked) {
     ctx.save();
     ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
@@ -199,20 +190,9 @@ function draw() {
     ctx.restore();
   }
 
-  if (ui.showSub.checked) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(100,150,255,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([8, 12]);
-    ctx.beginPath();
-    for (let i = 1; i <= 4; i++) { ctx.moveTo(0, subs0[i]); ctx.lineTo(W, subs0[i]); }
-    for (let i = 1; i <= 2; i++) { ctx.moveTo(0, subs1[i]); ctx.lineTo(W, subs1[i]); }
-    for (let i = 1; i <= 2; i++) { ctx.moveTo(0, subs2[i]); ctx.lineTo(W, subs2[i]); }
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // --- Голова ---
-  const skullTopBase = subs0[0]; 
-  const skullBotBase = subs0[3]; 
+  // --- Расчет головы ---
+  const skullTopBase = 0; 
+  const skullBotBase = headStep * 3 / 5; 
   const baseR = (skullBotBase - skullTopBase) / 2;
   const skullCyBase  = skullTopBase + baseR; 
 
@@ -224,9 +204,11 @@ function draw() {
   const rX = baseR * skullW;
   const headCx = cx + skullX * rX; 
   const cy = skullCyBase;
+  
+  const skullTop = cy - rY;
   const skullBottom = cy + rY;
 
-  const chinBaseY = subs0[4];
+  const chinBaseY = headStep * 4 / 5;
   const chinYOffset = parseFloat(ui.chinY.value) || 0;
   const chinCenterY = chinBaseY + chinYOffset * (headStep / 5);
 
@@ -257,23 +239,23 @@ function draw() {
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  // --- Шея ---
+  // --- Расчет шеи ---
   const neckWParam = parseFloat(ui.neckW.value) || 0.3;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
   const neckHalfW = rX * neckWParam;
   const neckCx = headCx + neckXParam * rX;
   const neckTopY = chinCenterY - (headStep / 10); 
-  const neckBotY = headLines[1]; 
+  const neckBotY = headStep; 
 
-  // --- Торс ---
+  // --- Расчет торса ---
   const tH = parseFloat(ui.torsoH.value) || 0.85;
   const tW = parseFloat(ui.torsoW.value) || 1.5;
   const tX = parseFloat(ui.torsoX.value) || 0;
   const tTop = parseFloat(ui.torsoTop.value) || 0.6;
   const tBot = parseFloat(ui.torsoBot.value) || 0.8;
 
-  const torsoTopY = subs1[0]; 
-  const torsoBotY = subs1[3]; 
+  const torsoTopY = headStep; 
+  const torsoBotY = headStep * 2; 
   
   const baseTorsoH = torsoBotY - torsoTopY;
   const baseTorsoW = rX * 1.5; 
@@ -283,31 +265,87 @@ function draw() {
   const torsoRY = (baseTorsoH * tH) / 2;
   const torsoCx = cx + tX * torsoRX;
 
+  // Верх и низ яйца
+  const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
 
-  // --- Таз ---
-  // Правило: Ширина таза = Высота торса, Высота таза = Ширина торса
+  // --- Расчет таза ---
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
 
-  const pelvisW = torsoHeight; // Ширина таза = высоте торса
-  const pelvisH = torsoWidth;  // Высота таза = ширине торса
+  const pelvisW = torsoHeight; 
+  const pelvisH = torsoWidth;  
   
   const pelvisR = parseFloat(ui.pelvisR.value) || 0.2;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
   
-  // Таз начинается строго от низа торса
   const pelvisTopY = torsoBottomY;
-  const pelvisCx = torsoCx + pelvisX * pelvisW; // Привязываем к центру торса
+  const pelvisCx = torsoCx + pelvisX * pelvisW; 
   
   const pelvisXPos = pelvisCx - pelvisW / 2;
   const pelvisYPos = pelvisTopY;
   
-  // Радиус скругления берем от меньшей стороны, чтобы не ломалось
   const maxRadius = Math.min(pelvisW, pelvisH) / 2;
   const cornerRadius = maxRadius * pelvisR;
 
-  /* ---------- Отрисовка ---------- */
+  const pelvisBottomY = pelvisYPos + pelvisH;
+
+  // ============================================
+  // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
+  // ============================================
+  if (ui.showSub.checked) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(100,150,255,0.8)'; 
+    ctx.lineWidth = 2; 
+    ctx.setLineDash([10, 15]);
+
+    // 1. Подсекции ГОЛОВЫ (5 частей от макушки до подбородка)
+    // Верхняя точка: skullTop
+    // Нижняя точка: chinCenterY
+    const headTopSubY = skullTop;
+    const headBotSubY = chinCenterY;
+    const headSubCount = 5;
+    const headSubStep = (headBotSubY - headTopSubY) / headSubCount;
+    
+    ctx.beginPath();
+    for (let i = 1; i < headSubCount; i++) {
+      const y = headTopSubY + headSubStep * i;
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    ctx.stroke();
+
+    // 2. Подсекции ТОРСА (3 части от верха яйца до низа яйца)
+    const torsoTopSubY = torsoTopActualY;
+    const torsoBotSubY = torsoBottomY;
+    const torsoSubCount = 3;
+    const torsoSubStep = (torsoBotSubY - torsoTopSubY) / torsoSubCount;
+
+    ctx.beginPath();
+    for (let i = 1; i < torsoSubCount; i++) {
+      const y = torsoTopSubY + torsoSubStep * i;
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    ctx.stroke();
+
+    // 3. Подсекции ТАЗА (2 части от верха таза до низа таза)
+    const pelvisTopSubY = pelvisYPos;
+    const pelvisBotSubY = pelvisBottomY;
+    const pelvisSubCount = 2;
+    const pelvisSubStep = (pelvisBotSubY - pelvisTopSubY) / pelvisSubCount;
+
+    ctx.beginPath();
+    for (let i = 1; i < pelvisSubCount; i++) {
+      const y = pelvisTopSubY + pelvisSubStep * i;
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ============================================
+  // ОТРИСОВКА ФИГУР
+  // ============================================
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
@@ -320,7 +358,7 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 2. Таз (Скругленный прямоугольник, привязан к низу торса)
+  // 2. Таз (Скругленный прямоугольник)
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
