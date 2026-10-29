@@ -196,7 +196,7 @@ function draw() {
     ctx.restore();
   }
 
-  // --- Расчет головы ---
+  // --- Голова ---
   const skullTopBase = 0; 
   const skullBotBase = headStep * 3 / 5; 
   const baseR = (skullBotBase - skullTopBase) / 2;
@@ -245,7 +245,7 @@ function draw() {
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  // --- Расчет шеи ---
+  // --- Шея ---
   const neckWParam = parseFloat(ui.neckW.value) || 0.3;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
   const neckHalfW = rX * neckWParam;
@@ -253,7 +253,7 @@ function draw() {
   const neckTopY = chinCenterY - (headStep / 10); 
   const neckBotY = headStep; 
 
-  // --- Расчет торса ---
+  // --- Торс ---
   const tH = parseFloat(ui.torsoH.value) || 0.85;
   const tW = parseFloat(ui.torsoW.value) || 1.5;
   const tX = parseFloat(ui.torsoX.value) || 0;
@@ -274,28 +274,26 @@ function draw() {
   const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
 
-  // --- Расчет плеч ---
+  // --- Плечи ---
   const shoulderRParam = parseFloat(ui.shoulderR.value) || 1.0;
   const shoulderYParam = parseFloat(ui.shoulderY.value) || 0;
   
-  // Высота 1-й подсекции торса
   const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
   
-  // Центр плеча по Y: на границе 1-й подсекции + смещение
-  const shoulderCy = torsoTopActualY + torsoSubStep + (shoulderYParam * torsoSubStep);
+  // Центр плеча по Y: РОВНО ПОСЕРЕДИНЕ 1-й подсекции
+  const shoulderCy = torsoTopActualY + (torsoSubStep / 2) + (shoulderYParam * torsoSubStep);
   
-  // Радиус плеча: базово половина подсекции * на ползунок
   const shoulderRadius = (torsoSubStep / 2) * shoulderRParam;
 
-  // Центры плеч по X: примыкают к краям торса на этой высоте
-  // Находим ширину торса на высоте shoulderCy (приблизительно по формуле эллипса)
+  // Находим ширину торса на высоте shoulderCy
   const dyNorm = (shoulderCy - torsoCenterY) / torsoRY;
   const torsoWidthAtShoulder = torsoRX * Math.sqrt(Math.max(0, 1 - dyNorm * dyNorm));
   
-  const shoulderLeftCx = torsoCx - torsoWidthAtShoulder;
-  const shoulderRightCx = torsoCx + torsoWidthAtShoulder;
+  // Центры плеч: сдвигаем наружу так, чтобы внутренняя точка касалась контура
+  const shoulderLeftCx = torsoCx - torsoWidthAtShoulder - shoulderRadius;
+  const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
-  // --- Расчет таза ---
+  // --- Таз ---
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
 
@@ -313,8 +311,6 @@ function draw() {
   
   const maxRadius = Math.min(pelvisW, pelvisH) / 2;
   const cornerRadius = maxRadius * pelvisR;
-
-  const pelvisBottomY = pelvisYPos + pelvisH;
 
   // ============================================
   // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
@@ -353,7 +349,7 @@ function draw() {
 
     // 3. Таз (2 части)
     const pelvisTopSubY = pelvisYPos;
-    const pelvisBotSubY = pelvisBottomY;
+    const pelvisBotSubY = pelvisYPos + pelvisH;
     const pelvisSubCount = 2;
     const pelvisSubStep = (pelvisBotSubY - pelvisTopSubY) / pelvisSubCount;
 
@@ -373,7 +369,7 @@ function draw() {
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // 1. Плечи (рисуем до торса, чтобы они уходили под него)
+  // 1. Плечи (отдельные касающиеся круги)
   ctx.beginPath();
   ctx.arc(shoulderLeftCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
   ctx.stroke();
