@@ -93,15 +93,17 @@
     <label><span class="row">Высота трапеции (у шеи) <span class="val" id="vTrapY">0.50</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.50"></label>
 
     <h3>Таз (Прямоугольник)</h3>
-    <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.20</span></span><input type="range" id="pelvisR" min="0" max="0.5" step="0.01" value="0.20"></label>
+    <!-- Расширили max до 1.00 и поставили 0.50 по умолчанию -->
+    <label><span class="row">Скругление углов <span class="val" id="vPelvisR">0.50</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.50"></label>
     <label><span class="row">Смещение по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
     <h3>Пупок</h3>
     <label class="chk"><input type="checkbox" id="showNavel" checked> Показывать пупок</label>
-    <label><span class="row">Тип (Точка → Линия) <span class="val" id="vNavelType">0.00</span></span><input type="range" id="navelType" min="0" max="1" step="0.01" value="0.00"></label>
-    <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.20</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.20"></label>
-    <label><span class="row">Высота (длина) линии <span class="val" id="vNavelH">0.20</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.20"></label>
-    <label><span class="row">Смещение по Y <span class="val" id="vNavelY">0.00</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+    <!-- Поставили дефолтные значения со скрина -->
+    <label><span class="row">Тип (Точка → Линия) <span class="val" id="vNavelType">0.50</span></span><input type="range" id="navelType" min="0" max="1" step="0.01" value="0.50"></label>
+    <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.04</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.04"></label>
+    <label><span class="row">Высота (длина) линии <span class="val" id="vNavelH">0.23</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.23"></label>
+    <label><span class="row">Смещение по Y <span class="val" id="vNavelY">-0.05</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="-0.05"></label>
 
     <button id="resetBtn" class="sec">Сбросить ползунки</button>
     <button id="downloadBtn">Скачать PNG</button>
@@ -320,7 +322,7 @@ function draw() {
   const pelvisW = torsoHeight; 
   const pelvisH = torsoWidth;  
   
-  const pelvisR = parseFloat(ui.pelvisR.value) || 0.2;
+  const pelvisR = parseFloat(ui.pelvisR.value) || 0.5;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
   
   const pelvisTopY = torsoBottomY;
@@ -338,15 +340,12 @@ function draw() {
   const totalTorsoPelvisH = (pelvisYPos + pelvisH) - torsoTopActualY;
   const navelThird = totalTorsoPelvisH / 3;
   
-  // Пупок на 2/3 сверху (то есть на 1/3 снизу)
   let navelCenterY = torsoTopActualY + navelThird * 2;
   navelCenterY += (parseFloat(ui.navelY.value) || 0) * totalTorsoPelvisH;
   
-  const navelType = parseFloat(ui.navelType.value) || 0; // 0 = точка, 1 = линия
-  
-  // Размеры линии (относительно радиуса торса)
-  const navelLineW = (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType; // Ширина (горизонталь)
-  const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; // Высота (вертикаль)
+  const navelType = parseFloat(ui.navelType.value) || 0; 
+  const navelLineW = (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType; 
+  const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; 
 
   // ============================================
   // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
@@ -402,7 +401,7 @@ function draw() {
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // 1. Плечи (круги)
+  // 1. Плечи
   ctx.beginPath();
   ctx.arc(shoulderLeftCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
   ctx.stroke();
@@ -426,7 +425,7 @@ function draw() {
   ctx.lineTo(torsoCx, clavTorsoAttachY);
   ctx.stroke();
 
-  // 4. Торс (Яйцо)
+  // 4. Торс
   ctx.beginPath();
   ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
   ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
@@ -448,7 +447,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 6. Пупок (Вертикальный)
+  // 6. Пупок
   if (ui.showNavel.checked) {
     ctx.save();
     ctx.strokeStyle = color;
@@ -456,23 +455,18 @@ function draw() {
     ctx.lineWidth = lw;
 
     if (navelType < 0.05) {
-      // Точка
       ctx.beginPath();
       ctx.arc(torsoCx, navelCenterY, Math.max(3, lw * 1.5), 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Вертикальная линия (или овал)
       ctx.beginPath();
-      // Рисуем линию с учетом ширины и высоты
       ctx.ellipse(torsoCx, navelCenterY, Math.max(1, navelLineW / 2), Math.max(1, navelLineH / 2), 0, 0, Math.PI * 2);
-      ctx.stroke(); // Обводка
-      // Или заливка, если нужна закрашенная форма
-      // ctx.fill();
+      ctx.stroke();
     }
     ctx.restore();
   }
 
-  // 7. Шея (с обрезкой)
+  // 7. Шея
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
@@ -566,6 +560,7 @@ function updateLabels() {
 Object.values(ui).forEach(el => { el.addEventListener('input', draw); el.addEventListener('change', draw); });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
+  // Обновленные дефолтные значения по скрину
   ui.heads.value = 5.0; ui.lineWidth.value = 5;
   ui.skullH.value = 1.0; ui.skullW.value = 1.0; ui.skullX.value = 0;
   ui.chinY.value = 0.30; ui.chinW.value = 0.00; ui.chinR.value = 0.30;
@@ -574,8 +569,8 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
   ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
-  ui.pelvisR.value = 0.20; ui.pelvisX.value = 0.00;
-  ui.showNavel.checked = true; ui.navelType.value = 0.00; ui.navelW.value = 0.20; ui.navelH.value = 0.20; ui.navelY.value = 0.00;
+  ui.pelvisR.value = 0.50; ui.pelvisX.value = 0.00;
+  ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
 });
