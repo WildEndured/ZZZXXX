@@ -99,7 +99,8 @@
     <h3>Пупок</h3>
     <label class="chk"><input type="checkbox" id="showNavel" checked> Показывать пупок</label>
     <label><span class="row">Тип (Точка → Линия) <span class="val" id="vNavelType">0.00</span></span><input type="range" id="navelType" min="0" max="1" step="0.01" value="0.00"></label>
-    <label><span class="row">Ширина (если линия) <span class="val" id="vNavelW">0.20</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.20"></label>
+    <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.20</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.20"></label>
+    <label><span class="row">Высота (длина) линии <span class="val" id="vNavelH">0.20</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.20"></label>
     <label><span class="row">Смещение по Y <span class="val" id="vNavelY">0.00</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
     <button id="resetBtn" class="sec">Сбросить ползунки</button>
@@ -111,7 +112,7 @@
   </div>
 </div>
 
-<script>
+ <script>
 let canvasW = 4096;
 const canvasH = 4096;
 let refImage = null;
@@ -131,7 +132,8 @@ const ui = {
   torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
   shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'), trapY: document.getElementById('trapY'),
   pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX'),
-  showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), navelW: document.getElementById('navelW'), navelY: document.getElementById('navelY')
+  showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), 
+  navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY')
 };
 
 const vals = {
@@ -145,7 +147,8 @@ const vals = {
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
   vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'), vTrapY: document.getElementById('vTrapY'),
   vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX'),
-  vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), vNavelY: document.getElementById('vNavelY')
+  vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), 
+  vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY')
 };
 
 document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -162,10 +165,8 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
       refImage = img;
       const ratio = img.width / img.height;
       canvasW = Math.round(canvasH * ratio);
-      
       canvas.width = canvasW;
       canvas.height = canvasH;
-      
       draw();
     };
     img.src = event.target.result;
@@ -332,19 +333,20 @@ function draw() {
   const cornerRadius = maxRadius * pelvisR;
 
   // ============================================
-  // РАСЧЕТ ПУПКА
+  // РАСЧЕТ ПУПКА (Вертикальный)
   // ============================================
   const totalTorsoPelvisH = (pelvisYPos + pelvisH) - torsoTopActualY;
   const navelThird = totalTorsoPelvisH / 3;
   
   // Пупок на 2/3 сверху (то есть на 1/3 снизу)
-  let navelY = torsoTopActualY + navelThird * 2;
-  
-  // Добавляем смещение
-  navelY += (parseFloat(ui.navelY.value) || 0) * totalTorsoPelvisH;
+  let navelCenterY = torsoTopActualY + navelThird * 2;
+  navelCenterY += (parseFloat(ui.navelY.value) || 0) * totalTorsoPelvisH;
   
   const navelType = parseFloat(ui.navelType.value) || 0; // 0 = точка, 1 = линия
-  const navelWidth = (parseFloat(ui.navelW.value) || 0.2) * torsoRX; // Ширина линии относительно радиуса торса
+  
+  // Размеры линии (относительно радиуса торса)
+  const navelLineW = (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType; // Ширина (горизонталь)
+  const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; // Высота (вертикаль)
 
   // ============================================
   // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
@@ -446,7 +448,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 6. Пупок (если включен)
+  // 6. Пупок (Вертикальный)
   if (ui.showNavel.checked) {
     ctx.save();
     ctx.strokeStyle = color;
@@ -456,15 +458,16 @@ function draw() {
     if (navelType < 0.05) {
       // Точка
       ctx.beginPath();
-      ctx.arc(torsoCx, navelY, Math.max(3, lw * 1.5), 0, Math.PI * 2);
+      ctx.arc(torsoCx, navelCenterY, Math.max(3, lw * 1.5), 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Линия
-      const w = navelWidth * navelType;
+      // Вертикальная линия (или овал)
       ctx.beginPath();
-      ctx.moveTo(torsoCx - w / 2, navelY);
-      ctx.lineTo(torsoCx + w / 2, navelY);
-      ctx.stroke();
+      // Рисуем линию с учетом ширины и высоты
+      ctx.ellipse(torsoCx, navelCenterY, Math.max(1, navelLineW / 2), Math.max(1, navelLineH / 2), 0, 0, Math.PI * 2);
+      ctx.stroke(); // Обводка
+      // Или заливка, если нужна закрашенная форма
+      // ctx.fill();
     }
     ctx.restore();
   }
@@ -556,6 +559,7 @@ function updateLabels() {
   vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
   vals.vNavelType.textContent = parseFloat(ui.navelType.value).toFixed(2);
   vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
+  vals.vNavelH.textContent = parseFloat(ui.navelH.value).toFixed(2);
   vals.vNavelY.textContent = parseFloat(ui.navelY.value).toFixed(2);
 }
 
@@ -571,7 +575,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
   ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
   ui.pelvisR.value = 0.20; ui.pelvisX.value = 0.00;
-  ui.showNavel.checked = true; ui.navelType.value = 0.00; ui.navelW.value = 0.20; ui.navelY.value = 0.00;
+  ui.showNavel.checked = true; ui.navelType.value = 0.00; ui.navelW.value = 0.20; ui.navelH.value = 0.20; ui.navelY.value = 0.00;
   ui.showHeads.checked = true; ui.showSub.checked = true;
   draw();
 });
