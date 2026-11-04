@@ -198,6 +198,13 @@
 
         <hr style="border-color:#444; width:100%;">
 
+        <div class="subhead">Конусность предплечья (п.6-7)</div>
+        <label><span class="row">Расширение в 1/3 <span class="val" id="vForeExpand">0.20</span></span><input type="range" id="foreExpand" min="0" max="1" step="0.05" value="0.20"></label>
+        <label><span class="row">Вогнутость внутренней <span class="val" id="vForeConcave">0.35</span></span><input type="range" id="foreConcave" min="0" max="1" step="0.05" value="0.35"></label>
+        <label><span class="row">Выпуклость внешней <span class="val" id="vForeConvex">0.15</span></span><input type="range" id="foreConvex" min="0" max="1" step="0.05" value="0.15"></label>
+
+        <hr style="border-color:#444; width:100%;">
+
         <!-- ЛЕВАЯ РУКА -->
         <div class="subhead">Левая рука</div>
         <label><span class="row">Сгиб плеча <span class="val" id="vLShoulderAngle">0.00</span></span><input type="range" id="lShoulderAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
@@ -289,6 +296,10 @@ const ui = {
   showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
   showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
   
+  foreExpand: document.getElementById('foreExpand'),
+  foreConcave: document.getElementById('foreConcave'),
+  foreConvex: document.getElementById('foreConvex'),
+  
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
   
@@ -314,6 +325,9 @@ const vals = {
   vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
   
   vWristR: document.getElementById('vWristR'), vArmLw: document.getElementById('vArmLw'),
+  vForeExpand: document.getElementById('vForeExpand'),
+  vForeConcave: document.getElementById('vForeConcave'),
+  vForeConvex: document.getElementById('vForeConvex'),
   vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
   vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
   vRShoulderAngle: document.getElementById('vRShoulderAngle'), vRElbowAngle: document.getElementById('vRElbowAngle'),
@@ -342,6 +356,34 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   };
   reader.readAsDataURL(file);
 });
+
+// ============================================
+// ПРОФИЛИ ПРЕДПЛЕЧЬЯ (п.6-7)
+// ============================================
+function forearmHalfWidth(t, baseW, tipW, expand) {
+  // t < 1/3: расширение
+  if (t < 1/3) {
+    const peak = baseW + expand * (baseW - tipW);
+    const localT = t / (1/3);
+    return baseW + (peak - baseW) * Math.sin(localT * Math.PI / 2);
+  }
+  // t >= 1/3: сужение
+  const peak = baseW + expand * (baseW - tipW);
+  const localT = (t - 1/3) / (2/3);
+  return peak + (tipW - peak) * localT;
+}
+
+function forearmSideWidths(t, baseW, tipW, expand, concave, convex) {
+  const w = forearmHalfWidth(t, baseW, tipW, expand);
+  if (t < 1/3) return { inner: w, outer: w };
+  const localT = (t - 1/3) / (2/3);
+  
+  // Внутренняя: вогнутая (уменьшается быстрее, квадратично)
+  const inner = w * (1 - concave * localT * localT);
+  // Внешняя: выпуклая/прямая (уменьшается медленнее, с горбом)
+  const outer = w * (1 + convex * Math.sin(localT * Math.PI));
+  return { inner, outer };
+}
 
 // ============================================
 // ГЕОМЕТРИЯ РУКИ
@@ -581,6 +623,10 @@ function draw() {
   const lElbowAngle    = parseFloat(ui.lElbowAngle.value)    || 0;
   const rShoulderAngle = parseFloat(ui.rShoulderAngle.value) || 0;
   const rElbowAngle    = parseFloat(ui.rElbowAngle.value)    || 0;
+
+  const foreExpand  = parseFloat(ui.foreExpand.value)  || 0.20;
+  const foreConcave = parseFloat(ui.foreConcave.value) || 0.35;
+  const foreConvex  = parseFloat(ui.foreConvex.value)  || 0.15;
 
   const lWristBaseX = pelvisXPos - wristRadius + lWristXParam * pelvisW;
   const lWristBaseY = pelvisBottomY - wristRadius + lWristYParam * pelvisH;
@@ -846,59 +892,65 @@ function draw() {
       const { shoulder, elbow, wrist, ballRadius: br } = arm;
       const innerSign = isLeft ? 1 : -1;
 
-      // Векторы для расчета касательных к шарам
+      // --- 1. Плечо → Локоть (прямые линии от края до края) ---
       const dx1 = elbow.x - shoulder.x;
       const dy1 = elbow.y - shoulder.y;
       const len1 = Math.hypot(dx1, dy1) || 1;
       const nx1 = -dy1 / len1;
       const ny1 =  dx1 / len1;
 
-      const dx2 = wrist.x - elbow.x;
-      const dy2 = wrist.y - elbow.y;
-      const len2 = Math.hypot(dx2, dy2) || 1;
-      const nx2 = -dy2 / len2;
-      const ny2 =  dx2 / len2;
-
-      // Находим точки на окружностях (внешняя и внутренняя сторона)
-      // Для левой руки внешняя сторона - это правая (innerSign = 1 -> +nx)
-      // Для правой руки внешняя сторона - это левая (innerSign = -1 -> -nx)
-      
-      // 1. От плеча к локтю
       const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
       const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
       
       const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
       const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
 
-      // Рисуем внешнюю линию
       ctx.beginPath();
       ctx.moveTo(p1Outer.x, p1Outer.y);
       ctx.lineTo(p2Outer.x, p2Outer.y);
       ctx.stroke();
 
-      // Рисуем внутреннюю линию
       ctx.beginPath();
       ctx.moveTo(p1Inner.x, p1Inner.y);
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // 2. От локтя к запястью
-      const p2OuterW = { x: elbow.x + nx2 * innerSign * br, y: elbow.y + ny2 * innerSign * br };
-      const p2InnerW = { x: elbow.x - nx2 * innerSign * br, y: elbow.y - ny2 * innerSign * br };
-      
-      const p3OuterW = { x: wrist.x + nx2 * innerSign * br, y: wrist.y + ny2 * innerSign * br };
-      const p3InnerW = { x: wrist.x - nx2 * innerSign * br, y: wrist.y - ny2 * innerSign * br };
+      // --- 2. Локоть → Запястье (с профилями п.6-7) ---
+      const dx2 = wrist.x - elbow.x;
+      const dy2 = wrist.y - elbow.y;
+      const len2 = Math.hypot(dx2, dy2) || 1;
+      const nx2 = -dy2 / len2;
+      const ny2 =  dx2 / len2;
 
-      // Внешняя линия предплечья
+      const samples = 16;
+      const sideA = []; // Внешняя
+      const sideB = []; // Внутренняя
+
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples;
+        const cX = elbow.x + dx2 * t;
+        const cY = elbow.y + dy2 * t;
+
+        const { inner, outer } = forearmSideWidths(t, br, br * 0.8, foreExpand, foreConcave, foreConvex);
+
+        // В зависимости от руки распределяем внешнюю и внутреннюю стороны
+        const wOuter = innerSign > 0 ? outer : inner;
+        const wInner = innerSign > 0 ? inner : outer;
+
+        sideA.push({ x: cX + nx2 * innerSign * wOuter, y: cY + ny2 * innerSign * wOuter });
+        sideB.push({ x: cX - nx2 * innerSign * wInner, y: cY - ny2 * innerSign * wInner });
+      }
+
+      // Отрисовка внешней линии
       ctx.beginPath();
-      ctx.moveTo(p2OuterW.x, p2OuterW.y);
-      ctx.lineTo(p3OuterW.x, p3OuterW.y);
+      ctx.moveTo(sideA[0].x, sideA[0].y);
+      for (let i = 1; i < sideA.length; i++) ctx.lineTo(sideA[i].x, sideA[i].y);
       ctx.stroke();
 
-      // Внутренняя линия предплечья
+      // Отрисовка внутренней линии
       ctx.beginPath();
-      ctx.moveTo(p2InnerW.x, p2InnerW.y);
-      ctx.lineTo(p3InnerW.x, p3InnerW.y);
+      ctx.moveTo(sideB[0].x, sideB[0].y);
+      for (let i = 1; i < sideB.length; i++) ctx.lineTo(sideB[i].x, sideB[i].y);
       ctx.stroke();
 
       // Точка локтя (центр)
@@ -909,14 +961,14 @@ function draw() {
         ctx.fill();
       }
 
-      // Шар локтя (рисуем поверх линий)
+      // Шар локтя
       if (ui.showElbowBall.checked) {
         ctx.beginPath();
         ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // Шар запястья (рисуем поверх линий)
+      // Шар запястья
       if (ui.showWristBall.checked) {
         ctx.beginPath();
         ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2);
@@ -971,6 +1023,11 @@ function updateLabels() {
   
   vals.vWristR.textContent = parseFloat(ui.wristR.value).toFixed(2);
   vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
+  
+  vals.vForeExpand.textContent = parseFloat(ui.foreExpand.value).toFixed(2);
+  vals.vForeConcave.textContent = parseFloat(ui.foreConcave.value).toFixed(2);
+  vals.vForeConvex.textContent = parseFloat(ui.foreConvex.value).toFixed(2);
+
   vals.vLShoulderAngle.textContent = parseFloat(ui.lShoulderAngle.value).toFixed(2);
   vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
   vals.vLWristX.textContent = parseFloat(ui.lWristX.value).toFixed(2);
@@ -1011,6 +1068,10 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.showElbowBall.checked = true;
   ui.showElbow.checked = true;
   
+  ui.foreExpand.value = 0.20;
+  ui.foreConcave.value = 0.35;
+  ui.foreConvex.value = 0.15;
+
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
   
@@ -1032,4 +1093,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-</html>
+  </html>
