@@ -2,6 +2,8 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<!-- Маркер версии для GitHub Actions. Не удалять! -->
+<meta name="build" content="DEV">
 <title>Голова, Торс, Таз, Плечи, Руки и Ноги</title>
 <style>
   :root {
@@ -462,6 +464,31 @@
 </div>
 
 <script>
+/* ============================================================
+   АВТО-ОБНОВЛЕНИЕ ВЕРСИИ (проверка кэша)
+   ============================================================ */
+(function autoUpdateCheck() {
+  const currentBuild = document.querySelector('meta[name="build"]')?.content;
+  if (!currentBuild || currentBuild === 'DEV') return; // локально не проверяем
+
+  setInterval(async () => {
+    try {
+      // Запрос к текущей странице с обходом кэша
+      const res = await fetch(window.location.href, { cache: 'no-store' });
+      const text = await res.text();
+      const match = text.match(/<meta name="build" content="([^"]+)"/);
+      
+      if (match && match[1] !== currentBuild) {
+        console.log('Обнаружено обновление. Перезагрузка...');
+        // Меняем URL, чтобы сбросить кэш HTML
+        window.location.href = window.location.pathname + '?updated=' + Date.now();
+      }
+    } catch (e) {
+      // Игнорируем ошибки сети
+    }
+  }, 60000); // Проверка раз в минуту
+})();
+
 /* ============================================================
    ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
@@ -992,7 +1019,6 @@ function draw() {
   };
   
   // Ширина руки у плеча равна радиусу шара плеча.
-  // Это гарантирует, что контур руки начнется точно от краев шара и сольется с ним.
   const shoulderThick = shoulderRadius * (parseFloat(ui.thickShoulder.value) || 1.00);
   const elbowThick    = ballRadius * (parseFloat(ui.thickElbow.value)    || 1.00);
   const wristThick    = ballRadius * (parseFloat(ui.thickWrist.value)    || 0.60);
@@ -1284,8 +1310,6 @@ function draw() {
       const { shoulder, elbow, wrist, ballRadius: br } = arm;
       const innerSign = isLeft ? 1 : -1;
 
-      // Смещаем старт контура руки вниз по направлению к локтю.
-      // Так как ширина у старта = радиусу шара плеча, этот старт идеально перекрывается шаром.
       const upperStart = {
         x: shoulder.x + (elbow.x - shoulder.x) * 0.15,
         y: shoulder.y + (elbow.y - shoulder.y) * 0.15
@@ -1404,4 +1428,4 @@ updateAllLabels();
 draw();
 </script>
 </body>
-</html>
+  </html>
