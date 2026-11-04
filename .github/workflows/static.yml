@@ -2,7 +2,7 @@ name: Deploy with Cache Bust
 
 on:
   push:
-    branches: ["V1.3", "main",] # Добавлены популярные ветки на всякий случай
+    branches: ["V1.3"] # Добавлены популярные ветки на всякий случай
   workflow_dispatch:
 
 permissions:
