@@ -192,7 +192,9 @@
         <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
         <label><span class="row">Радиус запястья (доля таза) <span class="val" id="vWristR">0.12</span></span><input type="range" id="wristR" min="0.05" max="0.40" step="0.01" value="0.12"></label>
         <label><span class="row">Толщина рук <span class="val" id="vArmLw">1.0</span></span><input type="range" id="armLw" min="0.3" max="2" step="0.1" value="1.0"></label>
+        <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
         <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
+        <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
 
         <hr style="border-color:#444; width:100%;">
 
@@ -284,7 +286,8 @@ const ui = {
   navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY'),
   
   showArms: document.getElementById('showArms'), wristR: document.getElementById('wristR'),
-  showElbowBall: document.getElementById('showElbowBall'), armLw: document.getElementById('armLw'),
+  showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
+  showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
   
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
@@ -850,33 +853,69 @@ function draw() {
       const nx1 = -dy1 / len1;
       const ny1 =  dx1 / len1;
 
-      // Находим точки на окружностях (внешняя и внутренняя сторона)
-      // Для левой руки внешняя сторона - это правая (innerSign = 1 -> +nx)
-      // Для правой руки внешняя сторона - это левая (innerSign = -1 -> -nx)
-      
-      // От плеча к локтю
+      const dx2 = wrist.x - elbow.x;
+      const dy2 = wrist.y - elbow.y;
+      const len2 = Math.hypot(dx2, dy2) || 1;
+      const nx2 = -dy2 / len2;
+      const ny2 =  dx2 / len2;
+
+      // 1. От плеча к локтю
       const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
       const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
       
       const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
       const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
 
-      // Рисуем внешнюю линию
+      // Внешняя линия
       ctx.beginPath();
       ctx.moveTo(p1Outer.x, p1Outer.y);
       ctx.lineTo(p2Outer.x, p2Outer.y);
       ctx.stroke();
 
-      // Рисуем внутреннюю линию
+      // Внутренняя линия
       ctx.beginPath();
       ctx.moveTo(p1Inner.x, p1Inner.y);
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // Шар локтя (рисуем поверх линий)
+      // 2. От локтя к запястью
+      const p2OuterW = { x: elbow.x + nx2 * innerSign * br, y: elbow.y + ny2 * innerSign * br };
+      const p2InnerW = { x: elbow.x - nx2 * innerSign * br, y: elbow.y - ny2 * innerSign * br };
+      
+      const p3OuterW = { x: wrist.x + nx2 * innerSign * br, y: wrist.y + ny2 * innerSign * br };
+      const p3InnerW = { x: wrist.x - nx2 * innerSign * br, y: wrist.y - ny2 * innerSign * br };
+
+      // Внешняя линия предплечья
+      ctx.beginPath();
+      ctx.moveTo(p2OuterW.x, p2OuterW.y);
+      ctx.lineTo(p3OuterW.x, p3OuterW.y);
+      ctx.stroke();
+
+      // Внутренняя линия предплечья
+      ctx.beginPath();
+      ctx.moveTo(p2InnerW.x, p2InnerW.y);
+      ctx.lineTo(p3InnerW.x, p3InnerW.y);
+      ctx.stroke();
+
+      // Точка локтя (центр)
+      if (ui.showElbow.checked) {
+        ctx.beginPath();
+        ctx.arc(elbow.x, elbow.y, Math.max(3, lw * 0.8), 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      // Шар локтя
       if (ui.showElbowBall.checked) {
         ctx.beginPath();
         ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Шар запястья
+      if (ui.showWristBall.checked) {
+        ctx.beginPath();
+        ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2);
         ctx.stroke();
       }
     };
@@ -964,7 +1003,9 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   // Сброс рук
   ui.showArms.checked = true;
   ui.wristR.value = 0.12; ui.armLw.value = 1.0;
+  ui.showWristBall.checked = true; 
   ui.showElbowBall.checked = true;
+  ui.showElbow.checked = true;
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
@@ -987,4 +1028,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-</html>
+  </html>
