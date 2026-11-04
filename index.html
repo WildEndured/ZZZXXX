@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- Маркер версии для GitHub Actions. Не удалять! -->
 <meta name="build" content="DEV">
-<title>Голова, Торс, Таз и Плечи</title>
+<title>Голова, Торс, Таз, Плечи и Руки</title>
 <style>
   :root {
     --bg: #1e1e1e;
@@ -21,14 +21,14 @@
     display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
   .wrap { display: flex; gap: 16px; align-items: flex-start; width: 100%; max-width: 1600px; }
-  
+
   .panel {
-    flex: 0 0 320px;
+    flex: 0 0 340px;
     display: flex; flex-direction: column; gap: 8px;
     background: var(--panel); padding: 12px; border-radius: 10px;
     max-height: 92vh; overflow-y: auto;
   }
-  
+
   .accordion {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -63,7 +63,7 @@
   input[type="range"] { width: 100%; accent-color: var(--accent); }
   input[type="color"] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
   .chk { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
-  
+
   button {
     padding: 8px 12px; border-radius: 6px; border: none;
     background: var(--accent); color: #fff; font-size: 13px;
@@ -73,13 +73,21 @@
   button.sec { background: #444; }
   button.sec:hover { background: #555; }
 
+  .subhead {
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 4px 0 2px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+  }
+
   .stage {
     flex: 1; min-width: 0; max-height: 92vh; overflow: auto;
     border: 1px solid var(--border); border-radius: 8px;
     background: #000; display: flex; justify-content: center;
   }
   canvas { display: block; max-width: 100%; height: auto; }
-  
+
   @media (max-width: 900px) {
     .wrap { flex-direction: column; align-items: center; }
     .panel { flex: 0 0 auto; width: 100%; max-height: 50vh; order: 2; }
@@ -91,7 +99,7 @@
 
 <div class="wrap">
   <div class="panel">
-    
+
     <!-- Блок 1: Общее -->
     <div class="accordion open">
       <div class="accordion-header">Общее и Подложка</div>
@@ -152,14 +160,14 @@
         <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
         <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
-        
+
         <label class="chk"><input type="checkbox" id="showHipLines" checked> Линии паха и бедер (п.20-22)</label>
         <label><span class="row">Точка паха (смещение) <span class="val" id="vHipGap">0.50</span></span><input type="range" id="hipGap" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <label><span class="row">Ширина паха <span class="val" id="vHipGapW">0.20</span></span><input type="range" id="hipGapW" min="0.01" max="0.5" step="0.01" value="0.20"></label>
         <label><span class="row">Высота верхних углов <span class="val" id="vHipTopY">0.00</span></span><input type="range" id="hipTopY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <label><span class="row">Высота середин боков <span class="val" id="vHipMidY">0.50</span></span><input type="range" id="hipMidY" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <hr style="border-color:#444; width:100%;">
-        
+
         <label class="chk"><input type="checkbox" id="showAbsLines" checked> Линии от пупка к плечам</label>
         <label><span class="row">Изгиб линий <span class="val" id="vAbsBend">0.30</span></span><input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30"></label>
       </div>
@@ -174,6 +182,21 @@
         <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.04</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.04"></label>
         <label><span class="row">Высота линии <span class="val" id="vNavelH">0.23</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.23"></label>
         <label><span class="row">Смещение по Y <span class="val" id="vNavelY">-0.05</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="-0.05"></label>
+      </div>
+    </div>
+
+    <!-- Блок 6: Руки -->
+    <div class="accordion">
+      <div class="accordion-header">Руки</div>
+      <div class="accordion-content">
+        <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
+        <label><span class="row">Радиус запястья (доля таза) <span class="val" id="vWristR">0.33</span></span><input type="range" id="wristR" min="0.10" max="0.60" step="0.01" value="0.33"></label>
+        <label><span class="row">Изгиб локтя <span class="val" id="vElbowBend">0.10</span></span><input type="range" id="elbowBend" min="-0.5" max="0.5" step="0.01" value="0.10"></label>
+        <label><span class="row">Смещение запястья X <span class="val" id="vWristX">0.00</span></span><input type="range" id="wristX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Смещение запястья Y <span class="val" id="vWristY">0.00</span></span><input type="range" id="wristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
+        <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
+        <label><span class="row">Толщина рук <span class="val" id="vArmLw">1.0</span></span><input type="range" id="armLw" min="0.3" max="2" step="0.1" value="1.0"></label>
       </div>
     </div>
 
@@ -244,7 +267,12 @@ const ui = {
   hipMidY: document.getElementById('hipMidY'),
   showAbsLines: document.getElementById('showAbsLines'), absBend: document.getElementById('absBend'),
   showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), 
-  navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY')
+  navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY'),
+  // Руки
+  showArms: document.getElementById('showArms'), wristR: document.getElementById('wristR'),
+  elbowBend: document.getElementById('elbowBend'), wristX: document.getElementById('wristX'), wristY: document.getElementById('wristY'),
+  showWristBall: document.getElementById('showWristBall'), showElbow: document.getElementById('showElbow'),
+  armLw: document.getElementById('armLw')
 };
 
 const vals = {
@@ -262,7 +290,9 @@ const vals = {
   vHipTopY: document.getElementById('vHipTopY'), vHipMidY: document.getElementById('vHipMidY'),
   vAbsBend: document.getElementById('vAbsBend'),
   vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), 
-  vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY')
+  vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
+  vWristR: document.getElementById('vWristR'), vElbowBend: document.getElementById('vElbowBend'),
+  vWristX: document.getElementById('vWristX'), vWristY: document.getElementById('vWristY'), vArmLw: document.getElementById('vArmLw')
 };
 
 document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -287,6 +317,24 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   };
   reader.readAsDataURL(file);
 });
+
+// ============================================
+// ФУНКЦИЯ ПОСТРОЕНИЯ РУКИ
+// ============================================
+function calcElbow(sh, wr, bend) {
+  const mx = (sh.x + wr.x) / 2;
+  const my = (sh.y + wr.y) / 2;
+  const dx = wr.x - sh.x;
+  const dy = wr.y - sh.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const px = -dy / len;
+  const py =  dx / len;
+  return {
+    x: mx + px * bend * len,
+    y: my + py * bend * len,
+    mx, my
+  };
+}
 
 function draw() {
   const W = canvasW, H = canvasH;
@@ -460,7 +508,7 @@ function draw() {
   const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; 
 
   // ============================================
-  // РАСЧЕТ ЛИНИЙ БЕДЕР (п.20-22) + ПРОМЕЖУТОК ПАХА
+  // РАСЧЕТ ЛИНИЙ БЕДЕР
   // ============================================
   const pelvisBottomY = pelvisYPos + pelvisH;
   const hipGapParam = parseFloat(ui.hipGap.value) || 0.5;
@@ -483,7 +531,34 @@ function draw() {
   const hipMidRightPoint = { x: pelvisXPos + pelvisW, y: pelvisYPos + pelvisH * hipMidYParam };
 
   // ============================================
-  // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
+  // РАСЧЕТ РУК
+  // ============================================
+  const showArms = ui.showArms.checked;
+  const wristRParam  = parseFloat(ui.wristR.value)  || 0.33;
+  const elbowBendParam = parseFloat(ui.elbowBend.value) || 0.10;
+  const wristXParam = parseFloat(ui.wristX.value) || 0;
+  const wristYParam = parseFloat(ui.wristY.value) || 0;
+  const armLwMul = parseFloat(ui.armLw.value) || 1.0;
+
+  // Радиус = 1/3 высоты таза * модификатор
+  const wristRadius = (pelvisH / 3) * (wristRParam / 0.33);
+
+  // Низ шара = низ таза.
+  const wristCy = pelvisBottomY - wristRadius + wristYParam * pelvisH;
+  
+  const wristCxLeft  = pelvisXPos - wristRadius + wristXParam * pelvisW;
+  const wristCxRight = pelvisXPos + pelvisW + wristRadius + wristXParam * pelvisW;
+
+  const shoulderL = { x: shoulderLeftCx,  y: shoulderCy };
+  const shoulderR = { x: shoulderRightCx, y: shoulderCy };
+  const wristL = { x: wristCxLeft,  y: wristCy };
+  const wristR = { x: wristCxRight, y: wristCy };
+
+  const elbowL = calcElbow(shoulderL, wristL, -elbowBendParam);
+  const elbowR = calcElbow(shoulderR, wristR,  elbowBendParam);
+
+  // ============================================
+  // ОТРИСОВКА ПОДСЕКЦИЙ
   // ============================================
   if (ui.showSub.checked) {
     ctx.save();
@@ -566,7 +641,7 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 5. Таз (рамка)
+  // 5. Таз
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
@@ -579,7 +654,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 6. Линии бедер (п.20-22)
+  // 6. Линии бедер
   if (ui.showHipLines.checked) {
     ctx.save();
     ctx.strokeStyle = 'rgba(255,100,100,0.8)'; 
@@ -614,7 +689,7 @@ function draw() {
     ctx.restore();
   }
 
-  // 7. Линии пресса (п.18)
+  // 7. Линии пресса
   if (ui.showAbsLines.checked) {
     ctx.save();
     ctx.beginPath();
@@ -664,7 +739,7 @@ function draw() {
     ctx.restore();
   }
 
-  // 9. Шея (с обрезкой)
+  // 9. Шея
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
@@ -720,6 +795,50 @@ function draw() {
   }
   ctx.restore();
 
+  // 11. РУКИ
+  if (showArms) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, lw * armLwMul);
+    ctx.setLineDash([]);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    const drawArm = (sh, el, wr) => {
+      // Плечо → локоть
+      ctx.beginPath();
+      ctx.moveTo(sh.x, sh.y);
+      ctx.lineTo(el.x, el.y);
+      ctx.stroke();
+
+      // Локоть → запястье
+      ctx.beginPath();
+      ctx.moveTo(el.x, el.y);
+      ctx.lineTo(wr.x, wr.y);
+      ctx.stroke();
+
+      // Точка локтя
+      if (ui.showElbow.checked) {
+        ctx.beginPath();
+        ctx.arc(el.x, el.y, Math.max(3, lw * 0.8), 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      // Шар запястья
+      if (ui.showWristBall.checked) {
+        ctx.beginPath();
+        ctx.arc(wr.x, wr.y, wristRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    };
+
+    drawArm(shoulderL, elbowL, wristL);
+    drawArm(shoulderR, elbowR, wristR);
+
+    ctx.restore();
+  }
+
   ctx.restore(); 
   updateLabels();
 }
@@ -758,6 +877,11 @@ function updateLabels() {
   vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
   vals.vNavelH.textContent = parseFloat(ui.navelH.value).toFixed(2);
   vals.vNavelY.textContent = parseFloat(ui.navelY.value).toFixed(2);
+  vals.vWristR.textContent = parseFloat(ui.wristR.value).toFixed(2);
+  vals.vElbowBend.textContent = parseFloat(ui.elbowBend.value).toFixed(2);
+  vals.vWristX.textContent = parseFloat(ui.wristX.value).toFixed(2);
+  vals.vWristY.textContent = parseFloat(ui.wristY.value).toFixed(2);
+  vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
 }
 
 Object.values(ui).forEach(el => { 
@@ -782,6 +906,14 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.showAbsLines.checked = true; ui.absBend.value = 0.30;
   ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
   ui.showHeads.checked = true; ui.showSub.checked = true;
+  
+  // Сброс рук
+  ui.showArms.checked = true;
+  ui.wristR.value = 0.33; ui.elbowBend.value = 0.10;
+  ui.wristX.value = 0.00; ui.wristY.value = 0.00;
+  ui.showWristBall.checked = true; ui.showElbow.checked = true;
+  ui.armLw.value = 1.0;
+
   draw();
 });
 
