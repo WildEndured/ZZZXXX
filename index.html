@@ -193,6 +193,7 @@
         <label><span class="row">Радиус запястья (доля таза) <span class="val" id="vWristR">0.12</span></span><input type="range" id="wristR" min="0.05" max="0.40" step="0.01" value="0.12"></label>
         <label><span class="row">Толщина рук <span class="val" id="vArmLw">1.0</span></span><input type="range" id="armLw" min="0.3" max="2" step="0.1" value="1.0"></label>
         <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
+        <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
         <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
 
         <hr style="border-color:#444; width:100%;">
@@ -285,8 +286,8 @@ const ui = {
   navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY'),
   
   showArms: document.getElementById('showArms'), wristR: document.getElementById('wristR'),
-  showWristBall: document.getElementById('showWristBall'), showElbow: document.getElementById('showElbow'),
-  armLw: document.getElementById('armLw'),
+  showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
+  showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
   
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
@@ -869,6 +870,13 @@ function draw() {
         ctx.fill();
       }
 
+      // Шар локтя
+      if (ui.showElbowBall.checked) {
+        ctx.beginPath();
+        ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       // Шар запястья
       if (ui.showWristBall.checked) {
         ctx.beginPath();
@@ -960,7 +968,9 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   // Сброс рук
   ui.showArms.checked = true;
   ui.wristR.value = 0.12; ui.armLw.value = 1.0;
-  ui.showWristBall.checked = true; ui.showElbow.checked = true;
+  ui.showWristBall.checked = true; 
+  ui.showElbowBall.checked = true;
+  ui.showElbow.checked = true;
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
@@ -983,4 +993,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-</html>
+  </html>
