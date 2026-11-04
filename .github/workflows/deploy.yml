@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]   # или master — как у тебя называется ветка
+  workflow_dispatch:    # позволяет запускать вручную
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # === Cache busting: заменяем ?v=OLD на ?v=BUILD_ID ===
+      - name: Inject build version
+        run: |
+          BUILD_ID=$(git rev-parse --short HEAD)-$(date +%s)
+          echo "Build ID: $BUILD_ID"
+          # Находим все ?v=... и заменяем на актуальный
+          find . -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" \) \
+            -not -path "./.git/*" -not -path "./.github/*" \
+            -exec sed -i -E "s/\?v=[a-zA-Z0-9._-]+/?v=${BUILD_ID}/g" {} +
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
