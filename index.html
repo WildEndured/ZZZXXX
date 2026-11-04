@@ -751,6 +751,74 @@ function strokeOutline(sideA, sideB) {
 }
 
 /* ============================================================
+   НОВАЯ ОТРИСОВКА ВЕРХНЕГО СЕГМЕНТА РУКИ (ПЛАВНЫЙ ПЕРЕХОД ОТ ПЛЕЧА)
+   ============================================================ */
+function buildUpperArmSmooth(shoulder, elbow, shoulderR, shoulderThick, elbowThick, innerSign, params) {
+  const sideA = [];
+  const sideB = [];
+  const samples = 32;
+
+  // Точка старта внешней линии (верхушка плеча)
+  const outerStart = {
+    x: shoulder.x - innerSign * shoulderR * 0.9,
+    y: shoulder.y - shoulderR * 0.9
+  };
+  
+  // Точка старта внутренней линии (подмышка)
+  const innerStart = {
+    x: shoulder.x + innerSign * shoulderR * 0.2,
+    y: shoulder.y + shoulderR * 0.6
+  };
+
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    const easeT = t * t * (3 - 2 * t); // Плавный старт
+
+    // --- Внешняя линия ---
+    // Начинается в outerStart, плавно переходит в линию "центр плеча -> локоть" и отрисовывает внешнюю сторону руки
+    const ctrlOuterX = shoulder.x - innerSign * shoulderR * 1.5;
+    const ctrlOuterY = shoulder.y + (elbow.y - shoulder.y) * 0.3;
+    
+    // Базовый центр для текущей точки
+    const centerX = shoulder.x + (elbow.x - shoulder.x) * t;
+    const centerY = shoulder.y + (elbow.y - shoulder.y) * t;
+
+    // Направление к локтю
+    const dx = elbow.x - shoulder.x;
+    const dy = elbow.y - shoulder.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny =  dx / len;
+
+    // Профиль ширины
+    const w = upperArmHalfWidth(t, shoulderThick, elbowThick, params.bugle);
+
+    // Смещение для плавного старта внешней стороны
+    const outerBlend = (1 - easeT) * shoulderR * 0.5;
+    
+    // Смещение для плавного старта внутренней стороны
+    const innerBlend = (1 - easeT) * shoulderR * 0.5;
+
+    // Внешняя точка
+    const ptA = {
+      x: centerX + nx * (w + (innerSign > 0 ? -outerBlend : outerBlend)),
+      y: centerY + ny * (w + (innerSign > 0 ? -outerBlend : outerBlend))
+    };
+
+    // Внутренняя точка
+    const ptB = {
+      x: centerX - nx * (w + (innerSign > 0 ? -innerBlend : innerBlend)),
+      y: centerY - ny * (w + (innerSign > 0 ? -innerBlend : innerBlend))
+    };
+
+    sideA.push(ptA);
+    sideB.push(ptB);
+  }
+
+  return { sideA, sideB };
+}
+
+/* ============================================================
    ДЕТАЛИ НОГ
    ============================================================ */
 function drawKneecapHint(knee, ballR, innerSign) {
@@ -1304,36 +1372,15 @@ function draw() {
       const { shoulder, elbow, wrist, ballRadius: br } = arm;
       const innerSign = isLeft ? 1 : -1;
 
-      // Точка старта руки смещена к подмышке/шее
-      const startPoint = {
-        x: shoulder.x - innerSign * shoulderRadius * 0.2,
-        y: shoulder.y - shoulderRadius * 0.9
-      };
-
-      // Вектор от старта к локтю (для расчета нормали)
-      const dx = elbow.x - startPoint.x;
-      const dy = elbow.y - startPoint.y;
-      const len = Math.hypot(dx, dy) || 1;
-      const nx = -dy / len;
-      const ny =  dx / len;
-
-      // Вычисляем ширину руки так, чтобы внешний край проходил через верхнюю точку шара
-      const targetOuterX = shoulder.x - innerSign * shoulderRadius;
-      const targetOuterY = shoulder.y;
-      
-      const distToEdge = (targetOuterX - startPoint.x) * nx + (targetOuterY - startPoint.y) * ny;
-      let actualBaseW = Math.abs(distToEdge);
-      
-      // Не даем ширине стать слишком маленькой
-      if (actualBaseW < shoulderThick * 0.5) actualBaseW = shoulderThick * 0.5;
-
-      const upper = buildSegmentOutline(
-        startPoint, elbow, 'upper',
-        actualBaseW, elbowThick,
-        armParams, innerSign, 0
+      // --- Верхнее плечо ---
+      const upperOutline = buildUpperArmSmooth(
+        shoulder, elbow, shoulderRadius, 
+        shoulderThick, elbowThick, 
+        innerSign, armParams
       );
-      strokeOutline(upper.sideA, upper.sideB);
+      strokeOutline(upperOutline.sideA, upperOutline.sideB);
 
+      // --- Предплечье ---
       const fore = buildSegmentOutline(
         elbow, wrist, 'fore',
         elbowThick, wristThick,
@@ -1440,4 +1487,4 @@ updateAllLabels();
 draw();
 </script>
 </body>
-</html>
+  </html>
