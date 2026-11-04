@@ -344,21 +344,20 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 });
 
 // ============================================
-// ПОСТРОЕНИЕ РУКИ С ПЛАВНЫМ ПЕРЕХОДОМ ОТ ПЛЕЧА
+// ГЕОМЕТРИЯ РУКИ
 // ============================================
-function buildArmSmooth(shoulderCenter, shoulderRadius, wristBase, shoulderAngle, elbowAngle, wristRadius, innerSign) {
-  // 1. Поворот линии запястья
-  const dx = wristBase.x - shoulderCenter.x;
-  const dy = wristBase.y - shoulderCenter.y;
+function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
+  const dx = wristBase.x - shoulder.x;
+  const dy = wristBase.y - shoulder.y;
+
   const cosA = Math.cos(shoulderAngle);
   const sinA = Math.sin(shoulderAngle);
   const rx = dx * cosA - dy * sinA;
   const ry = dx * sinA + dy * cosA;
-  const wrist = { x: shoulderCenter.x + rx, y: shoulderCenter.y + ry };
+  const wrist = { x: shoulder.x + rx, y: shoulder.y + ry };
 
-  // 2. Локоть ровно посередине между плечом и запястьем
-  const mx = (shoulderCenter.x + wrist.x) / 2;
-  const my = (shoulderCenter.y + wrist.y) / 2;
+  const mx = (shoulder.x + wrist.x) / 2;
+  const my = (shoulder.y + wrist.y) / 2;
   const len = Math.hypot(rx, ry) || 1;
   const px = -ry / len;
   const py =  rx / len;
@@ -367,7 +366,7 @@ function buildArmSmooth(shoulderCenter, shoulderRadius, wristBase, shoulderAngle
     y: my + py * elbowAngle * len * 0.5
   };
 
-  return { shoulderCenter, shoulderRadius, elbow, wrist, wristRadius, innerSign };
+  return { shoulder, elbow, wrist, ballRadius };
 }
 
 function draw() {
@@ -588,17 +587,12 @@ function draw() {
   const rWristBaseX = pelvisXPos + pelvisW + wristRadius + rWristXParam * pelvisW;
   const rWristBaseY = pelvisBottomY - wristRadius + rWristYParam * pelvisH;
 
-  // Строим руки (используя новую функцию)
-  const armL = buildArmSmooth(
-    { x: shoulderLeftCx, y: shoulderCy }, shoulderRadius,
-    { x: lWristBaseX, y: lWristBaseY },
-    -lShoulderAngle, -lElbowAngle, wristRadius, 1
-  );
-  const armR = buildArmSmooth(
-    { x: shoulderRightCx, y: shoulderCy }, shoulderRadius,
-    { x: rWristBaseX, y: rWristBaseY },
-    rShoulderAngle, rElbowAngle, wristRadius, -1
-  );
+  // Центры шаров
+  const shoulderL = { x: shoulderLeftCx, y: shoulderCy };
+  const shoulderR = { x: shoulderRightCx, y: shoulderCy };
+
+  const armL = buildArm(shoulderL, { x: lWristBaseX, y: lWristBaseY }, -lShoulderAngle, -lElbowAngle, wristRadius);
+  const armR = buildArm(shoulderR, { x: rWristBaseX, y: rWristBaseY },  rShoulderAngle,  rElbowAngle, wristRadius);
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -847,56 +841,66 @@ function draw() {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    const drawArm = (arm) => {
-      const { shoulderCenter, shoulderRadius: sr, elbow, wrist, wristRadius: wr, innerSign } = arm;
+    const drawArm = (arm, isLeft) => {
+      const { shoulder, elbow, wrist, ballRadius: br } = arm;
+      const innerSign = isLeft ? 1 : -1;
 
-      // Вектор от плеча к локтю
-      const dx = elbow.x - shoulderCenter.x;
-      const dy = elbow.y - shoulderCenter.y;
-      const len = Math.hypot(dx, dy) || 1;
+      // Векторы для расчета касательных к шарам
+      const dx1 = elbow.x - shoulder.x;
+      const dy1 = elbow.y - shoulder.y;
+      const len1 = Math.hypot(dx1, dy1) || 1;
+      const nx1 = -dy1 / len1;
+      const ny1 =  dx1 / len1;
+
+      const dx2 = wrist.x - elbow.x;
+      const dy2 = wrist.y - elbow.y;
+      const len2 = Math.hypot(dx2, dy2) || 1;
+      const nx2 = -dy2 / len2;
+      const ny2 =  dx2 / len2;
+
+      // Находим точки на окружностях (внешняя и внутренняя сторона)
+      // Для левой руки внешняя сторона - это правая (innerSign = 1 -> +nx)
+      // Для правой руки внешняя сторона - это левая (innerSign = -1 -> -nx)
       
-      // Нормаль к вектору
-      const nx = -dy / len;
-      const ny =  dx / len;
-
-      // Точки крепления:
-      // Внешняя точка (на краю шара плеча, смещена вперед)
-      const outerPt = {
-        x: shoulderCenter.x + nx * innerSign * sr,
-        y: shoulderCenter.y + ny * innerSign * sr
-      };
+      // 1. От плеча к локтю
+      const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
+      const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
       
-      // Внутренняя точка (в подмышке, чуть ниже и ближе к центру)
-      const innerPt = {
-        x: shoulderCenter.x - nx * innerSign * sr * 0.6,
-        y: shoulderCenter.y - ny * innerSign * sr * 0.6
-      };
+      const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
+      const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
 
-      // Кривые от плеча к локтю (плавный переход)
-      // Внешняя линия
+      // Рисуем внешнюю линию
       ctx.beginPath();
-      ctx.moveTo(outerPt.x, outerPt.y);
-      // Контрольная точка для плавности
-      const ctrlOuterX = (outerPt.x + elbow.x) / 2 + nx * innerSign * sr * 0.2;
-      const ctrlOuterY = (outerPt.y + elbow.y) / 2 + ny * innerSign * sr * 0.2;
-      ctx.quadraticCurveTo(ctrlOuterX, ctrlOuterY, elbow.x, elbow.y);
+      ctx.moveTo(p1Outer.x, p1Outer.y);
+      ctx.lineTo(p2Outer.x, p2Outer.y);
       ctx.stroke();
 
-      // Внутренняя линия
+      // Рисуем внутреннюю линию
       ctx.beginPath();
-      ctx.moveTo(innerPt.x, innerPt.y);
-      const ctrlInnerX = (innerPt.x + elbow.x) / 2 - nx * innerSign * sr * 0.1;
-      const ctrlInnerY = (innerPt.y + elbow.y) / 2 - ny * innerSign * sr * 0.1;
-      ctx.quadraticCurveTo(ctrlInnerX, ctrlInnerY, elbow.x, elbow.y);
+      ctx.moveTo(p1Inner.x, p1Inner.y);
+      ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // Линия от локтя к запястью (прямая)
+      // 2. От локтя к запястью
+      const p2OuterW = { x: elbow.x + nx2 * innerSign * br, y: elbow.y + ny2 * innerSign * br };
+      const p2InnerW = { x: elbow.x - nx2 * innerSign * br, y: elbow.y - ny2 * innerSign * br };
+      
+      const p3OuterW = { x: wrist.x + nx2 * innerSign * br, y: wrist.y + ny2 * innerSign * br };
+      const p3InnerW = { x: wrist.x - nx2 * innerSign * br, y: wrist.y - ny2 * innerSign * br };
+
+      // Внешняя линия предплечья
       ctx.beginPath();
-      ctx.moveTo(elbow.x, elbow.y);
-      ctx.lineTo(wrist.x, wrist.y);
+      ctx.moveTo(p2OuterW.x, p2OuterW.y);
+      ctx.lineTo(p3OuterW.x, p3OuterW.y);
       ctx.stroke();
 
-      // Точка локтя
+      // Внутренняя линия предплечья
+      ctx.beginPath();
+      ctx.moveTo(p2InnerW.x, p2InnerW.y);
+      ctx.lineTo(p3InnerW.x, p3InnerW.y);
+      ctx.stroke();
+
+      // Точка локтя (центр)
       if (ui.showElbow.checked) {
         ctx.beginPath();
         ctx.arc(elbow.x, elbow.y, Math.max(3, lw * 0.8), 0, Math.PI * 2);
@@ -904,23 +908,23 @@ function draw() {
         ctx.fill();
       }
 
-      // Шар локтя
+      // Шар локтя (рисуем поверх линий)
       if (ui.showElbowBall.checked) {
         ctx.beginPath();
-        ctx.arc(elbow.x, elbow.y, wr, 0, Math.PI * 2);
+        ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // Шар запястья
+      // Шар запястья (рисуем поверх линий)
       if (ui.showWristBall.checked) {
         ctx.beginPath();
-        ctx.arc(wrist.x, wrist.y, wr, 0, Math.PI * 2);
+        ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2);
         ctx.stroke();
       }
     };
 
-    drawArm(armL);
-    drawArm(armR);
+    drawArm(armL, true);
+    drawArm(armR, false);
 
     ctx.restore();
   }
