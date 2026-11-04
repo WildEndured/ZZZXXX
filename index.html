@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- Маркер версии для GitHub Actions. Не удалять! -->
 <meta name="build" content="DEV">
-<title>Голова, Торс, Таз, Плечи, Руки и Ноги</title>
+<title>Голова, Торс, Таз и Плечи</title>
 <style>
   :root {
     --bg: #1e1e1e;
@@ -21,14 +21,14 @@
     display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
   .wrap { display: flex; gap: 16px; align-items: flex-start; width: 100%; max-width: 1600px; }
-
+  
   .panel {
-    flex: 0 0 340px;
+    flex: 0 0 320px;
     display: flex; flex-direction: column; gap: 8px;
     background: var(--panel); padding: 12px; border-radius: 10px;
     max-height: 92vh; overflow-y: auto;
   }
-
+  
   .accordion {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -63,7 +63,7 @@
   input[type="range"] { width: 100%; accent-color: var(--accent); }
   input[type="color"] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
   .chk { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
-
+  
   button {
     padding: 8px 12px; border-radius: 6px; border: none;
     background: var(--accent); color: #fff; font-size: 13px;
@@ -73,21 +73,13 @@
   button.sec { background: #444; }
   button.sec:hover { background: #555; }
 
-  .subhead {
-    font-size: 12px; font-weight: 600; color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin: 4px 0 2px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 4px;
-  }
-
   .stage {
     flex: 1; min-width: 0; max-height: 92vh; overflow: auto;
     border: 1px solid var(--border); border-radius: 8px;
     background: #000; display: flex; justify-content: center;
   }
   canvas { display: block; max-width: 100%; height: auto; }
-
+  
   @media (max-width: 900px) {
     .wrap { flex-direction: column; align-items: center; }
     .panel { flex: 0 0 auto; width: 100%; max-height: 50vh; order: 2; }
@@ -99,30 +91,18 @@
 
 <div class="wrap">
   <div class="panel">
-
+    
     <!-- Блок 1: Общее -->
     <div class="accordion open">
       <div class="accordion-header">Общее и Подложка</div>
       <div class="accordion-content">
         <label class="chk"><input type="checkbox" id="showRef" checked> Показывать подложку</label>
-        <label>
-          <span class="row">Прозрачность <span class="val" data-for="refOp"></span></span>
-          <input type="range" id="refOp" min="0" max="1" step="0.05" value="0.5">
-        </label>
+        <label><span class="row">Прозрачность <span class="val" id="vRefOp">0.50</span></span><input type="range" id="refOp" min="0" max="1" step="0.05" value="0.5"></label>
         <button id="uploadBtn" class="sec">Загрузить картинку</button>
         <input type="file" id="fileInput" style="display:none;" accept="image/*">
-        <label>
-          <span class="row">Рост в головах <span class="val" data-for="heads"></span></span>
-          <input type="range" id="heads" min="3" max="12" step="0.1" value="5.0">
-        </label>
-        <label>
-          <span class="row">Цвет линий</span>
-          <input type="color" id="lineColor" value="#ff3b3b">
-        </label>
-        <label>
-          <span class="row">Толщина <span class="val" data-for="lineWidth"></span></span>
-          <input type="range" id="lineWidth" min="1" max="30" step="1" value="5">
-        </label>
+        <label><span class="row">Рост в головах <span class="val" id="vHeads">5.0</span></span><input type="range" id="heads" min="3" max="12" step="0.1" value="5.0"></label>
+        <label><span class="row">Цвет линий</span><input type="color" id="lineColor" value="#ff3b3b"></label>
+        <label><span class="row">Толщина <span class="val" id="vWidth">5</span></span><input type="range" id="lineWidth" min="1" max="30" step="1" value="5"></label>
         <label class="chk"><input type="checkbox" id="showHeads" checked> Показывать секции</label>
         <label class="chk"><input type="checkbox" id="showSub" checked> Показывать подсекции</label>
       </div>
@@ -132,44 +112,17 @@
     <div class="accordion">
       <div class="accordion-header">Голова (Череп и Челюсть)</div>
       <div class="accordion-content">
-        <label>
-          <span class="row">Высота черепа <span class="val" data-for="skullH"></span></span>
-          <input type="range" id="skullH" min="0.3" max="1.6" step="0.01" value="1.0">
-        </label>
-        <label>
-          <span class="row">Ширина черепа <span class="val" data-for="skullW"></span></span>
-          <input type="range" id="skullW" min="0.5" max="1.6" step="0.01" value="1.0">
-        </label>
-        <label>
-          <span class="row">Смещение по X <span class="val" data-for="skullX"></span></span>
-          <input type="range" id="skullX" min="-0.5" max="0.5" step="0.01" value="0">
-        </label>
+        <label><span class="row">Высота черепа <span class="val" id="vSkullH">1.00</span></span><input type="range" id="skullH" min="0.3" max="1.6" step="0.01" value="1.0"></label>
+        <label><span class="row">Ширина черепа <span class="val" id="vSkullW">1.00</span></span><input type="range" id="skullW" min="0.5" max="1.6" step="0.01" value="1.0"></label>
+        <label><span class="row">Смещение по X <span class="val" id="vSkullX">0.00</span></span><input type="range" id="skullX" min="-0.5" max="0.5" step="0.01" value="0"></label>
         <hr style="border-color:#444; width:100%;">
-        <label>
-          <span class="row">Высота подбородка <span class="val" data-for="chinY"></span></span>
-          <input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0.30">
-        </label>
-        <label>
-          <span class="row">Ширина подбородка <span class="val" data-for="chinW"></span></span>
-          <input type="range" id="chinW" min="0" max="1" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Округлость <span class="val" data-for="chinR"></span></span>
-          <input type="range" id="chinR" min="0" max="1" step="0.01" value="0.30">
-        </label>
+        <label><span class="row">Высота подбородка <span class="val" id="vChinY">0.30</span></span><input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0.30"></label>
+        <label><span class="row">Ширина подбородка <span class="val" id="vChinW">0.00</span></span><input type="range" id="chinW" min="0" max="1" step="0.01" value="0.00"></label>
+        <label><span class="row">Округлость <span class="val" id="vChinR">0.30</span></span><input type="range" id="chinR" min="0" max="1" step="0.01" value="0.30"></label>
         <hr style="border-color:#444; width:100%;">
-        <label>
-          <span class="row">Крепление челюсти (A) <span class="val" data-for="jawY"></span></span>
-          <input type="range" id="jawY" min="0" max="1" step="0.01" value="0.77">
-        </label>
-        <label>
-          <span class="row">Ширина угла (B) <span class="val" data-for="jawW"></span></span>
-          <input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.78">
-        </label>
-        <label>
-          <span class="row">Высота угла (B) <span class="val" data-for="jawB"></span></span>
-          <input type="range" id="jawB" min="0" max="1" step="0.01" value="0.73">
-        </label>
+        <label><span class="row">Крепление челюсти (A) <span class="val" id="vJawY">0.77</span></span><input type="range" id="jawY" min="0" max="1" step="0.01" value="0.77"></label>
+        <label><span class="row">Ширина угла (B) <span class="val" id="vJawW">0.78</span></span><input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.78"></label>
+        <label><span class="row">Высота угла (B) <span class="val" id="vJawB">0.73</span></span><input type="range" id="jawB" min="0" max="1" step="0.01" value="0.73"></label>
       </div>
     </div>
 
@@ -177,27 +130,12 @@
     <div class="accordion">
       <div class="accordion-header">Шея, Плечи и Ключицы</div>
       <div class="accordion-content">
-        <label>
-          <span class="row">Ширина шеи <span class="val" data-for="neckW"></span></span>
-          <input type="range" id="neckW" min="0.1" max="0.8" step="0.01" value="0.30">
-        </label>
-        <label>
-          <span class="row">Смещение шеи по X <span class="val" data-for="neckX"></span></span>
-          <input type="range" id="neckX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
+        <label><span class="row">Ширина шеи <span class="val" id="vNeckW">0.30</span></span><input type="range" id="neckW" min="0.1" max="0.8" step="0.01" value="0.30"></label>
+        <label><span class="row">Смещение шеи по X <span class="val" id="vNeckX">0.00</span></span><input type="range" id="neckX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
-        <label>
-          <span class="row">Смещение плеч по Y <span class="val" data-for="shoulderY"></span></span>
-          <input type="range" id="shoulderY" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Высота ключиц <span class="val" data-for="clavY"></span></span>
-          <input type="range" id="clavY" min="0" max="1" step="0.01" value="0.80">
-        </label>
-        <label>
-          <span class="row">Трапеция (у шеи) <span class="val" data-for="trapY"></span></span>
-          <input type="range" id="trapY" min="0" max="1" step="0.01" value="0.50">
-        </label>
+        <label><span class="row">Смещение плеч по Y <span class="val" id="vShoulderY">0.00</span></span><input type="range" id="shoulderY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Высота ключиц <span class="val" id="vClavY">0.80</span></span><input type="range" id="clavY" min="0" max="1" step="0.01" value="0.80"></label>
+        <label><span class="row">Трапеция (у шеи) <span class="val" id="vTrapY">0.50</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.50"></label>
       </div>
     </div>
 
@@ -205,61 +143,25 @@
     <div class="accordion">
       <div class="accordion-header">Торс и Таз</div>
       <div class="accordion-content">
-        <label>
-          <span class="row">Высота торса <span class="val" data-for="torsoH"></span></span>
-          <input type="range" id="torsoH" min="0.5" max="1.3" step="0.01" value="0.85">
-        </label>
-        <label>
-          <span class="row">Ширина торса <span class="val" data-for="torsoW"></span></span>
-          <input type="range" id="torsoW" min="0.5" max="2.00" step="0.01" value="1.50">
-        </label>
-        <label>
-          <span class="row">Смещение торса по X <span class="val" data-for="torsoX"></span></span>
-          <input type="range" id="torsoX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Сужение торса сверху <span class="val" data-for="torsoTop"></span></span>
-          <input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60">
-        </label>
-        <label>
-          <span class="row">Сужение торса снизу <span class="val" data-for="torsoBot"></span></span>
-          <input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80">
-        </label>
+        <label><span class="row">Высота торса <span class="val" id="vTorsoH">0.85</span></span><input type="range" id="torsoH" min="0.5" max="1.3" step="0.01" value="0.85"></label>
+        <label><span class="row">Ширина торса <span class="val" id="vTorsoW">1.50</span></span><input type="range" id="torsoW" min="0.5" max="2.00" step="0.01" value="1.50"></label>
+        <label><span class="row">Смещение торса по X <span class="val" id="vTorsoX">0.00</span></span><input type="range" id="torsoX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Сужение торса сверху <span class="val" id="vTorsoTop">0.60</span></span><input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60"></label>
+        <label><span class="row">Сужение торса снизу <span class="val" id="vTorsoBot">0.80</span></span><input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80"></label>
         <hr style="border-color:#444; width:100%;">
-        <label>
-          <span class="row">Скругление таза <span class="val" data-for="pelvisR"></span></span>
-          <input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85">
-        </label>
-        <label>
-          <span class="row">Смещение таза по X <span class="val" data-for="pelvisX"></span></span>
-          <input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
+        <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
+        <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
-
+        
         <label class="chk"><input type="checkbox" id="showHipLines" checked> Линии паха и бедер (п.20-22)</label>
-        <label>
-          <span class="row">Точка паха (смещение) <span class="val" data-for="hipGap"></span></span>
-          <input type="range" id="hipGap" min="0.1" max="0.9" step="0.01" value="0.50">
-        </label>
-        <label>
-          <span class="row">Ширина паха <span class="val" data-for="hipGapW"></span></span>
-          <input type="range" id="hipGapW" min="0.01" max="0.5" step="0.01" value="0.20">
-        </label>
-        <label>
-          <span class="row">Высота верхних углов <span class="val" data-for="hipTopY"></span></span>
-          <input type="range" id="hipTopY" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Высота середин боков <span class="val" data-for="hipMidY"></span></span>
-          <input type="range" id="hipMidY" min="0.1" max="0.9" step="0.01" value="0.50">
-        </label>
+        <label><span class="row">Точка паха (смещение) <span class="val" id="vHipGap">0.50</span></span><input type="range" id="hipGap" min="0.1" max="0.9" step="0.01" value="0.50"></label>
+        <label><span class="row">Ширина паха <span class="val" id="vHipGapW">0.20</span></span><input type="range" id="hipGapW" min="0.01" max="0.5" step="0.01" value="0.20"></label>
+        <label><span class="row">Высота верхних углов <span class="val" id="vHipTopY">0.00</span></span><input type="range" id="hipTopY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Высота середин боков <span class="val" id="vHipMidY">0.50</span></span><input type="range" id="hipMidY" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <hr style="border-color:#444; width:100%;">
-
+        
         <label class="chk"><input type="checkbox" id="showAbsLines" checked> Линии от пупка к плечам</label>
-        <label>
-          <span class="row">Изгиб линий <span class="val" data-for="absBend"></span></span>
-          <input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30">
-        </label>
+        <label><span class="row">Изгиб линий <span class="val" id="vAbsBend">0.30</span></span><input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30"></label>
       </div>
     </div>
 
@@ -268,187 +170,10 @@
       <div class="accordion-header">Пупок</div>
       <div class="accordion-content">
         <label class="chk"><input type="checkbox" id="showNavel" checked> Показывать пупок</label>
-        <label>
-          <span class="row">Тип (Точка → Линия) <span class="val" data-for="navelType"></span></span>
-          <input type="range" id="navelType" min="0" max="1" step="0.01" value="0.50">
-        </label>
-        <label>
-          <span class="row">Ширина линии <span class="val" data-for="navelW"></span></span>
-          <input type="range" id="navelW" min="0" max="1" step="0.01" value="0.04">
-        </label>
-        <label>
-          <span class="row">Высота линии <span class="val" data-for="navelH"></span></span>
-          <input type="range" id="navelH" min="0" max="1" step="0.01" value="0.23">
-        </label>
-        <label>
-          <span class="row">Смещение по Y <span class="val" data-for="navelY"></span></span>
-          <input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="-0.05">
-        </label>
-      </div>
-    </div>
-
-    <!-- Блок 6: Руки -->
-    <div class="accordion">
-      <div class="accordion-header">Руки</div>
-      <div class="accordion-content">
-        <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
-        <label>
-          <span class="row">Радиус шара (доля таза) <span class="val" data-for="wristR"></span></span>
-          <input type="range" id="wristR" min="0.03" max="0.30" step="0.01" value="0.14">
-        </label>
-        <label>
-          <span class="row">Толщина контура <span class="val" data-for="armLw"></span></span>
-          <input type="range" id="armLw" min="1" max="10" step="0.5" value="3">
-        </label>
-        <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
-        <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Конусность (п.4-7)</div>
-        <label>
-          <span class="row">Толщина у плеча (× шара) <span class="val" data-for="thickShoulder"></span></span>
-          <input type="range" id="thickShoulder" min="0.5" max="3.0" step="0.05" value="1.00">
-        </label>
-        <label>
-          <span class="row">Толщина у локтя (× шара) <span class="val" data-for="thickElbow"></span></span>
-          <input type="range" id="thickElbow" min="0.4" max="2.0" step="0.05" value="1.00">
-        </label>
-        <label>
-          <span class="row">Толщина у запястья (× шара) <span class="val" data-for="thickWrist"></span></span>
-          <input type="range" id="thickWrist" min="0.2" max="1.5" step="0.05" value="0.60">
-        </label>
-        <label>
-          <span class="row">Bugle верхнего плеча <span class="val" data-for="bugleAmt"></span></span>
-          <input type="range" id="bugleAmt" min="0" max="1" step="0.05" value="0.35">
-        </label>
-        <label>
-          <span class="row">Расширение предплечья <span class="val" data-for="foreExpand"></span></span>
-          <input type="range" id="foreExpand" min="0" max="1" step="0.05" value="0.20">
-        </label>
-        <label>
-          <span class="row">Вогнутость внутренней <span class="val" data-for="foreConcave"></span></span>
-          <input type="range" id="foreConcave" min="0" max="1" step="0.05" value="0.35">
-        </label>
-        <label>
-          <span class="row">Выпуклость внешней <span class="val" data-for="foreConvex"></span></span>
-          <input type="range" id="foreConvex" min="0" max="1" step="0.05" value="0.15">
-        </label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Левая рука</div>
-        <label>
-          <span class="row">Сгиб плеча <span class="val" data-for="lShoulderAngle"></span></span>
-          <input type="range" id="lShoulderAngle" min="-1.5" max="1.5" step="0.01" value="-0.15">
-        </label>
-        <label>
-          <span class="row">Сгиб локтя <span class="val" data-for="lElbowAngle"></span></span>
-          <input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение запястья X <span class="val" data-for="lWristX"></span></span>
-          <input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение запястья Y <span class="val" data-for="lWristY"></span></span>
-          <input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Правая рука</div>
-        <label>
-          <span class="row">Сгиб плеча <span class="val" data-for="rShoulderAngle"></span></span>
-          <input type="range" id="rShoulderAngle" min="-1.5" max="1.5" step="0.01" value="-0.15">
-        </label>
-        <label>
-          <span class="row">Сгиб локтя <span class="val" data-for="rElbowAngle"></span></span>
-          <input type="range" id="rElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение запястья X <span class="val" data-for="rWristX"></span></span>
-          <input type="range" id="rWristX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение запястья Y <span class="val" data-for="rWristY"></span></span>
-          <input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-      </div>
-    </div>
-
-    <!-- Блок 7: Ноги -->
-    <div class="accordion">
-      <div class="accordion-header">Ноги</div>
-      <div class="accordion-content">
-        <label class="chk"><input type="checkbox" id="showLegs" checked> Показывать ноги</label>
-        <label>
-          <span class="row">Радиус шара лодыжки (доля таза) <span class="val" data-for="ankleR"></span></span>
-          <input type="range" id="ankleR" min="0.05" max="0.30" step="0.01" value="0.14">
-        </label>
-        <label>
-          <span class="row">Масштаб шара колена (× плеча) <span class="val" data-for="kneeScale"></span></span>
-          <input type="range" id="kneeScale" min="0.8" max="1.8" step="0.01" value="1.15">
-        </label>
-        <label>
-          <span class="row">Отступ лодыжки от земли <span class="val" data-for="ankleGap"></span></span>
-          <input type="range" id="ankleGap" min="0" max="1.5" step="0.05" value="0.5">
-        </label>
-
-        <div class="subhead">Конусность ног</div>
-        <label>
-          <span class="row">Толщина у бедра (× шара) <span class="val" data-for="thickHip"></span></span>
-          <input type="range" id="thickHip" min="0.5" max="4.0" step="0.05" value="2.00">
-        </label>
-        <label>
-          <span class="row">Расширение бедра <span class="val" data-for="thighExpand"></span></span>
-          <input type="range" id="thighExpand" min="0" max="1" step="0.05" value="0.20">
-        </label>
-        <label>
-          <span class="row">Впадина внутренней стороны <span class="val" data-for="hipDipAmt"></span></span>
-          <input type="range" id="hipDipAmt" min="0" max="0.8" step="0.05" value="0.30">
-        </label>
-        <label>
-          <span class="row">Расширение икры <span class="val" data-for="calfExpand"></span></span>
-          <input type="range" id="calfExpand" min="0" max="1" step="0.05" value="0.25">
-        </label>
-        <label>
-          <span class="row">Вогнутость внутренней <span class="val" data-for="calfConcave"></span></span>
-          <input type="range" id="calfConcave" min="0" max="1" step="0.05" value="0.35">
-        </label>
-        <label>
-          <span class="row">Выпуклость внешней <span class="val" data-for="calfConvex"></span></span>
-          <input type="range" id="calfConvex" min="0" max="1" step="0.05" value="0.18">
-        </label>
-        <hr style="border-color:#444; width:100%;">
-        <label class="chk"><input type="checkbox" id="showKneecapHint" checked> Намёк на коленную чашечку</label>
-        <label class="chk"><input type="checkbox" id="showKneeBone" checked> Костная точка колена (внутрь)</label>
-        <label class="chk"><input type="checkbox" id="showHipDipLine" checked> Линия колено → впадина бедра</label>
-        <label class="chk"><input type="checkbox" id="showAnkleBugle" checked> Bugle на лодыжке</label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Левая нога</div>
-        <label>
-          <span class="row">Смещение колена X <span class="val" data-for="lKneeX"></span></span>
-          <input type="range" id="lKneeX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение лодыжки X <span class="val" data-for="lAnkleX"></span></span>
-          <input type="range" id="lAnkleX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Правая нога</div>
-        <label>
-          <span class="row">Смещение колена X <span class="val" data-for="rKneeX"></span></span>
-          <input type="range" id="rKneeX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
-        <label>
-          <span class="row">Смещение лодыжки X <span class="val" data-for="rAnkleX"></span></span>
-          <input type="range" id="rAnkleX" min="-0.5" max="0.5" step="0.01" value="0.00">
-        </label>
+        <label><span class="row">Тип (Точка → Линия) <span class="val" id="vNavelType">0.50</span></span><input type="range" id="navelType" min="0" max="1" step="0.01" value="0.50"></label>
+        <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.04</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.04"></label>
+        <label><span class="row">Высота линии <span class="val" id="vNavelH">0.23</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.23"></label>
+        <label><span class="row">Смещение по Y <span class="val" id="vNavelY">-0.05</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="-0.05"></label>
       </div>
     </div>
 
@@ -485,75 +210,61 @@
   }, 60000);
 })();
 
-/* ============================================================
-   ИНИЦИАЛИЗАЦИЯ
-   ============================================================ */
-const canvas = document.getElementById('cv');
-const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
-const canvasH = 4096;
+// --- Скрипт для аккордеонов ---
+document.querySelectorAll('.accordion-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+
+// --- Основной код ---
 let canvasW = 4096;
+const canvasH = 4096;
 let refImage = null;
 
-/* ============================================================
-   АККОРДЕОНЫ
-   ============================================================ */
-document.querySelectorAll('.accordion-header').forEach(header => {
-  header.addEventListener('click', () => header.parentElement.classList.toggle('open'));
-});
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
 
-/* ============================================================
-   UI
-   ============================================================ */
-const ui = {};
-document.querySelectorAll('input[id]').forEach(el => { ui[el.id] = el; });
+const ui = {
+  showRef: document.getElementById('showRef'), refOp: document.getElementById('refOp'),
+  heads: document.getElementById('heads'), lineColor: document.getElementById('lineColor'), lineWidth: document.getElementById('lineWidth'),
+  showHeads: document.getElementById('showHeads'), showSub: document.getElementById('showSub'),
+  skullH: document.getElementById('skullH'), skullW: document.getElementById('skullW'), skullX: document.getElementById('skullX'),
+  chinY: document.getElementById('chinY'), chinW: document.getElementById('chinW'), chinR: document.getElementById('chinR'),
+  jawY: document.getElementById('jawY'), jawW: document.getElementById('jawW'), jawB: document.getElementById('jawB'),
+  neckW: document.getElementById('neckW'), neckX: document.getElementById('neckX'),
+  torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
+  torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
+  shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'), trapY: document.getElementById('trapY'),
+  pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX'),
+  showHipLines: document.getElementById('showHipLines'), 
+  hipGap: document.getElementById('hipGap'), 
+  hipGapW: document.getElementById('hipGapW'), 
+  hipTopY: document.getElementById('hipTopY'), 
+  hipMidY: document.getElementById('hipMidY'),
+  showAbsLines: document.getElementById('showAbsLines'), absBend: document.getElementById('absBend'),
+  showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), 
+  navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY')
+};
 
-const initialValues = {};
-document.querySelectorAll('input[id]').forEach(el => {
-  initialValues[el.id] = el.type === 'checkbox' ? el.checked : el.value;
-});
+const vals = {
+  vRefOp: document.getElementById('vRefOp'),
+  vHeads: document.getElementById('vHeads'), vWidth: document.getElementById('vWidth'),
+  vSkullH: document.getElementById('vSkullH'), vSkullW: document.getElementById('vSkullW'), vSkullX: document.getElementById('vSkullX'),
+  vChinY: document.getElementById('vChinY'), vChinW: document.getElementById('vChinW'), vChinR: document.getElementById('vChinR'),
+  vJawY: document.getElementById('vJawY'), vJawW: document.getElementById('vJawW'), vJawB: document.getElementById('vJawB'),
+  vNeckW: document.getElementById('vNeckW'), vNeckX: document.getElementById('vNeckX'),
+  vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
+  vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
+  vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'), vTrapY: document.getElementById('vTrapY'),
+  vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX'),
+  vHipGap: document.getElementById('vHipGap'), vHipGapW: document.getElementById('vHipGapW'), 
+  vHipTopY: document.getElementById('vHipTopY'), vHipMidY: document.getElementById('vHipMidY'),
+  vAbsBend: document.getElementById('vAbsBend'),
+  vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), 
+  vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY')
+};
 
-const labelNodes = new Map();
-document.querySelectorAll('.val[data-for]').forEach(el => {
-  const input = document.getElementById(el.dataset.for);
-  if (input) {
-    const digits = (String(input.step).split('.')[1] || '').length || 0;
-    labelNodes.set(el.dataset.for, { el, digits });
-  }
-});
-
-function updateLabel(id) {
-  const meta = labelNodes.get(id);
-  if (!meta) return;
-  const v = parseFloat(ui[id].value);
-  meta.el.textContent = meta.digits > 0 ? v.toFixed(meta.digits) : String(v);
-}
-function updateAllLabels() {
-  labelNodes.forEach((_, id) => updateLabel(id));
-}
-
-/* ============================================================
-   ОТРИСОВКА С requestAnimationFrame
-   ============================================================ */
-let rafPending = false;
-function scheduleDraw() {
-  if (rafPending) return;
-  rafPending = true;
-  requestAnimationFrame(() => {
-    rafPending = false;
-    draw();
-  });
-}
-
-function onInput(e) {
-  const id = e.target.id;
-  if (id) updateLabel(id);
-  scheduleDraw();
-}
-document.querySelectorAll('input').forEach(el => el.addEventListener('input', onInput));
-
-/* ============================================================
-   ЗАГРУЗКА ИЗОБРАЖЕНИЯ
-   ============================================================ */
 document.getElementById('uploadBtn').addEventListener('click', () => {
   document.getElementById('fileInput').click();
 });
@@ -566,7 +277,8 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
     const img = new Image();
     img.onload = () => {
       refImage = img;
-      canvasW = Math.round(canvasH * (img.width / img.height));
+      const ratio = img.width / img.height;
+      canvasW = Math.round(canvasH * ratio);
       canvas.width = canvasW;
       canvas.height = canvasH;
       draw();
@@ -576,292 +288,16 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-/* ============================================================
-   СБРОС / СКАЧИВАНИЕ
-   ============================================================ */
-document.getElementById('resetBtn').addEventListener('click', () => {
-  document.querySelectorAll('input[id]').forEach(el => {
-    const def = initialValues[el.id];
-    if (el.type === 'checkbox') el.checked = def;
-    else el.value = def;
-  });
-  updateAllLabels();
-  draw();
-});
-
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = `body_${canvasW}x${canvasH}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-});
-
-/* ============================================================
-   ГЕОМЕТРИЯ РУКИ
-   ============================================================ */
-function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
-  const dx = wristBase.x - shoulder.x;
-  const dy = wristBase.y - shoulder.y;
-
-  const cosA = Math.cos(shoulderAngle);
-  const sinA = Math.sin(shoulderAngle);
-  const rx = dx * cosA - dy * sinA;
-  const ry = dx * sinA + dy * cosA;
-  const wrist = { x: shoulder.x + rx, y: shoulder.y + ry };
-
-  const mx = (shoulder.x + wrist.x) / 2;
-  const my = (shoulder.y + wrist.y) / 2;
-  const len = Math.hypot(rx, ry) || 1;
-  const px = -ry / len;
-  const py =  rx / len;
-  const elbow = {
-    x: mx + px * elbowAngle * len * 0.5,
-    y: my + py * elbowAngle * len * 0.5
-  };
-
-  return { shoulder, elbow, wrist, ballRadius };
-}
-
-/* ============================================================
-   ПРОФИЛИ РУК (п.4-7)
-   ============================================================ */
-function upperArmHalfWidth(t, baseW, tipW, bugle) {
-  if (t < 1/3) {
-    const peak = tipW + bugle * (baseW - tipW);
-    const localT = t / (1/3);
-    return tipW + (peak - tipW) * Math.sin(localT * Math.PI / 2);
-  }
-  return tipW;
-}
-
-function forearmHalfWidth(t, baseW, tipW, expand) {
-  if (t < 1/3) {
-    const peak = baseW + expand * (baseW - tipW);
-    const localT = t / (1/3);
-    return baseW + (peak - baseW) * Math.sin(localT * Math.PI / 2);
-  }
-  const peak = baseW + expand * (baseW - tipW);
-  const localT = (t - 1/3) / (2/3);
-  return peak + (tipW - peak) * localT;
-}
-
-function forearmSideWidths(t, baseW, tipW, expand, concave, convex) {
-  const w = forearmHalfWidth(t, baseW, tipW, expand);
-  if (t < 1/3) return { inner: w, outer: w };
-  const localT = (t - 1/3) / (2/3);
-  const inner = w * (1 - concave * localT * localT);
-  const outer = w * (1 + convex * Math.sin(localT * Math.PI));
-  return { inner, outer };
-}
-
-/* ============================================================
-   ПРОФИЛИ НОГ (п.1, 8)
-   ============================================================ */
-function thighHalfWidth(t, hipW, kneeW, expand) {
-  if (t < 1/3) {
-    const peak = hipW + expand * (hipW - kneeW);
-    const localT = t / (1/3);
-    return hipW + (peak - hipW) * Math.sin(localT * Math.PI / 2);
-  }
-  const peak = hipW + expand * (hipW - kneeW);
-  const localT = (t - 1/3) / (2/3);
-  return peak + (kneeW - peak) * localT;
-}
-
-function calfHalfWidth(t, kneeW, ankleW, expand) {
-  if (t < 1/3) {
-    const peak = kneeW + expand * (kneeW - ankleW);
-    const localT = t / (1/3);
-    return kneeW + (peak - kneeW) * Math.sin(localT * Math.PI / 2);
-  }
-  const peak = kneeW + expand * (kneeW - ankleW);
-  const localT = (t - 1/3) / (2/3);
-  return peak + (ankleW - peak) * localT;
-}
-
-function calfSideWidths(t, kneeW, ankleW, expand, concave, convex) {
-  const w = calfHalfWidth(t, kneeW, ankleW, expand);
-  if (t < 1/3) return { inner: w, outer: w };
-  const localT = (t - 1/3) / (2/3);
-  const inner = w * (1 - concave * localT * localT);
-  const outer = w * (1 + convex * Math.sin(localT * Math.PI));
-  return { inner, outer };
-}
-
-/* ============================================================
-   КОНТУР СЕГМЕНТА
-   ============================================================ */
-function buildSegmentOutline(p0, p1, segment, baseW, tipW, params, innerSign, dipAmt, samples = 32) {
-  const dx = p1.x - p0.x;
-  const dy = p1.y - p0.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const nx = -dy / len;
-  const ny =  dx / len;
-
-  const sideA = [];
-  const sideB = [];
-
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples;
-    const cx = p0.x + dx * t;
-    const cy = p0.y + dy * t;
-
-    let wA, wB;
-    if (segment === 'upper') {
-      const w = upperArmHalfWidth(t, baseW, tipW, params.bugle);
-      wA = w; wB = w;
-    } else if (segment === 'fore') {
-      const { inner, outer } = forearmSideWidths(
-        t, baseW, tipW, params.expand, params.concave, params.convex
-      );
-      if (innerSign > 0) { wA = outer; wB = inner; }
-      else { wA = inner; wB = outer; }
-    } else if (segment === 'thigh') {
-      const w = thighHalfWidth(t, baseW, tipW, params.thighExpand);
-      const dipEnd = 0.35;
-      let innerW = w;
-      if (t < dipEnd) {
-        const localT = 1 - t / dipEnd;
-        innerW = w * (1 - dipAmt * localT * localT);
-      }
-      if (innerSign > 0) { wA = w; wB = innerW; }
-      else { wA = innerW; wB = w; }
-    } else { // calf
-      const { inner, outer } = calfSideWidths(
-        t, baseW, tipW, params.calfExpand, params.calfConcave, params.calfConvex
-      );
-      if (innerSign > 0) { wA = outer; wB = inner; }
-      else { wA = inner; wB = outer; }
-    }
-
-    sideA.push({ x: cx + nx * wA, y: cy + ny * wA });
-    sideB.push({ x: cx - nx * wB, y: cy - ny * wB });
-  }
-
-  return { sideA, sideB };
-}
-
-function strokeOutline(sideA, sideB) {
-  ctx.beginPath();
-  ctx.moveTo(sideA[0].x, sideA[0].y);
-  for (let i = 1; i < sideA.length; i++) ctx.lineTo(sideA[i].x, sideA[i].y);
-  for (let i = sideB.length - 1; i >= 0; i--) ctx.lineTo(sideB[i].x, sideB[i].y);
-  ctx.closePath();
-  ctx.stroke();
-}
-
-/* ============================================================
-   НОВАЯ ОТРИСОВКА ВЕРХНЕГО СЕГМЕНТА РУКИ (ПЛАВНЫЙ ПЕРЕХОД ОТ ПЛЕЧА)
-   ============================================================ */
-function buildUpperArmSmooth(shoulder, elbow, shoulderR, shoulderThick, elbowThick, innerSign, params) {
-  const sideA = [];
-  const sideB = [];
-  const samples = 32;
-
-  // Точка старта внешней линии (верхушка плеча)
-  const outerStart = {
-    x: shoulder.x - innerSign * shoulderR * 0.9,
-    y: shoulder.y - shoulderR * 0.9
-  };
-  
-  // Точка старта внутренней линии (подмышка)
-  const innerStart = {
-    x: shoulder.x + innerSign * shoulderR * 0.2,
-    y: shoulder.y + shoulderR * 0.6
-  };
-
-  for (let i = 0; i <= samples; i++) {
-    const t = i / samples;
-    const easeT = t * t * (3 - 2 * t); // Плавный старт
-
-    // --- Внешняя линия ---
-    // Начинается в outerStart, плавно переходит в линию "центр плеча -> локоть" и отрисовывает внешнюю сторону руки
-    const ctrlOuterX = shoulder.x - innerSign * shoulderR * 1.5;
-    const ctrlOuterY = shoulder.y + (elbow.y - shoulder.y) * 0.3;
-    
-    // Базовый центр для текущей точки
-    const centerX = shoulder.x + (elbow.x - shoulder.x) * t;
-    const centerY = shoulder.y + (elbow.y - shoulder.y) * t;
-
-    // Направление к локтю
-    const dx = elbow.x - shoulder.x;
-    const dy = elbow.y - shoulder.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny =  dx / len;
-
-    // Профиль ширины
-    const w = upperArmHalfWidth(t, shoulderThick, elbowThick, params.bugle);
-
-    // Смещение для плавного старта внешней стороны
-    const outerBlend = (1 - easeT) * shoulderR * 0.5;
-    
-    // Смещение для плавного старта внутренней стороны
-    const innerBlend = (1 - easeT) * shoulderR * 0.5;
-
-    // Внешняя точка
-    const ptA = {
-      x: centerX + nx * (w + (innerSign > 0 ? -outerBlend : outerBlend)),
-      y: centerY + ny * (w + (innerSign > 0 ? -outerBlend : outerBlend))
-    };
-
-    // Внутренняя точка
-    const ptB = {
-      x: centerX - nx * (w + (innerSign > 0 ? -innerBlend : innerBlend)),
-      y: centerY - ny * (w + (innerSign > 0 ? -innerBlend : innerBlend))
-    };
-
-    sideA.push(ptA);
-    sideB.push(ptB);
-  }
-
-  return { sideA, sideB };
-}
-
-/* ============================================================
-   ДЕТАЛИ НОГ
-   ============================================================ */
-function drawKneecapHint(knee, ballR, innerSign) {
-  const cxK = knee.x;
-  const cyK = knee.y;
-  const r = ballR * 0.55;
-
-  ctx.save();
-  ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.6);
-  ctx.beginPath();
-  ctx.moveTo(cxK - r * innerSign, cyK - r * 0.7);
-  ctx.quadraticCurveTo(cxK, cyK - r * 0.15, cxK + r * innerSign, cyK - r * 0.7);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(cxK - r * 0.6 * innerSign, cyK + r * 0.6);
-  ctx.quadraticCurveTo(cxK, cyK + r * 0.15, cxK + r * 0.6 * innerSign, cyK + r * 0.6);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawAnkleBugle(ankle, ballR, innerSign) {
-  const bugleR = ballR * 0.35;
-  ctx.beginPath();
-  ctx.arc(ankle.x + innerSign * ballR * 0.85, ankle.y, bugleR, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
-/* ============================================================
-   ОСНОВНАЯ ОТРИСОВКА
-   ============================================================ */
 function draw() {
   const W = canvasW, H = canvasH;
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
   if (refImage && ui.showRef.checked) {
-    const op = parseFloat(ui.refOp.value);
-    if (op > 0) {
-      ctx.save();
-      ctx.globalAlpha = op;
-      ctx.drawImage(refImage, 0, 0, W, H);
-      ctx.restore();
-    }
+    ctx.save();
+    ctx.globalAlpha = parseFloat(ui.refOp.value) || 0.5;
+    ctx.drawImage(refImage, 0, 0, W, H);
+    ctx.restore();
   }
 
   const n = parseFloat(ui.heads.value) || 5.0;
@@ -869,28 +305,26 @@ function draw() {
   const lw = parseInt(ui.lineWidth.value) || 5;
 
   const headStep = H / n;
-  const cx = W / 2;
+  const headLines = [];
+  for (let i = 0; i <= n; i++) headLines.push(i * headStep);
 
-  /* ---------- СЕТКА СЕКЦИЙ ---------- */
+  const cx = W / 2; 
+
+  // Сетка секций
   if (ui.showHeads.checked) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(180,180,180,0.7)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([20, 20]);
+    ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
     ctx.beginPath();
-    for (let i = 0; i <= n; i++) {
-      const y = i * headStep;
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-    }
+    for (const y of headLines) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
     ctx.stroke();
     ctx.restore();
   }
 
-  /* ---------- ГОЛОВА ---------- */
-  const skullBotBase = headStep * 3 / 5;
-  const baseR = skullBotBase / 2;
-  const skullCyBase = baseR;
+  // --- Голова ---
+  const skullTopBase = 0; 
+  const skullBotBase = headStep * 3 / 5; 
+  const baseR = (skullBotBase - skullTopBase) / 2;
+  const skullCyBase  = skullTopBase + baseR; 
 
   const skullH = parseFloat(ui.skullH.value) || 1;
   const skullW = parseFloat(ui.skullW.value) || 1;
@@ -898,9 +332,9 @@ function draw() {
 
   const rY = baseR * skullH;
   const rX = baseR * skullW;
-  const headCx = cx + skullX * rX;
+  const headCx = cx + skullX * rX; 
   const cy = skullCyBase;
-
+  
   const skullTop = cy - rY;
   const skullBottom = cy + rY;
 
@@ -928,31 +362,33 @@ function draw() {
 
   let chinLeft, chinRight;
   if (chinHalfW < 1.5) {
-    chinLeft = chinRight = { x: headCx, y: chinCenterY };
+    chinLeft = { x: headCx, y: chinCenterY };
+    chinRight = { x: headCx, y: chinCenterY };
   } else {
     chinLeft  = { x: headCx - chinHalfW, y: chinCenterY };
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  /* ---------- ШЕЯ ---------- */
+  // --- Шея ---
   const neckWParam = parseFloat(ui.neckW.value) || 0.3;
   const neckXParam = parseFloat(ui.neckX.value) || 0;
   const neckHalfW = rX * neckWParam;
   const neckCx = headCx + neckXParam * rX;
-  const neckTopY = chinCenterY - (headStep / 10);
-  const neckBotY = headStep;
+  const neckTopY = chinCenterY - (headStep / 10); 
+  const neckBotY = headStep; 
 
-  /* ---------- ТОРС ---------- */
+  // --- Торс ---
   const tH = parseFloat(ui.torsoH.value) || 0.85;
   const tW = parseFloat(ui.torsoW.value) || 1.5;
   const tX = parseFloat(ui.torsoX.value) || 0;
   const tTop = parseFloat(ui.torsoTop.value) || 0.6;
   const tBot = parseFloat(ui.torsoBot.value) || 0.8;
 
-  const torsoTopY = headStep;
-  const torsoBotY = headStep * 2;
+  const torsoTopY = headStep; 
+  const torsoBotY = headStep * 2; 
+  
   const baseTorsoH = torsoBotY - torsoTopY;
-  const baseTorsoW = rX * 1.5;
+  const baseTorsoW = rX * 1.5; 
 
   const torsoCenterY = torsoTopY + (baseTorsoH * tH) / 2;
   const torsoRX = (baseTorsoW * tW) / 2;
@@ -962,227 +398,140 @@ function draw() {
   const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
 
-  /* ---------- ПЛЕЧИ ---------- */
+  // --- Плечи ---
   const shoulderYParam = parseFloat(ui.shoulderY.value) || 0;
   const clavYParam = parseFloat(ui.clavY.value) || 0.8;
   const trapYParam = parseFloat(ui.trapY.value) || 0.5;
-
+  
   const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
+  
   const shoulderCy = torsoTopActualY + (torsoSubStep / 2) + (shoulderYParam * torsoSubStep);
   const shoulderRadius = torsoSubStep / 2;
 
   const dyNorm = (shoulderCy - torsoCenterY) / torsoRY;
   const torsoWidthAtShoulder = torsoRX * Math.sqrt(Math.max(0, 1 - dyNorm * dyNorm));
-
-  const shoulderLeftCx  = torsoCx - torsoWidthAtShoulder - shoulderRadius;
+  
+  const shoulderLeftCx = torsoCx - torsoWidthAtShoulder - shoulderRadius;
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
-  /* ---------- КЛЮЧИЦЫ / ТРАПЕЦИИ ---------- */
-  const neckBaseY = neckBotY - (headStep * 0.1 * (1 - trapYParam));
-  const neckBaseLeftX  = neckCx - neckHalfW;
+  // --- Ключицы и Трапеции ---
+  const neckBaseY = neckBotY - (headStep * 0.1 * (1 - trapYParam)); 
+  const neckBaseLeftX = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
-  const trapLeftAttach  = { x: shoulderLeftCx  + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
+  const trapLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
   const trapRightAttach = { x: shoulderRightCx - shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
 
-  const clavLeftAttach  = { x: shoulderLeftCx  + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
+  const clavLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
   const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
 
   const clavTorsoAttachY = torsoTopActualY + torsoRY * 0.2;
 
-  /* ---------- ТАЗ ---------- */
+  // --- Таз ---
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
 
-  const pelvisW = torsoHeight;
-  const pelvisH = torsoWidth;
-
+  const pelvisW = torsoHeight; 
+  const pelvisH = torsoWidth;  
+  
   const pelvisR = parseFloat(ui.pelvisR.value) || 0.85;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
-
+  
   const pelvisTopY = torsoBottomY;
-  const pelvisCx = torsoCx + pelvisX * pelvisW;
-
+  const pelvisCx = torsoCx + pelvisX * pelvisW; 
+  
   const pelvisXPos = pelvisCx - pelvisW / 2;
   const pelvisYPos = pelvisTopY;
-  const pelvisBottomY = pelvisYPos + pelvisH;
-
+  
   const maxRadius = Math.min(pelvisW, pelvisH) / 2;
   const cornerRadius = maxRadius * pelvisR;
 
-  /* ---------- ПУПОК ---------- */
-  const totalTorsoPelvisH = pelvisBottomY - torsoTopActualY;
+  // ============================================
+  // РАСЧЕТ ПУПКА
+  // ============================================
+  const totalTorsoPelvisH = (pelvisYPos + pelvisH) - torsoTopActualY;
   const navelThird = totalTorsoPelvisH / 3;
-
+  
   let navelCenterY = torsoTopActualY + navelThird * 2;
   navelCenterY += (parseFloat(ui.navelY.value) || 0) * totalTorsoPelvisH;
+  
+  const navelType = parseFloat(ui.navelType.value) || 0; 
+  const navelLineW = (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType; 
+  const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; 
 
-  const navelType = parseFloat(ui.navelType.value) || 0;
-  const navelLineW = Math.max(1, (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType);
-  const navelLineH = Math.max(1, (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType);
-
-  /* ---------- ЛИНИИ БЕДЕР ---------- */
+  // ============================================
+  // РАСЧЕТ ЛИНИЙ БЕДЕР (п.20-22) + ПРОМЕЖУТОК ПАХА
+  // ============================================
+  const pelvisBottomY = pelvisYPos + pelvisH;
   const hipGapParam = parseFloat(ui.hipGap.value) || 0.5;
-  const hipGapWParam = parseFloat(ui.hipGapW.value) || 0.2;
-
-  const hipGapCenterX = pelvisXPos + pelvisW * hipGapParam;
-  const hipGapWidth = Math.max(1, pelvisW * hipGapWParam);
-
-  const hipGapLeftPoint  = { x: hipGapCenterX - hipGapWidth / 2, y: pelvisBottomY };
+  const hipGapWParam = parseFloat(ui.hipGapW.value) || 0.2; 
+  
+  const hipGapCenterX = pelvisXPos + pelvisW * hipGapParam; 
+  const hipGapWidth = pelvisW * hipGapWParam;
+  
+  const hipGapLeftPoint = { x: hipGapCenterX - hipGapWidth / 2, y: pelvisBottomY };
   const hipGapRightPoint = { x: hipGapCenterX + hipGapWidth / 2, y: pelvisBottomY };
 
-  const hipTopOffsetY = (parseFloat(ui.hipTopY.value) || 0) * pelvisH;
-  const hipTopLeftPoint  = { x: pelvisXPos + cornerRadius * 0.5, y: pelvisYPos + hipTopOffsetY };
+  const hipTopYParam = parseFloat(ui.hipTopY.value) || 0;
+  const hipTopOffsetY = hipTopYParam * pelvisH;
+  
+  const hipTopLeftPoint = { x: pelvisXPos + cornerRadius * 0.5, y: pelvisYPos + hipTopOffsetY };
   const hipTopRightPoint = { x: pelvisXPos + pelvisW - cornerRadius * 0.5, y: pelvisYPos + hipTopOffsetY };
 
   const hipMidYParam = parseFloat(ui.hipMidY.value) || 0.5;
-  const hipMidLeftPoint  = { x: pelvisXPos, y: pelvisYPos + pelvisH * hipMidYParam };
+  const hipMidLeftPoint = { x: pelvisXPos, y: pelvisYPos + pelvisH * hipMidYParam };
   const hipMidRightPoint = { x: pelvisXPos + pelvisW, y: pelvisYPos + pelvisH * hipMidYParam };
 
-  /* ---------- РУКИ ---------- */
-  const showArms = ui.showArms.checked;
-  const wristRParam = parseFloat(ui.wristR.value) || 0.14;
-  const armLwMul    = parseFloat(ui.armLw.value) || 3;
-
-  const ballRadius = Math.max(1, pelvisH * wristRParam);
-
-  const lWristXParam = parseFloat(ui.lWristX.value) || 0;
-  const lWristYParam = parseFloat(ui.lWristY.value) || 0;
-  const rWristXParam = parseFloat(ui.rWristX.value) || 0;
-  const rWristYParam = parseFloat(ui.rWristY.value) || 0;
-
-  const lShoulderAngle = parseFloat(ui.lShoulderAngle.value) || 0;
-  const lElbowAngle    = parseFloat(ui.lElbowAngle.value)    || 0;
-  const rShoulderAngle = parseFloat(ui.rShoulderAngle.value) || 0;
-  const rElbowAngle    = parseFloat(ui.rElbowAngle.value)    || 0;
-
-  const lWristBaseX = pelvisXPos - ballRadius + lWristXParam * pelvisW;
-  const lWristBaseY = pelvisBottomY - ballRadius + lWristYParam * pelvisH;
-  const rWristBaseX = pelvisXPos + pelvisW + ballRadius + rWristXParam * pelvisW;
-  const rWristBaseY = pelvisBottomY - ballRadius + rWristYParam * pelvisH;
-
-  const shoulderL = { x: shoulderLeftCx, y: shoulderCy };
-  const shoulderR = { x: shoulderRightCx, y: shoulderCy };
-  
-  const wristLBase = { x: lWristBaseX, y: lWristBaseY };
-  const wristRBase = { x: rWristBaseX, y: rWristBaseY };
-
-  const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, ballRadius);
-  const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, ballRadius);
-
-  const armParams = {
-    bugle:   parseFloat(ui.bugleAmt.value)   || 0,
-    expand:  parseFloat(ui.foreExpand.value) || 0,
-    concave: parseFloat(ui.foreConcave.value)|| 0,
-    convex:  parseFloat(ui.foreConvex.value) || 0,
-    thighExpand:  parseFloat(ui.thighExpand.value) || 0,
-    calfExpand:   parseFloat(ui.calfExpand.value)  || 0,
-    calfConcave:  parseFloat(ui.calfConcave.value) || 0,
-    calfConvex:   parseFloat(ui.calfConvex.value)  || 0
-  };
-  
-  const shoulderThick = shoulderRadius * (parseFloat(ui.thickShoulder.value) || 1.00);
-  const elbowThick    = ballRadius * (parseFloat(ui.thickElbow.value)    || 1.00);
-  const wristThick    = ballRadius * (parseFloat(ui.thickWrist.value)    || 0.60);
-
-  /* ---------- НОГИ ---------- */
-  const showLegs = ui.showLegs.checked;
-  const ankleRParam = parseFloat(ui.ankleR.value) || 0.14;
-  const kneeScaleParam = parseFloat(ui.kneeScale.value) || 1.15;
-  const ankleGapParam = parseFloat(ui.ankleGap.value) || 0.5;
-
-  const ankleBallRadius = Math.max(1, pelvisH * ankleRParam);
-  const kneeBallRadius  = shoulderRadius * kneeScaleParam;
-
-  const ankleGap = ankleGapParam * pelvisH;
-  const ankleCy = H - ankleBallRadius - ankleGap;
-
-  const hipSpread = pelvisW * 0.42;
-  const hipJointLeft  = { x: pelvisCx - hipSpread, y: pelvisBottomY };
-  const hipJointRight = { x: pelvisCx + hipSpread, y: pelvisBottomY };
-
-  const ankleBaseLeftX  = pelvisCx - hipSpread * 0.85;
-  const ankleBaseRightX = pelvisCx + hipSpread * 0.85;
-
-  const lKneeXParam  = parseFloat(ui.lKneeX.value)  || 0;
-  const lAnkleXParam = parseFloat(ui.lAnkleX.value) || 0;
-  const rKneeXParam  = parseFloat(ui.rKneeX.value)  || 0;
-  const rAnkleXParam = parseFloat(ui.rAnkleX.value) || 0;
-
-  const kneeBaseLeftX  = (hipJointLeft.x  + ankleBaseLeftX)  / 2;
-  const kneeBaseRightX = (hipJointRight.x + ankleBaseRightX) / 2;
-  const kneeY = (pelvisBottomY + ankleCy) / 2;
-
-  const kneeLeft  = { x: kneeBaseLeftX  + lKneeXParam  * pelvisW, y: kneeY };
-  const kneeRight = { x: kneeBaseRightX + rKneeXParam  * pelvisW, y: kneeY };
-
-  const ankleLeft  = { x: ankleBaseLeftX  + lAnkleXParam * pelvisW, y: ankleCy };
-  const ankleRight = { x: ankleBaseRightX + rAnkleXParam * pelvisW, y: ankleCy };
-
-  const hipThick   = ballRadius * (parseFloat(ui.thickHip.value) || 2.0);
-  const kneeThick  = kneeBallRadius * 0.95;
-  const ankleThick = ankleBallRadius * 0.85;
-  const hipDipAmt  = parseFloat(ui.hipDipAmt.value) || 0.30;
-
-  /* ============================================================
-     ПОДСЕКЦИИ
-     ============================================================ */
+  // ============================================
+  // ОТРИСОВКА ДИНАМИЧЕСКИХ ПОДСЕКЦИЙ
+  // ============================================
   if (ui.showSub.checked) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(100,150,255,0.8)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(100,150,255,0.8)'; 
+    ctx.lineWidth = 2; 
     ctx.setLineDash([10, 15]);
+
+    const headTopSubY = skullTop;
+    const headBotSubY = chinCenterY;
+    const headSubCount = 5;
+    const headSubStep = (headBotSubY - headTopSubY) / headSubCount;
     ctx.beginPath();
-
-    const headSubStep = (chinCenterY - skullTop) / 5;
-    for (let i = 1; i < 5; i++) {
-      const y = skullTop + headSubStep * i;
+    for (let i = 1; i < headSubCount; i++) {
+      const y = headTopSubY + headSubStep * i;
       ctx.moveTo(0, y); ctx.lineTo(W, y);
     }
-
-    const torsoSubStepDraw = (torsoBottomY - torsoTopActualY) / 3;
-    for (let i = 1; i < 3; i++) {
-      const y = torsoTopActualY + torsoSubStepDraw * i;
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-    }
-
-    const pelvisSubStep = pelvisH / 2;
-    for (let i = 1; i < 2; i++) {
-      const y = pelvisYPos + pelvisSubStep * i;
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-    }
-
     ctx.stroke();
+
+    const torsoTopSubY = torsoTopActualY;
+    const torsoBotSubY = torsoBottomY;
+    const torsoSubCount = 3;
+    const torsoSubStepDraw = (torsoBotSubY - torsoTopSubY) / torsoSubCount;
+    ctx.beginPath();
+    for (let i = 1; i < torsoSubCount; i++) {
+      const y = torsoTopSubY + torsoSubStepDraw * i;
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    ctx.stroke();
+
+    const pelvisTopSubY = pelvisYPos;
+    const pelvisBotSubY = pelvisYPos + pelvisH;
+    const pelvisSubCount = 2;
+    const pelvisSubStep = (pelvisBotSubY - pelvisTopSubY) / pelvisSubCount;
+    ctx.beginPath();
+    for (let i = 1; i < pelvisSubCount; i++) {
+      const y = pelvisTopSubY + pelvisSubStep * i;
+      ctx.moveTo(0, y); ctx.lineTo(W, y);
+    }
+    ctx.stroke();
+
     ctx.restore();
   }
 
-  /* ============================================================
-     ФИГУРЫ
-     ============================================================ */
+  // ============================================
+  // ОТРИСОВКА ФИГУР
+  // ============================================
   ctx.save();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lw;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.setLineDash([]);
-
-  const torsoPath = () => {
-    ctx.beginPath();
-    ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
-    ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY,
-                      torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2,
-                      torsoCx + torsoRX, torsoCenterY);
-    ctx.bezierCurveTo(torsoCx + torsoRX, torsoCenterY + torsoRY * 0.5,
-                      torsoCx + torsoRX * tBot, torsoCenterY + torsoRY,
-                      torsoCx, torsoCenterY + torsoRY);
-    ctx.bezierCurveTo(torsoCx - torsoRX * tBot, torsoCenterY + torsoRY,
-                      torsoCx - torsoRX, torsoCenterY + torsoRY * 0.5,
-                      torsoCx - torsoRX, torsoCenterY);
-    ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2,
-                      torsoCx - torsoRX * tTop, torsoCenterY - torsoRY,
-                      torsoCx, torsoCenterY - torsoRY);
-    ctx.closePath();
-  };
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
   // 1. Плечи
   ctx.beginPath();
@@ -1209,10 +558,15 @@ function draw() {
   ctx.stroke();
 
   // 4. Торс
-  torsoPath();
+  ctx.beginPath();
+  ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
+  ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
+  ctx.bezierCurveTo(torsoCx + torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx + torsoRX * tBot, torsoCenterY + torsoRY, torsoCx, torsoCenterY + torsoRY);
+  ctx.bezierCurveTo(torsoCx - torsoRX * tBot, torsoCenterY + torsoRY, torsoCx - torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx - torsoRX, torsoCenterY);
+  ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 5. Таз
+  // 5. Таз (рамка)
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
@@ -1223,14 +577,13 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisH, pelvisXPos, pelvisYPos + pelvisH - cornerRadius);
   ctx.lineTo(pelvisXPos, pelvisYPos + cornerRadius);
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
-  ctx.closePath();
   ctx.stroke();
 
-  // 6. Линии бедер
+  // 6. Линии бедер (п.20-22)
   if (ui.showHipLines.checked) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,100,100,0.8)';
-    ctx.lineWidth = Math.max(1, lw * 0.6);
+    ctx.strokeStyle = 'rgba(255,100,100,0.8)'; 
+    ctx.lineWidth = Math.max(1, lw * 0.6); 
 
     const bottomStep = pelvisW / 5;
     ctx.setLineDash([5, 5]);
@@ -1261,14 +614,20 @@ function draw() {
     ctx.restore();
   }
 
-  // 7. Линии пресса
+  // 7. Линии пресса (п.18)
   if (ui.showAbsLines.checked) {
     ctx.save();
-    torsoPath();
+    ctx.beginPath();
+    ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
+    ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
+    ctx.bezierCurveTo(torsoCx + torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx + torsoRX * tBot, torsoCenterY + torsoRY, torsoCx, torsoCenterY + torsoRY);
+    ctx.bezierCurveTo(torsoCx - torsoRX * tBot, torsoCenterY + torsoRY, torsoCx - torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx - torsoRX, torsoCenterY);
+    ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
+    ctx.closePath();
     ctx.clip();
 
     const absBendParam = parseFloat(ui.absBend.value) || 0.3;
-
+    
     ctx.beginPath();
     ctx.moveTo(torsoCx, navelCenterY);
     const ctrlLeftX = torsoCx - (torsoCx - trapLeftAttach.x) * absBendParam;
@@ -1282,30 +641,33 @@ function draw() {
     const ctrlRightY = navelCenterY - (navelCenterY - trapRightAttach.y) * 0.5;
     ctx.quadraticCurveTo(ctrlRightX, ctrlRightY, trapRightAttach.x, trapRightAttach.y);
     ctx.stroke();
-
+    
     ctx.restore();
   }
 
   // 8. Пупок
   if (ui.showNavel.checked) {
     ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = lw;
+
     if (navelType < 0.05) {
       ctx.beginPath();
       ctx.arc(torsoCx, navelCenterY, Math.max(3, lw * 1.5), 0, Math.PI * 2);
-      ctx.fillStyle = color;
       ctx.fill();
     } else {
       ctx.beginPath();
-      ctx.ellipse(torsoCx, navelCenterY, navelLineW / 2, navelLineH / 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(torsoCx, navelCenterY, Math.max(1, navelLineW / 2), Math.max(1, navelLineH / 2), 0, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  // 9. Шея
+  // 9. Шея (с обрезкой)
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, 0, W, neckBotY);
+  ctx.rect(0, 0, W, neckBotY); 
   ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
   ctx.moveTo(attachLeft.x, attachLeft.y);
   ctx.lineTo(cornerLeft.x, cornerLeft.y);
@@ -1327,12 +689,13 @@ function draw() {
   ctx.lineTo(neckCx + neckHalfW, neckBotY);
   ctx.lineTo(neckCx + neckHalfW, neckTopY);
   ctx.stroke();
-  ctx.restore();
+  ctx.restore(); 
 
   // 10. Голова
-  ctx.beginPath();
-  ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw;
+
+  ctx.beginPath(); ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2); ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(attachLeft.x, attachLeft.y);
@@ -1347,10 +710,7 @@ function draw() {
   ctx.stroke();
 
   if (chinHalfW < 1.5) {
-    ctx.beginPath();
-    ctx.arc(headCx, chinCenterY, Math.max(3, lw), 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(headCx, chinCenterY, Math.max(3, lw), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
   } else {
     ctx.beginPath();
     ctx.moveTo(chinLeft.x, chinLeft.y);
@@ -1358,133 +718,83 @@ function draw() {
     else ctx.quadraticCurveTo(headCx, chinCenterY + (chinRound / chinHalfW) * chinHalfW * 0.8, chinRight.x, chinRight.y);
     ctx.stroke();
   }
-
-  // 11. РУКИ
-  if (showArms) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(0.5, armLwMul);
-    ctx.setLineDash([]);
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    const drawArm = (arm, isLeft) => {
-      const { shoulder, elbow, wrist, ballRadius: br } = arm;
-      const innerSign = isLeft ? 1 : -1;
-
-      // --- Верхнее плечо ---
-      const upperOutline = buildUpperArmSmooth(
-        shoulder, elbow, shoulderRadius, 
-        shoulderThick, elbowThick, 
-        innerSign, armParams
-      );
-      strokeOutline(upperOutline.sideA, upperOutline.sideB);
-
-      // --- Предплечье ---
-      const fore = buildSegmentOutline(
-        elbow, wrist, 'fore',
-        elbowThick, wristThick,
-        armParams, innerSign, 0
-      );
-      strokeOutline(fore.sideA, fore.sideB);
-
-      if (ui.showElbowBall.checked) {
-        ctx.beginPath();
-        ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      if (ui.showWristBall.checked) {
-        ctx.beginPath();
-        ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-    };
-
-    drawArm(armL, true);
-    drawArm(armR, false);
-
-    ctx.restore();
-  }
-
-  // 12. НОГИ
-  if (showLegs) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.setLineDash([]);
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    const drawLeg = (hip, knee, ankle, isLeft) => {
-      const innerSign = isLeft ? 1 : -1;
-
-      const thigh = buildSegmentOutline(
-        hip, knee, 'thigh',
-        hipThick, kneeThick,
-        armParams, innerSign, hipDipAmt
-      );
-      strokeOutline(thigh.sideA, thigh.sideB);
-
-      const calf = buildSegmentOutline(
-        knee, ankle, 'calf',
-        kneeThick, ankleThick,
-        armParams, innerSign, 0
-      );
-      strokeOutline(calf.sideA, calf.sideB);
-
-      ctx.beginPath();
-      ctx.arc(knee.x, knee.y, kneeBallRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(ankle.x, ankle.y, ankleBallRadius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      if (ui.showKneecapHint.checked) {
-        drawKneecapHint(knee, kneeBallRadius, innerSign);
-      }
-
-      if (ui.showKneeBone.checked) {
-        const kneeBone = { x: knee.x + innerSign * kneeBallRadius * 0.4, y: knee.y };
-        ctx.beginPath();
-        ctx.arc(kneeBone.x, kneeBone.y, Math.max(3, lw * 0.7), 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      }
-
-      if (ui.showHipDipLine.checked) {
-        const kneeInnerEdge = { x: knee.x + innerSign * kneeBallRadius, y: knee.y };
-        const hipDip = { x: hip.x + innerSign * hipThick * 0.2, y: hip.y - pelvisH * 0.15 };
-        ctx.save();
-        ctx.lineWidth = Math.max(1, lw * 0.5);
-        ctx.beginPath();
-        ctx.moveTo(kneeInnerEdge.x, kneeInnerEdge.y);
-        ctx.lineTo(hipDip.x, hipDip.y);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      if (ui.showAnkleBugle.checked) {
-        drawAnkleBugle(ankle, ankleBallRadius, innerSign);
-      }
-    };
-
-    drawLeg(hipJointLeft, kneeLeft, ankleLeft, true);
-    drawLeg(hipJointRight, kneeRight, ankleRight, false);
-
-    ctx.restore();
-  }
-
   ctx.restore();
+
+  ctx.restore(); 
+  updateLabels();
 }
 
-/* ============================================================
-   СТАРТ
-   ============================================================ */
+function updateLabels() {
+  vals.vRefOp.textContent  = parseFloat(ui.refOp.value).toFixed(2);
+  vals.vHeads.textContent  = parseFloat(ui.heads.value).toFixed(1);
+  vals.vWidth.textContent  = ui.lineWidth.value;
+  vals.vSkullH.textContent = parseFloat(ui.skullH.value).toFixed(2);
+  vals.vSkullW.textContent = parseFloat(ui.skullW.value).toFixed(2);
+  vals.vSkullX.textContent = parseFloat(ui.skullX.value).toFixed(2);
+  vals.vChinY.textContent  = parseFloat(ui.chinY.value).toFixed(2);
+  vals.vChinW.textContent  = parseFloat(ui.chinW.value).toFixed(2);
+  vals.vChinR.textContent  = parseFloat(ui.chinR.value).toFixed(2);
+  vals.vJawY.textContent   = parseFloat(ui.jawY.value).toFixed(2);
+  vals.vJawW.textContent   = parseFloat(ui.jawW.value).toFixed(2);
+  vals.vJawB.textContent   = parseFloat(ui.jawB.value).toFixed(2);
+  vals.vNeckW.textContent  = parseFloat(ui.neckW.value).toFixed(2);
+  vals.vNeckX.textContent  = parseFloat(ui.neckX.value).toFixed(2);
+  vals.vTorsoH.textContent = parseFloat(ui.torsoH.value).toFixed(2);
+  vals.vTorsoW.textContent = parseFloat(ui.torsoW.value).toFixed(2);
+  vals.vTorsoX.textContent = parseFloat(ui.torsoX.value).toFixed(2);
+  vals.vTorsoTop.textContent = parseFloat(ui.torsoTop.value).toFixed(2);
+  vals.vTorsoBot.textContent = parseFloat(ui.torsoBot.value).toFixed(2);
+  vals.vShoulderY.textContent = parseFloat(ui.shoulderY.value).toFixed(2);
+  vals.vClavY.textContent = parseFloat(ui.clavY.value).toFixed(2);
+  vals.vTrapY.textContent = parseFloat(ui.trapY.value).toFixed(2);
+  vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
+  vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
+  vals.vHipGap.textContent = parseFloat(ui.hipGap.value).toFixed(2);
+  vals.vHipGapW.textContent = parseFloat(ui.hipGapW.value).toFixed(2);
+  vals.vHipTopY.textContent = parseFloat(ui.hipTopY.value).toFixed(2);
+  vals.vHipMidY.textContent = parseFloat(ui.hipMidY.value).toFixed(2);
+  vals.vAbsBend.textContent = parseFloat(ui.absBend.value).toFixed(2);
+  vals.vNavelType.textContent = parseFloat(ui.navelType.value).toFixed(2);
+  vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
+  vals.vNavelH.textContent = parseFloat(ui.navelH.value).toFixed(2);
+  vals.vNavelY.textContent = parseFloat(ui.navelY.value).toFixed(2);
+}
+
+Object.values(ui).forEach(el => { 
+  if(el) {
+    el.addEventListener('input', draw); 
+    el.addEventListener('change', draw); 
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  ui.heads.value = 5.0; ui.lineWidth.value = 5;
+  ui.skullH.value = 1.0; ui.skullW.value = 1.0; ui.skullX.value = 0;
+  ui.chinY.value = 0.30; ui.chinW.value = 0.00; ui.chinR.value = 0.30;
+  ui.jawY.value = 0.77; ui.jawW.value = 0.78; ui.jawB.value = 0.73;
+  ui.neckW.value = 0.30; ui.neckX.value = 0.00;
+  ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
+  ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
+  ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
+  ui.pelvisR.value = 0.85; ui.pelvisX.value = 0.00;
+  ui.hipGap.value = 0.50; ui.hipGapW.value = 0.20; ui.hipTopY.value = 0.00; ui.hipMidY.value = 0.50;
+  ui.showHipLines.checked = true;
+  ui.showAbsLines.checked = true; ui.absBend.value = 0.30;
+  ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
+  ui.showHeads.checked = true; ui.showSub.checked = true;
+  draw();
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `body_${canvasW}x${canvasH}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
 canvas.width = canvasW;
 canvas.height = canvasH;
-updateAllLabels();
 draw();
 </script>
 </body>
-  </html>
+</html>
