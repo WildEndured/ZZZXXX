@@ -2,7 +2,7 @@ name: Deploy with Cache Bust
 
 on:
   push:
-    branches: ["V1.3"]
+    branches: ["V1.3", "main",] # Добавлены популярные ветки на всякий случай
   workflow_dispatch:
 
 permissions:
@@ -29,33 +29,20 @@ jobs:
           # 1. Создаем папку для сборки
           mkdir -p dist
           
-          # 2. Копируем все файлы в dist
+          # 2. Копируем все файлы в dist (исключая системные папки)
           rsync -av --exclude='.git' --exclude='.github' --exclude='dist' ./ dist/
           
-          # 3. Генерируем уникальный хэш
+          # 3. Генерируем уникальный хэш на основе времени
           HASH=$(date +%s)
           echo "Version: $HASH"
           
-          # 4. Переименовываем все JS файлы, добавляя хэш
-          find dist/js -name "*.js" | while read file; do
-            dir=$(dirname "$file")
-            filename=$(basename "$file" .js)
-            mv "$file" "${dir}/${filename}.${HASH}.js"
-          done
-          
-          # 5. Переименовываем CSS
-          if [ -f dist/style.css ]; then
-            mv dist/style.css dist/style.${HASH}.css
-          fi
-          
-          # 6. Обновляем импорты внутри JS файлов
-          find dist/js -name "*.js" | while read file; do
-            sed -i -E "s|from ['\"](\.{1,2}/[^'\"]+)\.js['\"]|from '\1.${HASH}.js'|g" "$file"
-          done
-          
-          # 7. Обновляем index.html
-          sed -i "s|src=\"js/main.js\"|src=\"js/main.${HASH}.js\"|g" dist/index.html
-          sed -i "s|href=\"style.css\"|href=\"style.${HASH}.css\"|g" dist/index.html
+          # 4. Так как у нас один HTML-файл, мы внедрим мета-теги для запрета кэширования 
+          # прямо в <head> файла index.html
+          sed -i "s|<head>|<head>\n    <meta http-equiv=\"Cache-Control\" content=\"no-cache, no-store, must-revalidate\">\n    <meta http-equiv=\"Pragma\" content=\"no-cache\">\n    <meta http-equiv=\"Expires\" content=\"0\">|g" dist/index.html
+
+          # Опционально: если вы хотите добавить хэш в название файла (например, index.html?v=123),
+          # это можно сделать только если у вас есть ссылки на этот файл извне. 
+          # Для GitHub Pages достаточно мета-тегов выше.
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -67,4 +54,4 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
