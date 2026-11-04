@@ -1013,7 +1013,6 @@ function draw() {
     calfConvex:   parseFloat(ui.calfConvex.value)  || 0
   };
   
-  // Базовая толщина верхнего сегмента руки
   const shoulderThick = shoulderRadius * (parseFloat(ui.thickShoulder.value) || 1.00);
   const elbowThick    = ballRadius * (parseFloat(ui.thickElbow.value)    || 1.00);
   const wristThick    = ballRadius * (parseFloat(ui.thickWrist.value)    || 0.60);
@@ -1305,18 +1304,32 @@ function draw() {
       const { shoulder, elbow, wrist, ballRadius: br } = arm;
       const innerSign = isLeft ? 1 : -1;
 
-      // Смещаем старт руки ВВЕРХ и ВНУТРЬ (к шее).
-      // Это заставит руку расти из подмышки, а не из внешнего края шара.
-      const startX = shoulder.x - innerSign * shoulderRadius * 0.4;
-      const startY = shoulder.y - shoulderRadius * 0.8;
+      // Точка старта руки смещена к подмышке/шее
+      const startPoint = {
+        x: shoulder.x - innerSign * shoulderRadius * 0.2,
+        y: shoulder.y - shoulderRadius * 0.9
+      };
 
-      // Рассчитываем ширину руки в этой точке так, чтобы ее внешний край 
-      // совпал с внешним краем шара плеча.
-      const upperStart = { x: startX, y: startY };
+      // Вектор от старта к локтю (для расчета нормали)
+      const dx = elbow.x - startPoint.x;
+      const dy = elbow.y - startPoint.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny =  dx / len;
+
+      // Вычисляем ширину руки так, чтобы внешний край проходил через верхнюю точку шара
+      const targetOuterX = shoulder.x - innerSign * shoulderRadius;
+      const targetOuterY = shoulder.y;
       
+      const distToEdge = (targetOuterX - startPoint.x) * nx + (targetOuterY - startPoint.y) * ny;
+      let actualBaseW = Math.abs(distToEdge);
+      
+      // Не даем ширине стать слишком маленькой
+      if (actualBaseW < shoulderThick * 0.5) actualBaseW = shoulderThick * 0.5;
+
       const upper = buildSegmentOutline(
-        upperStart, elbow, 'upper',
-        shoulderThick, elbowThick,
+        startPoint, elbow, 'upper',
+        actualBaseW, elbowThick,
         armParams, innerSign, 0
       );
       strokeOutline(upper.sideA, upper.sideB);
@@ -1427,4 +1440,4 @@ updateAllLabels();
 draw();
 </script>
 </body>
-  </html>
+</html>
