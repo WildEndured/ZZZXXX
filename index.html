@@ -469,24 +469,20 @@
    ============================================================ */
 (function autoUpdateCheck() {
   const currentBuild = document.querySelector('meta[name="build"]')?.content;
-  if (!currentBuild || currentBuild === 'DEV') return; // локально не проверяем
+  if (!currentBuild || currentBuild === 'DEV') return;
 
   setInterval(async () => {
     try {
-      // Запрос к текущей странице с обходом кэша
       const res = await fetch(window.location.href, { cache: 'no-store' });
       const text = await res.text();
       const match = text.match(/<meta name="build" content="([^"]+)"/);
       
       if (match && match[1] !== currentBuild) {
         console.log('Обнаружено обновление. Перезагрузка...');
-        // Меняем URL, чтобы сбросить кэш HTML
         window.location.href = window.location.pathname + '?updated=' + Date.now();
       }
-    } catch (e) {
-      // Игнорируем ошибки сети
-    }
-  }, 60000); // Проверка раз в минуту
+    } catch (e) {}
+  }, 60000);
 })();
 
 /* ============================================================
@@ -997,7 +993,6 @@ function draw() {
   const rWristBaseX = pelvisXPos + pelvisW + ballRadius + rWristXParam * pelvisW;
   const rWristBaseY = pelvisBottomY - ballRadius + rWristYParam * pelvisH;
 
-  // Точка крепления руки — центр плечевого шара
   const shoulderL = { x: shoulderLeftCx, y: shoulderCy };
   const shoulderR = { x: shoulderRightCx, y: shoulderCy };
   
@@ -1018,7 +1013,7 @@ function draw() {
     calfConvex:   parseFloat(ui.calfConvex.value)  || 0
   };
   
-  // Ширина руки у плеча равна радиусу шара плеча.
+  // Базовая толщина верхнего сегмента руки
   const shoulderThick = shoulderRadius * (parseFloat(ui.thickShoulder.value) || 1.00);
   const elbowThick    = ballRadius * (parseFloat(ui.thickElbow.value)    || 1.00);
   const wristThick    = ballRadius * (parseFloat(ui.thickWrist.value)    || 0.60);
@@ -1310,11 +1305,15 @@ function draw() {
       const { shoulder, elbow, wrist, ballRadius: br } = arm;
       const innerSign = isLeft ? 1 : -1;
 
-      const upperStart = {
-        x: shoulder.x + (elbow.x - shoulder.x) * 0.15,
-        y: shoulder.y + (elbow.y - shoulder.y) * 0.15
-      };
+      // Смещаем старт руки ВВЕРХ и ВНУТРЬ (к шее).
+      // Это заставит руку расти из подмышки, а не из внешнего края шара.
+      const startX = shoulder.x - innerSign * shoulderRadius * 0.4;
+      const startY = shoulder.y - shoulderRadius * 0.8;
 
+      // Рассчитываем ширину руки в этой точке так, чтобы ее внешний край 
+      // совпал с внешним краем шара плеча.
+      const upperStart = { x: startX, y: startY };
+      
       const upper = buildSegmentOutline(
         upperStart, elbow, 'upper',
         shoulderThick, elbowThick,
