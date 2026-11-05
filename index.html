@@ -883,26 +883,57 @@ function draw() {
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // 2. Линия от локтя к запястью (одна осевая линия)
-      ctx.beginPath();
-      ctx.moveTo(elbow.x, elbow.y);
-      ctx.lineTo(wrist.x, wrist.y);
-      ctx.stroke();
-
-      // 3. Поперечная метка на предплечье
+      // 2. Линия от локтя к запястью и поперечная метка
       const dx2 = wrist.x - elbow.x;
       const dy2 = wrist.y - elbow.y;
       const len2 = Math.hypot(dx2, dy2) || 1;
-      const px2 = -dy2 / len2;
-      const py2 =  dx2 / len2;
+      const ux2 = dx2 / len2;
+      const uy2 = dy2 / len2;
+      const px2 = -uy2; // Перпендикуляр
+      const py2 =  ux2;
 
       const markX = elbow.x + dx2 * crossPosParam;
       const markY = elbow.y + dy2 * crossPosParam;
       const markHalf = wristRadius * crossWParam;
 
+      const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
+      const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
+
+      // Осевая линия (тонкая, для направления)
+      ctx.save();
+      ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.5);
       ctx.beginPath();
-      ctx.moveTo(markX - px2 * markHalf, markY - py2 * markHalf);
-      ctx.lineTo(markX + px2 * markHalf, markY + py2 * markHalf);
+      ctx.moveTo(elbow.x, elbow.y);
+      ctx.lineTo(wrist.x, wrist.y);
+      ctx.stroke();
+      ctx.restore();
+
+      // Линии от локтя к краям метки
+      ctx.beginPath();
+      ctx.moveTo(elbow.x, elbow.y);
+      ctx.lineTo(markLeft.x, markLeft.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(elbow.x, elbow.y);
+      ctx.lineTo(markRight.x, markRight.y);
+      ctx.stroke();
+
+      // Линии от краев метки к запястью
+      ctx.beginPath();
+      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.lineTo(wrist.x, wrist.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(markRight.x, markRight.y);
+      ctx.lineTo(wrist.x, wrist.y);
+      ctx.stroke();
+
+      // Сама поперечная метка
+      ctx.beginPath();
+      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.lineTo(markRight.x, markRight.y);
       ctx.stroke();
 
       // Точка локтя (центр)
