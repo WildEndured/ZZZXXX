@@ -195,10 +195,10 @@
         <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
         <hr style="border-color:#444; width:100%;">
         
-        <div class="subhead">Метка на предплечье</div>
-        <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.50</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.50"></label>
-        <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="3" step="0.01" value="0.20"></label>
-        <label><span class="row">Скругление стыка <span class="val" id="vCrossRound">0.00</span></span><input type="range" id="crossRound" min="0" max="1" step="0.01" value="0.00"></label>
+        <div class="subhead">Метка (расширение) на предплечье</div>
+        <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.33</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.33"></label>
+        <label><span class="row">Ширина расширения <span class="val" id="vCrossW">1.5</span></span><input type="range" id="crossW" min="0" max="3" step="0.01" value="1.5"></label>
+        <label><span class="row">Вогнутость (внутр.) <span class="val" id="vCrossRound">0.50</span></span><input type="range" id="crossRound" min="0" max="1" step="0.01" value="0.50"></label>
         
         <hr style="border-color:#444; width:100%;">
 
@@ -603,9 +603,9 @@ function draw() {
   const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
   const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
 
-  const crossPosParam = parseFloat(ui.crossPos.value) || 0.5;
-  const crossWParam   = parseFloat(ui.crossW.value) || 0.2;
-  const crossRoundParam = parseFloat(ui.crossRound.value) || 0; 
+  const crossPosParam = parseFloat(ui.crossPos.value) || 0.33;
+  const crossWParam   = parseFloat(ui.crossW.value) || 1.5;
+  const crossRoundParam = parseFloat(ui.crossRound.value) || 0.5; 
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -882,97 +882,79 @@ function draw() {
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // 2. Предплечье (от локтя к запястью)
+      // 2. Предплечье (Новая логика, разделение на 3 части)
       const dx2 = wrist.x - elbow.x;
       const dy2 = wrist.y - elbow.y;
       const len2 = Math.hypot(dx2, dy2) || 1;
-      const ux2 = dx2 / len2;
-      const uy2 = dy2 / len2;
-      const px2 = -uy2; // Перпендикуляр
-      const py2 =  ux2;
+      
+      // Единичные векторы
+      const ux = dx2 / len2;
+      const uy = dy2 / len2;
+      
+      // Перпендикуляр
+      const px = -uy;
+      const py =  ux;
 
-      // Края метки
-      const markX = elbow.x + dx2 * crossPosParam;
-      const markY = elbow.y + dy2 * crossPosParam;
-      const markHalf = wristRadius * crossWParam;
-      const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
-      const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
+      // Точка максимума (1/3 пути)
+      // Если ползунок crossPosParam меняет положение, используем его, иначе 1/3
+      const peakT = crossPosParam; 
+      
+      const peakX = elbow.x + dx2 * peakT;
+      const peakY = elbow.y + dy2 * peakT;
+      
+      // Ширина в точке максимума
+      const maxWidth = br * crossWParam;
 
-      // Края шара локтя
-      const elbowLeft = { x: elbow.x - px2 * br, y: elbow.y - py2 * br };
-      const elbowRight = { x: elbow.x + px2 * br, y: elbow.y + py2 * br };
+      // Направления для "внутренней" и "внешней" стороны
+      // innerSign: 1 для левой руки (внутренняя сторона смотрит вправо), -1 для правой
+      // Если мы рисуем левую руку, "внутренняя" сторона предплечья находится справа (в сторону тела).
+      
+      // Точки на локте
+      const elbowOuter = { x: elbow.x + px * innerSign * br, y: elbow.y + py * innerSign * br };
+      const elbowInner = { x: elbow.x - px * innerSign * br, y: elbow.y - py * innerSign * br };
+      
+      // Точки на пике
+      const peakOuter = { x: peakX + px * innerSign * maxWidth, y: peakY + py * innerSign * maxWidth };
+      const peakInner = { x: peakX - px * innerSign * maxWidth, y: peakY - py * innerSign * maxWidth };
 
-      // Края шара запястья
-      const wristLeft = { x: wrist.x - px2 * br, y: wrist.y - py2 * br };
-      const wristRight = { x: wrist.x + px2 * br, y: wrist.y + py2 * br };
+      // Точки на запястье
+      const wristOuter = { x: wrist.x + px * innerSign * br, y: wrist.y + py * innerSign * br };
+      const wristInner = { x: wrist.x - px * innerSign * br, y: wrist.y - py * innerSign * br };
 
-      // Параметры скругления
-      const roundAmount = crossRoundParam * markHalf; // Смещение внутрь метки
-
-      // Если скругление включено, используем дуги (quadraticCurveTo)
-      if (roundAmount > 0.5) {
-        // Левая сторона: линия от локтя -> дуга -> линия к запястью
-        ctx.beginPath();
-        ctx.moveTo(elbowLeft.x, elbowLeft.y);
-        // Точка входа в дугу (чуть не доходя до markLeft)
-        const entryLeft = { 
-          x: markLeft.x + (markLeft.x - elbowLeft.x) / 2, 
-          y: markLeft.y + (markLeft.y - elbowLeft.y) / 2 
-        };
-        // Точка выхода из дуги (чуть отступив от markLeft в сторону запястья)
-        const exitLeft = {
-          x: wristLeft.x + (markLeft.x - wristLeft.x) / 2,
-          y: wristLeft.y + (markLeft.y - wristLeft.y) / 2
-        };
-        // Рисуем линию до входа в дугу, затем дугу, затем линию к запястью
-        ctx.lineTo(entryLeft.x, entryLeft.y);
-        ctx.quadraticCurveTo(markLeft.x, markLeft.y, exitLeft.x, exitLeft.y);
-        ctx.lineTo(wristLeft.x, wristLeft.y);
-        ctx.stroke();
-
-        // Правая сторона
-        ctx.beginPath();
-        ctx.moveTo(elbowRight.x, elbowRight.y);
-        const entryRight = { 
-          x: markRight.x + (markRight.x - elbowRight.x) / 2, 
-          y: markRight.y + (markRight.y - elbowRight.y) / 2 
-        };
-        const exitRight = {
-          x: wristRight.x + (markRight.x - wristRight.x) / 2,
-          y: wristRight.y + (markRight.y - wristRight.y) / 2
-        };
-        ctx.lineTo(entryRight.x, entryRight.y);
-        ctx.quadraticCurveTo(markRight.x, markRight.y, exitRight.x, exitRight.y);
-        ctx.lineTo(wristRight.x, wristRight.y);
-        ctx.stroke();
-
-      } else {
-        // Без скругления (обычные прямые линии)
-        ctx.beginPath();
-        ctx.moveTo(elbowLeft.x, elbowLeft.y);
-        ctx.lineTo(markLeft.x, markLeft.y);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(elbowRight.x, elbowRight.y);
-        ctx.lineTo(markRight.x, markRight.y);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(markLeft.x, markLeft.y);
-        ctx.lineTo(wristLeft.x, wristLeft.y);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(markRight.x, markRight.y);
-        ctx.lineTo(wristRight.x, wristRight.y);
-        ctx.stroke();
-      }
-
-      // Сама поперечная метка
+      // Вспомогательные точки для кривых Безье (контрольные точки)
+      
+      // Внешняя сторона (прямая/выпуклая)
+      // От локтя к пику
       ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(markRight.x, markRight.y);
+      ctx.moveTo(elbowOuter.x, elbowOuter.y);
+      ctx.quadraticCurveTo(
+        elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8, 
+        elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8, 
+        peakOuter.x, peakOuter.y
+      );
+      // От пика к запястью (прямая или слегка выпуклая)
+      ctx.quadraticCurveTo(
+        peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1, 
+        peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1,
+        wristOuter.x, wristOuter.y
+      );
+      ctx.stroke();
+
+      // Внутренняя сторона (вогнутая)
+      // От локтя к пику
+      ctx.beginPath();
+      ctx.moveTo(elbowInner.x, elbowInner.y);
+      ctx.quadraticCurveTo(
+        elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRoundParam * 0.5), 
+        elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRoundParam * 0.5), 
+        peakInner.x, peakInner.y
+      );
+      // От пика к запястью (сильно вогнутая)
+      ctx.quadraticCurveTo(
+        peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRoundParam), 
+        peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRoundParam),
+        wristInner.x, wristInner.y
+      );
       ctx.stroke();
 
       // Точка локтя (центр)
@@ -1088,7 +1070,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.showWristBall.checked = true; 
   ui.showElbowBall.checked = true;
   ui.showElbow.checked = true;
-  ui.crossPos.value = 0.50; ui.crossW.value = 0.20; ui.crossRound.value = 0.00;
+  ui.crossPos.value = 0.33; ui.crossW.value = 1.5; ui.crossRound.value = 0.50;
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
