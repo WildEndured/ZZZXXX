@@ -99,6 +99,7 @@
 
 <div class="wrap">
   <div class="panel">
+
     <!-- Блок 1: Общее -->
     <div class="accordion open">
       <div class="accordion-header">Общее и Подложка</div>
@@ -193,9 +194,12 @@
         <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
         <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
         <hr style="border-color:#444; width:100%;">
+        
         <div class="subhead">Метка на предплечье</div>
         <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.50</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.50"></label>
-        <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="1" step="0.01" value="0.20"></label>
+        <!-- Увеличен лимит до 3.0 -->
+        <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="3" step="0.01" value="0.20"></label>
+        
         <hr style="border-color:#444; width:100%;">
 
         <!-- ЛЕВАЯ РУКА -->
@@ -204,6 +208,7 @@
         <label><span class="row">Сгиб локтя <span class="val" id="vLElbowAngle">0.10</span></span><input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
         <label><span class="row">Смещение запястья X <span class="val" id="vLWristX">-0.30</span></span><input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+
         <hr style="border-color:#444; width:100%;">
 
         <!-- ПРАВАЯ РУКА -->
@@ -885,47 +890,36 @@ function draw() {
       const px2 = -uy2; // Перпендикуляр
       const py2 =  ux2;
 
-      // Края метки
-      const markX = elbow.x + dx2 * crossPosParam;
-      const markY = elbow.y + dy2 * crossPosParam;
-      const markHalf = wristRadius * crossWParam;
-      const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
-      const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
-
-      // Края шара локтя (строго по перпендикуляру к оси предплечья)
+      // Линии предплечья (строго параллельно, от краев шара к краям шара)
       const elbowLeft = { x: elbow.x - px2 * br, y: elbow.y - py2 * br };
       const elbowRight = { x: elbow.x + px2 * br, y: elbow.y + py2 * br };
-
-      // Линии от краев шара локтя к краям метки
-      ctx.beginPath();
-      ctx.moveTo(elbowLeft.x, elbowLeft.y);
-      ctx.lineTo(markLeft.x, markLeft.y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(elbowRight.x, elbowRight.y);
-      ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
-
-      // Сама поперечная метка
-      ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
-
-      // Края шара запястья (строго по перпендикуляру к оси предплечья)
+      
       const wristLeft = { x: wrist.x - px2 * br, y: wrist.y - py2 * br };
       const wristRight = { x: wrist.x + px2 * br, y: wrist.y + py2 * br };
 
-      // Линии от краев метки к краям шара запястья
+      // Левая линия предплечья
       ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.moveTo(elbowLeft.x, elbowLeft.y);
       ctx.lineTo(wristLeft.x, wristLeft.y);
       ctx.stroke();
 
+      // Правая линия предплечья
       ctx.beginPath();
-      ctx.moveTo(markRight.x, markRight.y);
+      ctx.moveTo(elbowRight.x, elbowRight.y);
       ctx.lineTo(wristRight.x, wristRight.y);
+      ctx.stroke();
+
+      // 3. Поперечная метка (пересекает предплечье и может выходить за его края)
+      const markX = elbow.x + dx2 * crossPosParam;
+      const markY = elbow.y + dy2 * crossPosParam;
+      const markHalf = wristRadius * crossWParam; // Теперь лимит 3.0
+      
+      const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
+      const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
+
+      ctx.beginPath();
+      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.lineTo(markRight.x, markRight.y);
       ctx.stroke();
 
       // Точка локтя (центр)
