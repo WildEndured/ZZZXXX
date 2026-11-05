@@ -200,6 +200,9 @@
         <!-- Увеличен лимит до 3.0 -->
         <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="3" step="0.01" value="0.20"></label>
         
+        <!-- НОВЫЙ ПОЛЗУНОК -->
+        <label><span class="row">Скругление стыка <span class="val" id="vCrossRound">0.00</span></span><input type="range" id="crossRound" min="0" max="1" step="0.01" value="0.00"></label>
+        
         <hr style="border-color:#444; width:100%;">
 
         <!-- ЛЕВАЯ РУКА -->
@@ -293,7 +296,7 @@ const ui = {
   showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
   showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
   
-  crossPos: document.getElementById('crossPos'), crossW: document.getElementById('crossW'),
+  crossPos: document.getElementById('crossPos'), crossW: document.getElementById('crossW'), crossRound: document.getElementById('crossRound'),
   
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
@@ -320,7 +323,7 @@ const vals = {
   vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
   
   vWristR: document.getElementById('vWristR'), vArmLw: document.getElementById('vArmLw'),
-  vCrossPos: document.getElementById('vCrossPos'), vCrossW: document.getElementById('vCrossW'),
+  vCrossPos: document.getElementById('vCrossPos'), vCrossW: document.getElementById('vCrossW'), vCrossRound: document.getElementById('vCrossRound'),
   
   vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
   vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
@@ -605,6 +608,7 @@ function draw() {
 
   const crossPosParam = parseFloat(ui.crossPos.value) || 0.5;
   const crossWParam   = parseFloat(ui.crossW.value) || 0.2;
+  const crossRoundParam = parseFloat(ui.crossRound.value) || 0; // Новый параметр
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -912,11 +916,26 @@ function draw() {
       ctx.lineTo(markRight.x, markRight.y);
       ctx.stroke();
 
-      // Сама поперечная метка
-      ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
+      // Сама поперечная метка (с учетом скругления)
+      if (crossRoundParam > 0.01) {
+        // Скругляем стык, срезая углы
+        const cornerX = markX + (markHalf * crossRoundParam);
+        const cornerY = markY;
+        // Находим точки, где срезать (просто отступаем от краев внутрь)
+        const cut = crossRoundParam * markHalf * 0.5;
+        const roundedLeft = { x: markLeft.x + px2 * cut, y: markLeft.y + py2 * cut };
+        const roundedRight = { x: markRight.x - px2 * cut, y: markRight.y - py2 * cut };
+        
+        ctx.beginPath();
+        ctx.moveTo(roundedLeft.x, roundedLeft.y);
+        ctx.quadraticCurveTo(markX, markY, roundedRight.x, roundedRight.y);
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(markLeft.x, markLeft.y);
+        ctx.lineTo(markRight.x, markRight.y);
+        ctx.stroke();
+      }
 
       // Края шара запястья (строго по перпендикуляру к оси предплечья)
       const wristLeft = { x: wrist.x - px2 * br, y: wrist.y - py2 * br };
@@ -1005,6 +1024,7 @@ function updateLabels() {
   vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
   vals.vCrossPos.textContent = parseFloat(ui.crossPos.value).toFixed(2);
   vals.vCrossW.textContent = parseFloat(ui.crossW.value).toFixed(2);
+  vals.vCrossRound.textContent = parseFloat(ui.crossRound.value).toFixed(2); // Новое
   
   vals.vLShoulderAngle.textContent = parseFloat(ui.lShoulderAngle.value).toFixed(2);
   vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
@@ -1045,7 +1065,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.showWristBall.checked = true; 
   ui.showElbowBall.checked = true;
   ui.showElbow.checked = true;
-  ui.crossPos.value = 0.50; ui.crossW.value = 0.20;
+  ui.crossPos.value = 0.50; ui.crossW.value = 0.20; ui.crossRound.value = 0.00;
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
