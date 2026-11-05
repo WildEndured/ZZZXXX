@@ -686,11 +686,14 @@ function draw() {
   const rFootXParam = parseFloat(ui.rFootX.value) || 0;
   const rFootYParam = parseFloat(ui.rFootY.value) || 0;
 
+  // Соединяем бедра с тазом с учетом складки
   const hipLeftJoint = { x: pelvisXPos + pelvisW * 0.25 + lThighXParam * pelvisW, y: pelvisBottomY };
   const hipRightJoint = { x: pelvisXPos + pelvisW * 0.75 + rThighXParam * pelvisW, y: pelvisBottomY };
 
-  const ankleLeftJoint = { x: pelvisXPos + pelvisW * 0.25 + lFootXParam * pelvisW, y: pelvisBottomY + H * 0.25 + lFootYParam * pelvisH };
-  const ankleRightJoint = { x: pelvisXPos + pelvisW * 0.75 + rFootXParam * pelvisW, y: pelvisBottomY + H * 0.25 + rFootYParam * pelvisH };
+  // Оставляем место для стоп (немного приподнимаем щиколотки)
+  const legLenY = H - (pelvisBottomY + H * 0.1); // Оставляем 10% высоты для стоп
+  const ankleLeftJoint = { x: pelvisXPos + pelvisW * 0.25 + lFootXParam * pelvisW, y: pelvisBottomY + legLenY + lFootYParam * pelvisH };
+  const ankleRightJoint = { x: pelvisXPos + pelvisW * 0.75 + rFootXParam * pelvisW, y: pelvisBottomY + legLenY + rFootYParam * pelvisH };
 
   const legL = buildLeg(hipLeftJoint, ankleLeftJoint, 0, thighWParam, kneeBallRadius, ankleBallRadius);
   const legR = buildLeg(hipRightJoint, ankleRightJoint, 0, thighWParam, kneeBallRadius, ankleBallRadius);
@@ -1084,14 +1087,16 @@ function draw() {
         ctx.restore();
       }
 
+      // Внешняя сторона бедра (плавно от таза)
       ctx.beginPath();
       ctx.moveTo(hipOuter.x, hipOuter.y);
       ctx.quadraticCurveTo(
-        hip.x + dxT * 0.5 - nxT * innerSign * thighW * 0.9, 
-        hip.y + dyT * 0.5 - nyT * innerSign * thighW * 0.9, 
+        hip.x + dxT * 0.5 - nxT * innerSign * thighW * 1.1, 
+        hip.y + dyT * 0.5 - nyT * innerSign * thighW * 1.1, 
         kneeOuterPt.x, kneeOuterPt.y
       );
       
+      // Внешняя сторона голени (выпуклая)
       const calfOuterW = calfW; 
       const ankleOuterPt = { x: ankle.x - nxT * ankleBallRadius, y: ankle.y - nyT * ankleBallRadius };
 
@@ -1102,6 +1107,7 @@ function draw() {
       );
       ctx.stroke();
 
+      // Внутренняя сторона бедра (с выемкой)
       ctx.beginPath();
       ctx.moveTo(hipInner.x, hipInner.y);
       ctx.quadraticCurveTo(
@@ -1109,6 +1115,7 @@ function draw() {
         kneeInnerPt.x, kneeInnerPt.y
       );
 
+      // Внутренняя сторона голени (вогнутая)
       const calfInnerW = calfW * (1 - calfConcaveParam * 0.6);
       const ankleInnerPt = { x: ankle.x + nxT * ankleBallRadius, y: ankle.y + nyT * ankleBallRadius };
 
@@ -1119,6 +1126,7 @@ function draw() {
       );
       ctx.stroke();
 
+      // Коленная чашечка
       ctx.save();
       ctx.lineWidth = Math.max(1, lw * 0.6);
       ctx.beginPath();
