@@ -23,7 +23,7 @@
   .wrap { display: flex; gap: 16px; align-items: flex-start; width: 100%; max-width: 1600px; }
 
   .panel {
-    flex: 0 0 340px;
+    flex: 0 0 360px;
     display: flex; flex-direction: column; gap: 8px;
     background: var(--panel); padding: 12px; border-radius: 10px;
     max-height: 92vh; overflow-y: auto;
@@ -50,7 +50,7 @@
   }
   .accordion-content {
     display: none; padding: 12px;
-    flex-direction: column; gap: 12px;
+    flex-direction: column; gap: 10px;
     border-top: 1px solid var(--border);
   }
   .accordion.open .accordion-content {
@@ -205,10 +205,19 @@
         <label><span class="row">Смещение запястья X <span class="val" id="vLWristX">-0.30</span></span><input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
-        <div class="subhead">Предплечье (левое)</div>
-        <label><span class="row">Точка излома вдоль <span class="val" id="vLForeT">0.50</span></span><input type="range" id="lForeT" min="0.05" max="0.95" step="0.01" value="0.50"></label>
-        <label><span class="row">Смещение внутренней <span class="val" id="vLForeW">0.15</span></span><input type="range" id="lForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
-        <label><span class="row">Ширина излома <span class="val" id="vLForeR">0.10</span></span><input type="range" id="lForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
+        <div class="subhead">Предплечье (левое) — Внешняя сторона</div>
+        <label><span class="row">Излом вдоль <span class="val" id="vLForeTOuter">0.50</span></span><input type="range" id="lForeTOuter" min="0.05" max="0.95" step="0.01" value="0.50"></label>
+        <label><span class="row">Смещение по нормали <span class="val" id="vLForeWOuter">0.15</span></span><input type="range" id="lForeWOuter" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
+        <label><span class="row">Скругление излома <span class="val" id="vLForeROuter">0.10</span></span><input type="range" id="lForeROuter" min="0" max="0.5" step="0.01" value="0.10"></label>
+
+        <div class="subhead">Предплечье (левое) — Внутренняя сторона</div>
+        <label><span class="row">Излом вдоль <span class="val" id="vLForeTInner">0.50</span></span><input type="range" id="lForeTInner" min="0.05" max="0.95" step="0.01" value="0.50"></label>
+        <label><span class="row">Смещение по нормали <span class="val" id="vLForeWInner">-0.15</span></span><input type="range" id="lForeWInner" min="-0.5" max="0.5" step="0.01" value="-0.15"></label>
+        <label><span class="row">Скругление излома <span class="val" id="vLForeRInner">0.10</span></span><input type="range" id="lForeRInner" min="0" max="0.5" step="0.01" value="0.10"></label>
+
+        <div class="subhead">Предплечье (левое) — Общее</div>
+        <label><span class="row">Ширина излома <span class="val" id="vLForeWidth">0.00</span></span><input type="range" id="lForeWidth" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Скругление (общее) <span class="val" id="vLForeRound">0.00</span></span><input type="range" id="lForeRound" min="0" max="1" step="0.01" value="0.00"></label>
 
         <hr style="border-color:#444; width:100%;">
 
@@ -218,11 +227,20 @@
         <label><span class="row">Сгиб локтя <span class="val" id="vRElbowAngle">0.10</span></span><input type="range" id="rElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
         <label><span class="row">Смещение запястья X <span class="val" id="vRWristX">0.30</span></span><input type="range" id="rWristX" min="-0.5" max="0.5" step="0.01" value="0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vRWristY">0.00</span></span><input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        
-        <div class="subhead">Предплечье (правое)</div>
-        <label><span class="row">Точка излома вдоль <span class="val" id="vRForeT">0.50</span></span><input type="range" id="rForeT" min="0.05" max="0.95" step="0.01" value="0.50"></label>
-        <label><span class="row">Смещение внутренней <span class="val" id="vRForeW">0.15</span></span><input type="range" id="rForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
-        <label><span class="row">Ширина излома <span class="val" id="vRForeR">0.10</span></span><input type="range" id="rForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
+
+        <div class="subhead">Предплечье (правое) — Внешняя сторона</div>
+        <label><span class="row">Излом вдоль <span class="val" id="vRForeTOuter">0.50</span></span><input type="range" id="rForeTOuter" min="0.05" max="0.95" step="0.01" value="0.50"></label>
+        <label><span class="row">Смещение по нормали <span class="val" id="vRForeWOuter">0.15</span></span><input type="range" id="rForeWOuter" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
+        <label><span class="row">Скругление излома <span class="val" id="vRForeROuter">0.10</span></span><input type="range" id="rForeROuter" min="0" max="0.5" step="0.01" value="0.10"></label>
+
+        <div class="subhead">Предплечье (правое) — Внутренняя сторона</div>
+        <label><span class="row">Излом вдоль <span class="val" id="vRForeTInner">0.50</span></span><input type="range" id="rForeTInner" min="0.05" max="0.95" step="0.01" value="0.50"></label>
+        <label><span class="row">Смещение по нормали <span class="val" id="vRForeWInner">-0.15</span></span><input type="range" id="rForeWInner" min="-0.5" max="0.5" step="0.01" value="-0.15"></label>
+        <label><span class="row">Скругление излома <span class="val" id="vRForeRInner">0.10</span></span><input type="range" id="rForeRInner" min="0" max="0.5" step="0.01" value="0.10"></label>
+
+        <div class="subhead">Предплечье (правое) — Общее</div>
+        <label><span class="row">Ширина излома <span class="val" id="vRForeWidth">0.00</span></span><input type="range" id="rForeWidth" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Скругление (общее) <span class="val" id="vRForeRound">0.00</span></span><input type="range" id="rForeRound" min="0" max="1" step="0.01" value="0.00"></label>
 
       </div>
     </div>
@@ -302,11 +320,25 @@ const ui = {
   
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
-  lForeT: document.getElementById('lForeT'), lForeW: document.getElementById('lForeW'), lForeR: document.getElementById('lForeR'),
+  lForeTOuter: document.getElementById('lForeTOuter'),
+  lForeWOuter: document.getElementById('lForeWOuter'),
+  lForeROuter: document.getElementById('lForeROuter'),
+  lForeTInner: document.getElementById('lForeTInner'),
+  lForeWInner: document.getElementById('lForeWInner'),
+  lForeRInner: document.getElementById('lForeRInner'),
+  lForeWidth: document.getElementById('lForeWidth'),
+  lForeRound: document.getElementById('lForeRound'),
   
   rShoulderAngle: document.getElementById('rShoulderAngle'), rElbowAngle: document.getElementById('rElbowAngle'),
   rWristX: document.getElementById('rWristX'), rWristY: document.getElementById('rWristY'),
-  rForeT: document.getElementById('rForeT'), rForeW: document.getElementById('rForeW'), rForeR: document.getElementById('rForeR')
+  rForeTOuter: document.getElementById('rForeTOuter'),
+  rForeWOuter: document.getElementById('rForeWOuter'),
+  rForeROuter: document.getElementById('rForeROuter'),
+  rForeTInner: document.getElementById('rForeTInner'),
+  rForeWInner: document.getElementById('rForeWInner'),
+  rForeRInner: document.getElementById('rForeRInner'),
+  rForeWidth: document.getElementById('rForeWidth'),
+  rForeRound: document.getElementById('rForeRound')
 };
 
 const vals = {
@@ -329,10 +361,24 @@ const vals = {
   vWristR: document.getElementById('vWristR'), vArmLw: document.getElementById('vArmLw'),
   vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
   vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
-  vLForeT: document.getElementById('vLForeT'), vLForeW: document.getElementById('vLForeW'), vLForeR: document.getElementById('vLForeR'),
+  vLForeTOuter: document.getElementById('vLForeTOuter'),
+  vLForeWOuter: document.getElementById('vLForeWOuter'),
+  vLForeROuter: document.getElementById('vLForeROuter'),
+  vLForeTInner: document.getElementById('vLForeTInner'),
+  vLForeWInner: document.getElementById('vLForeWInner'),
+  vLForeRInner: document.getElementById('vLForeRInner'),
+  vLForeWidth: document.getElementById('vLForeWidth'),
+  vLForeRound: document.getElementById('vLForeRound'),
   vRShoulderAngle: document.getElementById('vRShoulderAngle'), vRElbowAngle: document.getElementById('vRElbowAngle'),
   vRWristX: document.getElementById('vRWristX'), vRWristY: document.getElementById('vRWristY'),
-  vRForeT: document.getElementById('vRForeT'), vRForeW: document.getElementById('vRForeW'), vRForeR: document.getElementById('vRForeR')
+  vRForeTOuter: document.getElementById('vRForeTOuter'),
+  vRForeWOuter: document.getElementById('vRForeWOuter'),
+  vRForeROuter: document.getElementById('vRForeROuter'),
+  vRForeTInner: document.getElementById('vRForeTInner'),
+  vRForeWInner: document.getElementById('vRForeWInner'),
+  vRForeRInner: document.getElementById('vRForeRInner'),
+  vRForeWidth: document.getElementById('vRForeWidth'),
+  vRForeRound: document.getElementById('vRForeRound')
 };
 
 document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -382,6 +428,37 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   };
 
   return { shoulder, elbow, wrist, ballRadius };
+}
+
+// Рисует ломаную из elbow -> break -> wrist со скруглением угла в точке break.
+// roundParam 0..1 — степень скругления (0 = жёсткий угол).
+function drawBentSegment(p1, p2, p3, roundParam) {
+  if (roundParam <= 0.001) {
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.stroke();
+    return;
+  }
+
+  // Находим точки отсечения от вершины p2 вдоль рёбер p2->p1 и p2->p3
+  const v1x = p1.x - p2.x, v1y = p1.y - p2.y;
+  const v3x = p3.x - p2.x, v3y = p3.y - p2.y;
+  const len1 = Math.hypot(v1x, v1y) || 1;
+  const len3 = Math.hypot(v3x, v3y) || 1;
+
+  const r = Math.min(roundParam, 0.95) * Math.min(len1, len3) * 0.5;
+
+  const a = { x: p2.x + (v1x / len1) * r, y: p2.y + (v1y / len1) * r };
+  const b = { x: p2.x + (v3x / len3) * r, y: p2.y + (v3y / len3) * r };
+
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(a.x, a.y);
+  ctx.quadraticCurveTo(p2.x, p2.y, b.x, b.y);
+  ctx.lineTo(p3.x, p3.y);
+  ctx.stroke();
 }
 
 function draw() {
@@ -597,13 +674,25 @@ function draw() {
   const rShoulderAngle = parseFloat(ui.rShoulderAngle.value) || 0;
   const rElbowAngle    = parseFloat(ui.rElbowAngle.value)    || 0;
 
-  const lForeT = parseFloat(ui.lForeT.value) || 0.5;
-  const lForeW = parseFloat(ui.lForeW.value) || 0.15;
-  const lForeR = parseFloat(ui.lForeR.value) || 0.10;
+  // Параметры предплечья (левая)
+  const lForeTOuter = parseFloat(ui.lForeTOuter.value) || 0.5;
+  const lForeWOuter = parseFloat(ui.lForeWOuter.value) || 0.15;
+  const lForeROuter = parseFloat(ui.lForeROuter.value) || 0.10;
+  const lForeTInner = parseFloat(ui.lForeTInner.value) || 0.5;
+  const lForeWInner = parseFloat(ui.lForeWInner.value) || -0.15;
+  const lForeRInner = parseFloat(ui.lForeRInner.value) || 0.10;
+  const lForeWidth  = parseFloat(ui.lForeWidth.value)  || 0;
+  const lForeRound  = parseFloat(ui.lForeRound.value)  || 0;
 
-  const rForeT = parseFloat(ui.rForeT.value) || 0.5;
-  const rForeW = parseFloat(ui.rForeW.value) || 0.15;
-  const rForeR = parseFloat(ui.rForeR.value) || 0.10;
+  // Параметры предплечья (правая)
+  const rForeTOuter = parseFloat(ui.rForeTOuter.value) || 0.5;
+  const rForeWOuter = parseFloat(ui.rForeWOuter.value) || 0.15;
+  const rForeROuter = parseFloat(ui.rForeROuter.value) || 0.10;
+  const rForeTInner = parseFloat(ui.rForeTInner.value) || 0.5;
+  const rForeWInner = parseFloat(ui.rForeWInner.value) || -0.15;
+  const rForeRInner = parseFloat(ui.rForeRInner.value) || 0.10;
+  const rForeWidth  = parseFloat(ui.rForeWidth.value)  || 0;
+  const rForeRound  = parseFloat(ui.rForeRound.value)  || 0;
 
   const lWristBaseX = pelvisXPos - wristRadius + lWristXParam * pelvisW;
   const lWristBaseY = pelvisBottomY - wristRadius + lWristYParam * pelvisH;
@@ -618,8 +707,18 @@ function draw() {
   const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
   const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
 
-  armL.foreParams = { t: lForeT, w: lForeW, r: lForeR };
-  armR.foreParams = { t: rForeT, w: rForeW, r: rForeR };
+  armL.foreParams = {
+    outer: { t: lForeTOuter, w: lForeWOuter, r: lForeROuter },
+    inner: { t: lForeTInner, w: lForeWInner, r: lForeRInner },
+    width: lForeWidth,
+    round: lForeRound
+  };
+  armR.foreParams = {
+    outer: { t: rForeTOuter, w: rForeWOuter, r: rForeROuter },
+    inner: { t: rForeTInner, w: rForeWInner, r: rForeRInner },
+    width: rForeWidth,
+    round: rForeRound
+  };
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -888,61 +987,46 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(p1Outer.x, p1Outer.y); ctx.lineTo(p2Outer.x, p2Outer.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(p1Inner.x, p1Inner.y); ctx.lineTo(p2Inner.x, p2Inner.y); ctx.stroke();
 
-      // 2. Локоть - Запястье (две прямые линии с внешней и внутренней стороны)
+      // 2. Локоть - Запястье
       const dx2 = wrist.x - elbow.x;
       const dy2 = wrist.y - elbow.y;
       const len2 = Math.hypot(dx2, dy2) || 1;
       const nx2 = -dy2 / len2;
       const ny2 =  dx2 / len2;
 
-      // Параметр t - положение точки излома вдоль сегмента (0..1)
-      const t = Math.max(0.01, Math.min(0.99, foreParams.t));
-
-      // Базовые точки на осевой линии
-      const breakBaseX = elbow.x + dx2 * t;
-      const breakBaseY = elbow.y + dy2 * t;
-
-      // Ширина на локте и на запястье
       const wElbow = br;
       const wWrist = br;
+      const extraWidth = br * foreParams.width; // общая добавка к ширине в точке излома
 
-      // foreParams.w — смещение "излома" наружу/внутрь по нормали
-      // foreParams.r — дополнительная ширина излома (0..0.5)
-      const extraW = br * foreParams.w;
-      const bulge = br * foreParams.r;
+      // Вспомогательная функция: считает 3 точки ломаной для одной стороны (внешней или внутренней)
+      // side +1 = внешняя (по нормали innerSign), side -1 = внутренняя
+      const computeSide = (side, params) => {
+        const t = Math.max(0.01, Math.min(0.99, params.t));
+        const sign = innerSign * side; // сторона относительно нормали
+        // Базовая точка на оси в позиции t
+        const baseX = elbow.x + dx2 * t;
+        const baseY = elbow.y + dy2 * t;
+        // Интерполированная ширина
+        const wBase = wElbow * (1 - t) + wWrist * t;
+        // Смещение по нормали:
+        // params.w - сдвиг наружу/внутрь; extraWidth - общая добавка; params.r - локальное расширение излома
+        const offsetBase = wBase + extraWidth + br * params.r;
+        const offset = offsetBase + br * params.w;
 
-      // Интерполированная базовая ширина в точке излома
-      const wBreakBase = wElbow * (1 - t) + wWrist * t;
+        const pElbow = { x: elbow.x + nx2 * sign * wElbow, y: elbow.y + ny2 * sign * wElbow };
+        const pBreak = { x: baseX + nx2 * sign * offset, y: baseY + ny2 * sign * offset };
+        const pWrist = { x: wrist.x + nx2 * sign * wWrist, y: wrist.y + ny2 * sign * wWrist };
 
-      // Внешняя сторона: точки на локте, изломе и запястье
-      const outerElbow = { x: elbow.x + nx2 * innerSign * wElbow, y: elbow.y + ny2 * innerSign * wElbow };
-      const outerBreak = {
-        x: breakBaseX + nx2 * innerSign * (wBreakBase + extraW + bulge),
-        y: breakBaseY + ny2 * innerSign * (wBreakBase + extraW + bulge)
+        return { pElbow, pBreak, pWrist };
       };
-      const outerWrist = { x: wrist.x + nx2 * innerSign * wWrist, y: wrist.y + ny2 * innerSign * wWrist };
 
-      // Внутренняя сторона: точки на локте, изломе и запястье
-      const innerElbow = { x: elbow.x - nx2 * innerSign * wElbow, y: elbow.y - ny2 * innerSign * wElbow };
-      const innerBreak = {
-        x: breakBaseX - nx2 * innerSign * (wBreakBase - extraW + bulge),
-        y: breakBaseY - ny2 * innerSign * (wBreakBase - extraW + bulge)
-      };
-      const innerWrist = { x: wrist.x - nx2 * innerSign * wWrist, y: wrist.y - ny2 * innerSign * wWrist };
+      const outer = computeSide(+1, foreParams.outer);
+      const inner = computeSide(-1, foreParams.inner);
 
-      // Внешняя ломаная: локоть -> излом -> запястье
-      ctx.beginPath();
-      ctx.moveTo(outerElbow.x, outerElbow.y);
-      ctx.lineTo(outerBreak.x, outerBreak.y);
-      ctx.lineTo(outerWrist.x, outerWrist.y);
-      ctx.stroke();
-
-      // Внутренняя ломаная: локоть -> излом -> запястье
-      ctx.beginPath();
-      ctx.moveTo(innerElbow.x, innerElbow.y);
-      ctx.lineTo(innerBreak.x, innerBreak.y);
-      ctx.lineTo(innerWrist.x, innerWrist.y);
-      ctx.stroke();
+      // Внешняя ломаная
+      drawBentSegment(outer.pElbow, outer.pBreak, outer.pWrist, foreParams.round);
+      // Внутренняя ломаная
+      drawBentSegment(inner.pElbow, inner.pBreak, inner.pWrist, foreParams.round);
 
       // Точка локтя
       if (ui.showElbow.checked) {
@@ -1018,16 +1102,26 @@ function updateLabels() {
   vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
   vals.vLWristX.textContent = parseFloat(ui.lWristX.value).toFixed(2);
   vals.vLWristY.textContent = parseFloat(ui.lWristY.value).toFixed(2);
-  vals.vLForeT.textContent = parseFloat(ui.lForeT.value).toFixed(2);
-  vals.vLForeW.textContent = parseFloat(ui.lForeW.value).toFixed(2);
-  vals.vLForeR.textContent = parseFloat(ui.lForeR.value).toFixed(2);
+  vals.vLForeTOuter.textContent = parseFloat(ui.lForeTOuter.value).toFixed(2);
+  vals.vLForeWOuter.textContent = parseFloat(ui.lForeWOuter.value).toFixed(2);
+  vals.vLForeROuter.textContent = parseFloat(ui.lForeROuter.value).toFixed(2);
+  vals.vLForeTInner.textContent = parseFloat(ui.lForeTInner.value).toFixed(2);
+  vals.vLForeWInner.textContent = parseFloat(ui.lForeWInner.value).toFixed(2);
+  vals.vLForeRInner.textContent = parseFloat(ui.lForeRInner.value).toFixed(2);
+  vals.vLForeWidth.textContent = parseFloat(ui.lForeWidth.value).toFixed(2);
+  vals.vLForeRound.textContent = parseFloat(ui.lForeRound.value).toFixed(2);
   vals.vRShoulderAngle.textContent = parseFloat(ui.rShoulderAngle.value).toFixed(2);
   vals.vRElbowAngle.textContent = parseFloat(ui.rElbowAngle.value).toFixed(2);
   vals.vRWristX.textContent = parseFloat(ui.rWristX.value).toFixed(2);
   vals.vRWristY.textContent = parseFloat(ui.rWristY.value).toFixed(2);
-  vals.vRForeT.textContent = parseFloat(ui.rForeT.value).toFixed(2);
-  vals.vRForeW.textContent = parseFloat(ui.rForeW.value).toFixed(2);
-  vals.vRForeR.textContent = parseFloat(ui.rForeR.value).toFixed(2);
+  vals.vRForeTOuter.textContent = parseFloat(ui.rForeTOuter.value).toFixed(2);
+  vals.vRForeWOuter.textContent = parseFloat(ui.rForeWOuter.value).toFixed(2);
+  vals.vRForeROuter.textContent = parseFloat(ui.rForeROuter.value).toFixed(2);
+  vals.vRForeTInner.textContent = parseFloat(ui.rForeTInner.value).toFixed(2);
+  vals.vRForeWInner.textContent = parseFloat(ui.rForeWInner.value).toFixed(2);
+  vals.vRForeRInner.textContent = parseFloat(ui.rForeRInner.value).toFixed(2);
+  vals.vRForeWidth.textContent = parseFloat(ui.rForeWidth.value).toFixed(2);
+  vals.vRForeRound.textContent = parseFloat(ui.rForeRound.value).toFixed(2);
 }
 
 Object.values(ui).forEach(el => { 
@@ -1062,11 +1156,15 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
-  ui.lForeT.value = 0.50; ui.lForeW.value = 0.15; ui.lForeR.value = 0.10;
+  ui.lForeTOuter.value = 0.50; ui.lForeWOuter.value = 0.15; ui.lForeROuter.value = 0.10;
+  ui.lForeTInner.value = 0.50; ui.lForeWInner.value = -0.15; ui.lForeRInner.value = 0.10;
+  ui.lForeWidth.value = 0.00; ui.lForeRound.value = 0.00;
   
   ui.rShoulderAngle.value = 0.00; ui.rElbowAngle.value = 0.10;
   ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
-  ui.rForeT.value = 0.50; ui.rForeW.value = 0.15; ui.rForeR.value = 0.10;
+  ui.rForeTOuter.value = 0.50; ui.rForeWOuter.value = 0.15; ui.rForeROuter.value = 0.10;
+  ui.rForeTInner.value = 0.50; ui.rForeWInner.value = -0.15; ui.rForeRInner.value = 0.10;
+  ui.rForeWidth.value = 0.00; ui.rForeRound.value = 0.00;
 
   draw();
 });
@@ -1083,4 +1181,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-</html>
+  </html>
