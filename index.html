@@ -186,7 +186,7 @@
     </div>
 
     <!-- Блок 6: Руки -->
-    <div class="accordion">
+    <div class="accordion open">
       <div class="accordion-header">Руки</div>
       <div class="accordion-content">
         <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
@@ -196,6 +196,10 @@
         <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
         <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
 
+        <hr style="border-color:#444; width:100%;">
+        <div class="subhead">Метка на предплечье</div>
+        <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.50</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.50"></label>
+        <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="1" step="0.01" value="0.20"></label>
         <hr style="border-color:#444; width:100%;">
 
         <!-- ЛЕВАЯ РУКА -->
@@ -289,6 +293,8 @@ const ui = {
   showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
   showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
   
+  crossPos: document.getElementById('crossPos'), crossW: document.getElementById('crossW'),
+  
   lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
   
@@ -314,6 +320,8 @@ const vals = {
   vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
   
   vWristR: document.getElementById('vWristR'), vArmLw: document.getElementById('vArmLw'),
+  vCrossPos: document.getElementById('vCrossPos'), vCrossW: document.getElementById('vCrossW'),
+  
   vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
   vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
   vRShoulderAngle: document.getElementById('vRShoulderAngle'), vRElbowAngle: document.getElementById('vRElbowAngle'),
@@ -594,6 +602,9 @@ function draw() {
 
   const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
   const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
+
+  const crossPosParam = parseFloat(ui.crossPos.value) || 0.5;
+  const crossWParam   = parseFloat(ui.crossW.value) || 0.2;
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -876,6 +887,22 @@ function draw() {
       ctx.lineTo(wrist.x, wrist.y);
       ctx.stroke();
 
+      // 3. Поперечная метка на предплечье
+      const dx2 = wrist.x - elbow.x;
+      const dy2 = wrist.y - elbow.y;
+      const len2 = Math.hypot(dx2, dy2) || 1;
+      const px2 = -dy2 / len2;
+      const py2 =  dx2 / len2;
+
+      const markX = elbow.x + dx2 * crossPosParam;
+      const markY = elbow.y + dy2 * crossPosParam;
+      const markHalf = wristRadius * crossWParam;
+
+      ctx.beginPath();
+      ctx.moveTo(markX - px2 * markHalf, markY - py2 * markHalf);
+      ctx.lineTo(markX + px2 * markHalf, markY + py2 * markHalf);
+      ctx.stroke();
+
       // Точка локтя (центр)
       if (ui.showElbow.checked) {
         ctx.beginPath();
@@ -946,6 +973,9 @@ function updateLabels() {
   
   vals.vWristR.textContent = parseFloat(ui.wristR.value).toFixed(2);
   vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
+  vals.vCrossPos.textContent = parseFloat(ui.crossPos.value).toFixed(2);
+  vals.vCrossW.textContent = parseFloat(ui.crossW.value).toFixed(2);
+  
   vals.vLShoulderAngle.textContent = parseFloat(ui.lShoulderAngle.value).toFixed(2);
   vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
   vals.vLWristX.textContent = parseFloat(ui.lWristX.value).toFixed(2);
@@ -985,6 +1015,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.showWristBall.checked = true; 
   ui.showElbowBall.checked = true;
   ui.showElbow.checked = true;
+  ui.crossPos.value = 0.50; ui.crossW.value = 0.20;
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
@@ -1007,4 +1038,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-</html>
+  </html>
