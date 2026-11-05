@@ -205,7 +205,7 @@
         <!-- ЛЕВАЯ РУКА -->
         <div class="subhead">Левая рука</div>
         <label><span class="row">Сгиб плеча <span class="val" id="vLShoulderAngle">0.00</span></span><input type="range" id="lShoulderAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Сгиб локтя <span class="val" id="vLElbowAngle">0.10</span></span><input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
+        <label><span class="row">Сгиб локтя <span class="val" id="lElbowAngle">0.10</span></span><input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
         <label><span class="row">Смещение запястья X <span class="val" id="vLWristX">-0.30</span></span><input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
@@ -906,67 +906,73 @@ function draw() {
       const wristLeft = { x: wrist.x - px2 * br, y: wrist.y - py2 * br };
       const wristRight = { x: wrist.x + px2 * br, y: wrist.y + py2 * br };
 
-      // Скругление стыка (от 0 до 1)
-      const roundOffset = crossRoundParam * markHalf;
+      // Параметры скругления
+      const roundAmount = crossRoundParam * markHalf; // Смещение внутрь метки
 
-      // Точки, где линии встречаются с меткой (со смещением внутрь для скругления)
-      const markLeftIn = { x: markLeft.x + px2 * roundOffset, y: markLeft.y + py2 * roundOffset };
-      const markRightIn = { x: markRight.x - px2 * roundOffset, y: markRight.y - py2 * roundOffset };
-
-      // 1. Линия от края шара локтя к внутренней точке метки
-      ctx.beginPath();
-      ctx.moveTo(elbowLeft.x, elbowLeft.y);
-      ctx.lineTo(markLeftIn.x, markLeftIn.y);
-      ctx.stroke();
-
-      // 2. Линия от края шара локтя к внутренней точке метки
-      ctx.beginPath();
-      ctx.moveTo(elbowRight.x, elbowRight.y);
-      ctx.lineTo(markRightIn.x, markRightIn.y);
-      ctx.stroke();
-
-      // 3. Дуга скругления слева (или просто линия, если скругление 0)
-      if (crossRoundParam > 0.01) {
-        // Рисуем дугу от markLeftIn до markLeft
+      // Если скругление включено, используем дуги (quadraticCurveTo)
+      if (roundAmount > 0.5) {
+        // Левая сторона: линия от локтя -> дуга -> линия к запястью
         ctx.beginPath();
-        ctx.moveTo(markLeftIn.x, markLeftIn.y);
-        ctx.quadraticCurveTo(markLeft.x, markLeft.y, markLeft.x, markLeft.y); // Упрощенная дуга
+        ctx.moveTo(elbowLeft.x, elbowLeft.y);
+        // Точка входа в дугу (чуть не доходя до markLeft)
+        const entryLeft = { 
+          x: markLeft.x + (markLeft.x - elbowLeft.x) / 2, 
+          y: markLeft.y + (markLeft.y - elbowLeft.y) / 2 
+        };
+        // Точка выхода из дуги (чуть отступив от markLeft в сторону запястья)
+        const exitLeft = {
+          x: wristLeft.x + (markLeft.x - wristLeft.x) / 2,
+          y: wristLeft.y + (markLeft.y - wristLeft.y) / 2
+        };
+        // Рисуем линию до входа в дугу, затем дугу, затем линию к запястью
+        ctx.lineTo(entryLeft.x, entryLeft.y);
+        ctx.quadraticCurveTo(markLeft.x, markLeft.y, exitLeft.x, exitLeft.y);
+        ctx.lineTo(wristLeft.x, wristLeft.y);
         ctx.stroke();
-      } else {
+
+        // Правая сторона
         ctx.beginPath();
-        ctx.moveTo(markLeftIn.x, markLeftIn.y);
+        ctx.moveTo(elbowRight.x, elbowRight.y);
+        const entryRight = { 
+          x: markRight.x + (markRight.x - elbowRight.x) / 2, 
+          y: markRight.y + (markRight.y - elbowRight.y) / 2 
+        };
+        const exitRight = {
+          x: wristRight.x + (markRight.x - wristRight.x) / 2,
+          y: wristRight.y + (markRight.y - wristRight.y) / 2
+        };
+        ctx.lineTo(entryRight.x, entryRight.y);
+        ctx.quadraticCurveTo(markRight.x, markRight.y, exitRight.x, exitRight.y);
+        ctx.lineTo(wristRight.x, wristRight.y);
+        ctx.stroke();
+
+      } else {
+        // Без скругления (обычные прямые линии)
+        ctx.beginPath();
+        ctx.moveTo(elbowLeft.x, elbowLeft.y);
         ctx.lineTo(markLeft.x, markLeft.y);
         ctx.stroke();
-      }
 
-      // 4. Дуга скругления справа
-      if (crossRoundParam > 0.01) {
         ctx.beginPath();
-        ctx.moveTo(markRightIn.x, markRightIn.y);
-        ctx.quadraticCurveTo(markRight.x, markRight.y, markRight.x, markRight.y);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(markRightIn.x, markRightIn.y);
+        ctx.moveTo(elbowRight.x, elbowRight.y);
         ctx.lineTo(markRight.x, markRight.y);
         ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(markLeft.x, markLeft.y);
+        ctx.lineTo(wristLeft.x, wristLeft.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(markRight.x, markRight.y);
+        ctx.lineTo(wristRight.x, wristRight.y);
+        ctx.stroke();
       }
 
-      // 5. Поперечная метка
+      // Сама поперечная метка
       ctx.beginPath();
       ctx.moveTo(markLeft.x, markLeft.y);
       ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
-
-      // 6. Линии от краев метки к краям шара запястья
-      ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(wristLeft.x, wristLeft.y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(markRight.x, markRight.y);
-      ctx.lineTo(wristRight.x, wristRight.y);
       ctx.stroke();
 
       // Точка локтя (центр)
