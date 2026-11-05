@@ -99,7 +99,6 @@
 
 <div class="wrap">
   <div class="panel">
-
     <!-- Блок 1: Общее -->
     <div class="accordion open">
       <div class="accordion-header">Общее и Подложка</div>
@@ -160,14 +159,12 @@
         <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
         <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
-
         <label class="chk"><input type="checkbox" id="showHipLines" checked> Линии паха и бедер (п.20-22)</label>
         <label><span class="row">Точка паха (смещение) <span class="val" id="vHipGap">0.50</span></span><input type="range" id="hipGap" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <label><span class="row">Ширина паха <span class="val" id="vHipGapW">0.20</span></span><input type="range" id="hipGapW" min="0.01" max="0.5" step="0.01" value="0.20"></label>
         <label><span class="row">Высота верхних углов <span class="val" id="vHipTopY">0.00</span></span><input type="range" id="hipTopY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <label><span class="row">Высота середин боков <span class="val" id="vHipMidY">0.50</span></span><input type="range" id="hipMidY" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <hr style="border-color:#444; width:100%;">
-
         <label class="chk"><input type="checkbox" id="showAbsLines" checked> Линии от пупка к плечам</label>
         <label><span class="row">Изгиб линий <span class="val" id="vAbsBend">0.30</span></span><input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30"></label>
       </div>
@@ -195,13 +192,10 @@
         <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
         <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
         <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
-
         <hr style="border-color:#444; width:100%;">
-        
         <div class="subhead">Метка на предплечье</div>
         <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.50</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.50"></label>
         <label><span class="row">Ширина метки <span class="val" id="vCrossW">0.20</span></span><input type="range" id="crossW" min="0" max="1" step="0.01" value="0.20"></label>
-        
         <hr style="border-color:#444; width:100%;">
 
         <!-- ЛЕВАЯ РУКА -->
@@ -210,7 +204,6 @@
         <label><span class="row">Сгиб локтя <span class="val" id="vLElbowAngle">0.10</span></span><input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
         <label><span class="row">Смещение запястья X <span class="val" id="vLWristX">-0.30</span></span><input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-
         <hr style="border-color:#444; width:100%;">
 
         <!-- ПРАВАЯ РУКА -->
@@ -892,66 +885,47 @@ function draw() {
       const px2 = -uy2; // Перпендикуляр
       const py2 =  ux2;
 
+      // Края метки
       const markX = elbow.x + dx2 * crossPosParam;
       const markY = elbow.y + dy2 * crossPosParam;
       const markHalf = wristRadius * crossWParam;
-
-      // Края метки
       const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
       const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
 
-      // Находим точку старта на шаре локтя для левой линии (огибаем шар)
-      const angleLeftStart = Math.atan2(markLeft.y - elbow.y, markLeft.x - elbow.x);
-      const startLeft = {
-        x: elbow.x + Math.cos(angleLeftStart) * br,
-        y: elbow.y + Math.sin(angleLeftStart) * br
-      };
-
-      // Находим точку старта на шаре локтя для правой линии
-      const angleRightStart = Math.atan2(markRight.y - elbow.y, markRight.x - elbow.x);
-      const startRight = {
-        x: elbow.x + Math.cos(angleRightStart) * br,
-        y: elbow.y + Math.sin(angleRightStart) * br
-      };
+      // Края шара локтя (строго по перпендикуляру к оси предплечья)
+      const elbowLeft = { x: elbow.x - px2 * br, y: elbow.y - py2 * br };
+      const elbowRight = { x: elbow.x + px2 * br, y: elbow.y + py2 * br };
 
       // Линии от краев шара локтя к краям метки
       ctx.beginPath();
-      ctx.moveTo(startLeft.x, startLeft.y);
+      ctx.moveTo(elbowLeft.x, elbowLeft.y);
       ctx.lineTo(markLeft.x, markLeft.y);
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.moveTo(startRight.x, startRight.y);
+      ctx.moveTo(elbowRight.x, elbowRight.y);
       ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
-
-      // Линии от краев метки к краям шара запястья
-      const angleLeftEnd = Math.atan2(markLeft.y - wrist.y, markLeft.x - wrist.x);
-      const endLeft = {
-        x: wrist.x + Math.cos(angleLeftEnd) * br,
-        y: wrist.y + Math.sin(angleLeftEnd) * br
-      };
-
-      const angleRightEnd = Math.atan2(markRight.y - wrist.y, markRight.x - wrist.x);
-      const endRight = {
-        x: wrist.x + Math.cos(angleRightEnd) * br,
-        y: wrist.y + Math.sin(angleRightEnd) * br
-      };
-
-      ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(endLeft.x, endLeft.y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(markRight.x, markRight.y);
-      ctx.lineTo(endRight.x, endRight.y);
       ctx.stroke();
 
       // Сама поперечная метка
       ctx.beginPath();
       ctx.moveTo(markLeft.x, markLeft.y);
       ctx.lineTo(markRight.x, markRight.y);
+      ctx.stroke();
+
+      // Края шара запястья (строго по перпендикуляру к оси предплечья)
+      const wristLeft = { x: wrist.x - px2 * br, y: wrist.y - py2 * br };
+      const wristRight = { x: wrist.x + px2 * br, y: wrist.y + py2 * br };
+
+      // Линии от краев метки к краям шара запястья
+      ctx.beginPath();
+      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.lineTo(wristLeft.x, wristLeft.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(markRight.x, markRight.y);
+      ctx.lineTo(wristRight.x, wristRight.y);
       ctx.stroke();
 
       // Точка локтя (центр)
