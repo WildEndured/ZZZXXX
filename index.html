@@ -883,7 +883,7 @@ function draw() {
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // 2. Линия от локтя к запястью и поперечная метка
+      // 2. Предплечье (от локтя к запястью)
       const dx2 = wrist.x - elbow.x;
       const dy2 = wrist.y - elbow.y;
       const len2 = Math.hypot(dx2, dy2) || 1;
@@ -900,18 +900,18 @@ function draw() {
       const markLeft = { x: markX - px2 * markHalf, y: markY - py2 * markHalf };
       const markRight = { x: markX + px2 * markHalf, y: markY + py2 * markHalf };
 
-      // Края шара локтя (в направлении к запястью)
-      // Мы берем точки на окружности локтя, наиболее близкие к краям метки
-      const elbowToMarkLeftAngle = Math.atan2(markLeft.y - elbow.y, markLeft.x - elbow.x);
-      const elbowToMarkRightAngle = Math.atan2(markRight.y - elbow.y, markRight.x - elbow.x);
-
+      // Находим точку старта на шаре локтя для левой линии (огибаем шар)
+      const angleLeftStart = Math.atan2(markLeft.y - elbow.y, markLeft.x - elbow.x);
       const startLeft = {
-        x: elbow.x + Math.cos(elbowToMarkLeftAngle) * br,
-        y: elbow.y + Math.sin(elbowToMarkLeftAngle) * br
+        x: elbow.x + Math.cos(angleLeftStart) * br,
+        y: elbow.y + Math.sin(angleLeftStart) * br
       };
+
+      // Находим точку старта на шаре локтя для правой линии
+      const angleRightStart = Math.atan2(markRight.y - elbow.y, markRight.x - elbow.x);
       const startRight = {
-        x: elbow.x + Math.cos(elbowToMarkRightAngle) * br,
-        y: elbow.y + Math.sin(elbowToMarkRightAngle) * br
+        x: elbow.x + Math.cos(angleRightStart) * br,
+        y: elbow.y + Math.sin(angleRightStart) * br
       };
 
       // Линии от краев шара локтя к краям метки
@@ -925,21 +925,33 @@ function draw() {
       ctx.lineTo(markRight.x, markRight.y);
       ctx.stroke();
 
-      // Сама поперечная метка
-      ctx.beginPath();
-      ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(markRight.x, markRight.y);
-      ctx.stroke();
+      // Линии от краев метки к краям шара запястья
+      const angleLeftEnd = Math.atan2(markLeft.y - wrist.y, markLeft.x - wrist.x);
+      const endLeft = {
+        x: wrist.x + Math.cos(angleLeftEnd) * br,
+        y: wrist.y + Math.sin(angleLeftEnd) * br
+      };
 
-      // Линии от краев метки к центру запястья
+      const angleRightEnd = Math.atan2(markRight.y - wrist.y, markRight.x - wrist.x);
+      const endRight = {
+        x: wrist.x + Math.cos(angleRightEnd) * br,
+        y: wrist.y + Math.sin(angleRightEnd) * br
+      };
+
       ctx.beginPath();
       ctx.moveTo(markLeft.x, markLeft.y);
-      ctx.lineTo(wrist.x, wrist.y);
+      ctx.lineTo(endLeft.x, endLeft.y);
       ctx.stroke();
 
       ctx.beginPath();
       ctx.moveTo(markRight.x, markRight.y);
-      ctx.lineTo(wrist.x, wrist.y);
+      ctx.lineTo(endRight.x, endRight.y);
+      ctx.stroke();
+
+      // Сама поперечная метка
+      ctx.beginPath();
+      ctx.moveTo(markLeft.x, markLeft.y);
+      ctx.lineTo(markRight.x, markRight.y);
       ctx.stroke();
 
       // Точка локтя (центр)
