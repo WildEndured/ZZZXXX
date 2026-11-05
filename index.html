@@ -206,7 +206,7 @@
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
         <div class="subhead">Предплечье (левое)</div>
-        <label><span class="row">Точка излома (вдоль) <span class="val" id="vLForeT">0.33</span></span><input type="range" id="lForeT" min="0" max="1" step="0.01" value="0.33"></label>
+        <label><span class="row">Точка излома (вдоль) <span class="val" id="vLForeT">0.50</span></span><input type="range" id="lForeT" min="0" max="1" step="0.01" value="0.50"></label>
         <label><span class="row">Смещение ширины (внутрь/наружу) <span class="val" id="vLForeW">0.15</span></span><input type="range" id="lForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
         <label><span class="row">Ширина излома (округлость) <span class="val" id="vLForeR">0.10</span></span><input type="range" id="lForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
 
@@ -220,7 +220,7 @@
         <label><span class="row">Смещение запястья Y <span class="val" id="vRWristY">0.00</span></span><input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         
         <div class="subhead">Предплечье (правое)</div>
-        <label><span class="row">Точка излома (вдоль) <span class="val" id="vRForeT">0.33</span></span><input type="range" id="rForeT" min="0" max="1" step="0.01" value="0.33"></label>
+        <label><span class="row">Точка излома (вдоль) <span class="val" id="vRForeT">0.50</span></span><input type="range" id="rForeT" min="0" max="1" step="0.01" value="0.50"></label>
         <label><span class="row">Смещение ширины (внутрь/наружу) <span class="val" id="vRForeW">0.15</span></span><input type="range" id="rForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
         <label><span class="row">Ширина излома (округлость) <span class="val" id="vRForeR">0.10</span></span><input type="range" id="rForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
 
@@ -597,11 +597,11 @@ function draw() {
   const rShoulderAngle = parseFloat(ui.rShoulderAngle.value) || 0;
   const rElbowAngle    = parseFloat(ui.rElbowAngle.value)    || 0;
 
-  const lForeT = parseFloat(ui.lForeT.value) || 0.33;
+  const lForeT = parseFloat(ui.lForeT.value) || 0.5;
   const lForeW = parseFloat(ui.lForeW.value) || 0.15;
   const lForeR = parseFloat(ui.lForeR.value) || 0.10;
 
-  const rForeT = parseFloat(ui.rForeT.value) || 0.33;
+  const rForeT = parseFloat(ui.rForeT.value) || 0.5;
   const rForeW = parseFloat(ui.rForeW.value) || 0.15;
   const rForeR = parseFloat(ui.rForeR.value) || 0.10;
 
@@ -1054,11 +1054,11 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   
   ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
   ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
-  ui.lForeT.value = 0.33; ui.lForeW.value = 0.15; ui.lForeR.value = 0.10;
+  ui.lForeT.value = 0.50; ui.lForeW.value = 0.15; ui.lForeR.value = 0.10;
   
   ui.rShoulderAngle.value = 0.00; ui.rElbowAngle.value = 0.10;
   ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
-  ui.rForeT.value = 0.33; ui.rForeW.value = 0.15; ui.rForeR.value = 0.10;
+  ui.rForeT.value = 0.50; ui.rForeW.value = 0.15; ui.rForeR.value = 0.10;
 
   draw();
 });
@@ -1075,4 +1075,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-      </html>
+</html>
