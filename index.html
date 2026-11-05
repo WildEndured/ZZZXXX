@@ -853,12 +853,6 @@ function draw() {
       const nx1 = -dy1 / len1;
       const ny1 =  dx1 / len1;
 
-      const dx2 = wrist.x - elbow.x;
-      const dy2 = wrist.y - elbow.y;
-      const len2 = Math.hypot(dx2, dy2) || 1;
-      const nx2 = -dy2 / len2;
-      const ny2 =  dx2 / len2;
-
       // 1. От плеча к локтю
       const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
       const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
@@ -876,25 +870,6 @@ function draw() {
       ctx.beginPath();
       ctx.moveTo(p1Inner.x, p1Inner.y);
       ctx.lineTo(p2Inner.x, p2Inner.y);
-      ctx.stroke();
-
-      // 2. От локтя к запястью
-      const p2OuterW = { x: elbow.x + nx2 * innerSign * br, y: elbow.y + ny2 * innerSign * br };
-      const p2InnerW = { x: elbow.x - nx2 * innerSign * br, y: elbow.y - ny2 * innerSign * br };
-      
-      const p3OuterW = { x: wrist.x + nx2 * innerSign * br, y: wrist.y + ny2 * innerSign * br };
-      const p3InnerW = { x: wrist.x - nx2 * innerSign * br, y: wrist.y - ny2 * innerSign * br };
-
-      // Внешняя линия предплечья
-      ctx.beginPath();
-      ctx.moveTo(p2OuterW.x, p2OuterW.y);
-      ctx.lineTo(p3OuterW.x, p3OuterW.y);
-      ctx.stroke();
-
-      // Внутренняя линия предплечья
-      ctx.beginPath();
-      ctx.moveTo(p2InnerW.x, p2InnerW.y);
-      ctx.lineTo(p3InnerW.x, p3InnerW.y);
       ctx.stroke();
 
       // Точка локтя (центр)
