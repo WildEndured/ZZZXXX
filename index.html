@@ -853,26 +853,28 @@ function draw() {
       const nx1 = -dy1 / len1;
       const ny1 =  dx1 / len1;
 
-      // 1. Линии от плеча к локтю
+      // 1. Линии от плеча к локтю (две параллельные)
       const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
       const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
       
       const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
       const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
 
-      // Внешняя линия
       ctx.beginPath();
       ctx.moveTo(p1Outer.x, p1Outer.y);
       ctx.lineTo(p2Outer.x, p2Outer.y);
       ctx.stroke();
 
-      // Внутренняя линия
       ctx.beginPath();
       ctx.moveTo(p1Inner.x, p1Inner.y);
       ctx.lineTo(p2Inner.x, p2Inner.y);
       ctx.stroke();
 
-      // 2. Линии предплечья (локоть → запястье) ОТСУТСТВУЮТ
+      // 2. Линия от локтя к запястью (одна осевая линия)
+      ctx.beginPath();
+      ctx.moveTo(elbow.x, elbow.y);
+      ctx.lineTo(wrist.x, wrist.y);
+      ctx.stroke();
 
       // Точка локтя (центр)
       if (ui.showElbow.checked) {
