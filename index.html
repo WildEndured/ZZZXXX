@@ -206,7 +206,7 @@
         <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
 
         <div class="subhead">Предплечье (левое)</div>
-        <label><span class="row">Точка излома вдоль <span class="val" id="vLForeT">0.50</span></span><input type="range" id="lForeT" min="0" max="1" step="0.01" value="0.50"></label>
+        <label><span class="row">Точка излома вдоль <span class="val" id="vLForeT">0.50</span></span><input type="range" id="lForeT" min="0.05" max="0.95" step="0.01" value="0.50"></label>
         <label><span class="row">Смещение внутренней <span class="val" id="vLForeW">0.15</span></span><input type="range" id="lForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
         <label><span class="row">Ширина излома <span class="val" id="vLForeR">0.10</span></span><input type="range" id="lForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
 
@@ -220,7 +220,7 @@
         <label><span class="row">Смещение запястья Y <span class="val" id="vRWristY">0.00</span></span><input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         
         <div class="subhead">Предплечье (правое)</div>
-        <label><span class="row">Точка излома вдоль <span class="val" id="vRForeT">0.50</span></span><input type="range" id="rForeT" min="0" max="1" step="0.01" value="0.50"></label>
+        <label><span class="row">Точка излома вдоль <span class="val" id="vRForeT">0.50</span></span><input type="range" id="rForeT" min="0.05" max="0.95" step="0.01" value="0.50"></label>
         <label><span class="row">Смещение внутренней <span class="val" id="vRForeW">0.15</span></span><input type="range" id="rForeW" min="-0.5" max="0.5" step="0.01" value="0.15"></label>
         <label><span class="row">Ширина излома <span class="val" id="vRForeR">0.10</span></span><input type="range" id="rForeR" min="0" max="0.5" step="0.01" value="0.10"></label>
 
@@ -888,53 +888,61 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(p1Outer.x, p1Outer.y); ctx.lineTo(p2Outer.x, p2Outer.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(p1Inner.x, p1Inner.y); ctx.lineTo(p2Inner.x, p2Inner.y); ctx.stroke();
 
-      // 2. Локоть - Запястье (ломаная линия с ползунками)
+      // 2. Локоть - Запястье (две прямые линии с внешней и внутренней стороны)
       const dx2 = wrist.x - elbow.x;
       const dy2 = wrist.y - elbow.y;
       const len2 = Math.hypot(dx2, dy2) || 1;
       const nx2 = -dy2 / len2;
       const ny2 =  dx2 / len2;
 
-      // Вспомогательная функция для вычисления точки на ломаной
-      const getBreakPoint = (sideSign) => {
-        // Базовая точка на прямой линии от локтя к запястью
-        const baseX = elbow.x + dx2 * foreParams.t;
-        const baseY = elbow.y + dy2 * foreParams.t;
-        
-        // Точка смещения (ширина)
-        // foreParams.w - смещение ширины (внутрь/наружу)
-        // foreParams.r - толщина в самой точке (округлость)
-        
-        // Точка на внешней/внутренней линии
-        let w;
-        if (sideSign === 1) {
-           // Внешняя сторона
-           w = br * (1 + foreParams.w); // Базовая ширина + смещение
-        } else {
-           // Внутренняя сторона
-           w = br * (1 - foreParams.w); 
-        }
-        
-        return {
-          x: baseX + nx2 * innerSign * sideSign * w,
-          y: baseY + ny2 * innerSign * sideSign * w
-        };
+      // Параметр t - положение точки излома вдоль сегмента (0..1)
+      const t = Math.max(0.01, Math.min(0.99, foreParams.t));
+
+      // Базовые точки на осевой линии
+      const breakBaseX = elbow.x + dx2 * t;
+      const breakBaseY = elbow.y + dy2 * t;
+
+      // Ширина на локте и на запястье
+      const wElbow = br;
+      const wWrist = br;
+
+      // foreParams.w — смещение "излома" наружу/внутрь по нормали
+      // foreParams.r — дополнительная ширина излома (0..0.5)
+      const extraW = br * foreParams.w;
+      const bulge = br * foreParams.r;
+
+      // Интерполированная базовая ширина в точке излома
+      const wBreakBase = wElbow * (1 - t) + wWrist * t;
+
+      // Внешняя сторона: точки на локте, изломе и запястье
+      const outerElbow = { x: elbow.x + nx2 * innerSign * wElbow, y: elbow.y + ny2 * innerSign * wElbow };
+      const outerBreak = {
+        x: breakBaseX + nx2 * innerSign * (wBreakBase + extraW + bulge),
+        y: breakBaseY + ny2 * innerSign * (wBreakBase + extraW + bulge)
       };
+      const outerWrist = { x: wrist.x + nx2 * innerSign * wWrist, y: wrist.y + ny2 * innerSign * wWrist };
 
-      const breakOuter = getBreakPoint(1);
-      const breakInner = getBreakPoint(-1);
+      // Внутренняя сторона: точки на локте, изломе и запястье
+      const innerElbow = { x: elbow.x - nx2 * innerSign * wElbow, y: elbow.y - ny2 * innerSign * wElbow };
+      const innerBreak = {
+        x: breakBaseX - nx2 * innerSign * (wBreakBase - extraW + bulge),
+        y: breakBaseY - ny2 * innerSign * (wBreakBase - extraW + bulge)
+      };
+      const innerWrist = { x: wrist.x - nx2 * innerSign * wWrist, y: wrist.y - ny2 * innerSign * wWrist };
 
-      const p3OuterW = { x: wrist.x + nx2 * innerSign * br, y: wrist.y + ny2 * innerSign * br };
-      const p3InnerW = { x: wrist.x - nx2 * innerSign * br, y: wrist.y - ny2 * innerSign * br };
+      // Внешняя ломаная: локоть -> излом -> запястье
+      ctx.beginPath();
+      ctx.moveTo(outerElbow.x, outerElbow.y);
+      ctx.lineTo(outerBreak.x, outerBreak.y);
+      ctx.lineTo(outerWrist.x, outerWrist.y);
+      ctx.stroke();
 
-      // Линия от локтя к точке излома
-      ctx.beginPath(); ctx.moveTo(p2Outer.x, p2Outer.y); ctx.lineTo(breakOuter.x, breakOuter.y); ctx.stroke();
-      // Линия от точки излома к запястью
-      ctx.beginPath(); ctx.moveTo(breakOuter.x, breakOuter.y); ctx.lineTo(p3OuterW.x, p3OuterW.y); ctx.stroke();
-
-      // Внутренняя линия
-      ctx.beginPath(); ctx.moveTo(p2Inner.x, p2Inner.y); ctx.lineTo(breakInner.x, breakInner.y); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(breakInner.x, breakInner.y); ctx.lineTo(p3InnerW.x, p3InnerW.y); ctx.stroke();
+      // Внутренняя ломаная: локоть -> излом -> запястье
+      ctx.beginPath();
+      ctx.moveTo(innerElbow.x, innerElbow.y);
+      ctx.lineTo(innerBreak.x, innerBreak.y);
+      ctx.lineTo(innerWrist.x, innerWrist.y);
+      ctx.stroke();
 
       // Точка локтя
       if (ui.showElbow.checked) {
@@ -1075,4 +1083,4 @@ canvas.height = canvasH;
 draw();
 </script>
 </body>
-  </html>
+</html>
