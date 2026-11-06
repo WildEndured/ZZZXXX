@@ -1,80 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Head Builder — SVG</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
-    <div class="stage" id="stage">
-      <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <pattern id="grid" width="128" height="128" patternUnits="userSpaceOnUse">
-            <path d="M128 0H0V128" fill="none" stroke="#1b2430" stroke-width="2" opacity="0.55"/>
-          </pattern>
-        </defs>
-        <rect x="0" y="0" width="4096" height="4096" fill="#0b0f14"/>
-        <rect x="0" y="0" width="4096" height="4096" fill="url(#grid)"/>
-        <g id="guides" stroke="#2b3a4a" stroke-width="3" fill="none" stroke-dasharray="12 14"></g>
-        <g id="head" stroke="#e8f0f7" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
-      </svg>
+    <div class="canvas-wrap">
+      <svg id="stage" viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
 
     <div class="panel">
-      <label class="row">
-        <span>Рост в головах (X): <b id="xVal">7</b></span>
-        <input id="xRange" type="range" min="3" max="12" step="1" value="7" />
-      </label>
-
-      <label class="row">
-        <span>Круг: высота <b id="cHVal">1.00</b></span>
-        <input id="cH" type="range" min="0.4" max="1.6" step="0.01" value="1" />
-      </label>
-
-      <label class="row">
-        <span>Круг: ширина <b id="cWVal">1.00</b></span>
-        <input id="cW" type="range" min="0.4" max="1.6" step="0.01" value="1" />
-      </label>
-
-      <label class="row">
-        <span>Подбородок: тип</span>
-        <select id="chinType">
-          <option value="line">Линия</option>
-          <option value="dot">Точка (аниме)</option>
-        </select>
-      </label>
-
-      <label class="row">
-        <span>Подбородок: ширина <b id="chWVal">0.35</b></span>
-        <input id="chW" type="range" min="0.05" max="0.8" step="0.01" value="0.35" />
-      </label>
-
-      <label class="row">
-        <span>Подбородок: высота <b id="chHVal">0.06</b></span>
-        <input id="chH" type="range" min="0.01" max="0.3" step="0.01" value="0.06" />
-      </label>
-
-      <label class="row">
-        <span>Челюсть: высота крепления <b id="jYVal">0.62</b></span>
-        <input id="jY" type="range" min="0.4" max="0.85" step="0.01" value="0.62" />
-      </label>
-
-      <label class="row">
-        <span>Челюсть: угол <b id="jAVal">65</b>°</span>
-        <input id="jA" type="range" min="30" max="120" step="1" value="65" />
-      </label>
-
-      <label class="row">
-        <span>Челюсть: ширина <b id="jWVal">0.5</b></span>
-        <input id="jW" type="range" min="0.1" max="1" step="0.01" value="0.5" />
-      </label>
-
-      <div class="row actions">
-        <button id="download">Скачать SVG</button>
-        <button id="reset">Сброс</button>
+      <div class="panel-head">
+        <span>Голова в частях</span>
+        <span id="xVal" class="badge">6</span>
       </div>
+
+      <label class="row">
+        <span>X (делений роста)</span>
+        <input id="xParts" type="range" min="3" max="12" step="1" value="6" />
+      </label>
+
+      <div class="panel-head"><span>Череп</span></div>
+      <label class="row">
+        <span>Высота круга</span>
+        <input id="skullH" type="range" min="0.6" max="1.6" step="0.01" value="1" />
+      </label>
+      <label class="row">
+        <span>Ширина круга</span>
+        <input id="skullW" type="range" min="0.6" max="1.6" step="0.01" value="1" />
+      </label>
+
+      <div class="panel-head"><span>Подбородок</span></div>
+      <label class="row">
+        <span>Ширина</span>
+        <input id="chinW" type="range" min="0" max="1" step="0.01" value="0.35" />
+      </label>
+      <label class="row">
+        <span>Высота</span>
+        <input id="chinH" type="range" min="-0.5" max="0.5" step="0.01" value="0" />
+      </label>
+      <label class="row">
+        <span>Тип: точка ↔ линия</span>
+        <input id="chinType" type="range" min="0" max="1" step="0.01" value="0" />
+      </label>
+
+      <div class="panel-head"><span>Челюсть</span></div>
+      <label class="row">
+        <span>Высота крепления</span>
+        <input id="jawH" type="range" min="0.4" max="1.2" step="0.01" value="0.9" />
+      </label>
+      <label class="row">
+        <span>Угол челюсти</span>
+        <input id="jawAngle" type="range" min="5" max="60" step="1" value="25" />
+      </label>
+      <label class="row">
+        <span>Ширина челюсти</span>
+        <input id="jawW" type="range" min="0.4" max="1.4" step="0.01" value="1" />
+      </label>
+
+      <button id="exportBtn">Скачать SVG</button>
     </div>
   </div>
 
