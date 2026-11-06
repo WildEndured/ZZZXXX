@@ -1116,16 +1116,12 @@ function draw() {
       
       // ** ПРИВЯЗКА К ТАЗУ **
       // Внешняя линия начинается от середины бокового края таза
-      const pelvisSideX = isLeft ? pelvisXPos : (pelvisXPos + pelvisW);
-      const pelvisSideY = pelvisYPos + pelvisH * 0.5; 
-      
-      const hipOuter = { x: pelvisSideX, y: pelvisSideY };
+      const hipOuterX = isLeft ? pelvisXPos : (pelvisXPos + pelvisW);
+      const hipOuterY = pelvisYPos + pelvisH * 0.5; 
       
       // Внутренняя линия начинается от низа таза (ближе к центру)
       const hipInnerStartY = pelvisYPos + pelvisH;
       const hipInnerStartX = isLeft ? pelvisXPos + pelvisW * 0.25 : pelvisXPos + pelvisW * 0.75;
-      
-      const hipInner = { x: hipInnerStartX, y: hipInnerStartY };
       
       // Точки на колене
       const kneeOuter = { x: kneeX + px * innerSign * kneeRadius, y: kneeY + py * innerSign * kneeRadius };
@@ -1137,7 +1133,7 @@ function draw() {
       
       // Внешняя линия бедра (выпуклая)
       ctx.beginPath();
-      ctx.moveTo(hipOuter.x, hipOuter.y);
+      ctx.moveTo(hipOuterX, hipOuterY);
       ctx.quadraticCurveTo(
         hipX + dx * 0.25 + px * innerSign * hipWidth * 1.2,
         hipY + dy * 0.25 + py * innerSign * hipWidth * 1.2,
@@ -1147,7 +1143,7 @@ function draw() {
 
       // Внутренняя линия бедра (с впадиной)
       ctx.beginPath();
-      ctx.moveTo(hipInner.x, hipInner.y);
+      ctx.moveTo(hipInnerStartX, hipInnerStartY);
       ctx.quadraticCurveTo(dipX, dipY, kneeInner.x, kneeInner.y);
       ctx.stroke();
 
