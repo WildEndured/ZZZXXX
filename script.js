@@ -1,253 +1,254 @@
 (() => {
-  const SVG_NS = "http://www.w3.org/2000/svg";
+  "use strict";
+
+  // ---------- Константы ----------
   const W = 4096, H = 4096;
-  const MARGIN = 0.05 * H;          // 5% сверху и снизу
-  const USABLE_H = H - MARGIN * 2;  // высота доступной области
-  const TOP = MARGIN;
+  const DPI = 300;
+  const MARGIN_PCT = 0.05;              // отступ 5% сверху и снизу
+  const TOP = H * MARGIN_PCT;           // 204.8
+  const BOTTOM = H * (1 - MARGIN_PCT);  // 3891.2
+  const BODY_H = BOTTOM - TOP;          // высота рабочей области
 
-  const svg = document.getElementById("svg");
-  const guides = document.getElementById("guides");
-  const headG = document.getElementById("head");
-
-  const $ = (id) => document.getElementById(id);
-
-  const state = {
-    x: 7,
-    cH: 1,
-    cW: 1,
-    chinType: "line",
-    chW: 0.35,
-    chH: 0.06,
-    jY: 0.62,
-    jA: 65,
-    jW: 0.5,
-  };
-
-  function el(tag, attrs = {}) {
-    const n = document.createElementNS(SVG_NS, tag);
-    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-    return n;
-  }
-
-  function clear(g) {
-    while (g.firstChild) g.removeChild(g.firstChild);
-  }
-
-  function draw() {
-    clear(guides);
-    clear(headG);
-
-    const headH = USABLE_H / state.x;      // высота "головы"
-    const y0 = TOP;                        // верх головы
-    const cx = W / 2;                      // центральная ось
-
-    // ---------- направляющие: верхняя область 1/X на 5 частей ----------
-    for (let i = 0; i <= 5; i++) {
-      const y = y0 + (headH * i) / 5;
-      guides.appendChild(el("line", { x1: 0, y1: y, x2: W, y2: y }));
-    }
-    // центральная ось
-    guides.appendChild(el("line", { x1: cx, y1: 0, x2: cx, y2: H, "stroke-dasharray": "8 20" }));
-
-    // ---------- круг черепа ----------
-    // вершина на 1/5, низ на 3/5 -> радиус = (3/5 - 1/5)/2 * headH = headH/5
-    const rBase = headH / 5;
-    const ry = rBase * state.cH;
-    const rx = rBase * state.cW;
-    const cy = y0 + (headH * 2) / 5; // центр между 1/5 и 3/5
-
-    const skull = el("ellipse", { cx, cy, rx, ry, fill: "none" });
-    headG.appendChild(skull);
-
-    // крайние (широчайшие) точки эллипса
-    const leftX = cx - rx;
-    const rightX = cx + rx;
-    const widestY = cy; // широчайшая точка по горизонтали
-
-    // ---------- подбородок на линии 4/5 ----------
-    const chinY = y0 + (headH * 4) / 5;
-    const chinHalf = (headH * state.chW) / 2;
-
-    if (state.chinType === "line") {
-      // линия шириной chW*headH и толщиной chH*headH
-      const thick = Math.max(2, headH * state.chH);
-      headG.appendChild(el("line", {
-        x1: cx - chinHalf, y1: chinY,
-        x2: cx + chinHalf, y2: chinY,
-        "stroke-width": thick
-      }));
-    } else {
-      // точка (аниме): радиус = chH*headH, положение по центру
-      const r = Math.max(2, headH * state.chH);
-      headG.appendChild(el("circle", { cx, cy: chinY, r, fill: "#e8f0f7", stroke: "none" }));
-    }
-
-    // ---------- челюсть ----------
-    // 1) от широчайшей точки круга вниз под 90° (вертикально) до высоты крепления jY
-    // 2) от конца линии 1 под углом jA к подбородку
-    const jYy = y0 + headH * state.jY; // высота крепления челюсти (доля headH)
-    const jawW = headH * state.jW;     // ширина челюсти (горизонтальное смещение)
-
-    // левая сторона
-    const leftTop = { x: leftX, y: widestY };
-    const leftDown = { x: leftX, y: Math.max(widestY, jYy) };
-    // подбородок: левая точка (или центр для точки)
-    const chinLeftX = state.chinType === "line" ? cx - chinHalf : cx;
-    const chinRightX = state.chinType === "line" ? cx + chinHalf : cx;
-
-    // угол челюсти: вторая линия идёт от leftDown к точке подбородка,
-    // но с учётом угла и ширины. Строим так:
-    // направление от leftDown к подбородку, затем корректируем по углу.
-    // Для наглядности: вторая линия идёт к точке (chinLeftX, chinY), смещённой на jawW.
-    const targetLeftX = Math.min(chinLeftX + jawW, cx);
-    const leftTarget = { x: targetLeftX, y: chinY };
-
-    // угол между вертикалью (линия 1) и линией 2 — регулируем через jA.
-    // Пересчитаем target по углу: линия 2 отклоняется от вертикали на (90 - jA) градусов.
-    // Проще: строим линию 2 от leftDown под углом jA к вертикали вниз.
-    const rad = (state.jA * Math.PI) / 180;
-    const dirX = Math.sin(rad);      // горизонтальное смещение
-    const dirY = Math.cos(rad);      // вертикальное смещение
-    // Длина линии 2 подбирается так, чтобы достичь chinY (или близко)
-    const needY = chinY - leftDown.y;
-    let len2 = Math.abs(needY) / Math.max(0.0001, Math.abs(dirY));
-    // Ограничим шириной челюсти
-    const maxLenX = Math.max(1, jawW) / Math.max(0.0001, Math.abs(dirX));
-    len2 = Math.min(len2, maxLenX * 1.6 + 1);
-
-    let leftEnd = {
-      x: leftDown.x + dirX * len2,
-      y: leftDown.y + dirY * len2,
-    };
-    // Если не дотянули до подбородка — тянем к подбородку (плавно)
-    if (leftEnd.y < chinY) {
-      const k = (chinY - leftDown.y) / Math.max(1e-6, (leftEnd.y - leftDown.y));
-      leftEnd = {
-        x: leftDown.x + (leftEnd.x - leftDown.x) * k,
-        y: chinY,
-      };
-    }
-    // Не даём уйти дальше центра
-    leftEnd.x = Math.min(leftEnd.x, cx);
-
-    // правая сторона — зеркально
-    const rightTop = { x: rightX, y: widestY };
-    const rightDown = { x: rightX, y: Math.max(widestY, jYy) };
-    let rightEnd = {
-      x: rightDown.x - (leftEnd.x - leftDown.x),
-      y: leftEnd.y,
-    };
-    rightEnd.x = Math.max(rightEnd.x, cx);
-
-    // Рисуем линии челюсти
-    // Линия 1 (вертикаль)
-    headG.appendChild(el("line", {
-      x1: leftTop.x, y1: leftTop.y, x2: leftDown.x, y2: leftDown.y
-    }));
-    headG.appendChild(el("line", {
-      x1: rightTop.x, y1: rightTop.y, x2: rightDown.x, y2: rightDown.y
-    }));
-
-    // Линия 2 (к подбородку)
-    headG.appendChild(el("line", {
-      x1: leftDown.x, y1: leftDown.y, x2: leftEnd.x, y2: leftEnd.y
-    }));
-    headG.appendChild(el("line", {
-      x1: rightDown.x, y1: rightDown.y, x2: rightEnd.x, y2: rightEnd.y
-    }));
-
-    // Соединение челюсти с подбородком (небольшие сегменты)
-    if (state.chinType === "line") {
-      // соединяем концы челюсти с краями подбородка
-      headG.appendChild(el("line", {
-        x1: leftEnd.x, y1: leftEnd.y, x2: chinLeftX, y2: chinY
-      }));
-      headG.appendChild(el("line", {
-        x1: rightEnd.x, y1: rightEnd.y, x2: chinRightX, y2: chinY
-      }));
-    } else {
-      // для точки — ведём к центру подбородка
-      headG.appendChild(el("line", {
-        x1: leftEnd.x, y1: leftEnd.y, x2: cx, y2: chinY
-      }));
-      headG.appendChild(el("line", {
-        x1: rightEnd.x, y1: rightEnd.y, x2: cx, y2: chinY
-      }));
-    }
-  }
+  const svg = document.getElementById("stage");
+  const NS = "http://www.w3.org/2000/svg";
 
   // ---------- UI ----------
-  function bindRange(id, key, labelId, fmt = (v) => v.toFixed(2)) {
-    const input = $(id);
-    const label = $(labelId);
-    input.addEventListener("input", () => {
-      state[key] = parseFloat(input.value);
-      label.textContent = fmt(state[key]);
-      draw();
-    });
-    label.textContent = fmt(state[key]);
+  const ui = {
+    xParts:   document.getElementById("xParts"),
+    xVal:     document.getElementById("xVal"),
+    skullH:   document.getElementById("skullH"),
+    skullW:   document.getElementById("skullW"),
+    chinW:    document.getElementById("chinW"),
+    chinH:    document.getElementById("chinH"),
+    chinType: document.getElementById("chinType"),
+    jawH:     document.getElementById("jawH"),
+    jawAngle: document.getElementById("jawAngle"),
+    jawW:     document.getElementById("jawW"),
+    exportBtn:document.getElementById("exportBtn"),
+  };
+
+  const state = {
+    X: +ui.xParts.value,
+    skullH: +ui.skullH.value,
+    skullW: +ui.skullW.value,
+    chinW: +ui.chinW.value,
+    chinH: +ui.chinH.value,
+    chinType: +ui.chinType.value,
+    jawH: +ui.jawH.value,
+    jawAngle: +ui.jawAngle.value,
+    jawW: +ui.jawW.value,
+  };
+
+  // ---------- Утилиты ----------
+  const el = (name, attrs = {}) => {
+    const n = document.createElementNS(NS, name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // Пересчёт: делим рабочую область на X равных частей.
+  // Слой "голова" занимает первую 1/X сверху — "рост в головах".
+  function metrics() {
+    const X = state.X;
+    const unit = BODY_H / X;               // высота одной "головы" (1/X)
+    const headTop = TOP;
+    const headBottom = TOP + unit;
+    const headH = unit;
+
+    // Деления внутри головы: 1/5, 2/5, 3/5, 4/5, 5/5
+    const p = (n) => headTop + headH * (n / 5); // n из 0..5
+    const l1 = p(1), l2 = p(2), l3 = p(3), l4 = p(4), l5 = p(5);
+
+    // Круг черепа: вершина на 1/5, низ на 3/5.
+    const baseRadius = (l3 - l1) / 2;            // диаметр = 2/5 головы
+    const cx = W / 2;
+    const cy = (l1 + l3) / 2;
+    const rx = baseRadius * state.skullW;        // горизонт. радиус
+    const ry = baseRadius * state.skullH;        // вертик. радиус
+    // Но по условию «вершина на 1/5, низина на 3/5» — держим это,
+    // изменяя ry так, чтобы верх/низ оставались фиксированными,
+    // а ползунок высоты растягивал бы круг симметрично вокруг cy.
+    // Для соответствия ТЗ используем rx/ry как множители вокруг центра.
+
+    // Подбородок на 4/5 (+ смещение ползунком)
+    const chinY = l4 + state.chinH * (headH / 5);
+    const chinHalfW = baseRadius * state.chinW;
+
+    return { X, unit, headTop, headBottom, headH, l1, l2, l3, l4, l5,
+             cx, cy, rx, ry, chinY, chinHalfW, baseRadius };
   }
 
-  $("xRange").addEventListener("input", (e) => {
-    state.x = parseInt(e.target.value, 10);
-    $("xVal").textContent = state.x;
-    draw();
-  });
-  $("xVal").textContent = state.x;
+  // ---------- Отрисовка ----------
+  function render() {
+    const m = metrics();
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-  bindRange("cH", "cH", "cHVal");
-  bindRange("cW", "cW", "cWVal");
-  bindRange("chW", "chW", "chWVal");
-  bindRange("chH", "chH", "chHVal");
-  bindRange("jY", "jY", "jYVal");
-  bindRange("jW", "jW", "jWVal");
-  bindRange("jA", "jA", "jAVal", (v) => Math.round(v));
+    // --- Фон и границы рабочей области (для наглядности) ---
+    const bg = el("rect", { x: 0, y: 0, width: W, height: H, fill: "#0d1117" });
+    svg.appendChild(bg);
 
-  $("chinType").addEventListener("change", (e) => {
-    state.chinType = e.target.value;
-    draw();
-  });
+    const work = el("rect", {
+      x: 0, y: TOP, width: W, height: BODY_H,
+      fill: "rgba(37,99,235,0.04)",
+    });
+    svg.appendChild(work);
 
-  $("reset").addEventListener("click", () => {
-    state.x = 7; state.cH = 1; state.cW = 1;
-    state.chinType = "line"; state.chW = 0.35; state.chH = 0.06;
-    state.jY = 0.62; state.jA = 65; state.jW = 0.5;
+    // --- Сетка X частей (горизонтальные линии) ---
+    const grid = el("g", { stroke: "#1f2a38", "stroke-width": 2 });
+    for (let i = 0; i <= m.X; i++) {
+      const y = TOP + (BODY_H / m.X) * i;
+      grid.appendChild(el("line", { x1: 0, y1: y, x2: W, y2: y }));
+    }
+    svg.appendChild(grid);
 
-    $("xRange").value = 7; $("xVal").textContent = 7;
-    $("cH").value = 1; $("cHVal").textContent = "1.00";
-    $("cW").value = 1; $("cWVal").textContent = "1.00";
-    $("chinType").value = "line";
-    $("chW").value = 0.35; $("chWVal").textContent = "0.35";
-    $("chH").value = 0.06; $("chHVal").textContent = "0.06";
-    $("jY").value = 0.62; $("jYVal").textContent = "0.62";
-    $("jA").value = 65; $("jAVal").textContent = "65";
-    $("jW").value = 0.5; $("jWVal").textContent = "0.50";
+    // --- Линии делений головы 1/5..5/5 ---
+    const headLines = el("g", { stroke: "#2b3a4f", "stroke-width": 2, "stroke-dasharray": "14 14" });
+    [m.l1, m.l2, m.l3, m.l4, m.l5].forEach((y) => {
+      headLines.appendChild(el("line", { x1: 0, y1: y, x2: W, y2: y }));
+    });
+    svg.appendChild(headLines);
 
-    draw();
-  });
+    // --- Осевая ---
+    svg.appendChild(el("line", {
+      x1: m.cx, y1: TOP, x2: m.cx, y2: BOTTOM,
+      stroke: "#1f2a38", "stroke-width": 2, "stroke-dasharray": "6 20"
+    }));
 
-  $("download").addEventListener("click", () => {
-    // Убираем сетку и вспомогательные линии из экспорта
-    const clone = svg.cloneNode(true);
-    const g = clone.querySelector("#guides");
-    if (g) g.remove();
-    // Убираем паттерн-фон (оставляем чистый фон)
-    const defs = clone.querySelector("defs");
-    if (defs) defs.remove();
-    const rects = clone.querySelectorAll("rect");
-    rects.forEach((r) => {
-      if (r.getAttribute("fill") === "url(#grid)") r.remove();
+    // --- Череп: круг/эллипс ---
+    // Фиксируем вершину (1/5) и низ (3/5) — эллипс симметричен по cy.
+    const skullTop = m.l1;
+    const skullBottom = m.l3;
+    const skullCy = (skullTop + skullBottom) / 2;
+    const skullRy = ((skullBottom - skullTop) / 2) * state.skullH;
+    const skullRx = m.baseRadius * state.skullW;
+
+    const skull = el("ellipse", {
+      cx: m.cx, cy: skullCy,
+      rx: skullRx, ry: skullRy,
+      fill: "rgba(124,58,237,0.12)",
+      stroke: "#7c3aed", "stroke-width": 8,
+    });
+    svg.appendChild(skull);
+
+    // --- Подбородок (точка ↔ линия через chinType) ---
+    // 0 = точка, 1 = линия. Промежуточные — плавный переход.
+    const t = clamp(state.chinType, 0, 1);
+    const chinHalfW = m.baseRadius * state.chinW * t;  // в точке ширина 0
+    const chinY = m.chinY;
+
+    if (chinHalfW < 1) {
+      // Чистая точка (аниме)
+      svg.appendChild(el("circle", {
+        cx: m.cx, cy: chinY, r: 18,
+        fill: "#22d3ee", stroke: "#22d3ee", "stroke-width": 2,
+      }));
+    } else {
+      // Линия подбородка
+      svg.appendChild(el("line", {
+        x1: m.cx - chinHalfW, y1: chinY,
+        x2: m.cx + chinHalfW, y2: chinY,
+        stroke: "#22d3ee", "stroke-width": 10, "stroke-linecap": "round",
+      }));
+    }
+
+    // --- Челюсть ---
+    // 1) широчайшая точка круга (правая) на уровне крепления jawH:
+    //    jawH = 0.9 → примерно на 3/5 (низ круга). Позиция по Y:
+    const jawAttachY = m.l1 + (m.l3 - m.l1) * state.jawH; // между 1/5 и 3/5 (масштабируется)
+    // X широчайшей точки круга на этом уровне:
+    const dyNorm = (jawAttachY - skullCy) / (skullRy || 1);
+    const dxSq = 1 - clamp(dyNorm * dyNorm, 0, 1);
+    const widestX = m.cx + skullRx * Math.sqrt(dxSq);
+
+    // 2) Первая линия: от широчайшей точки круга — строго вниз (90°).
+    //    Её длина регулируется jawH (высота крепления) и jawW (ширина).
+    const jawLen = (m.l5 - jawAttachY) * 0.55 * state.jawW;
+    const p1 = { x: widestX, y: jawAttachY };
+    const p2 = { x: widestX, y: jawAttachY + jawLen };
+
+    // 3) Вторая линия: от p2 под углом jawAngle к подбородку.
+    const chinAnchor = {
+      x: m.cx,
+      y: chinHalfW > 1 ? chinY : chinY,
+    };
+    const ang = (state.jawAngle * Math.PI) / 180;
+    // направление от p2 к подбородку; подстраиваем по X
+    const dxChin = chinAnchor.x - p2.x;
+    const dir = Math.sign(dxChin) || -1;
+    const len2 = Math.abs(dxChin) / Math.max(Math.cos(ang), 0.15);
+    const p3 = { x: p2.x + dir * Math.cos(ang) * len2, y: p2.y + Math.sin(ang) * len2 };
+
+    // Рисуем обе линии челюсти (левая + правая симметрично)
+    const jawG = el("g", {
+      stroke: "#f59e0b", "stroke-width": 9,
+      "stroke-linecap": "round", "stroke-linejoin": "round",
+      fill: "none",
     });
 
+    // Правая сторона
+    jawG.appendChild(el("line", { x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y }));
+    jawG.appendChild(el("line", { x1: p2.x, y1: p2.y, x2: p3.x, y2: p3.y }));
+
+    // Левая сторона (зеркально относительно cx)
+    const p1L = { x: 2 * m.cx - p1.x, y: p1.y };
+    const p2L = { x: 2 * m.cx - p2.x, y: p2.y };
+    const p3L = { x: 2 * m.cx - p3.x, y: p3.y };
+    jawG.appendChild(el("line", { x1: p1L.x, y1: p1L.y, x2: p2L.x, y2: p2L.y }));
+    jawG.appendChild(el("line", { x1: p2L.x, y1: p2L.y, x2: p3L.x, y2: p3L.y }));
+
+    svg.appendChild(jawG);
+
+    // Точки крепления (визуальные маркеры)
+    const dots = el("g", { fill: "#f59e0b" });
+    [p1, p2, p3, p1L, p2L, p3L].forEach((pt) => {
+      dots.appendChild(el("circle", { cx: pt.x, cy: pt.y, r: 7 }));
+    });
+    svg.appendChild(dots);
+  }
+
+  // ---------- Привязка событий ----------
+  function bindRange(input, key, cast = Number) {
+    input.addEventListener("input", () => {
+      state[key] = cast(input.value);
+      if (key === "X") ui.xVal.textContent = state[key];
+      render();
+    });
+  }
+
+  bindRange(ui.xParts, "X", (v) => parseInt(v, 10));
+  bindRange(ui.skullH, "skullH");
+  bindRange(ui.skullW, "skullW");
+  bindRange(ui.chinW, "chinW");
+  bindRange(ui.chinH, "chinH");
+  bindRange(ui.chinType, "chinType");
+  bindRange(ui.jawH, "jawH");
+  bindRange(ui.jawAngle, "jawAngle", (v) => parseInt(v, 10));
+  bindRange(ui.jawW, "jawW");
+
+  // ---------- Экспорт SVG ----------
+  ui.exportBtn.addEventListener("click", () => {
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", NS);
+    clone.setAttribute("width", W);
+    clone.setAttribute("height", H);
+    // Для печати в 300 dpi: 4096px / 300dpi = 13.65in
+    clone.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
     const data = new XMLSerializer().serializeToString(clone);
-    const blob = new Blob([data], { type: "image/svg+xml" });
+    const blob = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "head.svg";
+    a.download = "head-construction.svg";
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
-  draw();
+  // ---------- Старт ----------
+  ui.xVal.textContent = state.X;
+  render();
+  window.addEventListener("resize", render);
 })();
