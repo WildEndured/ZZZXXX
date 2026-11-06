@@ -11,7 +11,7 @@
     const bgColorLayer = document.getElementById('bgColorLayer');
     const bgImage = document.getElementById('bgImage');
 
-    // Элементы UI
+    // UI
     const clearBtn = document.getElementById('clearBtn');
     const downloadSvgBtn = document.getElementById('downloadSvgBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
@@ -37,7 +37,6 @@
     const headCountValue = document.getElementById('headCountValue');
     const showGridInput = document.getElementById('showGrid');
 
-    // Управление головой
     const showHeadInput = document.getElementById('showHead');
     const headWidthInput = document.getElementById('headWidth');
     const headWidthValue = document.getElementById('headWidthValue');
@@ -57,7 +56,7 @@
     let bgNaturalWidth = 0;
     let bgNaturalHeight = 0;
 
-    // --- Зум ---
+    // Зум
     let scale = 1, translateX = 0, translateY = 0;
     let startPanX = 0, startPanY = 0;
     const activePointers = new Map();
@@ -89,7 +88,7 @@
         zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // --- Подложка ---
+    // Подложка
     uploadBg.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -138,10 +137,10 @@
     window.addEventListener('resize', updateBgStyle);
 
     // ==========================================
-    // МАТЕМАТИКА РАЗМЕТКИ И ГОЛОВЫ
+    // МАТЕМАТИКА И РАЗМЕТКА
     // ==========================================
     
-    // Возвращает Y-координаты начала и конца самой верхней зоны
+    // Возвращает зону самой верхней головы
     function getTopZone() {
         const padding = Number(paddingSizeInput.value) / 100;
         const heads = Number(headCountInput.value);
@@ -149,9 +148,9 @@
         const step = drawingHeight / heads;
         
         return {
-            startY: padding,       // Верхняя граница зоны
-            stepHeight: step,      // Высота одной головы
-            endY: padding + step   // Нижняя граница верхней зоны
+            startY: padding,
+            stepHeight: step,
+            endY: padding + step
         };
     }
 
@@ -162,7 +161,6 @@
         const { startY, stepHeight } = getTopZone();
         const heads = Number(headCountInput.value);
 
-        // Горизонтальные линии
         for (let i = 0; i <= heads; i++) {
             const y = startY + (i * stepHeight);
             const line = document.createElementNS(SVG_NS, 'line');
@@ -174,64 +172,55 @@
             line.setAttribute('opacity', '0.6'); 
             measureLayer.appendChild(line);
         }
-
-        if (Number(paddingSizeInput.value) > 0) {
-            const borderRect = document.createElementNS(SVG_NS, 'rect');
-            borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', startY);
-            borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', 1 - (startY * 2));
-            borderRect.setAttribute('fill', 'none');
-            borderRect.setAttribute('stroke', '#ff4444'); 
-            borderRect.setAttribute('stroke-width', '0.003');
-            borderRect.setAttribute('opacity', '0.8');
-            measureLayer.appendChild(borderRect);
-        }
     }
 
+    // ==========================================
+    // ОТРИСОВКА ГОЛОВЫ (УПРОЩЕННАЯ)
+    // ==========================================
     function updateHead() {
         headLayer.innerHTML = '';
         if (!showHeadInput.checked) return;
 
         const { startY, stepHeight } = getTopZone();
         
-        // Зона головы делится на 5 частей
+        // По твоему ТЗ: делим зону головы на 5 частей
         const unit = stepHeight / 5; 
 
-        // Ключевые Y-координаты
+        // Опорные Y
         const yTop = startY;             // 0/5 (макушка)
         const yCircleBottom = startY + unit * 3; // 3/5 (низ круга)
         const yChin = startY + unit * 4; // 4/5 (подбородок)
         
         // Центр круга по Y
         const circleCenterY = yTop + unit * 1.5; 
-        // Радиус круга (по умолчанию)
+        // Базовый радиус круга (чтобы влезть в 0..3/5)
         const baseRadiusY = unit * 1.5; 
         
-        // Настройки пользователя
+        // Значения с ползунков (в процентах, переводим в коэффициенты)
         const headW = Number(headWidthInput.value) / 100;
         const headH = Number(headHeightInput.value) / 100;
         const chinW = Number(chinWidthInput.value) / 100;
-        const chinYOffset = Number(chinYInput.value) / 100; // Сдвиг подбородка
+        const chinYOffset = Number(chinYInput.value) / 100;
 
         // Итоговые размеры
-        const rx = baseRadiusY * headW; // Радиус по X
-        const ry = baseRadiusY * headH; // Радиус по Y
-        const cx = 0.5; // Центр по X
+        const rx = baseRadiusY * headW;
+        const ry = baseRadiusY * headH;
+        const cx = 0.5; 
 
-        // 1. Круг (Череп)
+        // 1. ЧЕРЕП (Круг) - рисуем зеленым
         const skull = document.createElementNS(SVG_NS, 'ellipse');
         skull.setAttribute('cx', cx);
         skull.setAttribute('cy', circleCenterY);
         skull.setAttribute('rx', rx);
         skull.setAttribute('ry', ry);
-        skull.setAttribute('fill', 'none');
-        skull.setAttribute('stroke', '#4a90d9');
-        skull.setAttribute('stroke-width', '0.004');
+        skull.setAttribute('fill', 'rgba(0, 255, 0, 0.1)'); // Легкий зеленый фон
+        skull.setAttribute('stroke', '#00aa00'); // Ярко-зеленый контур
+        skull.setAttribute('stroke-width', '0.006'); // Толстая линия
         headLayer.appendChild(skull);
 
-        // 2. Подбородок
-        // Подбородок по умолчанию на yChin, но можно сдвинуть
+        // 2. ПОДБОРОДОК - рисуем синим
         const actualChinY = yChin + (chinYOffset * unit);
-        const chinWidthHalf = rx * chinW; // Ширина подбородка относительно ширины черепа
+        const chinWidthHalf = rx * chinW; 
         
         const chinLeftX = cx - chinWidthHalf;
         const chinRightX = cx + chinWidthHalf;
@@ -239,25 +228,26 @@
         const chinLine = document.createElementNS(SVG_NS, 'line');
         chinLine.setAttribute('x1', chinLeftX); chinLine.setAttribute('y1', actualChinY);
         chinLine.setAttribute('x2', chinRightX); chinLine.setAttribute('y2', actualChinY);
-        chinLine.setAttribute('stroke', '#4a90d9');
-        chinLine.setAttribute('stroke-width', '0.004');
+        chinLine.setAttribute('stroke', '#0000ff'); // Синий
+        chinLine.setAttribute('stroke-width', '0.006');
+        chinLine.setAttribute('stroke-linecap', 'round');
         headLayer.appendChild(chinLine);
 
-        // 3. Челюсть
-        // Левая челюсть: от левого края круга (на уровне центра) вниз к подбородку
+        // 3. ЧЕЛЮСТЬ - рисуем красным
+        // От левого края круга к левому краю подбородка
         const leftJawPath = document.createElementNS(SVG_NS, 'path');
         leftJawPath.setAttribute('d', `M ${cx - rx} ${circleCenterY} L ${chinLeftX} ${actualChinY}`);
         leftJawPath.setAttribute('fill', 'none');
-        leftJawPath.setAttribute('stroke', '#4a90d9');
-        leftJawPath.setAttribute('stroke-width', '0.004');
+        leftJawPath.setAttribute('stroke', '#ff0000'); // Красный
+        leftJawPath.setAttribute('stroke-width', '0.006');
         headLayer.appendChild(leftJawPath);
 
-        // Правая челюсть
+        // От правого края круга к правому краю подбородка
         const rightJawPath = document.createElementNS(SVG_NS, 'path');
         rightJawPath.setAttribute('d', `M ${cx + rx} ${circleCenterY} L ${chinRightX} ${actualChinY}`);
         rightJawPath.setAttribute('fill', 'none');
-        rightJawPath.setAttribute('stroke', '#4a90d9');
-        rightJawPath.setAttribute('stroke-width', '0.004');
+        rightJawPath.setAttribute('stroke', '#ff0000'); // Красный
+        rightJawPath.setAttribute('stroke-width', '0.006');
         headLayer.appendChild(rightJawPath);
     }
 
@@ -271,20 +261,21 @@
     showHeadInput.addEventListener('change', updateHead);
     
     const headControls = [
-        [headWidthInput, headWidthValue, '%'],
-        [headHeightInput, headHeightValue, '%'],
-        [chinWidthInput, chinWidthValue, '%'],
-        [chinYInput, chinYValue, '']
+        [headWidthInput, headWidthValue],
+        [headHeightInput, headHeightValue],
+        [chinWidthInput, chinWidthValue],
+        [chinYInput, chinYValue]
     ];
 
-    headControls.forEach(([input, span, suffix]) => {
+    headControls.forEach(([input, span]) => {
         input.addEventListener('input', (e) => {
-            span.textContent = e.target.value + suffix;
+            span.textContent = e.target.value;
             updateHead();
         });
     });
 
-    updateAll(); // Первичная отрисовка
+    // Первичный запуск
+    updateAll();
 
     // ==========================================
     // РИСОВАНИЕ И ЗУМ
