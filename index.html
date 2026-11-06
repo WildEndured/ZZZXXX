@@ -345,8 +345,8 @@ function computeSkeleton(P, W, H) {
 
   // Руки
   const wristRadius = Math.max(1, pelvisH * P.wristR);
-  const lWristBase = { x: pelvisXPos - wristRadius + P.lWristX * pelvisW, y: pelvis.botY - wristRadius + P.lWristY * pelvisH };
-  const rWristBase = { x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW, y: pelvis.botY - wristRadius + P.rWristY * pelvisH };
+  const lWristBase = { x: pelvisXPos - wristRadius + P.lWristX * pelvisW, y: pelvisYPos + pelvisH - wristRadius + P.lWristY * pelvisH };
+  const rWristBase = { x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW, y: pelvisYPos + pelvisH - wristRadius + P.rWristY * pelvisH };
   sk.arms = {
     wristRadius,
     l: buildArm({ x: shoulderLeftCx,  y: shoulderCy }, lWristBase, -P.lShoulderAngle, -P.lElbowAngle, wristRadius),
@@ -355,8 +355,8 @@ function computeSkeleton(P, W, H) {
 
   // Ноги
   const legRadius = Math.max(1, pelvisH * P.legR);
-  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
-  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
+  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: sk.pelvis.botY };
+  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: sk.pelvis.botY };
   
   const footBaseY = H * 0.90;
 
@@ -598,7 +598,6 @@ function draw() {
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.strokeStyle = P.lineColor; ctx.lineWidth = P.lineWidth; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
-  // ВАЖНО: LAYERS объявлен здесь, после всех функций отрисовки!
   const LAYERS = [
     ['reference',   renderReference],
     ['grid',        renderGrid],
