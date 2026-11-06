@@ -816,8 +816,8 @@ function draw() {
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
   ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos, pelvisXPos + pelvisW, pelvisYPos + cornerRadius);
   
-  // Внешний край таза (разрыв, чтобы линия бедра начиналась из середины)
-  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH * 0.5); // <-- Разрыв для левой ноги
+  // Внешний край таза (разрыв для левой ноги)
+  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH * 0.5); 
   
   // Нижняя часть таза (где пах)
   ctx.moveTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos + pelvisH);
@@ -825,7 +825,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisH, pelvisXPos, pelvisYPos + pelvisH - cornerRadius);
   
   // Внешний край таза (разрыв для правой ноги)
-  ctx.lineTo(pelvisXPos, pelvisYPos + pelvisH * 0.5); // <-- Разрыв для правой ноги
+  ctx.lineTo(pelvisXPos, pelvisYPos + pelvisH * 0.5); 
   
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
@@ -1122,7 +1122,6 @@ function draw() {
       const hipWidth = pelvisH * thighWParam;
       
       // Точки на тазу (Внешняя начинается из середины бокового края таза)
-      // Смещение точки начала внешней линии бедра на уровень середины таза
       const startOuterX = isLeft ? pelvisXPos : pelvisXPos + pelvisW;
       const startOuterY = pelvisYPos + pelvisH * 0.5; 
       
