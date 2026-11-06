@@ -667,13 +667,8 @@ function draw() {
   const rFootXParam = parseFloat(ui.rFootX.value) || 0;
   const rFootYParam = parseFloat(ui.rFootY.value) || 0;
 
-  // Точки крепления ног к тазу (Внешние)
-  const lHipX = pelvisXPos + pelvisW * 0.25;
-  const rHipX = pelvisXPos + pelvisW * 0.75;
-  const hipY = pelvisBottomY;
-  
   // Точки стоп
-  const footY = H - (headStep * 0.1); // Чуть выше нижнего края
+  const footY = H - (headStep * 0.1); // Оставляем место для стоп
   const ankleRadius = Math.max(2, pelvisH * ankleRParam);
   
   const lAnkleBase = { 
@@ -725,21 +720,21 @@ function draw() {
     }
     ctx.stroke();
 
-    // Линии подсекций для ног
     if (showLegs) {
       const legSubCount = 3;
       ctx.beginPath();
       
-      // Левая нога
+      const lHipX = pelvisXPos + pelvisW * 0.25;
+      const rHipX = pelvisXPos + pelvisW * 0.75;
+      
       const dxL = lAnkleBase.x - lHipX;
-      const dyL = lAnkleBase.y - hipY;
+      const dyL = lAnkleBase.y - pelvisBottomY;
       const lenL = Math.hypot(dxL, dyL) || 1;
       const perpL_x = -dyL / lenL * (pelvisH * thighWParam);
       const perpL_y =  dxL / lenL * (pelvisH * thighWParam);
       
-      // Правая нога
       const dxR = rAnkleBase.x - rHipX;
-      const dyR = rAnkleBase.y - hipY;
+      const dyR = rAnkleBase.y - pelvisBottomY;
       const lenR = Math.hypot(dxR, dyR) || 1;
       const perpR_x = -dyR / lenR * (pelvisH * thighWParam);
       const perpR_y =  dxR / lenR * (pelvisH * thighWParam);
@@ -747,15 +742,13 @@ function draw() {
       for (let i = 1; i < legSubCount; i++) {
         const t = i / legSubCount;
         
-        // Левая
         let lx = lHipX + dxL * t;
-        let ly = hipY + dyL * t;
+        let ly = pelvisBottomY + dyL * t;
         ctx.moveTo(lx + perpL_x * 1.5, ly + perpL_y * 1.5);
         ctx.lineTo(lx - perpL_x * 1.5, ly - perpL_y * 1.5);
         
-        // Правая
         let rx = rHipX + dxR * t;
-        let ry = hipY + dyR * t;
+        let ry = pelvisBottomY + dyR * t;
         ctx.moveTo(rx + perpR_x * 1.5, ry + perpR_y * 1.5);
         ctx.lineTo(rx - perpR_x * 1.5, ry - perpR_y * 1.5);
       }
@@ -1086,7 +1079,6 @@ function draw() {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    // Общая ось ноги (от центра сустава к стопе)
     const drawLeg = (hipOuterX, hipInnerX, anklePoint, isLeft) => {
       const innerSign = isLeft ? 1 : -1; 
       const hipY = pelvisBottomY;
