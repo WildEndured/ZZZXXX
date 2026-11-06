@@ -7,63 +7,46 @@
     const drawLayer = document.getElementById('drawLayer');
     const measureLayer = document.getElementById('measureLayer');
     const headLayer = document.getElementById('headLayer');
-    
     const bgColorLayer = document.getElementById('bgColorLayer');
-    const bgImage = document.getElementById('bgImage');
 
     // UI
     const clearBtn = document.getElementById('clearBtn');
-    const downloadSvgBtn = document.getElementById('downloadSvgBtn');
-    const downloadPngBtn = document.getElementById('downloadPngBtn');
     const resetZoomBtn = document.getElementById('resetZoomBtn');
-    const uploadBg = document.getElementById('uploadBg');
-    const removeBgBtn = document.getElementById('removeBgBtn');
-    const bgControls = document.getElementById('bgControls');
-    const bgOpacity = document.getElementById('bgOpacity');
-    const bgOpacityValue = document.getElementById('bgOpacityValue');
-    const bgScale = document.getElementById('bgScale');
-    const bgScaleValue = document.getElementById('bgScaleValue');
     const bgColorInput = document.getElementById('bgColor');
     const lineColorInput = document.getElementById('lineColor');
     const lineWidthInput = document.getElementById('lineWidth');
     const lineWidthValue = document.getElementById('lineWidthValue');
-    
     const paddingSizeInput = document.getElementById('paddingSize');
     const paddingSizeValue = document.getElementById('paddingSizeValue');
     const headCountInput = document.getElementById('headCount');
     const headCountValue = document.getElementById('headCountValue');
     const showGridInput = document.getElementById('showGrid');
-
-    // Ползунки головы
     const showHeadInput = document.getElementById('showHead');
-    const skullHInput = document.getElementById('skullH');
+    
+    // Параметры головы
     const skullWInput = document.getElementById('skullW');
-    const chinYInput = document.getElementById('chinY');
+    const skullHInput = document.getElementById('skullH');
     const chinWInput = document.getElementById('chinW');
-    const chinRInput = document.getElementById('chinR');
-    const jawYInput = document.getElementById('jawY');
-    const jawWInput = document.getElementById('jawW');
-    const jawBInput = document.getElementById('jawB');
+    const chinYInput = document.getElementById('chinY');
+    const jawBreakYInput = document.getElementById('jawBreakY');
+    const jawBreakXInput = document.getElementById('jawBreakX');
+    const jawAttachYInput = document.getElementById('jawAttachY');
+    const jawAttachXInput = document.getElementById('jawAttachX');
 
-    // Текстовые значения
-    const vSkullH = document.getElementById('vSkullH');
     const vSkullW = document.getElementById('vSkullW');
-    const vChinY = document.getElementById('vChinY');
+    const vSkullH = document.getElementById('vSkullH');
     const vChinW = document.getElementById('vChinW');
-    const vChinR = document.getElementById('vChinR');
-    const vJawY = document.getElementById('vJawY');
-    const vJawW = document.getElementById('vJawW');
-    const vJawB = document.getElementById('vJawB');
+    const vChinY = document.getElementById('vChinY');
+    const vJawBreakY = document.getElementById('vJawBreakY');
+    const vJawBreakX = document.getElementById('vJawBreakX');
+    const vJawAttachY = document.getElementById('vJawAttachY');
+    const vJawAttachX = document.getElementById('vJawAttachX');
 
-    const PNG_SIZE = 4096;
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
-    let currentBgSrc = null; 
-    let bgNaturalWidth = 0;
-    let bgNaturalHeight = 0;
 
-    // --- Зум ---
+    // Зум
     let scale = 1, translateX = 0, translateY = 0;
     let startPanX = 0, startPanY = 0;
     const activePointers = new Map();
@@ -86,44 +69,7 @@
         zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // --- Подложка ---
-    uploadBg.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            currentBgSrc = event.target.result;
-            const tempImg = new Image();
-            tempImg.onload = () => {
-                bgNaturalWidth = tempImg.naturalWidth;
-                bgNaturalHeight = tempImg.naturalHeight;
-                bgImage.src = currentBgSrc;
-                bgImage.style.display = 'block';
-                bgControls.style.display = 'flex';
-                removeBgBtn.style.display = 'inline-block';
-                bgOpacity.value = 100; bgScale.value = 100;
-                updateBgStyle();
-            };
-            tempImg.src = currentBgSrc;
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
-    });
-    removeBgBtn.addEventListener('click', () => {
-        currentBgSrc = null; bgImage.removeAttribute('src'); bgImage.style.display = 'none';
-        bgControls.style.display = 'none'; removeBgBtn.style.display = 'none';
-    });
-    function updateBgStyle() {
-        if (!bgNaturalHeight) return;
-        bgImage.style.opacity = Number(bgOpacity.value) / 100;
-        bgImage.style.transform = `scale(${Number(bgScale.value) / 100})`;
-        bgOpacityValue.textContent = bgOpacity.value + '%';
-        bgScaleValue.textContent = bgScale.value + '%';
-    }
-    bgOpacity.addEventListener('input', updateBgStyle);
-    bgScale.addEventListener('input', updateBgStyle);
-
-    // --- Разметка ---
+    // Разметка и Зоны
     function getTopZone() {
         const padding = Number(paddingSizeInput.value) / 100;
         const heads = Number(headCountInput.value);
@@ -148,101 +94,100 @@
         }
     }
 
-    // ==========================================
-    // МАТЕМАТИКА ГОЛОВЫ (С ПРЯМЫМИ ЛИНИЯМИ ЧЕЛЮСТИ)
-    // ==========================================
+    // Отрисовка головы (С НУЛЯ, С ЖЕСТКИМ ИЗЛОМОМ)
     function updateHead() {
         headLayer.innerHTML = '';
         if (!showHeadInput.checked) return;
 
         const { startY, stepHeight } = getTopZone();
         
-        // Базовые координаты
-        const skullTopBase = startY; 
-        const skullBotBase = startY + stepHeight * 3 / 5; 
-        const baseR = (skullBotBase - skullTopBase) / 2;
-        const skullCyBase = skullTopBase + baseR; 
+        // Опорные точки зоны (1/5 шага)
+        const step5 = stepHeight / 5;
+        const yTop = startY;                    // 0/5
+        const yCircleBot = startY + step5 * 3;  // 3/5
+        const yChin = startY + step5 * 4;       // 4/5
 
-        // Значения с ползунков
+        // Череп
         const skullH = Number(skullHInput.value);
         const skullW = Number(skullWInput.value);
-        const chinYOffset = Number(chinYInput.value);
-        const chinWParam = Number(chinWInput.value);
-        const jawYParam = Number(jawYInput.value);
-        const jawWParam = Number(jawWInput.value);
-        const jawBParam = Number(jawBInput.value);
-
-        // Размеры черепа
-        const rY = baseR * skullH;
-        const rX = baseR * skullW;
-        const headCx = 0.5; 
-        const cy = skullCyBase;
+        // Радиус эллипса по Y (чтобы макушка была на 0/5, а низ на 3/5)
+        // Изначально радиус = 1.5 * step5. Если ползунок 1.0, он ровно вписывается.
+        const baseRy = (yCircleBot - yTop) / 2;
+        const ry = baseRy * skullH;
+        const rx = baseRy * skullW;
         
-        // Подбородок
-        const chinBaseY = startY + stepHeight * 4 / 5;
-        const chinCenterY = chinBaseY + chinYOffset * (stepHeight / 5);
-        const chinHalfW = chinWParam * rX * 0.7;
-        
-        // Крепление челюсти
-        const jawAttachY = skullBotBase - (skullBotBase - cy) * jawYParam;
-        
-        // Вычисляем ширину эллипса на высоте jawAttachY
-        const normY = (jawAttachY - cy) / rY;
-        const attachDx = Math.sqrt(Math.max(0, 1 - normY * normY));
-        
-        const attachLeft  = { x: headCx - rX * attachDx, y: jawAttachY };
-        const attachRight = { x: headCx + rX * attachDx, y: jawAttachY };
+        const cx = 0.5;
+        // Центр эллипса
+        const cy = yTop + ry; 
 
-        // Точки излома (углы) - здесь формируется вторая линия
-        const cornerLeft  = { x: headCx - rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
-        const cornerRight = { x: headCx + rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
-
-        // Точки подбородка
-        let chinLeft, chinRight;
-        if (chinHalfW < 0.001) {
-            chinLeft = { x: headCx, y: chinCenterY };
-            chinRight = { x: headCx, y: chinCenterY };
-        } else {
-            chinLeft  = { x: headCx - chinHalfW, y: chinCenterY };
-            chinRight = { x: headCx + chinHalfW, y: chinCenterY };
-        }
-
-        // Цвета и толщина
-        const strokeColor = lineColorInput.value;
-        const strokeWidth = Number(lineWidthInput.value) / 4096;
-
-        // 1. ЧЕРЕП (Эллипс)
+        // Отрисовка черепа
         const skull = document.createElementNS(SVG_NS, 'ellipse');
-        skull.setAttribute('cx', headCx);
+        skull.setAttribute('cx', cx);
         skull.setAttribute('cy', cy);
-        skull.setAttribute('rx', rX);
-        skull.setAttribute('ry', rY);
+        skull.setAttribute('rx', rx);
+        skull.setAttribute('ry', ry);
         skull.setAttribute('fill', 'none');
-        skull.setAttribute('stroke', strokeColor);
-        skull.setAttribute('stroke-width', strokeWidth);
+        skull.setAttribute('stroke', lineColorInput.value);
+        skull.setAttribute('stroke-width', Number(lineWidthInput.value) / 4096);
         headLayer.appendChild(skull);
 
-        // 2. ЧЕЛЮСТЬ И ПОДБОРОДОК (Жесткие прямые линии L)
+        // Подбородок
+        const chinW = Number(chinWInput.value);
+        const chinYOffset = Number(chinYInput.value) * step5;
+        const actualChinY = yChin + chinYOffset;
+        const chinHalfW = rx * chinW;
+        const chinLeftX = cx - chinHalfW;
+        const chinRightX = cx + chinHalfW;
+
+        const chinLine = document.createElementNS(SVG_NS, 'line');
+        chinLine.setAttribute('x1', chinLeftX); chinLine.setAttribute('y1', actualChinY);
+        chinLine.setAttribute('x2', chinRightX); chinLine.setAttribute('y2', actualChinY);
+        chinLine.setAttribute('stroke', lineColorInput.value);
+        chinLine.setAttribute('stroke-width', Number(lineWidthInput.value) / 4096);
+        headLayer.appendChild(chinLine);
+
+        // Точки крепления к черепу
+        // attachYParam: 0 = центр, 1 = самый низ. Берем от 0 до ry вниз от центра.
+        const attachYParam = Number(jawAttachYInput.value);
+        const attachXParam = Number(jawAttachXInput.value);
+        
+        const attachY = cy + (ry * attachYParam); // Y крепления
+        // X крепления вычисляем по формуле эллипса (чтобы точка всегда была на границе)
+        const normY = (attachY - cy) / ry;
+        const maxXAtY = rx * Math.sqrt(Math.max(0, 1 - normY * normY));
+        const actualAttachX = maxXAtY * attachXParam; // Если 1.0, то ровно на границе
+
+        const attachLeft = { x: cx - actualAttachX, y: attachY };
+        const attachRight = { x: cx + actualAttachX, y: attachY };
+
+        // Точки излома челюсти
+        const breakYParam = Number(jawBreakYInput.value);
+        const breakXParam = Number(jawBreakXInput.value);
+
+        // Y излома: интерполируем между Y крепления и Y подбородка
+        const breakY = attachY + (actualChinY - attachY) * breakYParam;
+        
+        // X излома: интерполируем между X крепления и X подбородка
+        const breakLeftX = attachLeft.x + (chinLeftX - attachLeft.x) * breakXParam;
+        const breakRightX = attachRight.x + (chinRightX - attachRight.x) * breakXParam;
+
+        const breakLeft = { x: breakLeftX, y: breakY };
+        const breakRight = { x: breakRightX, y: breakY };
+
+        // Отрисовка челюсти (ДВЕ ЖЕСТКИЕ ЛИНИИ: L)
         let pathD = `M ${attachLeft.x} ${attachLeft.y} `;
-        
-        // Первая линия челюсти (от черепа вниз к углу)
-        pathD += `L ${cornerLeft.x} ${cornerLeft.y} `;
-        // Вторая линия челюсти (от угла к подбородку)
-        pathD += `L ${chinLeft.x} ${chinLeft.y} `;
-        
-        // Сам подбородок
-        pathD += `L ${chinRight.x} ${chinRight.y} `;
-        
-        // Правая челюсть (от подбородка к углу)
-        pathD += `L ${cornerRight.x} ${cornerRight.y} `;
-        // Правая челюсть (от угла к черепу)
-        pathD += `L ${attachRight.x} ${attachRight.y}`;
+        pathD += `L ${breakLeft.x} ${breakLeft.y} `; // Первая линия
+        pathD += `L ${chinLeftX} ${actualChinY} `;   // Вторая линия
+
+        pathD += `M ${attachRight.x} ${attachRight.y} `;
+        pathD += `L ${breakRight.x} ${breakRight.y} `;
+        pathD += `L ${chinRightX} ${actualChinY}`;
 
         const jawPath = document.createElementNS(SVG_NS, 'path');
         jawPath.setAttribute('d', pathD);
         jawPath.setAttribute('fill', 'none');
-        jawPath.setAttribute('stroke', strokeColor);
-        jawPath.setAttribute('stroke-width', strokeWidth);
+        jawPath.setAttribute('stroke', lineColorInput.value);
+        jawPath.setAttribute('stroke-width', Number(lineWidthInput.value) / 4096);
         jawPath.setAttribute('stroke-linecap', 'round');
         jawPath.setAttribute('stroke-linejoin', 'round');
         headLayer.appendChild(jawPath);
@@ -256,61 +201,45 @@
     showGridInput.addEventListener('change', updateAll);
     showHeadInput.addEventListener('change', updateHead);
     bgColorInput.addEventListener('input', () => { bgColorLayer.style.backgroundColor = bgColorInput.value; });
-    
-    lineWidthInput.addEventListener('input', (e) => {
-        lineWidthValue.textContent = e.target.value;
-        updateHead();
-    });
+    lineWidthInput.addEventListener('input', (e) => { lineWidthValue.textContent = e.target.value; updateHead(); });
     lineColorInput.addEventListener('input', updateHead);
 
-    // Слушатели для головы
     const headControls = [
-        [skullHInput, vSkullH, 2],
-        [skullWInput, vSkullW, 2],
-        [chinYInput, vChinY, 2],
-        [chinWInput, vChinW, 2],
-        [jawYInput, vJawY, 2],
-        [jawWInput, vJawW, 2],
-        [jawBInput, vJawB, 2]
+        [skullWInput, vSkullW], [skullHInput, vSkullH],
+        [chinWInput, vChinW], [chinYInput, vChinY],
+        [jawBreakYInput, vJawBreakY], [jawBreakXInput, vJawBreakX],
+        [jawAttachYInput, vJawAttachY], [jawAttachXInput, vJawAttachX]
     ];
 
-    headControls.forEach(([input, span, decimals]) => {
+    headControls.forEach(([input, span]) => {
         input.addEventListener('input', (e) => {
-            span.textContent = Number(e.target.value).toFixed(decimals);
+            span.textContent = Number(e.target.value).toFixed(2);
             updateHead();
         });
     });
 
-    // chinR (округлость) в этой версии не используется для рисования, 
-    // так как мы делаем прямые линии, но оставим слушатель, чтобы не было ошибок
-    chinRInput.addEventListener('input', (e) => {
-        vChinR.textContent = Number(e.target.value).toFixed(2);
-    });
-
     updateAll();
 
-    // ==========================================
-    // РИСОВАНИЕ И ЗУМ
-    // ==========================================
+    // Рисование и Зум
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
         return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
     }
-    function getStrokeWidth() { return Number(lineWidthInput.value) / 4096; }
-    
+
     function startPath(p) {
         currentPath = document.createElementNS(SVG_NS, 'path');
         currentPath.setAttribute('fill', 'none');
-        currentPath.setAttribute('stroke', '#000000');
-        currentPath.setAttribute('stroke-width', getStrokeWidth());
+        currentPath.setAttribute('stroke', '#000');
+        currentPath.setAttribute('stroke-width', Number(lineWidthInput.value) / 4096);
         currentPath.setAttribute('stroke-linecap', 'round');
         currentPath.setAttribute('stroke-linejoin', 'round');
         currentPoints = [p];
         currentPath.setAttribute('d', `M ${p.x} ${p.y}`);
         drawLayer.appendChild(currentPath);
     }
+
     function extendPath(p) {
         if (!currentPath) return;
         currentPoints.push(p);
@@ -335,6 +264,7 @@
             startPanX = (p[0].x + p[1].x) / 2 - translateX; startPanY = (p[0].y + p[1].y) / 2 - translateY;
         }
     });
+    
     svg.addEventListener('pointermove', (e) => {
         if (!activePointers.has(e.pointerId)) return;
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -349,47 +279,35 @@
             applyTransform();
         } else if (drawing && activePointers.size === 1) extendPath(toSvgCoords(e));
     });
+
     const upCancel = (e) => {
         if (activePointers.has(e.pointerId)) activePointers.delete(e.pointerId);
         if (activePointers.size === 0) { drawing = false; isGestureActive = false; currentPath = null; }
     };
-    svg.addEventListener('pointerup', upCancel); svg.addEventListener('pointercancel', upCancel);
+    
+    svg.addEventListener('pointerup', upCancel); 
+    svg.addEventListener('pointercancel', upCancel);
     resetZoomBtn.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; applyTransform(); });
     clearBtn.addEventListener('click', () => { drawLayer.innerHTML = ''; });
 
     // Экспорт
-    async function getExportSvgString() {
+    document.getElementById('downloadPngBtn').addEventListener('click', async () => {
         const exportSvg = document.createElementNS(SVG_NS, 'svg');
         exportSvg.setAttribute('xmlns', SVG_NS); exportSvg.setAttribute('width', '4096'); exportSvg.setAttribute('height', '4096'); exportSvg.setAttribute('viewBox', '0 0 1 1');
         const bgRect = document.createElementNS(SVG_NS, 'rect');
         bgRect.setAttribute('x', '0'); bgRect.setAttribute('y', '0'); bgRect.setAttribute('width', '1'); bgRect.setAttribute('height', '1'); bgRect.setAttribute('fill', bgColorInput.value);
         exportSvg.appendChild(bgRect);
-        if (currentBgSrc) {
-            const imgEl = document.createElementNS(SVG_NS, 'image');
-            imgEl.setAttribute('href', currentBgSrc);
-            const s = Number(bgScale.value) / 100, w = 1 * (bgNaturalWidth/bgNaturalHeight), h = 1;
-            imgEl.setAttribute('x', 0.5 - w / 2); imgEl.setAttribute('y', 0.5 - h / 2); imgEl.setAttribute('width', w); imgEl.setAttribute('height', h);
-            imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet'); imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
-            const g = document.createElementNS(SVG_NS, 'g');
-            g.setAttribute('transform', `translate(0.5, 0.5) scale(${s}) translate(-0.5, -0.5)`);
-            g.appendChild(imgEl); exportSvg.appendChild(g);
-        }
         exportSvg.appendChild(measureLayer.cloneNode(true)); exportSvg.appendChild(headLayer.cloneNode(true));
-        const drawClone = drawLayer.cloneNode(true); drawClone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
-        exportSvg.appendChild(drawClone);
-        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + new XMLSerializer().serializeToString(exportSvg);
-    }
-    downloadSvgBtn.addEventListener('click', async () => {
-        const blob = new Blob([await getExportSvgString()], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'drawing.svg'; a.click(); URL.revokeObjectURL(url);
-    });
-    downloadPngBtn.addEventListener('click', async () => {
-        const blob = new Blob([await getExportSvgString()], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob); const img = new Image();
+        exportSvg.appendChild(drawLayer.cloneNode(true));
+        
+        const source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + new XMLSerializer().serializeToString(exportSvg);
+        const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
         img.onload = () => {
-            const c = document.createElement('canvas'); c.width = PNG_SIZE; c.height = PNG_SIZE;
-            c.getContext('2d').drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
-            c.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'drawing.png'; a.click(); URL.revokeObjectURL(a.href); }, 'image/png');
+            const c = document.createElement('canvas'); c.width = 4096; c.height = 4096;
+            c.getContext('2d').drawImage(img, 0, 0, 4096, 4096);
+            c.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'head.png'; a.click(); }, 'image/png');
             URL.revokeObjectURL(url);
         };
         img.src = url;
