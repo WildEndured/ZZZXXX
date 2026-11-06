@@ -810,23 +810,16 @@ function draw() {
   ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
   ctx.stroke();
 
-  // 5. Таз (разорванный для соединения с бедрами)
+  // 5. Таз
   ctx.beginPath();
   ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
   ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
   ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos, pelvisXPos + pelvisW, pelvisYPos + cornerRadius);
-  
-  // Внешний край таза (разрыв для левой ноги)
-  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH * 0.5); 
-  
-  // Нижняя часть таза (где пах)
-  ctx.moveTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos + pelvisH);
+  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH - cornerRadius);
+  ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH, pelvisXPos + pelvisW - cornerRadius, pelvisYPos + pelvisH);
   ctx.lineTo(pelvisXPos + cornerRadius, pelvisYPos + pelvisH);
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisH, pelvisXPos, pelvisYPos + pelvisH - cornerRadius);
-  
-  // Внешний край таза (разрыв для правой ноги)
-  ctx.lineTo(pelvisXPos, pelvisYPos + pelvisH * 0.5); 
-  
+  ctx.lineTo(pelvisXPos, pelvisYPos + cornerRadius);
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
@@ -1121,24 +1114,26 @@ function draw() {
       // Бедро: сужение от таза к колену (1. Общий конус)
       const hipWidth = pelvisH * thighWParam;
       
-      // Точки на тазу (Внешняя начинается из середины бокового края таза)
-      const startOuterX = isLeft ? pelvisXPos : pelvisXPos + pelvisW;
-      const startOuterY = pelvisYPos + pelvisH * 0.5; 
+      // ** ПРИВЯЗКА К ТАЗУ **
+      // Внешняя линия начинается от середины бокового края таза
+      const pelvisSideX = isLeft ? pelvisXPos : (pelvisXPos + pelvisW);
+      const pelvisSideY = pelvisYPos + pelvisH * 0.5; 
       
-      const hipOuter = { x: startOuterX + px * innerSign * hipWidth * 0.5, y: startOuterY + py * innerSign * hipWidth * 0.5 };
+      const hipOuter = { x: pelvisSideX, y: pelvisSideY };
       
-      // Внутренняя начинается из низа таза (из паха)
-      const hipInner = { x: hipX - px * innerSign * hipWidth, y: hipY - py * innerSign * hipWidth };
+      // Внутренняя линия начинается от низа таза (ближе к центру)
+      const hipInnerStartY = pelvisYPos + pelvisH;
+      const hipInnerStartX = isLeft ? pelvisXPos + pelvisW * 0.25 : pelvisXPos + pelvisW * 0.75;
+      
+      const hipInner = { x: hipInnerStartX, y: hipInnerStartY };
       
       // Точки на колене
       const kneeOuter = { x: kneeX + px * innerSign * kneeRadius, y: kneeY + py * innerSign * kneeRadius };
       const kneeInner = { x: kneeX - px * innerSign * kneeRadius, y: kneeY - py * innerSign * kneeRadius };
 
       // Внутренняя линия бедра (с впадиной)
-      // 5. Taper the things make a line from the inner edge of the knee ball to the hip dip
-      // 6. Make a dip in the thing to follow the line from the knee to the hip dip
-      const dipX = hipX + dx * 0.25 - px * innerSign * hipWidth * (1 + thighDipParam);
-      const dipY = hipY + dy * 0.25 - py * innerSign * hipWidth * (1 + thighDipParam);
+      const dipX = hipInnerStartX + dx * 0.25 - px * innerSign * hipWidth * (1 + thighDipParam);
+      const dipY = hipInnerStartY + dy * 0.25 - py * innerSign * hipWidth * (1 + thighDipParam);
       
       // Внешняя линия бедра (выпуклая)
       ctx.beginPath();
@@ -1180,11 +1175,10 @@ function draw() {
       ctx.stroke();
 
       // Голень Внутренняя (вогнутая)
-      // 8. 1/3 rule shape the calf, the last 2/3 on inner edge concave
       ctx.beginPath();
       ctx.moveTo(kneeInner.x, kneeInner.y);
       ctx.quadraticCurveTo(
-        calfX - px * innerSign * calfWidth * 0.5, // Вогнутость
+        calfX - px * innerSign * calfWidth * 0.5,
         calfY - py * innerSign * calfWidth * 0.5,
         ankleInner.x, ankleInner.y
       );
@@ -1214,7 +1208,6 @@ function draw() {
       ctx.stroke();
 
       // 7. Show knee bone on the inner edge of the knee more than the outer edge
-      // Внутренний выступ
       const bumpX = kneeX - px * innerSign * kneeRadius;
       const bumpY = kneeY - py * innerSign * kneeRadius;
       
@@ -1229,7 +1222,7 @@ function draw() {
       ctx.stroke();
     };
 
-    // Крепления ног
+    // Крепления ног (для центровки коленей)
     const lHipX = pelvisCx - actualHipJointW;
     const rHipX = pelvisCx + actualHipJointW;
 
