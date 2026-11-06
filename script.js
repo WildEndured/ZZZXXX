@@ -138,19 +138,33 @@
     window.addEventListener('resize', updateBgStyle);
 
     // ==========================================
-    // ОТРИСОВКА РАЗМЕТКИ
+    // МАТЕМАТИКА РАЗМЕТКИ И ГОЛОВЫ
     // ==========================================
+    
+    // Возвращает Y-координаты начала и конца самой верхней зоны
+    function getTopZone() {
+        const padding = Number(paddingSizeInput.value) / 100;
+        const heads = Number(headCountInput.value);
+        const drawingHeight = 1 - padding * 2;
+        const step = drawingHeight / heads;
+        
+        return {
+            startY: padding,       // Верхняя граница зоны
+            stepHeight: step,      // Высота одной головы
+            endY: padding + step   // Нижняя граница верхней зоны
+        };
+    }
+
     function updateGrid() {
         measureLayer.innerHTML = '';
         if (!showGridInput.checked) return;
 
-        const paddingPercent = Number(paddingSizeInput.value) / 100;
+        const { startY, stepHeight } = getTopZone();
         const heads = Number(headCountInput.value);
-        const drawingHeight = 1 - paddingPercent * 2;
-        const headStep = drawingHeight / heads;
 
+        // Горизонтальные линии
         for (let i = 0; i <= heads; i++) {
-            const y = paddingPercent + (i * headStep);
+            const y = startY + (i * stepHeight);
             const line = document.createElementNS(SVG_NS, 'line');
             line.setAttribute('x1', '0'); line.setAttribute('y1', y);
             line.setAttribute('x2', '1'); line.setAttribute('y2', y);
@@ -161,10 +175,10 @@
             measureLayer.appendChild(line);
         }
 
-        if (paddingPercent > 0) {
+        if (Number(paddingSizeInput.value) > 0) {
             const borderRect = document.createElementNS(SVG_NS, 'rect');
-            borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', paddingPercent);
-            borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', drawingHeight);
+            borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', startY);
+            borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', 1 - (startY * 2));
             borderRect.setAttribute('fill', 'none');
             borderRect.setAttribute('stroke', '#ff4444'); 
             borderRect.setAttribute('stroke-width', '0.003');
@@ -173,64 +187,78 @@
         }
     }
 
-    // ==========================================
-    // ОТРИСОВКА ГОЛОВЫ (УПРОЩЕННАЯ)
-    // ==========================================
     function updateHead() {
         headLayer.innerHTML = '';
         if (!showHeadInput.checked) return;
 
-        // Берем размеры прямо из ползунков (переводим в доли от 1)
-        // Ширина 30 -> 0.30, Высота 40 -> 0.40
-        const rx = Number(headWidthInput.value) / 100;
-        const ry = Number(headHeightInput.value) / 100;
+        const { startY, stepHeight } = getTopZone();
+        
+        // Зона головы делится на 5 частей
+        const unit = stepHeight / 5; 
+
+        // Ключевые Y-координаты
+        const yTop = startY;             // 0/5 (макушка)
+        const yCircleBottom = startY + unit * 3; // 3/5 (низ круга)
+        const yChin = startY + unit * 4; // 4/5 (подбородок)
+        
+        // Центр круга по Y
+        const circleCenterY = yTop + unit * 1.5; 
+        // Радиус круга (по умолчанию)
+        const baseRadiusY = unit * 1.5; 
+        
+        // Настройки пользователя
+        const headW = Number(headWidthInput.value) / 100;
+        const headH = Number(headHeightInput.value) / 100;
         const chinW = Number(chinWidthInput.value) / 100;
-        const chinYOffset = Number(chinYInput.value) / 100;
+        const chinYOffset = Number(chinYInput.value) / 100; // Сдвиг подбородка
 
-        // Центр холста по X
-        const cx = 0.5;
-        // Центр круга по Y (сдвигаем вверх, чтобы поместилась челюсть)
-        const cy = 0.35; 
+        // Итоговые размеры
+        const rx = baseRadiusY * headW; // Радиус по X
+        const ry = baseRadiusY * headH; // Радиус по Y
+        const cx = 0.5; // Центр по X
 
-        // 1. Череп (Круг)
+        // 1. Круг (Череп)
         const skull = document.createElementNS(SVG_NS, 'ellipse');
         skull.setAttribute('cx', cx);
-        skull.setAttribute('cy', cy);
+        skull.setAttribute('cy', circleCenterY);
         skull.setAttribute('rx', rx);
         skull.setAttribute('ry', ry);
         skull.setAttribute('fill', 'none');
         skull.setAttribute('stroke', '#4a90d9');
-        skull.setAttribute('stroke-width', '0.005'); // Сделали потолще
+        skull.setAttribute('stroke-width', '0.004');
         headLayer.appendChild(skull);
 
         // 2. Подбородок
-        const chinY = cy + ry + chinYOffset; // Низ круга + сдвиг
-        const chinLeft = cx - chinW;
-        const chinRight = cx + chinW;
+        // Подбородок по умолчанию на yChin, но можно сдвинуть
+        const actualChinY = yChin + (chinYOffset * unit);
+        const chinWidthHalf = rx * chinW; // Ширина подбородка относительно ширины черепа
+        
+        const chinLeftX = cx - chinWidthHalf;
+        const chinRightX = cx + chinWidthHalf;
 
         const chinLine = document.createElementNS(SVG_NS, 'line');
-        chinLine.setAttribute('x1', chinLeft); chinLine.setAttribute('y1', chinY);
-        chinLine.setAttribute('x2', chinRight); chinLine.setAttribute('y2', chinY);
+        chinLine.setAttribute('x1', chinLeftX); chinLine.setAttribute('y1', actualChinY);
+        chinLine.setAttribute('x2', chinRightX); chinLine.setAttribute('y2', actualChinY);
         chinLine.setAttribute('stroke', '#4a90d9');
-        chinLine.setAttribute('stroke-width', '0.005');
+        chinLine.setAttribute('stroke-width', '0.004');
         headLayer.appendChild(chinLine);
 
-        // 3. Челюсть (Линии от краев круга к подбородку)
-        // Левая челюсть
-        const leftJaw = document.createElementNS(SVG_NS, 'path');
-        leftJaw.setAttribute('d', `M ${cx - rx} ${cy} L ${cx - rx*0.8} ${chinY} L ${chinLeft} ${chinY}`);
-        leftJaw.setAttribute('fill', 'none');
-        leftJaw.setAttribute('stroke', '#4a90d9');
-        leftJaw.setAttribute('stroke-width', '0.005');
-        headLayer.appendChild(leftJaw);
+        // 3. Челюсть
+        // Левая челюсть: от левого края круга (на уровне центра) вниз к подбородку
+        const leftJawPath = document.createElementNS(SVG_NS, 'path');
+        leftJawPath.setAttribute('d', `M ${cx - rx} ${circleCenterY} L ${chinLeftX} ${actualChinY}`);
+        leftJawPath.setAttribute('fill', 'none');
+        leftJawPath.setAttribute('stroke', '#4a90d9');
+        leftJawPath.setAttribute('stroke-width', '0.004');
+        headLayer.appendChild(leftJawPath);
 
         // Правая челюсть
-        const rightJaw = document.createElementNS(SVG_NS, 'path');
-        rightJaw.setAttribute('d', `M ${cx + rx} ${cy} L ${cx + rx*0.8} ${chinY} L ${chinRight} ${chinY}`);
-        rightJaw.setAttribute('fill', 'none');
-        rightJaw.setAttribute('stroke', '#4a90d9');
-        rightJaw.setAttribute('stroke-width', '0.005');
-        headLayer.appendChild(rightJaw);
+        const rightJawPath = document.createElementNS(SVG_NS, 'path');
+        rightJawPath.setAttribute('d', `M ${cx + rx} ${circleCenterY} L ${chinRightX} ${actualChinY}`);
+        rightJawPath.setAttribute('fill', 'none');
+        rightJawPath.setAttribute('stroke', '#4a90d9');
+        rightJawPath.setAttribute('stroke-width', '0.004');
+        headLayer.appendChild(rightJawPath);
     }
 
     // --- Слушатели UI ---
@@ -243,23 +271,23 @@
     showHeadInput.addEventListener('change', updateHead);
     
     const headControls = [
-        [headWidthInput, headWidthValue],
-        [headHeightInput, headHeightValue],
-        [chinWidthInput, chinWidthValue],
-        [chinYInput, chinYValue]
+        [headWidthInput, headWidthValue, '%'],
+        [headHeightInput, headHeightValue, '%'],
+        [chinWidthInput, chinWidthValue, '%'],
+        [chinYInput, chinYValue, '']
     ];
 
-    headControls.forEach(([input, span]) => {
+    headControls.forEach(([input, span, suffix]) => {
         input.addEventListener('input', (e) => {
-            span.textContent = e.target.value;
+            span.textContent = e.target.value + suffix;
             updateHead();
         });
     });
 
-    updateAll();
+    updateAll(); // Первичная отрисовка
 
     // ==========================================
-    // РИСОВАНИЕ И ЗУМ (Без изменений)
+    // РИСОВАНИЕ И ЗУМ
     // ==========================================
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
