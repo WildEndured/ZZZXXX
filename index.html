@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SVG Голова</title>
+    <title>SVG Конструктор Головы</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,17 +16,16 @@
                 <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
                 
                 <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-                    <g id="measureLayer"></g>
-                    <!-- НОВЫЙ СЛОЙ ДЛЯ ГОЛОВЫ -->
-                    <g id="headLayer"></g>
-                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+                    <g id="measureLayer"></g> <!-- Сетка -->
+                    <g id="headLayer"></g>    <!-- Слой головы -->
+                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g> <!-- Рисование -->
                 </svg>
             </div>
         </div>
 
         <div class="controls">
             <div class="control-group">
-                <button id="clearBtn">Очистить</button>
+                <button id="clearBtn">Очистить рисунок</button>
                 <button id="downloadSvgBtn">Скачать SVG</button>
                 <button id="downloadPngBtn">Скачать PNG</button>
                 <button id="resetZoomBtn">Сбросить зум</button>
@@ -64,14 +63,14 @@
 
             <!-- УПРАВЛЕНИЕ ГОЛОВОЙ -->
             <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                <legend><input type="checkbox" id="showHead" checked> Голова (болванка)</legend>
+                <legend><input type="checkbox" id="showHead" checked> Голова</legend>
                 <div class="control-group">
-                    <label>Ширина: <input type="range" id="headWidth" min="10" max="100" value="30"><span id="headWidthValue">30</span></label>
-                    <label>Высота: <input type="range" id="headHeight" min="10" max="100" value="40"><span id="headHeightValue">40</span></label>
+                    <label>Ширина: <input type="range" id="headWidth" min="10" max="200" value="100"><span id="headWidthValue">100%</span></label>
+                    <label>Высота: <input type="range" id="headHeight" min="10" max="200" value="100"><span id="headHeightValue">100%</span></label>
                 </div>
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Подбородок: <input type="range" id="chinWidth" min="10" max="100" value="20"><span id="chinWidthValue">20</span></label>
-                    <label>Сдвиг Y: <input type="range" id="chinY" min="-20" max="20" value="0"><span id="chinYValue">0</span></label>
+                    <label>Подбородок: <input type="range" id="chinWidth" min="10" max="100" value="40"><span id="chinWidthValue">40%</span></label>
+                    <label>Сдвиг Y: <input type="range" id="chinY" min="-50" max="50" value="0"><span id="chinYValue">0</span></label>
                 </div>
             </fieldset>
         </div>
