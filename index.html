@@ -160,12 +160,6 @@
         <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
         <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
-        <label class="chk"><input type="checkbox" id="showHipLines" checked> Линии паха и бедер (п.20-22)</label>
-        <label><span class="row">Точка паха (смещение) <span class="val" id="vHipGap">0.50</span></span><input type="range" id="hipGap" min="0.1" max="0.9" step="0.01" value="0.50"></label>
-        <label><span class="row">Ширина паха <span class="val" id="vHipGapW">0.20</span></span><input type="range" id="hipGapW" min="0.01" max="0.5" step="0.01" value="0.20"></label>
-        <label><span class="row">Высота верхних углов <span class="val" id="vHipTopY">0.00</span></span><input type="range" id="hipTopY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Высота середин боков <span class="val" id="vHipMidY">0.50</span></span><input type="range" id="hipMidY" min="0.1" max="0.9" step="0.01" value="0.50"></label>
-        <hr style="border-color:#444; width:100%;">
         <label class="chk"><input type="checkbox" id="showAbsLines" checked> Линии от пупка к плечам</label>
         <label><span class="row">Изгиб линий <span class="val" id="vAbsBend">0.30</span></span><input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30"></label>
       </div>
@@ -278,11 +272,6 @@ const ui = {
   torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
   shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'), trapY: document.getElementById('trapY'),
   pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX'),
-  showHipLines: document.getElementById('showHipLines'), 
-  hipGap: document.getElementById('hipGap'), 
-  hipGapW: document.getElementById('hipGapW'), 
-  hipTopY: document.getElementById('hipTopY'), 
-  hipMidY: document.getElementById('hipMidY'),
   showAbsLines: document.getElementById('showAbsLines'), absBend: document.getElementById('absBend'),
   showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), 
   navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY'),
@@ -311,8 +300,6 @@ const vals = {
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
   vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'), vTrapY: document.getElementById('vTrapY'),
   vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX'),
-  vHipGap: document.getElementById('vHipGap'), vHipGapW: document.getElementById('vHipGapW'), 
-  vHipTopY: document.getElementById('vHipTopY'), vHipMidY: document.getElementById('vHipMidY'),
   vAbsBend: document.getElementById('vAbsBend'),
   vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), 
   vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
@@ -547,29 +534,6 @@ function draw() {
   const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; 
 
   // ============================================
-  // ЛИНИИ БЕДЕР
-  // ============================================
-  const pelvisBottomY = pelvisYPos + pelvisH;
-  const hipGapParam = parseFloat(ui.hipGap.value) || 0.5;
-  const hipGapWParam = parseFloat(ui.hipGapW.value) || 0.2; 
-  
-  const hipGapCenterX = pelvisXPos + pelvisW * hipGapParam; 
-  const hipGapWidth = pelvisW * hipGapWParam;
-  
-  const hipGapLeftPoint = { x: hipGapCenterX - hipGapWidth / 2, y: pelvisBottomY };
-  const hipGapRightPoint = { x: hipGapCenterX + hipGapWidth / 2, y: pelvisBottomY };
-
-  const hipTopYParam = parseFloat(ui.hipTopY.value) || 0;
-  const hipTopOffsetY = hipTopYParam * pelvisH;
-  
-  const hipTopLeftPoint = { x: pelvisXPos + cornerRadius * 0.5, y: pelvisYPos + hipTopOffsetY };
-  const hipTopRightPoint = { x: pelvisXPos + pelvisW - cornerRadius * 0.5, y: pelvisYPos + hipTopOffsetY };
-
-  const hipMidYParam = parseFloat(ui.hipMidY.value) || 0.5;
-  const hipMidLeftPoint = { x: pelvisXPos, y: pelvisYPos + pelvisH * hipMidYParam };
-  const hipMidRightPoint = { x: pelvisXPos + pelvisW, y: pelvisYPos + pelvisH * hipMidYParam };
-
-  // ============================================
   // РУКИ
   // ============================================
   const showArms = ui.showArms.checked;
@@ -702,42 +666,7 @@ function draw() {
   ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
   ctx.stroke();
 
-  // 6. Линии бедер
-  if (ui.showHipLines.checked) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,100,100,0.8)'; 
-    ctx.lineWidth = Math.max(1, lw * 0.6); 
-
-    const bottomStep = pelvisW / 5;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    for (let i = 1; i < 5; i++) {
-      const x = pelvisXPos + bottomStep * i;
-      ctx.moveTo(x, pelvisBottomY - 15);
-      ctx.lineTo(x, pelvisBottomY + 15);
-    }
-    ctx.stroke();
-
-    ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(hipGapLeftPoint.x, hipGapLeftPoint.y);
-    ctx.lineTo(hipTopLeftPoint.x, hipTopLeftPoint.y);
-    ctx.moveTo(hipGapRightPoint.x, hipGapRightPoint.y);
-    ctx.lineTo(hipTopRightPoint.x, hipTopRightPoint.y);
-    ctx.stroke();
-
-    ctx.setLineDash([10, 5]);
-    ctx.beginPath();
-    ctx.moveTo(hipGapLeftPoint.x, hipGapLeftPoint.y);
-    ctx.lineTo(hipMidLeftPoint.x, hipMidLeftPoint.y);
-    ctx.moveTo(hipGapRightPoint.x, hipGapRightPoint.y);
-    ctx.lineTo(hipMidRightPoint.x, hipMidRightPoint.y);
-    ctx.stroke();
-
-    ctx.restore();
-  }
-
-  // 7. Линии пресса
+  // 6. Линии пресса
   if (ui.showAbsLines.checked) {
     ctx.save();
     ctx.beginPath();
@@ -768,7 +697,7 @@ function draw() {
     ctx.restore();
   }
 
-  // 8. Пупок
+  // 7. Пупок
   if (ui.showNavel.checked) {
     ctx.save();
     ctx.strokeStyle = color;
@@ -787,7 +716,7 @@ function draw() {
     ctx.restore();
   }
 
-  // 9. Шея
+  // 8. Шея
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, 0, W, neckBotY); 
@@ -814,7 +743,7 @@ function draw() {
   ctx.stroke();
   ctx.restore(); 
 
-  // 10. Голова
+  // 9. Голова
   ctx.save();
   ctx.strokeStyle = color; ctx.lineWidth = lw;
 
@@ -843,7 +772,7 @@ function draw() {
   }
   ctx.restore();
 
-  // 11. РУКИ
+  // 10. РУКИ
   if (showArms) {
     ctx.save();
     ctx.strokeStyle = color;
@@ -983,10 +912,6 @@ function updateLabels() {
   vals.vTrapY.textContent = parseFloat(ui.trapY.value).toFixed(2);
   vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
   vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
-  vals.vHipGap.textContent = parseFloat(ui.hipGap.value).toFixed(2);
-  vals.vHipGapW.textContent = parseFloat(ui.hipGapW.value).toFixed(2);
-  vals.vHipTopY.textContent = parseFloat(ui.hipTopY.value).toFixed(2);
-  vals.vHipMidY.textContent = parseFloat(ui.hipMidY.value).toFixed(2);
   vals.vAbsBend.textContent = parseFloat(ui.absBend.value).toFixed(2);
   vals.vNavelType.textContent = parseFloat(ui.navelType.value).toFixed(2);
   vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
@@ -1026,8 +951,6 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
   ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
   ui.pelvisR.value = 0.85; ui.pelvisX.value = 0.00;
-  ui.hipGap.value = 0.50; ui.hipGapW.value = 0.20; ui.hipTopY.value = 0.00; ui.hipMidY.value = 0.50;
-  ui.showHipLines.checked = true;
   ui.showAbsLines.checked = true; ui.absBend.value = 0.30;
   ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
   ui.showHeads.checked = true; ui.showSub.checked = true;
