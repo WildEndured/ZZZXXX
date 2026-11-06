@@ -2,32 +2,31 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG Холст с разметкой</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SVG Холст с зумом и разметкой</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <h1>SVG Холст</h1>
         
-        <!-- Контейнер принудительно квадратный -->
+        <!-- Обертка для зума (не дает SVG вылезти за края) -->
         <div class="canvas-wrapper" id="canvasWrapper">
-            <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-                <!-- Фон -->
-                <rect id="bgRect" x="0" y="0" width="1" height="1" fill="#ffffff"/>
-                
-                <!-- Слой разметки (поля и головы) -->
-                <g id="measureLayer"></g>
-                
-                <!-- Слой рисования -->
-                <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
-            </svg>
+            <!-- Внутренний контейнер, который мы будем зумить -->
+            <div class="zoom-container" id="zoomContainer">
+                <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+                    <rect id="bgRect" x="0" y="0" width="1" height="1" fill="#ffffff"/>
+                    <g id="measureLayer"></g>
+                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+                </svg>
+            </div>
         </div>
 
         <div class="controls">
             <button id="clearBtn">Очистить рисунок</button>
             <button id="downloadSvgBtn">Скачать SVG</button>
             <button id="downloadPngBtn">Скачать PNG (4096×4096)</button>
+            <button id="resetZoomBtn">Сбросить зум</button>
             
             <label>
                 Фон:
