@@ -6,7 +6,8 @@
     const zoomContainer = document.getElementById('zoomContainer');
     const drawLayer = document.getElementById('drawLayer');
     const measureLayer = document.getElementById('measureLayer');
-    const bgRect = document.getElementById('bgRect');
+    
+    const bgColorLayer = document.getElementById('bgColorLayer');
     const bgImage = document.getElementById('bgImage');
 
     const clearBtn = document.getElementById('clearBtn');
@@ -42,43 +43,30 @@
     let currentBgSrc = null; 
 
     // --- Зум ---
-    // Начальное состояние: scale = 1 (ровно по размеру контейнера)
     let scale = 1, translateX = 0, translateY = 0;
     let startPanX = 0, startPanY = 0;
     
-    // Pointer events
     const activePointers = new Map();
     let initialPinchDistance = 0;
     let initialScale = 1;
     let isGestureActive = false;
 
-    // --- ОГРАНИЧЕНИЕ ЗУМА ---
-    // Не позволяем отдалить меньше 1 (100%). 
-    // И не позволяем увести холст за края (translateX/Y ограничены).
     function clampTransform() {
-        // Минимальный масштаб = 1
         if (scale < 1) scale = 1;
-
         const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
         const w = wrapperRect.width;
         const h = wrapperRect.height;
-
-        // Максимально допустимый сдвиг
         const maxTranslateX = 0;
         const minTranslateX = w - (w * scale);
-        
         const maxTranslateY = 0;
         const minTranslateY = h - (h * scale);
 
-        // Если scale === 1, сдвиг должен быть 0 (холст ровно по центру)
         if (scale === 1) {
             translateX = 0;
             translateY = 0;
         } else {
-            // Ограничиваем, чтобы не было пустых зон
             if (translateX > maxTranslateX) translateX = maxTranslateX;
             if (translateX < minTranslateX) translateX = minTranslateX;
-            
             if (translateY > maxTranslateY) translateY = maxTranslateY;
             if (translateY < minTranslateY) translateY = minTranslateY;
         }
@@ -89,7 +77,12 @@
         zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // --- Подложка ---
+    // --- Слой фона ---
+    bgColorInput.addEventListener('input', () => {
+        bgColorLayer.style.backgroundColor = bgColorInput.value;
+    });
+
+    // --- Слой подложки ---
     uploadBg.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -97,13 +90,11 @@
         const reader = new FileReader();
         reader.onload = (event) => {
             currentBgSrc = event.target.result;
-            // ВАЖНО: устанавливаем src, а не href
             bgImage.src = currentBgSrc;
             bgImage.style.display = 'block';
             bgControls.style.display = 'flex';
             removeBgBtn.style.display = 'inline-block';
             
-            // Сброс ползунков
             bgOpacity.value = 100;
             bgScale.value = 100;
             updateBgStyle();
@@ -128,7 +119,7 @@
         bgScaleValue.textContent = bgScale.value + '%';
         
         bgImage.style.opacity = opacity;
-        // Масштабируем подложку внутри контейнера
+        // Масштабируем картинку из центра, не трогая остальные слои
         bgImage.style.transform = `scale(${scaleVal})`;
     }
 
@@ -215,7 +206,7 @@
         currentPath.setAttribute('d', d);
     }
 
-    // --- ПОЙНТЕР СОБЫТИЯ ---
+    // --- Pointer Events ---
     svg.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
         
@@ -229,8 +220,6 @@
         } else if (activePointers.size === 2) {
             isGestureActive = true;
             drawing = false;
-            
-            // Удаляем случайную кляксу, если начали рисовать
             if (currentPath) {
                 currentPath.remove();
                 currentPath = null;
@@ -242,7 +231,6 @@
             
             const centerX = (pointers[0].x + pointers[1].x) / 2;
             const centerY = (pointers[0].y + pointers[1].y) / 2;
-            
             startPanX = centerX - translateX;
             startPanY = centerY - translateY;
         }
@@ -257,19 +245,15 @@
             const currentDistance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
             
             let newScale = initialScale * (currentDistance / initialPinchDistance);
-            
-            // Ограничение сверху (макс 20x), снизу (1x) обрабатывается в clampTransform
             newScale = Math.min(newScale, 20);
             
             const currentCenterX = (pointers[0].x + pointers[1].x) / 2;
             const currentCenterY = (pointers[0].y + pointers[1].y) / 2;
 
-            // Формула зума относительно центра
             translateX = currentCenterX - (currentCenterX - translateX) * (newScale / scale);
             translateY = currentCenterY - (currentCenterY - translateY) * (newScale / scale);
             scale = newScale;
             
-            // Панорамирование (сдвиг двумя пальцами)
             translateX += (currentCenterX - startPanX) - translateX;
             translateY += (currentCenterY - startPanY) - translateY;
 
@@ -283,7 +267,6 @@
         if (activePointers.has(e.pointerId)) {
             activePointers.delete(e.pointerId);
         }
-
         if (activePointers.size === 0) {
             drawing = false;
             isGestureActive = false;
@@ -299,7 +282,6 @@
     svg.addEventListener('pointerup', pointerUpOrCancel);
     svg.addEventListener('pointercancel', pointerUpOrCancel);
 
-    // --- Колесико мыши (Зум на ПК) ---
     svg.addEventListener('wheel', (e) => {
         e.preventDefault();
         const zoomFactor = 1.1;
@@ -309,14 +291,12 @@
         const mouseY = (e.clientY - rect.top) / rect.height;
         
         const newScale = Math.min(Math.max(scale * delta, 1), 20);
-        
         translateX -= (mouseX * rect.width) * (newScale - scale);
         translateY -= (mouseY * rect.height) * (newScale - scale);
         scale = newScale;
         applyTransform();
     }, { passive: false });
 
-    // Сброс зума
     resetZoomBtn.addEventListener('click', () => {
         scale = 1; translateX = 0; translateY = 0;
         applyTransform();
@@ -324,7 +304,6 @@
 
     // --- UI ---
     clearBtn.addEventListener('click', () => { drawLayer.innerHTML = ''; });
-    bgColorInput.addEventListener('input', () => { bgRect.setAttribute('fill', bgColorInput.value); });
     brushSizeInput.addEventListener('input', () => { brushSizeValue.textContent = brushSizeInput.value; });
     
     paddingSizeInput.addEventListener('input', (e) => {
@@ -340,21 +319,29 @@
     updateGrid();
 
     // --- Экспорт ---
+    // При экспорте мы собираем все 3 слоя в один SVG-файл
     async function getExportSvgString() {
-        const clone = svg.cloneNode(true);
-        clone.setAttribute('xmlns', SVG_NS);
-        clone.setAttribute('width', '4096');
-        clone.setAttribute('height', '4096');
-        clone.setAttribute('viewBox', '0 0 1 1');
-        clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
+        // Создаем чистый SVG размером 4096х4096
+        const exportSvg = document.createElementNS(SVG_NS, 'svg');
+        exportSvg.setAttribute('xmlns', SVG_NS);
+        exportSvg.setAttribute('width', '4096');
+        exportSvg.setAttribute('height', '4096');
+        exportSvg.setAttribute('viewBox', '0 0 1 1');
 
-        // Вшиваем подложку в SVG
+        // 1. Слой фона
+        const bgRect = document.createElementNS(SVG_NS, 'rect');
+        bgRect.setAttribute('x', '0');
+        bgRect.setAttribute('y', '0');
+        bgRect.setAttribute('width', '1');
+        bgRect.setAttribute('height', '1');
+        bgRect.setAttribute('fill', bgColorInput.value);
+        exportSvg.appendChild(bgRect);
+
+        // 2. Слой подложки
         if (currentBgSrc) {
             const imgEl = document.createElementNS(SVG_NS, 'image');
             imgEl.setAttribute('href', currentBgSrc);
             
-            // Координаты и размеры для viewBox 0 0 1 1
-            // Применяем масштабирование как в CSS
             const s = Number(bgScale.value) / 100;
             const w = s, h = s;
             const x = 0.5 - w/2, y = 0.5 - h/2;
@@ -365,13 +352,19 @@
             imgEl.setAttribute('height', h);
             imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
-            
-            const bgRectClone = clone.querySelector('#bgRect');
-            bgRectClone.after(imgEl);
+            exportSvg.appendChild(imgEl);
         }
 
+        // 3. Слой разметки и рисования (клонируем из текущего SVG)
+        const measureClone = measureLayer.cloneNode(true);
+        const drawClone = drawLayer.cloneNode(true);
+        drawClone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
+        
+        exportSvg.appendChild(measureClone);
+        exportSvg.appendChild(drawClone);
+
         const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(clone);
+        let source = serializer.serializeToString(exportSvg);
         return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + source;
     }
 
@@ -391,8 +384,6 @@
             const canvas = document.createElement('canvas');
             canvas.width = PNG_SIZE; canvas.height = PNG_SIZE;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = bgColorInput.value;
-            ctx.fillRect(0, 0, PNG_SIZE, PNG_SIZE);
             ctx.drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
             URL.revokeObjectURL(url);
 
@@ -401,7 +392,7 @@
             }, 'image/png');
         };
         img.onerror = () => {
-            alert('Ошибка при создании PNG.');
+            alert('Ошибка при создании PNG. Браузер заблокировал рендеринг картинки (CORS/taint).');
             URL.revokeObjectURL(url);
         };
         img.src = url;
