@@ -40,7 +40,11 @@
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
+    
+    // Переменные для подложки
     let currentBgSrc = null; 
+    let bgNaturalWidth = 0;  // Оригинальная ширина картинки
+    let bgNaturalHeight = 0; // Оригинальная высота картинки
 
     // --- Зум ---
     let scale = 1, translateX = 0, translateY = 0;
@@ -90,14 +94,23 @@
         const reader = new FileReader();
         reader.onload = (event) => {
             currentBgSrc = event.target.result;
-            bgImage.src = currentBgSrc;
-            bgImage.style.display = 'block';
-            bgControls.style.display = 'flex';
-            removeBgBtn.style.display = 'inline-block';
             
-            bgOpacity.value = 100;
-            bgScale.value = 100;
-            updateBgStyle();
+            // Создаем временный Image, чтобы узнать оригинальные пропорции
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                bgNaturalWidth = tempImg.naturalWidth;
+                bgNaturalHeight = tempImg.naturalHeight;
+                
+                bgImage.src = currentBgSrc;
+                bgImage.style.display = 'block';
+                bgControls.style.display = 'flex';
+                removeBgBtn.style.display = 'inline-block';
+                
+                bgOpacity.value = 100;
+                bgScale.value = 100;
+                updateBgStyle();
+            };
+            tempImg.src = currentBgSrc;
         };
         reader.readAsDataURL(file);
         e.target.value = '';
@@ -112,19 +125,40 @@
     });
 
     function updateBgStyle() {
+        if (!bgNaturalHeight) return; // Если картинка еще не загрузилась
+
         const opacity = Number(bgOpacity.value) / 100;
-        const scaleVal = Number(bgScale.value) / 100;
+        const scalePercent = Number(bgScale.value) / 100;
         
         bgOpacityValue.textContent = bgOpacity.value + '%';
         bgScaleValue.textContent = bgScale.value + '%';
         
         bgImage.style.opacity = opacity;
-        // Масштабируем картинку из центра, не трогая остальные слои
-        bgImage.style.transform = `scale(${scaleVal})`;
+
+        // --- МАГИЯ ПОДГОНКИ ПО ВЫСОТЕ ---
+        // Получаем размеры нашего рабочего контейнера (он квадратный)
+        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
+        const wrapperHeight = wrapperRect.height; 
+        
+        // Считаем, какой высоты должна быть картинка в пикселях при 100%
+        // Нам нужно, чтобы картинка была ровно по высоте контейнера.
+        // Но так как используется object-fit: contain, картинка центрируется.
+        // Чтобы через scale() добиться нужного визуального размера, 
+        // мы смотрим, как она отрисуется в контейнере по умолчанию.
+        
+        // Проще всего заставить картинку по высоте 100% контейнера.
+        // Для этого зададим ей высоту в CSS (в пикселях), а через transform будем крутить.
+        bgImage.style.height = wrapperHeight + 'px';
+        
+        // Применяем пользовательский масштаб
+        bgImage.style.transform = `scale(${scalePercent})`;
     }
 
     bgOpacity.addEventListener('input', updateBgStyle);
     bgScale.addEventListener('input', updateBgStyle);
+    
+    // При ресайзе окна пересчитываем размер подложки
+    window.addEventListener('resize', updateBgStyle);
 
     // --- Разметка ---
     function updateGrid() {
@@ -319,16 +353,14 @@
     updateGrid();
 
     // --- Экспорт ---
-    // При экспорте мы собираем все 3 слоя в один SVG-файл
     async function getExportSvgString() {
-        // Создаем чистый SVG размером 4096х4096
         const exportSvg = document.createElementNS(SVG_NS, 'svg');
         exportSvg.setAttribute('xmlns', SVG_NS);
         exportSvg.setAttribute('width', '4096');
         exportSvg.setAttribute('height', '4096');
         exportSvg.setAttribute('viewBox', '0 0 1 1');
 
-        // 1. Слой фона
+        // 1. Фон
         const bgRect = document.createElementNS(SVG_NS, 'rect');
         bgRect.setAttribute('x', '0');
         bgRect.setAttribute('y', '0');
@@ -337,14 +369,23 @@
         bgRect.setAttribute('fill', bgColorInput.value);
         exportSvg.appendChild(bgRect);
 
-        // 2. Слой подложки
+        // 2. Подложка
         if (currentBgSrc) {
             const imgEl = document.createElementNS(SVG_NS, 'image');
             imgEl.setAttribute('href', currentBgSrc);
             
-            const s = Number(bgScale.value) / 100;
-            const w = s, h = s;
-            const x = 0.5 - w/2, y = 0.5 - h/2;
+            // Пропорции для вписывания по высоте (чтобы 100% = высота холста)
+            const userScale = Number(bgScale.value) / 100;
+            
+            // Вычисляем, как картинка должна выглядеть в единицах viewBox (0..1)
+            // Высота всегда 1 (весь холст). Ширина зависит от соотношения сторон.
+            const aspect = bgNaturalWidth / bgNaturalHeight;
+            const w = 1 * aspect;
+            const h = 1;
+            
+            // Центрируем картинку
+            const x = 0.5 - w / 2;
+            const y = 0.5 - h / 2;
             
             imgEl.setAttribute('x', x);
             imgEl.setAttribute('y', y);
@@ -352,10 +393,21 @@
             imgEl.setAttribute('height', h);
             imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
-            exportSvg.appendChild(imgEl);
+            
+            // В SVG нет transform-origin center, поэтому применяем трансформацию вручную
+            // через обертку или через translate/scale.
+            // Проще всего обернуть в <g> и применить трансформацию.
+            if (userScale !== 1) {
+                const g = document.createElementNS(SVG_NS, 'g');
+                g.setAttribute('transform', `translate(0.5, 0.5) scale(${userScale}) translate(-0.5, -0.5)`);
+                g.appendChild(imgEl);
+                exportSvg.appendChild(g);
+            } else {
+                exportSvg.appendChild(imgEl);
+            }
         }
 
-        // 3. Слой разметки и рисования (клонируем из текущего SVG)
+        // 3. Разметка и рисование
         const measureClone = measureLayer.cloneNode(true);
         const drawClone = drawLayer.cloneNode(true);
         drawClone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
