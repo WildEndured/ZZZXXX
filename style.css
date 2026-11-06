@@ -1,13 +1,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #ddd; }
 
-#app {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
+#app { display: flex; height: 100vh; overflow: hidden; }
 
-/* Контейнер для холста */
 .canvas-wrap {
   flex: 1;
   display: flex;
@@ -21,95 +16,48 @@ body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #ddd; }
 #canvas {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: contain; /* Теперь холст всегда виден целиком */
   background: #fff;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
 #panel {
-  width: 320px;
+  width: 340px;
   flex-shrink: 0;
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
   background: #252525;
-  overflow-y: auto;
   border-left: 1px solid #333;
 }
 
+/* Вкладки */
+.tabs { display: flex; border-bottom: 1px solid #333; background: #1e1e1e; }
+.tab {
+  flex: 1; padding: 12px; background: none; border: none; color: #888;
+  font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; background: #252525; }
+.tab-content { display: none; padding: 16px; overflow-y: auto; flex: 1; }
+.tab-content.active { display: block; }
+
 h2 { font-size: 16px; margin-bottom: 12px; color: #fff; }
+label { display: block; font-size: 13px; margin-bottom: 12px; color: #aaa; }
+label span { float: right; color: #4fc3f7; font-weight: 600; }
+input[type="range"] { width: 100%; margin-top: 6px; accent-color: #4fc3f7; }
+select { width: 100%; margin-top: 6px; padding: 6px; background: #333; color: #ddd; border: 1px solid #444; border-radius: 4px; }
 
-label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: 12px;
-  color: #aaa;
+fieldset { border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 12px; }
+legend { font-size: 12px; color: #4fc3f7; padding: 0 6px; }
+
+button#download {
+  margin: 16px; padding: 14px; background: #4fc3f7; color: #111;
+  border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;
 }
+button#download:hover { background: #29b6f6; }
 
-label span {
-  float: right;
-  color: #4fc3f7;
-  font-weight: 600;
-}
-
-input[type="range"] {
-  width: 100%;
-  margin-top: 6px;
-  accent-color: #4fc3f7;
-}
-
-select {
-  width: 100%;
-  margin-top: 6px;
-  padding: 6px;
-  background: #333;
-  color: #ddd;
-  border: 1px solid #444;
-  border-radius: 4px;
-}
-
-fieldset {
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 12px;
-}
-
-legend {
-  font-size: 12px;
-  color: #4fc3f7;
-  padding: 0 6px;
-}
-
-button {
-  width: 100%;
-  padding: 12px;
-  background: #4fc3f7;
-  color: #111;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-button:hover { background: #29b6f6; }
-
-/* ===== МОБИЛЬНАЯ ВЕРСИЯ (СМАРТФОНЫ) ===== */
+/* Мобильная версия */
 @media (max-width: 768px) {
-  #app {
-    flex-direction: column; /* Ставим холст сверху, панель снизу */
-  }
-  
-  .canvas-wrap {
-    flex: none;
-    height: 40vh; /* Холст занимает 40% высоты экрана */
-    border-bottom: 1px solid #333;
-  }
-
-  #panel {
-    width: 100%;
-    flex: 1; /* Панель занимает оставшееся место */
-    border-left: none;
-    border-top: 1px solid #333;
-  }
+  #app { flex-direction: column; }
+  .canvas-wrap { flex: 1; height: 50vh; border-bottom: 1px solid #333; }
+  #panel { width: 100%; height: 50vh; flex: none; border-left: none; }
 }
