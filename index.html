@@ -6,89 +6,32 @@
 <meta name="build" content="DEV">
 <title>Голова, Торс, Таз, Плечи, Руки и Ноги</title>
 <style>
-  :root {
-    --bg: #1e1e1e;
-    --panel: #2a2a2a;
-    --text: #eee;
-    --accent: #4a90d9;
-    --border: #444;
-  }
+  :root { --bg: #1e1e1e; --panel: #2a2a2a; --text: #eee; --accent: #4a90d9; --border: #444; }
   * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 12px;
-    font-family: system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--text);
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-  }
+  body { margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .wrap { display: flex; gap: 16px; align-items: flex-start; width: 100%; max-width: 1600px; }
-
-  .panel {
-    flex: 0 0 340px;
-    display: flex; flex-direction: column; gap: 8px;
-    background: var(--panel); padding: 12px; border-radius: 10px;
-    max-height: 92vh; overflow-y: auto;
-  }
-
-  .accordion {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    background: #222;
-  }
-  .accordion-header {
-    background: #333; padding: 10px 14px;
-    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-    font-size: 14px; font-weight: 600; color: var(--accent);
-    user-select: none;
-  }
+  .panel { flex: 0 0 340px; display: flex; flex-direction: column; gap: 8px; background: var(--panel); padding: 12px; border-radius: 10px; max-height: 92vh; overflow-y: auto; }
+  .accordion { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #222; }
+  .accordion-header { background: #333; padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; color: var(--accent); user-select: none; }
   .accordion-header:hover { background: #3a3a3a; }
-  .accordion-header::after {
-    content: '▼'; font-size: 10px; transition: transform 0.3s;
-  }
-  .accordion.open .accordion-header::after {
-    transform: rotate(-180deg);
-  }
-  .accordion-content {
-    display: none; padding: 12px;
-    flex-direction: column; gap: 12px;
-    border-top: 1px solid var(--border);
-  }
-  .accordion.open .accordion-content {
-    display: flex;
-  }
-
+  .accordion-header::after { content: '▼'; font-size: 10px; transition: transform 0.3s; }
+  .accordion.open .accordion-header::after { transform: rotate(-180deg); }
+  .accordion-content { display: none; padding: 12px; flex-direction: column; gap: 12px; border-top: 1px solid var(--border); }
+  .accordion.open .accordion-content { display: flex; }
   label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
   label .row { display: flex; justify-content: space-between; align-items: center; color: #ccc; }
   label .val { color: var(--accent); font-variant-numeric: tabular-nums; }
   input[type="range"] { width: 100%; accent-color: var(--accent); }
   input[type="color"] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
   .chk { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
-
-  button {
-    padding: 8px 12px; border-radius: 6px; border: none;
-    background: var(--accent); color: #fff; font-size: 13px;
-    cursor: pointer; transition: background 0.2s;
-  }
+  button { padding: 8px 12px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-size: 13px; cursor: pointer; transition: background 0.2s; }
   button:hover { background: #5aa0e9; }
   button.sec { background: #444; }
   button.sec:hover { background: #555; }
-
-  .subhead {
-    font-size: 12px; font-weight: 600; color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.5px;
-    margin: 4px 0 2px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 4px;
-  }
+  .subhead { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 0 2px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
   .sep { border: none; border-top: 1px solid #444; width: 100%; }
-
-  .stage {
-    flex: 1; min-width: 0; max-height: 92vh; overflow: auto;
-    border: 1px solid var(--border); border-radius: 8px;
-    background: #000; display: flex; justify-content: center;
-  }
+  .stage { flex: 1; min-width: 0; max-height: 92vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: #000; display: flex; justify-content: center; }
   canvas { display: block; max-width: 100%; height: auto; }
-
   @media (max-width: 900px) {
     .wrap { flex-direction: column; align-items: center; }
     .panel { flex: 0 0 auto; width: 100%; max-height: 50vh; order: 2; }
@@ -112,7 +55,6 @@
 (function autoUpdateCheck() {
   const currentBuild = document.querySelector('meta[name="build"]')?.content;
   if (!currentBuild || currentBuild === 'DEV') return;
-
   setInterval(async () => {
     try {
       const res = await fetch(window.location.href, { cache: 'no-store' });
@@ -128,12 +70,7 @@
 /* ============================================================
    КОНСТАНТЫ ПРОПОРЦИЙ
    ============================================================ */
-const PROPORTIONS = {
-  skullHeight: 3 / 5,
-  chinLine:    4 / 5,
-  torsoTop:    1.0,
-  torsoBottom: 2.0,
-};
+const PROPORTIONS = { skullHeight: 3 / 5, chinLine: 4 / 5, torsoTop: 1.0, torsoBottom: 2.0 };
 
 /* ============================================================
    ДЕКЛАРАТИВНАЯ СХЕМА ПАРАМЕТРОВ
@@ -141,7 +78,7 @@ const PROPORTIONS = {
 const SCHEMA = (() => {
   const S = {};
 
-  // ---- Общее и подложка ----
+  // ---- Общее ----
   S.showRef = { type: 'checkbox', def: true, label: 'Показывать подложку', group: 'common' };
   S.refOp = { type: 'range', def: 0.5, min: 0, max: 1, step: 0.05, fmt: 2, label: 'Прозрачность', group: 'common' };
   S.heads = { type: 'range', def: 5.0, min: 3, max: 12, step: 0.1, fmt: 1, label: 'Рост в головах', group: 'common' };
@@ -161,14 +98,14 @@ const SCHEMA = (() => {
   S.jawW   = { type: 'range', def: 0.78, min: 0.3, max: 1.2, step: 0.01, fmt: 2, label: 'Ширина угла (B)', group: 'head' };
   S.jawB   = { type: 'range', def: 0.73, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота угла (B)', group: 'head' };
 
-  // ---- Шея и плечи ----
+  // ---- Шея ----
   S.neckW = { type: 'range', def: 0.30, min: 0.1, max: 0.8, step: 0.01, fmt: 2, label: 'Ширина шеи', group: 'neck' };
   S.neckX = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение шеи по X', group: 'neck' };
   S.shoulderY = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение плеч по Y', group: 'neck' };
   S.clavY = { type: 'range', def: 0.80, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота ключиц', group: 'neck' };
   S.trapY = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Трапеция (у шеи)', group: 'neck' };
 
-  // ---- Торс и таз ----
+  // ---- Торс ----
   S.torsoH   = { type: 'range', def: 0.85, min: 0.5, max: 1.3, step: 0.01, fmt: 2, label: 'Высота торса', group: 'torso' };
   S.torsoW   = { type: 'range', def: 1.50, min: 0.5, max: 2.00, step: 0.01, fmt: 2, label: 'Ширина торса', group: 'torso' };
   S.torsoX   = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение торса по X', group: 'torso' };
@@ -186,18 +123,17 @@ const SCHEMA = (() => {
   S.navelH    = { type: 'range', def: 0.23, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота линии', group: 'navel' };
   S.navelY    = { type: 'range', def: -0.05, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение по Y', group: 'navel' };
 
-  // ---- Руки: общее ----
+  // ---- Руки ----
   S.showArms = { type: 'checkbox', def: true, label: 'Показывать руки', group: 'arms' };
-  S.wristR   = { type: 'range', def: 0.12, min: 0.05, max: 0.40, step: 0.01, fmt: 2, label: 'Радиус запястья (доля таза)', group: 'arms' };
+  S.wristR   = { type: 'range', def: 0.12, min: 0.05, max: 0.40, step: 0.01, fmt: 2, label: 'Радиус запястья', group: 'arms' };
   S.armLw    = { type: 'range', def: 1.0, min: 0.3, max: 2, step: 0.1, fmt: 1, label: 'Толщина рук', group: 'arms' };
   S.showWristBall = { type: 'checkbox', def: true, label: 'Шар запястья', group: 'arms' };
-  S.showElbowBall = { type: 'checkbox', def: true, label: 'Шар локтя (как запястье)', group: 'arms' };
+  S.showElbowBall = { type: 'checkbox', def: true, label: 'Шар локтя', group: 'arms' };
   S.showElbow     = { type: 'checkbox', def: true, label: 'Точка локтя', group: 'arms' };
-  S.crossPos   = { type: 'range', def: 0.33, min: 0.1, max: 0.9, step: 0.01, fmt: 2, label: 'Позиция метки (локоть → запястье)', group: 'arms' };
+  S.crossPos   = { type: 'range', def: 0.33, min: 0.1, max: 0.9, step: 0.01, fmt: 2, label: 'Позиция метки', group: 'arms' };
   S.crossW     = { type: 'range', def: 1.5, min: 0, max: 3, step: 0.01, fmt: 2, label: 'Ширина расширения', group: 'arms' };
-  S.crossRound = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Вогнутость (внутр.)', group: 'arms' };
+  S.crossRound = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Вогнутость', group: 'arms' };
 
-  // ---- Руки: левая и правая ----
   const armSide = (side, defSign) => ({
     [`${side}ShoulderAngle`]: { type: 'range', def: 0.00, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб плеча', group: 'arms' },
     [`${side}ElbowAngle`]:    { type: 'range', def: 0.10, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб локтя', group: 'arms' },
@@ -208,7 +144,7 @@ const SCHEMA = (() => {
 
   // ---- НОГИ ----
   S.showLegs = { type: 'checkbox', def: true, label: 'Показывать ноги', group: 'legs' };
-  S.legR = { type: 'range', def: 0.15, min: 0.05, max: 0.5, step: 0.01, fmt: 2, label: 'Радиус бедра/голени (доля таза)', group: 'legs' };
+  S.legR = { type: 'range', def: 0.15, min: 0.05, max: 0.5, step: 0.01, fmt: 2, label: 'Радиус бедра/голени', group: 'legs' };
   S.legLw = { type: 'range', def: 1.0, min: 0.3, max: 2, step: 0.1, fmt: 1, label: 'Толщина ног', group: 'legs' };
   S.showKneeBall = { type: 'checkbox', def: true, label: 'Шар колена', group: 'legs' };
   S.showAnkleBall = { type: 'checkbox', def: true, label: 'Шар стопы', group: 'legs' };
@@ -226,7 +162,7 @@ const SCHEMA = (() => {
 })();
 
 /* ============================================================
-   ОПИСАНИЕ ГРУПП (заголовки аккордеонов)
+   ГРУППЫ И ПОСТРОЕНИЕ UI
    ============================================================ */
 const GROUPS = [
   { id: 'common', title: 'Общее и Подложка', open: true },
@@ -238,9 +174,6 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
-/* ============================================================
-   ПОСТРОЕНИЕ UI ИЗ СХЕМЫ
-   ============================================================ */
 const panel = document.getElementById('panel');
 const ui = {};
 const valEls = {};
@@ -262,11 +195,11 @@ function buildPanel() {
   const orderTorso = ['torsoH','torsoW','torsoX','torsoTop','torsoBot','__sep','pelvisR','pelvisX','__sep','showAbsLines','absBend'];
   const orderNavel = ['showNavel','navelType','navelW','navelH','navelY'];
   const orderArms = ['showArms','wristR','armLw','showWristBall','showElbowBall','showElbow',
-                     '__sub:Метка (расширение) на предплечье','crossPos','crossW','crossRound',
+                     '__sub:Метка на предплечье','crossPos','crossW','crossRound',
                      '__sep','__sub:Левая рука','lShoulderAngle','lElbowAngle','lWristX','lWristY',
                      '__sep','__sub:Правая рука','rShoulderAngle','rElbowAngle','rWristX','rWristY'];
   
-  // Новый порядок для ног:
+  // НОВОЕ: Порядок для ног
   const orderLegs = ['showLegs','legR','legLw','showKneeBall','showAnkleBall','showKneePoint',
                      '__sep','__sub:Левая нога','lHipAngle','lKneeAngle','lFootX','lFootY',
                      '__sep','__sub:Правая нога','rHipAngle','rKneeAngle','rFootX','rFootY'];
@@ -301,23 +234,15 @@ function makeSubhead(text) {
 
 function makeUploadRow() {
   const wrap = document.createElement('div');
-  wrap.style.display = 'flex';
-  wrap.style.flexDirection = 'column';
-  wrap.style.gap = '6px';
-
+  wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
   const btn = document.createElement('button');
   btn.className = 'sec';
   btn.textContent = 'Загрузить картинку';
   const file = document.createElement('input');
-  file.type = 'file';
-  file.accept = 'image/*';
-  file.style.display = 'none';
-
+  file.type = 'file'; file.accept = 'image/*'; file.style.display = 'none';
   btn.addEventListener('click', () => file.click());
   file.addEventListener('change', onFileChange);
-
-  wrap.appendChild(btn);
-  wrap.appendChild(file);
+  wrap.appendChild(btn); wrap.appendChild(file);
   return wrap;
 }
 
@@ -326,57 +251,37 @@ function makeField(key, cfg) {
     const label = document.createElement('label');
     label.className = 'chk';
     const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.id = key;
-    input.checked = !!cfg.def;
+    input.type = 'checkbox'; input.id = key; input.checked = !!cfg.def;
     input.addEventListener('input', scheduleDraw);
     label.appendChild(input);
     label.appendChild(document.createTextNode(cfg.label));
     ui[key] = input;
     return label;
   }
-
   if (cfg.type === 'color') {
     const label = document.createElement('label');
     const row = document.createElement('span');
-    row.className = 'row';
-    row.textContent = cfg.label;
+    row.className = 'row'; row.textContent = cfg.label;
     const input = document.createElement('input');
-    input.type = 'color';
-    input.id = key;
-    input.value = cfg.def;
+    input.type = 'color'; input.id = key; input.value = cfg.def;
     input.addEventListener('input', scheduleDraw);
-    label.appendChild(row);
-    label.appendChild(input);
+    label.appendChild(row); label.appendChild(input);
     ui[key] = input;
     return label;
   }
-
   const label = document.createElement('label');
   const row = document.createElement('span');
   row.className = 'row';
-  const txt = document.createElement('span');
-  txt.textContent = cfg.label;
-  const val = document.createElement('span');
-  val.className = 'val';
-  val.id = 'v_' + key;
+  const txt = document.createElement('span'); txt.textContent = cfg.label;
+  const val = document.createElement('span'); val.className = 'val'; val.id = 'v_' + key;
   val.textContent = formatVal(cfg.def, cfg.fmt);
-  row.appendChild(txt);
-  row.appendChild(val);
-
+  row.appendChild(txt); row.appendChild(val);
   const input = document.createElement('input');
-  input.type = 'range';
-  input.id = key;
-  input.min = cfg.min;
-  input.max = cfg.max;
-  input.step = cfg.step;
-  input.value = cfg.def;
-  input.addEventListener('input', () => { scheduleDraw(); });
-  input.addEventListener('change', () => { scheduleDraw(); });
-
-  label.appendChild(row);
-  label.appendChild(input);
-
+  input.type = 'range'; input.id = key;
+  input.min = cfg.min; input.max = cfg.max; input.step = cfg.step; input.value = cfg.def;
+  input.addEventListener('input', scheduleDraw);
+  input.addEventListener('change', scheduleDraw);
+  label.appendChild(row); label.appendChild(input);
   ui[key] = input;
   valEls[key] = { el: val, fmt: cfg.fmt };
   return label;
@@ -394,9 +299,6 @@ function updateLabels() {
   }
 }
 
-/* ============================================================
-   ЧТЕНИЕ ПАРАМЕТРОВ
-   ============================================================ */
 function readParams() {
   const P = {};
   for (const key in SCHEMA) {
@@ -409,7 +311,7 @@ function readParams() {
 }
 
 /* ============================================================
-   МАТЕМАТИКА / ГЕОМЕТРИЯ
+   ГЕОМЕТРИЯ
    ============================================================ */
 function ellipseDx(y, cy, rY) {
   const t = (y - cy) / rY;
@@ -423,7 +325,6 @@ function jawAttachPoint(skull, param) {
 function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   const dx = wristBase.x - shoulder.x;
   const dy = wristBase.y - shoulder.y;
-
   const cosA = Math.cos(shoulderAngle);
   const sinA = Math.sin(shoulderAngle);
   const rx = dx * cosA - dy * sinA;
@@ -439,7 +340,6 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
     x: mx + px * elbowAngle * len * 0.5,
     y: my + py * elbowAngle * len * 0.5
   };
-
   return { shoulder, elbow, wrist, ballRadius };
 }
 
@@ -451,7 +351,7 @@ function computeSkeleton(P, W, H) {
   const cx = W / 2;
   const headStep = H / P.heads;
 
-  // ---------- ГОЛОВА ----------
+  // Голова
   const baseR = headStep * PROPORTIONS.skullHeight / 2;
   const rX = baseR * P.skullW;
   const rY = baseR * P.skullH;
@@ -474,29 +374,25 @@ function computeSkeleton(P, W, H) {
   const cornerRight = { x: headCx + rX * P.jawW, y: jawAttachY + (chinCenterY - jawAttachY) * P.jawB };
 
   let chinLeft, chinRight;
-  if (chinHalfW < 1.5) {
-    chinLeft = chinRight = { x: headCx, y: chinCenterY };
-  } else {
+  if (chinHalfW < 1.5) { chinLeft = chinRight = { x: headCx, y: chinCenterY }; }
+  else {
     chinLeft  = { x: headCx - chinHalfW, y: chinCenterY };
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
   sk.head = {
-    cx: headCx, cy, rX, rY,
-    top: skullTop, bottom: skullBottom,
-    leftEdge:  (y) => ({ x: headCx - rX * ellipseDx(y, cy, rY), y }),
-    rightEdge: (y) => ({ x: headCx + rX * ellipseDx(y, cy, rY), y }),
+    cx: headCx, cy, rX, rY, top: skullTop, bottom: skullBottom,
     chin: { centerY: chinCenterY, halfW: chinHalfW, round: chinRound, left: chinLeft, right: chinRight },
     jaw:  { attachY: jawAttachY, attachLeft, attachRight, cornerLeft, cornerRight },
   };
 
-  // ---------- ШЕЯ ----------
+  // Шея
   const neckHalfW = rX * P.neckW;
   const neckCx = headCx + P.neckX * rX;
   const neckTopY = chinCenterY - headStep / 10;
   const neckBotY = headStep;
 
-  // ---------- ТОРС ----------
+  // Торс
   const torsoTopY = headStep * PROPORTIONS.torsoTop;
   const torsoBotY = headStep * PROPORTIONS.torsoBottom;
   const baseTorsoH = torsoBotY - torsoTopY;
@@ -510,14 +406,9 @@ function computeSkeleton(P, W, H) {
   const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
 
-  const torso = {
-    cx: torsoCx, cy: torsoCenterY, rX: torsoRX, rY: torsoRY,
-    topY: torsoTopActualY, botY: torsoBottomY,
-    topSqueeze: P.torsoTop, botSqueeze: P.torsoBot,
-  };
-  sk.torso = torso;
+  sk.torso = { cx: torsoCx, cy: torsoCenterY, rX: torsoRX, rY: torsoRY, topY: torsoTopActualY, botY: torsoBottomY, topSqueeze: P.torsoTop, botSqueeze: P.torsoBot };
 
-  // ---------- ПЛЕЧИ ----------
+  // Плечи
   const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
   const shoulderCy = torsoTopActualY + torsoSubStep / 2 + P.shoulderY * torsoSubStep;
   const shoulderRadius = torsoSubStep / 2;
@@ -538,19 +429,14 @@ function computeSkeleton(P, W, H) {
   const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * P.clavY };
   const clavTorsoAttachY = torsoTopActualY + torsoRY * 0.2;
 
-  sk.neck = {
-    cx: neckCx, halfW: neckHalfW,
-    topY: neckTopY, botY: neckBotY, baseY: neckBaseY,
-    baseLeftX: neckBaseLeftX, baseRightX: neckBaseRightX,
-  };
+  sk.neck = { cx: neckCx, halfW: neckHalfW, topY: neckTopY, botY: neckBotY, baseY: neckBaseY, baseLeftX: neckBaseLeftX, baseRightX: neckBaseRightX };
   sk.shoulders = {
     left:  { cx: shoulderLeftCx,  cy: shoulderCy, r: shoulderRadius },
     right: { cx: shoulderRightCx, cy: shoulderCy, r: shoulderRadius },
-    trapLeftAttach, trapRightAttach,
-    clavLeftAttach, clavRightAttach, clavTorsoAttachY,
+    trapLeftAttach, trapRightAttach, clavLeftAttach, clavRightAttach, clavTorsoAttachY,
   };
 
-  // ---------- ТАЗ ----------
+  // Таз (красный прямоугольник на схеме)
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
   const pelvisW = torsoHeight;
@@ -562,57 +448,42 @@ function computeSkeleton(P, W, H) {
   const maxRadius = Math.min(pelvisW, pelvisH) / 2;
   const cornerRadius = maxRadius * P.pelvisR;
 
-  const pelvis = {
-    x: pelvisXPos, y: pelvisYPos, w: pelvisW, h: pelvisH,
-    cx: pelvisCx, r: cornerRadius,
-    botY: pelvisYPos + pelvisH,
-  };
-  sk.pelvis = pelvis;
+  sk.pelvis = { x: pelvisXPos, y: pelvisYPos, w: pelvisW, h: pelvisH, cx: pelvisCx, r: cornerRadius, botY: pelvisYPos + pelvisH };
 
-  // ---------- ПУПОК ----------
-  const totalTorsoPelvisH = pelvis.botY - torsoTopActualY;
+  // Пупок
+  const totalTorsoPelvisH = sk.pelvis.botY - torsoTopActualY;
   const navelThird = totalTorsoPelvisH / 3;
   const navelCenterY = torsoTopActualY + navelThird * 2 + P.navelY * totalTorsoPelvisH;
-  sk.navel = {
-    x: torsoCx, y: navelCenterY,
-    lineW: P.navelW * torsoRX * P.navelType,
-    lineH: P.navelH * torsoRY * P.navelType,
-    type: P.navelType,
-  };
+  sk.navel = { x: torsoCx, y: navelCenterY, lineW: P.navelW * torsoRX * P.navelType, lineH: P.navelH * torsoRY * P.navelType, type: P.navelType };
 
-  // ---------- РУКИ ----------
+  // Руки
   const wristRadius = Math.max(1, pelvisH * P.wristR);
-  const lWristBase = {
-    x: pelvisXPos - wristRadius + P.lWristX * pelvisW,
-    y: pelvis.botY - wristRadius + P.lWristY * pelvisH,
-  };
-  const rWristBase = {
-    x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW,
-    y: pelvis.botY - wristRadius + P.rWristY * pelvisH,
-  };
-
+  const lWristBase = { x: pelvisXPos - wristRadius + P.lWristX * pelvisW, y: pelvis.botY - wristRadius + P.lWristY * pelvisH };
+  const rWristBase = { x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW, y: pelvis.botY - wristRadius + P.rWristY * pelvisH };
   sk.arms = {
     wristRadius,
     l: buildArm({ x: shoulderLeftCx,  y: shoulderCy }, lWristBase, -P.lShoulderAngle, -P.lElbowAngle, wristRadius),
     r: buildArm({ x: shoulderRightCx, y: shoulderCy }, rWristBase,  P.rShoulderAngle,  P.rElbowAngle, wristRadius),
   };
 
-  // ---------- НОГИ ----------
+  // ---- НОГИ ----
   const legRadius = Math.max(1, pelvisH * P.legR);
   
-  // Точка выхода ноги из таза (точки 1 и 4 на схеме)
-  // Ноги крепятся чуть ниже верха таза, ближе к его краям
-  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvisYPos + pelvis.h * 0.15 };
-  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvisYPos + pelvis.h * 0.15 };
+  // Точки 1 и 4 на схеме (верхние углы выхода из таза)
+  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
+  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
 
-  // Положение стопы (по умолчанию под тазом, с учётом смещений)
+  // Стопы: уходят вниз на длину бедра + голени
+  // Длина ноги от таза до стопы = ~2.5 высоты таза
+  const legLength = pelvisH * 2.5;
+  
   const lFootBase = {
-    x: pelvisXPos + pelvis.w * 0.25 + P.lFootX * pelvisW,
-    y: pelvis.botY + pelvis.h * 1.5 + P.lFootY * pelvisH, // уходит вниз
+    x: hipLeftAnchor.x + P.lFootX * pelvisW,
+    y: hipLeftAnchor.y + legLength + P.lFootY * pelvisH,
   };
   const rFootBase = {
-    x: pelvisXPos + pelvis.w * 0.75 + P.rFootX * pelvisW,
-    y: pelvis.botY + pelvis.h * 1.5 + P.rFootY * pelvisH,
+    x: hipRightAnchor.x + P.rFootX * pelvisW,
+    y: hipRightAnchor.y + legLength + P.rFootY * pelvisH,
   };
 
   sk.legs = {
@@ -621,7 +492,7 @@ function computeSkeleton(P, W, H) {
     r: buildArm(hipRightAnchor, rFootBase,  P.rHipAngle,  P.rKneeAngle, legRadius),
   };
 
-  // ---------- СЕТКА ----------
+  // Сетка
   sk.grid = { headLines: Array.from({ length: Math.floor(P.heads) + 1 }, (_, i) => i * headStep) };
 
   return sk;
@@ -632,103 +503,72 @@ function computeSkeleton(P, W, H) {
    ============================================================ */
 let refImage = null;
 
+// ВАЖНО: legs добавлены в самый конец, чтобы рисоваться ПОВЕРХ таза
 const LAYERS = [
   ['reference',   renderReference],
   ['grid',        renderGrid],
-  ['legs',        renderLegs],       // <-- Ноги (под тазом)
   ['shoulders',   renderShoulders],
   ['clavicles',   renderClavicles],
   ['torso',       renderTorso],
-  ['pelvis',      renderPelvis],     // <-- Таз (перекрывает верх ног)
+  ['pelvis',      renderPelvis],
   ['absLines',    renderAbsLines],
   ['navel',       renderNavel],
   ['neck',        renderNeck],
   ['head',        renderHead],
   ['arms',        renderArms],
+  ['legs',        renderLegs], // <-- В самом конце!
 ];
 
 function renderReference(ctx, sk, P, W, H) {
   if (!refImage || !P.showRef) return;
-  ctx.save();
-  ctx.globalAlpha = P.refOp || 0.5;
-  ctx.drawImage(refImage, 0, 0, W, H);
-  ctx.restore();
+  ctx.save(); ctx.globalAlpha = P.refOp || 0.5; ctx.drawImage(refImage, 0, 0, W, H); ctx.restore();
 }
 
 function renderGrid(ctx, sk, P, W) {
   if (P.showHeads) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(180,180,180,0.7)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([20, 20]);
+    ctx.save(); ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
     ctx.beginPath();
     for (const y of sk.grid.headLines) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
-    ctx.stroke();
-    ctx.restore();
+    ctx.stroke(); ctx.restore();
   }
-
   if (P.showSub) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(100,150,255,0.8)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 15]);
-
+    ctx.save(); ctx.strokeStyle = 'rgba(100,150,255,0.8)'; ctx.lineWidth = 2; ctx.setLineDash([10, 15]);
     const head = sk.head;
-    const headTopSubY = head.top;
-    const headBotSubY = head.chin.centerY;
-    const headSubStep = (headBotSubY - headTopSubY) / 5;
+    const hStep = (head.chin.centerY - head.top) / 5;
     ctx.beginPath();
-    for (let i = 1; i < 5; i++) {
-      const y = headTopSubY + headSubStep * i;
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-    }
+    for (let i = 1; i < 5; i++) { ctx.moveTo(0, head.top + hStep * i); ctx.lineTo(W, head.top + hStep * i); }
     ctx.stroke();
 
-    const t = sk.torso;
-    const tStep = (t.botY - t.topY) / 3;
+    const t = sk.torso; const tStep = (t.botY - t.topY) / 3;
     ctx.beginPath();
-    for (let i = 1; i < 3; i++) {
-      const y = t.topY + tStep * i;
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-    }
+    for (let i = 1; i < 3; i++) { ctx.moveTo(0, t.topY + tStep * i); ctx.lineTo(W, t.topY + tStep * i); }
     ctx.stroke();
 
-    const p = sk.pelvis;
-    const pStep = p.h / 2;
+    const p = sk.pelvis; const pStep = p.h / 2;
     ctx.beginPath();
-    for (let i = 1; i < 2; i++) {
-      const y = p.y + pStep * i;
-      ctx.moveTo(0, y); ctx.lineTo(W, y);
-    }
+    for (let i = 1; i < 2; i++) { ctx.moveTo(0, p.y + pStep * i); ctx.lineTo(W, p.y + pStep * i); }
     ctx.stroke();
-
     ctx.restore();
   }
 }
 
 function renderShoulders(ctx, sk) {
   ctx.save();
-  ctx.beginPath(); ctx.arc(sk.shoulders.left.cx,  sk.shoulders.left.cy,  sk.shoulders.left.r,  0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sk.shoulders.left.cx, sk.shoulders.left.cy, sk.shoulders.left.r, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.arc(sk.shoulders.right.cx, sk.shoulders.right.cy, sk.shoulders.right.r, 0, Math.PI * 2); ctx.stroke();
   ctx.restore();
 }
 
 function renderClavicles(ctx, sk) {
-  const s = sk.shoulders;
-  const n = sk.neck;
+  const s = sk.shoulders; const n = sk.neck;
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(s.trapLeftAttach.x, s.trapLeftAttach.y);
-  ctx.lineTo(n.baseLeftX, n.baseY);
-  ctx.moveTo(s.trapRightAttach.x, s.trapRightAttach.y);
-  ctx.lineTo(n.baseRightX, n.baseY);
+  ctx.moveTo(s.trapLeftAttach.x, s.trapLeftAttach.y); ctx.lineTo(n.baseLeftX, n.baseY);
+  ctx.moveTo(s.trapRightAttach.x, s.trapRightAttach.y); ctx.lineTo(n.baseRightX, n.baseY);
   ctx.stroke();
-
   ctx.beginPath();
-  ctx.moveTo(s.clavLeftAttach.x, s.clavLeftAttach.y);
-  ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
-  ctx.moveTo(s.clavRightAttach.x, s.clavRightAttach.y);
-  ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
+  ctx.moveTo(s.clavLeftAttach.x, s.clavLeftAttach.y); ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
+  ctx.moveTo(s.clavRightAttach.x, s.clavRightAttach.y); ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
   ctx.stroke();
   ctx.restore();
 }
@@ -743,16 +583,11 @@ function torsoPath(t) {
   return p;
 }
 
-function renderTorso(ctx, sk) {
-  ctx.save();
-  ctx.stroke(torsoPath(sk.torso));
-  ctx.restore();
-}
+function renderTorso(ctx, sk) { ctx.save(); ctx.stroke(torsoPath(sk.torso)); ctx.restore(); }
 
 function pelvisPath(p) {
   const path = new Path2D();
-  path.moveTo(p.x + p.r, p.y);
-  path.lineTo(p.x + p.w - p.r, p.y);
+  path.moveTo(p.x + p.r, p.y); path.lineTo(p.x + p.w - p.r, p.y);
   path.quadraticCurveTo(p.x + p.w, p.y, p.x + p.w, p.y + p.r);
   path.lineTo(p.x + p.w, p.y + p.h - p.r);
   path.quadraticCurveTo(p.x + p.w, p.y + p.h, p.x + p.w - p.r, p.y + p.h);
@@ -763,92 +598,54 @@ function pelvisPath(p) {
   return path;
 }
 
-function renderPelvis(ctx, sk) {
-  ctx.save();
-  ctx.stroke(pelvisPath(sk.pelvis));
-  ctx.restore();
-}
+function renderPelvis(ctx, sk) { ctx.save(); ctx.stroke(pelvisPath(sk.pelvis)); ctx.restore(); }
 
 function renderAbsLines(ctx, sk, P) {
   if (!P.showAbsLines) return;
-  const t = sk.torso;
-  const nav = sk.navel;
-  const s = sk.shoulders;
-
-  ctx.save();
-  ctx.clip(torsoPath(t));
-
+  const t = sk.torso; const nav = sk.navel; const s = sk.shoulders;
+  ctx.save(); ctx.clip(torsoPath(t));
   const bend = P.absBend;
   ctx.beginPath();
   ctx.moveTo(t.cx, nav.y);
-  ctx.quadraticCurveTo(
-    t.cx - (t.cx - s.trapLeftAttach.x) * bend,
-    nav.y - (nav.y - s.trapLeftAttach.y) * 0.5,
-    s.trapLeftAttach.x, s.trapLeftAttach.y
-  );
+  ctx.quadraticCurveTo(t.cx - (t.cx - s.trapLeftAttach.x) * bend, nav.y - (nav.y - s.trapLeftAttach.y) * 0.5, s.trapLeftAttach.x, s.trapLeftAttach.y);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(t.cx, nav.y);
-  ctx.quadraticCurveTo(
-    t.cx + (s.trapRightAttach.x - t.cx) * bend,
-    nav.y - (nav.y - s.trapRightAttach.y) * 0.5,
-    s.trapRightAttach.x, s.trapRightAttach.y
-  );
+  ctx.quadraticCurveTo(t.cx + (s.trapRightAttach.x - t.cx) * bend, nav.y - (nav.y - s.trapRightAttach.y) * 0.5, s.trapRightAttach.x, s.trapRightAttach.y);
   ctx.stroke();
-
   ctx.restore();
 }
 
 function renderNavel(ctx, sk, P) {
   if (!P.showNavel) return;
-  const nav = sk.navel;
-  const lw = P.lineWidth;
-
-  ctx.save();
-  ctx.strokeStyle = P.lineColor;
-  ctx.fillStyle = P.lineColor;
-  ctx.lineWidth = lw;
-
+  const nav = sk.navel; const lw = P.lineWidth;
+  ctx.save(); ctx.strokeStyle = P.lineColor; ctx.fillStyle = P.lineColor; ctx.lineWidth = lw;
   if (nav.type < 0.05) {
-    ctx.beginPath();
-    ctx.arc(nav.x, nav.y, Math.max(3, lw * 1.5), 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(nav.x, nav.y, Math.max(3, lw * 1.5), 0, Math.PI * 2); ctx.fill();
   } else {
-    ctx.beginPath();
-    ctx.ellipse(nav.x, nav.y, Math.max(1, nav.lineW / 2), Math.max(1, nav.lineH / 2), 0, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(nav.x, nav.y, Math.max(1, nav.lineW / 2), Math.max(1, nav.lineH / 2), 0, 0, Math.PI * 2); ctx.stroke();
   }
   ctx.restore();
 }
 
 function renderNeck(ctx, sk) {
-  const head = sk.head;
-  const neck = sk.neck;
-
+  const head = sk.head; const neck = sk.neck;
   const clip = new Path2D();
   clip.rect(0, 0, canvasWidth, neck.botY);
   clip.ellipse(head.cx, head.cy, head.rX, head.rY, 0, 0, Math.PI * 2);
-
-  ctx.save();
-  ctx.clip(clip, 'evenodd');
-
+  ctx.save(); ctx.clip(clip, 'evenodd');
   ctx.beginPath();
   ctx.moveTo(neck.cx - neck.halfW, neck.topY);
   ctx.lineTo(neck.cx - neck.halfW, neck.botY);
   ctx.lineTo(neck.cx + neck.halfW, neck.botY);
   ctx.lineTo(neck.cx + neck.halfW, neck.topY);
-  ctx.stroke();
-  ctx.restore();
+  ctx.stroke(); ctx.restore();
 }
 
 function renderHead(ctx, sk, P) {
   const h = sk.head;
-
   ctx.save();
-  ctx.beginPath();
-  ctx.ellipse(h.cx, h.cy, h.rX, h.rY, 0, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(h.cx, h.cy, h.rX, h.rY, 0, 0, Math.PI * 2); ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(h.jaw.attachLeft.x, h.jaw.attachLeft.y);
@@ -863,37 +660,23 @@ function renderHead(ctx, sk, P) {
   ctx.stroke();
 
   if (h.chin.halfW < 1.5) {
-    ctx.beginPath();
-    ctx.arc(h.cx, h.chin.centerY, Math.max(3, P.lineWidth), 0, Math.PI * 2);
-    ctx.fillStyle = P.lineColor;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(h.cx, h.chin.centerY, Math.max(3, P.lineWidth), 0, Math.PI * 2);
+    ctx.fillStyle = P.lineColor; ctx.fill();
   } else {
-    ctx.beginPath();
-    ctx.moveTo(h.chin.left.x, h.chin.left.y);
-    if (h.chin.round < 1) {
-      ctx.lineTo(h.chin.right.x, h.chin.right.y);
-    } else {
-      ctx.quadraticCurveTo(h.cx, h.chin.centerY + (h.chin.round / h.chin.halfW) * h.chin.halfW * 0.8, h.chin.right.x, h.chin.right.y);
-    }
+    ctx.beginPath(); ctx.moveTo(h.chin.left.x, h.chin.left.y);
+    if (h.chin.round < 1) ctx.lineTo(h.chin.right.x, h.chin.right.y);
+    else ctx.quadraticCurveTo(h.cx, h.chin.centerY + (h.chin.round / h.chin.halfW) * h.chin.halfW * 0.8, h.chin.right.x, h.chin.right.y);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-/* --- РУКИ --- */
 function renderArms(ctx, sk, P) {
   if (!P.showArms) return;
   const lw = Math.max(1, P.lineWidth * P.armLw);
-
-  ctx.save();
-  ctx.lineWidth = lw;
-  ctx.setLineDash([]);
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
-  drawOneArm(ctx, sk.arms.l, true,  sk, P);
+  ctx.save(); ctx.lineWidth = lw; ctx.setLineDash([]); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  drawOneArm(ctx, sk.arms.l, true, sk, P);
   drawOneArm(ctx, sk.arms.r, false, sk, P);
-
   ctx.restore();
 }
 
@@ -902,11 +685,9 @@ function drawOneArm(ctx, arm, isLeft, sk, P) {
   const innerSign = isLeft ? 1 : -1;
   const color = P.lineColor;
 
-  const dx1 = elbow.x - shoulder.x;
-  const dy1 = elbow.y - shoulder.y;
+  const dx1 = elbow.x - shoulder.x, dy1 = elbow.y - shoulder.y;
   const len1 = Math.hypot(dx1, dy1) || 1;
-  const nx1 = -dy1 / len1;
-  const ny1 =  dx1 / len1;
+  const nx1 = -dy1 / len1, ny1 = dx1 / len1;
 
   const p1Outer = { x: shoulder.x + nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y + ny1 * innerSign * sk.shoulders.left.r };
   const p1Inner = { x: shoulder.x - nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y - ny1 * innerSign * sk.shoulders.left.r };
@@ -916,15 +697,12 @@ function drawOneArm(ctx, arm, isLeft, sk, P) {
   ctx.beginPath(); ctx.moveTo(p1Outer.x, p1Outer.y); ctx.lineTo(p2Outer.x, p2Outer.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(p1Inner.x, p1Inner.y); ctx.lineTo(p2Inner.x, p2Inner.y); ctx.stroke();
 
-  const dx2 = wrist.x - elbow.x;
-  const dy2 = wrist.y - elbow.y;
+  const dx2 = wrist.x - elbow.x, dy2 = wrist.y - elbow.y;
   const len2 = Math.hypot(dx2, dy2) || 1;
-  const px = -dy2 / len2;
-  const py =  dx2 / len2;
+  const px = -dy2 / len2, py = dx2 / len2;
 
   const peakT = P.crossPos;
-  const peakX = elbow.x + dx2 * peakT;
-  const peakY = elbow.y + dy2 * peakT;
+  const peakX = elbow.x + dx2 * peakT, peakY = elbow.y + dy2 * peakT;
   const maxWidth = br * P.crossW;
   const crossRound = P.crossRound;
 
@@ -937,118 +715,76 @@ function drawOneArm(ctx, arm, isLeft, sk, P) {
 
   ctx.beginPath();
   ctx.moveTo(elbowOuter.x, elbowOuter.y);
-  ctx.quadraticCurveTo(
-    elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8,
-    elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8,
-    peakOuter.x, peakOuter.y
-  );
-  ctx.quadraticCurveTo(
-    peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1,
-    peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1,
-    wristOuter.x, wristOuter.y
-  );
+  ctx.quadraticCurveTo(elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8, elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8, peakOuter.x, peakOuter.y);
+  ctx.quadraticCurveTo(peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1, peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1, wristOuter.x, wristOuter.y);
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(elbowInner.x, elbowInner.y);
-  ctx.quadraticCurveTo(
-    elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRound * 0.5),
-    elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRound * 0.5),
-    peakInner.x, peakInner.y
-  );
-  ctx.quadraticCurveTo(
-    peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRound),
-    peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRound),
-    wristInner.x, wristInner.y
-  );
+  ctx.quadraticCurveTo(elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRound * 0.5), elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRound * 0.5), peakInner.x, peakInner.y);
+  ctx.quadraticCurveTo(peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRound), peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRound), wristInner.x, wristInner.y);
   ctx.stroke();
 
   if (P.showElbow) {
-    ctx.beginPath();
-    ctx.arc(elbow.x, elbow.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(elbow.x, elbow.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
   }
-  if (P.showElbowBall) {
-    ctx.beginPath(); ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2); ctx.stroke();
-  }
-  if (P.showWristBall) {
-    ctx.beginPath(); ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2); ctx.stroke();
-  }
+  if (P.showElbowBall) { ctx.beginPath(); ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2); ctx.stroke(); }
+  if (P.showWristBall) { ctx.beginPath(); ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
 /* --- НОГИ --- */
 function renderLegs(ctx, sk, P) {
   if (!P.showLegs) return;
   const lw = Math.max(1, P.lineWidth * P.legLw);
-
-  ctx.save();
-  ctx.lineWidth = lw;
-  ctx.setLineDash([]);
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-
-  drawOneLeg(ctx, sk.legs.l, true,  sk, P);
+  ctx.save(); ctx.lineWidth = lw; ctx.setLineDash([]); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  drawOneLeg(ctx, sk.legs.l, true, sk, P);
   drawOneLeg(ctx, sk.legs.r, false, sk, P);
-
   ctx.restore();
 }
 
-// Логика отрисовки ноги такая же, как у руки, но с точкой колена вместо локтя
 function drawOneLeg(ctx, leg, isLeft, sk, P) {
   const { shoulder: hip, elbow: knee, wrist: ankle, ballRadius: br } = leg;
   const innerSign = isLeft ? 1 : -1;
   const color = P.lineColor;
 
-  // ---- Бедро (точки 1 → 2) ----
-  const dx1 = knee.x - hip.x;
-  const dy1 = knee.y - hip.y;
+  // Бедро (hip -> knee)
+  const dx1 = knee.x - hip.x, dy1 = knee.y - hip.y;
   const len1 = Math.hypot(dx1, dy1) || 1;
-  const nx1 = -dy1 / len1;
-  const ny1 =  dx1 / len1;
+  const nx1 = -dy1 / len1, ny1 = dx1 / len1;
 
   const hipOuter = { x: hip.x + nx1 * innerSign * br, y: hip.y + ny1 * innerSign * br };
   const hipInner = { x: hip.x - nx1 * innerSign * br, y: hip.y - ny1 * innerSign * br };
   const kneeOuter = { x: knee.x + nx1 * innerSign * br, y: knee.y + ny1 * innerSign * br };
   const kneeInner = { x: knee.x - nx1 * innerSign * br, y: knee.y - ny1 * innerSign * br };
 
-  // Внешняя сторона бедра
+  // Линии бедра
   ctx.beginPath(); ctx.moveTo(hipOuter.x, hipOuter.y); ctx.lineTo(kneeOuter.x, kneeOuter.y); ctx.stroke();
-  // Внутренняя сторона бедра
   ctx.beginPath(); ctx.moveTo(hipInner.x, hipInner.y); ctx.lineTo(kneeInner.x, kneeInner.y); ctx.stroke();
 
-  // ---- Голень (точки 3/5 → 6/7) ----
-  const dx2 = ankle.x - knee.x;
-  const dy2 = ankle.y - knee.y;
+  // Голень (knee -> ankle)
+  const dx2 = ankle.x - knee.x, dy2 = ankle.y - knee.y;
   const len2 = Math.hypot(dx2, dy2) || 1;
-  const px = -dy2 / len2;
-  const py =  dx2 / len2;
+  const px = -dy2 / len2, py = dx2 / len2;
 
   const ankleOuter = { x: ankle.x + px * innerSign * br, y: ankle.y + py * innerSign * br };
   const ankleInner = { x: ankle.x - px * innerSign * br, y: ankle.y - py * innerSign * br };
 
-  // Внешняя сторона голени
+  // Линии голени
   ctx.beginPath(); ctx.moveTo(kneeOuter.x, kneeOuter.y); ctx.lineTo(ankleOuter.x, ankleOuter.y); ctx.stroke();
-  // Внутренняя сторона голени
   ctx.beginPath(); ctx.moveTo(kneeInner.x, kneeInner.y); ctx.lineTo(ankleInner.x, ankleInner.y); ctx.stroke();
 
-  // ---- Опциональные точки и шары ----
+  // Точки
   if (P.showKneePoint) {
-    ctx.beginPath();
-    ctx.arc(knee.x, knee.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(knee.x, knee.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
   }
-  if (P.showKneeBall) {
-    ctx.beginPath(); ctx.arc(knee.x, knee.y, br, 0, Math.PI * 2); ctx.stroke();
-  }
-  if (P.showAnkleBall) {
-    ctx.beginPath(); ctx.arc(ankle.x, ankle.y, br, 0, Math.PI * 2); ctx.stroke();
-  }
+  if (P.showKneeBall) { ctx.beginPath(); ctx.arc(knee.x, knee.y, br, 0, Math.PI * 2); ctx.stroke(); }
+  if (P.showAnkleBall) { ctx.beginPath(); ctx.arc(ankle.x, ankle.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
 /* ============================================================
-   ГЛАВНЫЙ ЦИКЛ ОТРИСОВКИ
+   ГЛАВНЫЙ ЦИКЛ
    ============================================================ */
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
@@ -1056,26 +792,16 @@ let canvasWidth = canvas.width;
 let canvasHeight = canvas.height;
 
 function draw() {
-  const W = canvasWidth;
-  const H = canvasHeight;
+  const W = canvasWidth; const H = canvasHeight;
   const P = readParams();
   const sk = computeSkeleton(P, W, H);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.save();
-  ctx.strokeStyle = P.lineColor;
-  ctx.lineWidth = P.lineWidth;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.strokeStyle = P.lineColor; ctx.lineWidth = P.lineWidth; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
 
   for (const [name, fn] of LAYERS) {
-    ctx.save();
-    fn(ctx, sk, P, W, H);
-    ctx.restore();
+    ctx.save(); fn(ctx, sk, P, W, H); ctx.restore();
   }
-
   ctx.restore();
   updateLabels();
 }
@@ -1084,15 +810,9 @@ let rafPending = false;
 function scheduleDraw() {
   if (rafPending) return;
   rafPending = true;
-  requestAnimationFrame(() => {
-    rafPending = false;
-    draw();
-  });
+  requestAnimationFrame(() => { rafPending = false; draw(); });
 }
 
-/* ============================================================
-   ЗАГРУЗКА КАРТИНКИ
-   ============================================================ */
 function onFileChange(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1103,8 +823,7 @@ function onFileChange(e) {
       refImage = img;
       const ratio = img.width / img.height;
       canvasWidth = Math.round(canvasHeight * ratio);
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
+      canvas.width = canvasWidth; canvas.height = canvasHeight;
       draw();
     };
     img.src = event.target.result;
@@ -1112,17 +831,12 @@ function onFileChange(e) {
   reader.readAsDataURL(file);
 }
 
-/* ============================================================
-   КНОПКИ
-   ============================================================ */
 function addButtons() {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex; gap:10px; margin-top:10px;';
 
   const resetBtn = document.createElement('button');
-  resetBtn.className = 'sec';
-  resetBtn.style.flex = '1';
-  resetBtn.textContent = 'Сбросить';
+  resetBtn.className = 'sec'; resetBtn.style.flex = '1'; resetBtn.textContent = 'Сбросить';
   resetBtn.addEventListener('click', () => {
     for (const key in SCHEMA) {
       const cfg = SCHEMA[key];
@@ -1134,8 +848,7 @@ function addButtons() {
   });
 
   const dlBtn = document.createElement('button');
-  dlBtn.style.flex = '1';
-  dlBtn.textContent = 'Скачать PNG';
+  dlBtn.style.flex = '1'; dlBtn.textContent = 'Скачать PNG';
   dlBtn.addEventListener('click', () => {
     const link = document.createElement('a');
     link.download = `body_${canvasWidth}x${canvasHeight}.png`;
@@ -1143,14 +856,10 @@ function addButtons() {
     link.click();
   });
 
-  wrap.appendChild(resetBtn);
-  wrap.appendChild(dlBtn);
+  wrap.appendChild(resetBtn); wrap.appendChild(dlBtn);
   panel.appendChild(wrap);
 }
 
-/* ============================================================
-   СТАРТ
-   ============================================================ */
 buildPanel();
 addButtons();
 draw();
