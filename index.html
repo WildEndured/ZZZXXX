@@ -1,70 +1,83 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Head Builder — SVG</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SVG Голова · Процедурный конструктор</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <div class="canvas-wrap">
-      <svg id="stage" viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet"></svg>
+    <!-- Панель управления (мобильная, снизу) -->
+    <div class="controls" id="controls">
+        <div class="control-header">
+            <span>⚙️ Параметры</span>
+            <button class="toggle-btn" id="toggleControls">▲</button>
+        </div>
+        <div class="controls-body" id="controlsBody">
+            <div class="control-row">
+                <label>Рост в головах (X)</label>
+                <input type="range" id="headsCount" min="3" max="12" value="7" step="1">
+                <span class="value-display" id="headsCountVal">7</span>
+            </div>
+            <div class="control-row">
+                <label>Ширина черепа</label>
+                <input type="range" id="skullWidth" min="0.5" max="1.8" value="1.0" step="0.01">
+                <span class="value-display" id="skullWidthVal">1.00</span>
+            </div>
+            <div class="control-row">
+                <label>Высота черепа</label>
+                <input type="range" id="skullHeight" min="0.5" max="1.8" value="1.0" step="0.01">
+                <span class="value-display" id="skullHeightVal">1.00</span>
+            </div>
+            <div class="control-row">
+                <label>Ширина подбородка</label>
+                <input type="range" id="chinWidth" min="0.1" max="1.0" value="0.5" step="0.01">
+                <span class="value-display" id="chinWidthVal">0.50</span>
+            </div>
+            <div class="control-row">
+                <label>Высота подбородка</label>
+                <input type="range" id="chinHeight" min="0.1" max="1.0" value="0.5" step="0.01">
+                <span class="value-display" id="chinHeightVal">0.50</span>
+            </div>
+            <div class="control-row">
+                <label>Тип подбородка</label>
+                <input type="range" id="chinType" min="0" max="1" value="0" step="1">
+                <span class="value-display" id="chinTypeVal">Линия</span>
+            </div>
+            <div class="control-row">
+                <label>Высота крепления челюсти</label>
+                <input type="range" id="jawAttach" min="0" max="1" value="0.5" step="0.01">
+                <span class="value-display" id="jawAttachVal">0.50</span>
+            </div>
+            <div class="control-row">
+                <label>Угол челюсти</label>
+                <input type="range" id="jawAngle" min="0" max="90" value="45" step="1">
+                <span class="value-display" id="jawAngleVal">45°</span>
+            </div>
+            <div class="control-row">
+                <label>Ширина челюсти</label>
+                <input type="range" id="jawWidth" min="0.5" max="1.5" value="1.0" step="0.01">
+                <span class="value-display" id="jawWidthVal">1.00</span>
+            </div>
+            <div class="control-row actions">
+                <button id="resetBtn">Сбросить</button>
+                <button id="downloadBtn">Скачать SVG</button>
+            </div>
+        </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-head">
-        <span>Голова в частях</span>
-        <span id="xVal" class="badge">6</span>
-      </div>
-
-      <label class="row">
-        <span>X (делений роста)</span>
-        <input id="xParts" type="range" min="3" max="12" step="1" value="6" />
-      </label>
-
-      <div class="panel-head"><span>Череп</span></div>
-      <label class="row">
-        <span>Высота круга</span>
-        <input id="skullH" type="range" min="0.6" max="1.6" step="0.01" value="1" />
-      </label>
-      <label class="row">
-        <span>Ширина круга</span>
-        <input id="skullW" type="range" min="0.6" max="1.6" step="0.01" value="1" />
-      </label>
-
-      <div class="panel-head"><span>Подбородок</span></div>
-      <label class="row">
-        <span>Ширина</span>
-        <input id="chinW" type="range" min="0" max="1" step="0.01" value="0.35" />
-      </label>
-      <label class="row">
-        <span>Высота</span>
-        <input id="chinH" type="range" min="-0.5" max="0.5" step="0.01" value="0" />
-      </label>
-      <label class="row">
-        <span>Тип: точка ↔ линия</span>
-        <input id="chinType" type="range" min="0" max="1" step="0.01" value="0" />
-      </label>
-
-      <div class="panel-head"><span>Челюсть</span></div>
-      <label class="row">
-        <span>Высота крепления</span>
-        <input id="jawH" type="range" min="0.4" max="1.2" step="0.01" value="0.9" />
-      </label>
-      <label class="row">
-        <span>Угол челюсти</span>
-        <input id="jawAngle" type="range" min="5" max="60" step="1" value="25" />
-      </label>
-      <label class="row">
-        <span>Ширина челюсти</span>
-        <input id="jawW" type="range" min="0.4" max="1.4" step="0.01" value="1" />
-      </label>
-
-      <button id="exportBtn">Скачать SVG</button>
+    <!-- Холст -->
+    <div class="canvas-wrap" id="canvasWrap">
+        <svg id="headSvg" viewBox="0 0 4096 4096" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+            <!-- Фон / рабочая область -->
+            <rect width="4096" height="4096" fill="#fafafa"/>
+            <!-- Сетка (отладочная, можно убрать) -->
+            <g id="debugGrid" opacity="0.15"></g>
+            <!-- Голова -->
+            <g id="headGroup"></g>
+        </svg>
     </div>
-  </div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
