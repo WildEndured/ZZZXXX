@@ -149,7 +149,7 @@
     }
 
     // ==========================================
-    // МАТЕМАТИКА ГОЛОВЫ ИЗ ТВОЕГО СТАРОГО КОДА (АДАПТИРОВАННАЯ ПОД SVG)
+    // МАТЕМАТИКА ГОЛОВЫ (С ПРЯМЫМИ ЛИНИЯМИ ЧЕЛЮСТИ)
     // ==========================================
     function updateHead() {
         headLayer.innerHTML = '';
@@ -157,10 +157,9 @@
 
         const { startY, stepHeight } = getTopZone();
         
-        // Базовые координаты для верхней зоны
-        // В SVG координаты идут сверху вниз от 0 до 1
+        // Базовые координаты
         const skullTopBase = startY; 
-        const skullBotBase = startY + stepHeight * 3 / 5; // 3/5 от высоты головы
+        const skullBotBase = startY + stepHeight * 3 / 5; 
         const baseR = (skullBotBase - skullTopBase) / 2;
         const skullCyBase = skullTopBase + baseR; 
 
@@ -169,7 +168,6 @@
         const skullW = Number(skullWInput.value);
         const chinYOffset = Number(chinYInput.value);
         const chinWParam = Number(chinWInput.value);
-        const chinRParam = Number(chinRInput.value);
         const jawYParam = Number(jawYInput.value);
         const jawWParam = Number(jawWInput.value);
         const jawBParam = Number(jawBInput.value);
@@ -177,28 +175,25 @@
         // Размеры черепа
         const rY = baseR * skullH;
         const rX = baseR * skullW;
-        const headCx = 0.5; // Всегда по центру холста
+        const headCx = 0.5; 
         const cy = skullCyBase;
         
         // Подбородок
         const chinBaseY = startY + stepHeight * 4 / 5;
         const chinCenterY = chinBaseY + chinYOffset * (stepHeight / 5);
-        
         const chinHalfW = chinWParam * rX * 0.7;
         
         // Крепление челюсти
         const jawAttachY = skullBotBase - (skullBotBase - cy) * jawYParam;
         
-        // Ищем ширину черепа на высоте крепления челюсти (теорема Пифагора для эллипса)
-        // Нормируем Y относительно центра и радиуса
+        // Вычисляем ширину эллипса на высоте jawAttachY
         const normY = (jawAttachY - cy) / rY;
-        // Защита от деления на ноль и выхода за пределы
         const attachDx = Math.sqrt(Math.max(0, 1 - normY * normY));
         
         const attachLeft  = { x: headCx - rX * attachDx, y: jawAttachY };
         const attachRight = { x: headCx + rX * attachDx, y: jawAttachY };
 
-        // Точки излома челюсти (углы)
+        // Точки излома (углы) - здесь формируется вторая линия
         const cornerLeft  = { x: headCx - rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
         const cornerRight = { x: headCx + rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
 
@@ -214,7 +209,7 @@
 
         // Цвета и толщина
         const strokeColor = lineColorInput.value;
-        const strokeWidth = Number(lineWidthInput.value) / 4096; // Переводим пиксели в доли viewBox
+        const strokeWidth = Number(lineWidthInput.value) / 4096;
 
         // 1. ЧЕРЕП (Эллипс)
         const skull = document.createElementNS(SVG_NS, 'ellipse');
@@ -227,12 +222,21 @@
         skull.setAttribute('stroke-width', strokeWidth);
         headLayer.appendChild(skull);
 
-        // 2. ЧЕЛЮСТЬ И ПОДБОРОДОК (Единый Path)
-        // Используем квадратичные кривые (Q), чтобы повторить логику quadraticCurveTo из Canvas
+        // 2. ЧЕЛЮСТЬ И ПОДБОРОДОК (Жесткие прямые линии L)
         let pathD = `M ${attachLeft.x} ${attachLeft.y} `;
-        pathD += `Q ${cornerLeft.x} ${cornerLeft.y} ${chinLeft.x} ${chinLeft.y} `;
+        
+        // Первая линия челюсти (от черепа вниз к углу)
+        pathD += `L ${cornerLeft.x} ${cornerLeft.y} `;
+        // Вторая линия челюсти (от угла к подбородку)
+        pathD += `L ${chinLeft.x} ${chinLeft.y} `;
+        
+        // Сам подбородок
         pathD += `L ${chinRight.x} ${chinRight.y} `;
-        pathD += `Q ${cornerRight.x} ${cornerRight.y} ${attachRight.x} ${attachRight.y}`;
+        
+        // Правая челюсть (от подбородка к углу)
+        pathD += `L ${cornerRight.x} ${cornerRight.y} `;
+        // Правая челюсть (от угла к черепу)
+        pathD += `L ${attachRight.x} ${attachRight.y}`;
 
         const jawPath = document.createElementNS(SVG_NS, 'path');
         jawPath.setAttribute('d', pathD);
@@ -265,7 +269,6 @@
         [skullWInput, vSkullW, 2],
         [chinYInput, vChinY, 2],
         [chinWInput, vChinW, 2],
-        [chinRInput, vChinR, 2],
         [jawYInput, vJawY, 2],
         [jawWInput, vJawW, 2],
         [jawBInput, vJawB, 2]
@@ -278,10 +281,16 @@
         });
     });
 
+    // chinR (округлость) в этой версии не используется для рисования, 
+    // так как мы делаем прямые линии, но оставим слушатель, чтобы не было ошибок
+    chinRInput.addEventListener('input', (e) => {
+        vChinR.textContent = Number(e.target.value).toFixed(2);
+    });
+
     updateAll();
 
     // ==========================================
-    // РИСОВАНИЕ И ЗУМ (Без изменений)
+    // РИСОВАНИЕ И ЗУМ
     // ==========================================
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
@@ -294,7 +303,7 @@
     function startPath(p) {
         currentPath = document.createElementNS(SVG_NS, 'path');
         currentPath.setAttribute('fill', 'none');
-        currentPath.setAttribute('stroke', '#000000'); // Рисуем всегда черным
+        currentPath.setAttribute('stroke', '#000000');
         currentPath.setAttribute('stroke-width', getStrokeWidth());
         currentPath.setAttribute('stroke-linecap', 'round');
         currentPath.setAttribute('stroke-linejoin', 'round');
