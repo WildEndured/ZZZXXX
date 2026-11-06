@@ -12,13 +12,9 @@
         
         <div class="canvas-wrapper" id="canvasWrapper">
             <div class="zoom-container" id="zoomContainer">
-                <!-- Слой 1: Фон -->
                 <div id="bgColorLayer" class="layer bg-color-layer" style="background-color: #ffffff;"></div>
-                
-                <!-- Слой 2: Подложка -->
                 <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
                 
-                <!-- Слой 3: SVG (Разметка, Голова, Рисование) -->
                 <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
                     <g id="measureLayer"></g>
                     <g id="headLayer"></g>
@@ -67,14 +63,17 @@
 
             <!-- УПРАВЛЕНИЕ ГОЛОВОЙ -->
             <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                <legend><input type="checkbox" id="showHead" checked> Голова (верхняя зона)</legend>
+                <legend><input type="checkbox" id="showHead" checked> Голова</legend>
                 <div class="control-group">
-                    <label>Ширина круга: <input type="range" id="headWidth" min="10" max="200" value="80"><span id="headWidthValue">80</span></label>
-                    <label>Высота круга: <input type="range" id="headHeight" min="10" max="200" value="80"><span id="headHeightValue">80</span></label>
+                    <label>Ширина: <input type="range" id="headWidth" min="10" max="200" value="100"><span id="headWidthValue">100%</span></label>
+                    <label>Высота: <input type="range" id="headHeight" min="10" max="200" value="100"><span id="headHeightValue">100%</span></label>
                 </div>
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Ширина подбородка: <input type="range" id="chinWidth" min="10" max="100" value="40"><span id="chinWidthValue">40</span></label>
+                    <label>Ширина подбородка: <input type="range" id="chinWidth" min="10" max="100" value="40"><span id="chinWidthValue">40%</span></label>
                     <label>Сдвиг подбородка: <input type="range" id="chinY" min="-50" max="50" value="0"><span id="chinYValue">0</span></label>
+                </div>
+                <div class="control-group" style="margin-top: 10px;">
+                    <label>Угол челюсти: <input type="range" id="jawAngle" min="0" max="60" value="10"><span id="jawAngleValue">10°</span></label>
                 </div>
             </fieldset>
         </div>
