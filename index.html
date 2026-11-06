@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SVG Конструктор Головы</title>
+    <title>SVG Голова (Референс)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
 
         <div class="controls">
             <div class="control-group">
-                <button id="clearBtn">Очистить</button>
+                <button id="clearBtn">Очистить рисунок</button>
                 <button id="downloadSvgBtn">Скачать SVG</button>
                 <button id="downloadPngBtn">Скачать PNG</button>
                 <button id="resetZoomBtn">Сбросить зум</button>
@@ -48,41 +48,37 @@
 
             <div class="control-group">
                 <label>Фон: <input type="color" id="bgColor" value="#ffffff"></label>
-                <label>Кисть: <input type="color" id="brushColor" value="#000000"></label>
-                <label>Толщина: <input type="range" id="brushSize" min="1" max="100" value="10"><span id="brushSizeValue">10</span></label>
-                <label><input type="checkbox" id="eraserMode"> Ластик</label>
+                <label>Цвет линий: <input type="color" id="lineColor" value="#ff3b3b"></label>
+                <label>Толщина: <input type="range" id="lineWidth" min="1" max="20" value="4"><span id="lineWidthValue">4</span></label>
             </div>
 
             <hr style="width: 100%; border-color: #444; margin: 5px 0;">
 
             <div class="control-group">
                 <label>Отступ: <input type="range" id="paddingSize" min="0" max="10" value="0"><span id="paddingSizeValue">0%</span></label>
-                <label>Головы: <input type="range" id="headCount" min="2" max="8" value="4"><span id="headCountValue">4</span></label>
+                <label>Головы: <input type="range" id="headCount" min="2" max="8" value="5"><span id="headCountValue">5</span></label>
                 <label><input type="checkbox" id="showGrid" checked> Разметка</label>
             </div>
 
-            <!-- УПРАВЛЕНИЕ ГОЛОВОЙ -->
+            <!-- УПРАВЛЕНИЕ ГОЛОВОЙ ИЗ ТВОЕГО СТАРОГО КОДА -->
             <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                <legend><input type="checkbox" id="showHead" checked> Голова (параметры)</legend>
+                <legend><input type="checkbox" id="showHead" checked> Голова</legend>
                 
                 <div class="control-group">
-                    <label>Ширина черепа: <input type="range" id="headWidth" min="10" max="200" value="100"><span id="headWidthValue">100</span></label>
-                    <label>Высота черепа: <input type="range" id="headHeight" min="10" max="200" value="100"><span id="headHeightValue">100</span></label>
+                    <label>Высота черепа: <input type="range" id="skullH" min="0.3" max="1.6" step="0.01" value="1.0"><span id="vSkullH">1.00</span></label>
+                    <label>Ширина черепа: <input type="range" id="skullW" min="0.5" max="1.6" step="0.01" value="1.0"><span id="vSkullW">1.00</span></label>
                 </div>
                 
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Ширина подбородка: <input type="range" id="chinWidth" min="0" max="100" value="40"><span id="chinWidthValue">40</span></label>
-                    <label>Сдвиг подбородка: <input type="range" id="chinY" min="-50" max="50" value="0"><span id="chinYValue">0</span></label>
+                    <label>Высота подбородка: <input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0.30"><span id="vChinY">0.30</span></label>
+                    <label>Ширина подбородка: <input type="range" id="chinW" min="0" max="1" step="0.01" value="0.40"><span id="vChinW">0.40</span></label>
+                    <label>Округлость: <input type="range" id="chinR" min="0" max="1" step="0.01" value="0.30"><span id="vChinR">0.30</span></label>
                 </div>
 
-                <!-- НОВЫЕ ПОЛЗУНКИ ЧЕЛЮСТИ -->
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Высота крепления: <input type="range" id="jawAttachY" min="0" max="100" value="50"><span id="jawAttachYValue">50</span></label>
-                    <label>Ширина челюсти: <input type="range" id="jawWidth" min="0" max="100" value="100"><span id="jawWidthValue">100</span></label>
-                </div>
-                <div class="control-group" style="margin-top: 10px;">
-                    <label>Угол челюсти: <input type="range" id="jawAngle" min="0" max="90" value="45"><span id="jawAngleValue">45</span></label>
-                    <label>Скругление: <input type="range" id="jawRound" min="0" max="20" value="5"><span id="jawRoundValue">5</span></label>
+                    <label>Крепление челюсти: <input type="range" id="jawY" min="0" max="1" step="0.01" value="0.77"><span id="vJawY">0.77</span></label>
+                    <label>Ширина угла: <input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.78"><span id="vJawW">0.78</span></label>
+                    <label>Высота угла: <input type="range" id="jawB" min="0" max="1" step="0.01" value="0.73"><span id="vJawB">0.73</span></label>
                 </div>
             </fieldset>
         </div>
