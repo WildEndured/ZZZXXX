@@ -11,7 +11,7 @@
     const bgColorLayer = document.getElementById('bgColorLayer');
     const bgImage = document.getElementById('bgImage');
 
-    // Элементы управления
+    // Элементы UI
     const clearBtn = document.getElementById('clearBtn');
     const downloadSvgBtn = document.getElementById('downloadSvgBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
@@ -37,7 +37,7 @@
     const headCountValue = document.getElementById('headCountValue');
     const showGridInput = document.getElementById('showGrid');
 
-    // Элементы управления головой
+    // Управление головой
     const showHeadInput = document.getElementById('showHead');
     const headWidthInput = document.getElementById('headWidth');
     const headWidthValue = document.getElementById('headWidthValue');
@@ -45,12 +45,8 @@
     const headHeightValue = document.getElementById('headHeightValue');
     const chinWidthInput = document.getElementById('chinWidth');
     const chinWidthValue = document.getElementById('chinWidthValue');
-    const chinHeightInput = document.getElementById('chinHeight');
-    const chinHeightValue = document.getElementById('chinHeightValue');
-    const jawAngleInput = document.getElementById('jawAngle');
-    const jawAngleValue = document.getElementById('jawAngleValue');
-    const jawRoundInput = document.getElementById('jawRound');
-    const jawRoundValue = document.getElementById('jawRoundValue');
+    const chinYInput = document.getElementById('chinY');
+    const chinYValue = document.getElementById('chinYValue');
 
     const PNG_SIZE = 4096;
 
@@ -79,9 +75,8 @@
         const maxTranslateY = 0;
         const minTranslateY = h - (h * scale);
 
-        if (scale === 1) {
-            translateX = 0; translateY = 0;
-        } else {
+        if (scale === 1) { translateX = 0; translateY = 0; } 
+        else {
             if (translateX > maxTranslateX) translateX = maxTranslateX;
             if (translateX < minTranslateX) translateX = minTranslateX;
             if (translateY > maxTranslateY) translateY = maxTranslateY;
@@ -94,10 +89,7 @@
         zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // --- Слой фона ---
-    bgColorInput.addEventListener('input', () => { bgColorLayer.style.backgroundColor = bgColorInput.value; });
-
-    // --- Слой подложки ---
+    // --- Подложка ---
     uploadBg.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -146,33 +138,19 @@
     window.addEventListener('resize', updateBgStyle);
 
     // ==========================================
-    // ОТРИСОВКА РАЗМЕТКИ И ГОЛОВЫ
+    // ОТРИСОВКА РАЗМЕТКИ
     // ==========================================
-    
-    // Возвращает координаты (Y) начала и конца самой верхней зоны (головы)
-    function getTopZoneCoords() {
-        const paddingPercent = Number(paddingSizeInput.value) / 100;
-        const heads = Number(headCountInput.value);
-        const drawingHeight = 1 - paddingPercent * 2;
-        const headStep = drawingHeight / heads;
-        
-        return {
-            startY: paddingPercent, // Самая верхняя линия
-            step: headStep,         // Высота одной головы
-            padding: paddingPercent
-        };
-    }
-
     function updateGrid() {
         measureLayer.innerHTML = '';
         if (!showGridInput.checked) return;
 
         const paddingPercent = Number(paddingSizeInput.value) / 100;
         const heads = Number(headCountInput.value);
-        const { startY, step } = getTopZoneCoords();
+        const drawingHeight = 1 - paddingPercent * 2;
+        const headStep = drawingHeight / heads;
 
         for (let i = 0; i <= heads; i++) {
-            const y = startY + (i * step);
+            const y = paddingPercent + (i * headStep);
             const line = document.createElementNS(SVG_NS, 'line');
             line.setAttribute('x1', '0'); line.setAttribute('y1', y);
             line.setAttribute('x2', '1'); line.setAttribute('y2', y);
@@ -185,8 +163,8 @@
 
         if (paddingPercent > 0) {
             const borderRect = document.createElementNS(SVG_NS, 'rect');
-            borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', startY);
-            borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', 1 - paddingPercent*2);
+            borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', paddingPercent);
+            borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', drawingHeight);
             borderRect.setAttribute('fill', 'none');
             borderRect.setAttribute('stroke', '#ff4444'); 
             borderRect.setAttribute('stroke-width', '0.003');
@@ -195,171 +173,94 @@
         }
     }
 
-    // ГЛАВНАЯ ФУНКЦИЯ ОТРИСОВКИ ГОЛОВЫ
+    // ==========================================
+    // ОТРИСОВКА ГОЛОВЫ (УПРОЩЕННАЯ)
+    // ==========================================
     function updateHead() {
         headLayer.innerHTML = '';
         if (!showHeadInput.checked) return;
 
-        const { startY, step } = getTopZoneCoords();
-        const step5 = step / 5; // 1/5 часть зоны головы
-
-        // 1. Опорные точки по вертикали (Y)
-        const yTop = startY;                 // 0/5 (макушка)
-        const yCircleBottom = startY + step5 * 3; // 3/5 (низ круга)
-        const yChin = startY + step5 * 4;    // 4/5 (подбородок)
-        
-        // Центр круга по Y
-        const circleCenterY = yTop + step5 * 1.5; // 1.5/5
-        const circleRadiusY = step5 * 1.5;        // Радиус = 1.5/5
-        
-        // Параметры из ползунков
-        const headW = Number(headWidthInput.value) / 100;
-        const headH = Number(headHeightInput.value) / 100;
+        // Берем размеры прямо из ползунков (переводим в доли от 1)
+        // Ширина 30 -> 0.30, Высота 40 -> 0.40
+        const rx = Number(headWidthInput.value) / 100;
+        const ry = Number(headHeightInput.value) / 100;
         const chinW = Number(chinWidthInput.value) / 100;
-        const chinH = Number(chinHeightInput.value) / 100;
-        const jawAngleDeg = Number(jawAngleInput.value);
-        const jawRound = Number(jawRoundInput.value) / 1000; // Переводим в единицы viewBox (0..1)
+        const chinYOffset = Number(chinYInput.value) / 100;
 
-        // Ширина круга (радиус по X)
-        // По умолчанию (100%) круг идеальный: радиус X = радиус Y.
-        const baseCircleRadiusX = circleRadiusY * headW;
-        const currentCircleRadiusY = circleRadiusY * headH; // Высота круга может меняться
+        // Центр холста по X
+        const cx = 0.5;
+        // Центр круга по Y (сдвигаем вверх, чтобы поместилась челюсть)
+        const cy = 0.35; 
 
-        // Координаты центра круга по X (всегда по центру холста)
-        const centerX = 0.5;
-
-        // Широчайшая точка круга (для крепления челюсти)
-        const maxWidthX = baseCircleRadiusX;
-        const jawAttachX = centerX - maxWidthX; // Левая точка
-        const jawAttachY = circleCenterY;       // Крепим по центру круга по Y (примерно)
-
-        // Ширина подбородка
-        const chinWidthHalf = (baseCircleRadiusX * chinW); // Половина ширины подбородка
-        const chinLeftX = centerX - chinWidthHalf;
-        const chinRightX = centerX + chinWidthHalf;
-        
-        // Высота подбородка (влияет на его Y позицию)
-        // По умолчанию подбородок на yChin. Ползунок двигает его вверх/вниз
-        const actualChinY = yChin - (step5 * (1 - chinH) * 0.5); 
-
-        // === 2. Рисуем круг (Череп) ===
+        // 1. Череп (Круг)
         const skull = document.createElementNS(SVG_NS, 'ellipse');
-        skull.setAttribute('cx', centerX);
-        skull.setAttribute('cy', circleCenterY);
-        skull.setAttribute('rx', baseCircleRadiusX);
-        skull.setAttribute('ry', currentCircleRadiusY);
+        skull.setAttribute('cx', cx);
+        skull.setAttribute('cy', cy);
+        skull.setAttribute('rx', rx);
+        skull.setAttribute('ry', ry);
         skull.setAttribute('fill', 'none');
         skull.setAttribute('stroke', '#4a90d9');
-        skull.setAttribute('stroke-width', '0.003');
+        skull.setAttribute('stroke-width', '0.005'); // Сделали потолще
         headLayer.appendChild(skull);
 
-        // === 3. Рисуем подбородок (Прямая линия) ===
+        // 2. Подбородок
+        const chinY = cy + ry + chinYOffset; // Низ круга + сдвиг
+        const chinLeft = cx - chinW;
+        const chinRight = cx + chinW;
+
         const chinLine = document.createElementNS(SVG_NS, 'line');
-        chinLine.setAttribute('x1', chinLeftX);
-        chinLine.setAttribute('y1', actualChinY);
-        chinLine.setAttribute('x2', chinRightX);
-        chinLine.setAttribute('y2', actualChinY);
+        chinLine.setAttribute('x1', chinLeft); chinLine.setAttribute('y1', chinY);
+        chinLine.setAttribute('x2', chinRight); chinLine.setAttribute('y2', chinY);
         chinLine.setAttribute('stroke', '#4a90d9');
-        chinLine.setAttribute('stroke-width', '0.003');
+        chinLine.setAttribute('stroke-width', '0.005');
         headLayer.appendChild(chinLine);
 
-        // === 4. Рисуем челюсть ===
-        // Используем Path с кривыми Безье для скругления (Q - квадратичная)
-        
-        const angleRad = (jawAngleDeg * Math.PI) / 180;
-        
-        // Первая точка (от круга вниз под углом)
-        // Идем от широчайшей точки круга вниз и немного внутрь
-        const jawPoint1X = jawAttachX + Math.cos(angleRad) * (step5 * 0.5);
-        const jawPoint1Y = jawAttachY + Math.sin(angleRad) * (step5 * 0.8);
-
+        // 3. Челюсть (Линии от краев круга к подбородку)
         // Левая челюсть
-        // M (старт) -> L (линия вниз к точке 1) -> Q (скругление к подбородку)
-        let leftJawPath = `M ${jawAttachX} ${jawAttachY} `;
-        leftJawPath += `L ${jawPoint1X} ${jawPoint1Y} `;
-        
-        // Если скругление 0, то просто линия до подбородка. Если больше - квадратичная кривая.
-        if (jawRound > 0) {
-            // Контрольная точка для скругления (чуть выше подбородка и левее)
-            const cpX = jawPoint1X + (chinLeftX - jawPoint1X) * 0.2;
-            const cpY = actualChinY - (actualChinY - jawPoint1Y) * 0.5;
-            leftJawPath += `Q ${cpX} ${cpY} ${chinLeftX} ${actualChinY}`;
-        } else {
-            leftJawPath += `L ${chinLeftX} ${actualChinY}`;
-        }
-
         const leftJaw = document.createElementNS(SVG_NS, 'path');
-        leftJaw.setAttribute('d', leftJawPath);
+        leftJaw.setAttribute('d', `M ${cx - rx} ${cy} L ${cx - rx*0.8} ${chinY} L ${chinLeft} ${chinY}`);
         leftJaw.setAttribute('fill', 'none');
         leftJaw.setAttribute('stroke', '#4a90d9');
-        leftJaw.setAttribute('stroke-width', '0.003');
+        leftJaw.setAttribute('stroke-width', '0.005');
         headLayer.appendChild(leftJaw);
 
-        // Правая челюсть (зеркально)
-        const jawAttachRightX = centerX + maxWidthX;
-        const jawPoint1RightX = jawAttachRightX - Math.cos(angleRad) * (step5 * 0.5);
-        const jawPoint1RightY = jawAttachY + Math.sin(angleRad) * (step5 * 0.8);
-
-        let rightJawPath = `M ${jawAttachRightX} ${jawAttachY} `;
-        rightJawPath += `L ${jawPoint1RightX} ${jawPoint1RightY} `;
-        
-        if (jawRound > 0) {
-            const cpX = jawPoint1RightX + (chinRightX - jawPoint1RightX) * 0.2;
-            const cpY = actualChinY - (actualChinY - jawPoint1RightY) * 0.5;
-            rightJawPath += `Q ${cpX} ${cpY} ${chinRightX} ${actualChinY}`;
-        } else {
-            rightJawPath += `L ${chinRightX} ${actualChinY}`;
-        }
-
+        // Правая челюсть
         const rightJaw = document.createElementNS(SVG_NS, 'path');
-        rightJaw.setAttribute('d', rightJawPath);
+        rightJaw.setAttribute('d', `M ${cx + rx} ${cy} L ${cx + rx*0.8} ${chinY} L ${chinRight} ${chinY}`);
         rightJaw.setAttribute('fill', 'none');
         rightJaw.setAttribute('stroke', '#4a90d9');
-        rightJaw.setAttribute('stroke-width', '0.003');
+        rightJaw.setAttribute('stroke-width', '0.005');
         headLayer.appendChild(rightJaw);
     }
 
-    // Слушатели для всех ползунков головы и разметки
-    function updateAll() {
-        updateGrid();
-        updateHead();
-    }
+    // --- Слушатели UI ---
+    function updateAll() { updateGrid(); updateHead(); }
 
-    paddingSizeInput.addEventListener('input', (e) => {
-        paddingSizeValue.textContent = e.target.value + '%';
-        updateAll();
-    });
-    headCountInput.addEventListener('input', (e) => {
-        headCountValue.textContent = e.target.value;
-        updateAll();
-    });
+    paddingSizeInput.addEventListener('input', (e) => { paddingSizeValue.textContent = e.target.value + '%'; updateAll(); });
+    headCountInput.addEventListener('input', (e) => { headCountValue.textContent = e.target.value; updateAll(); });
     showGridInput.addEventListener('change', updateAll);
 
-    // Слушатели для головы
     showHeadInput.addEventListener('change', updateHead);
     
     const headControls = [
-        [headWidthInput, headWidthValue, '%'],
-        [headHeightInput, headHeightValue, '%'],
-        [chinWidthInput, chinWidthValue, '%'],
-        [chinHeightInput, chinHeightValue, '%'],
-        [jawAngleInput, jawAngleValue, '°'],
-        [jawRoundInput, jawRoundValue, '']
+        [headWidthInput, headWidthValue],
+        [headHeightInput, headHeightValue],
+        [chinWidthInput, chinWidthValue],
+        [chinYInput, chinYValue]
     ];
 
-    headControls.forEach(([input, span, suffix]) => {
+    headControls.forEach(([input, span]) => {
         input.addEventListener('input', (e) => {
-            span.textContent = e.target.value + suffix;
+            span.textContent = e.target.value;
             updateHead();
         });
     });
 
-    updateAll(); // Первичная отрисовка
+    updateAll();
 
     // ==========================================
     // РИСОВАНИЕ И ЗУМ (Без изменений)
     // ==========================================
-    
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
         if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
@@ -489,14 +390,12 @@
         exportSvg.setAttribute('height', '4096');
         exportSvg.setAttribute('viewBox', '0 0 1 1');
 
-        // 1. Фон
         const bgRect = document.createElementNS(SVG_NS, 'rect');
         bgRect.setAttribute('x', '0'); bgRect.setAttribute('y', '0');
         bgRect.setAttribute('width', '1'); bgRect.setAttribute('height', '1');
         bgRect.setAttribute('fill', bgColorInput.value);
         exportSvg.appendChild(bgRect);
 
-        // 2. Подложка
         if (currentBgSrc) {
             const imgEl = document.createElementNS(SVG_NS, 'image');
             imgEl.setAttribute('href', currentBgSrc);
@@ -518,7 +417,6 @@
             }
         }
 
-        // 3. Слои
         exportSvg.appendChild(measureLayer.cloneNode(true));
         exportSvg.appendChild(headLayer.cloneNode(true));
         
