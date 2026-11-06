@@ -3,30 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas 4096x4096</title>
+    <title>SVG Рисование 4096×4096</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Холст 4096×4096 (300 DPI)</h1>
+        <h1>SVG Холст 4096×4096 (300 DPI)</h1>
         <div class="canvas-wrapper">
-            <canvas id="mainCanvas" width="4096" height="4096"></canvas>
+            <svg id="mainSvg"
+                 xmlns="http://www.w3.org/2000/svg"
+                 viewBox="0 0 4096 4096"
+                 width="4096"
+                 height="4096"
+                 preserveAspectRatio="xMidYMid meet">
+                <!-- Фон -->
+                <rect id="bgRect" x="0" y="0" width="4096" height="4096" fill="#ffffff"/>
+                <!-- Слой рисования -->
+                <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+            </svg>
         </div>
         <div class="controls">
             <button id="clearBtn">Очистить</button>
-            <button id="downloadBtn">Скачать PNG</button>
+            <button id="downloadSvgBtn">Скачать SVG</button>
+            <button id="downloadPngBtn">Скачать PNG</button>
             <label>
-                Цвет фона:
+                Фон:
                 <input type="color" id="bgColor" value="#ffffff">
             </label>
             <label>
-                Цвет кисти:
+                Цвет:
                 <input type="color" id="brushColor" value="#000000">
             </label>
             <label>
-                Размер кисти:
-                <input type="range" id="brushSize" min="1" max="100" value="10">
-                <span id="brushSizeValue">10</span>
+                Толщина:
+                <input type="range" id="brushSize" min="1" max="200" value="12">
+                <span id="brushSizeValue">12</span>
+            </label>
+            <label>
+                <input type="checkbox" id="eraserMode"> Ластик
             </label>
         </div>
     </div>
