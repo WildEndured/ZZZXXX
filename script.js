@@ -1,412 +1,610 @@
-(function () {
-    'use strict';
+'use strict';
 
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-    const svg = document.getElementById('mainSvg');
-    const zoomContainer = document.getElementById('zoomContainer');
-    const drawLayer = document.getElementById('drawLayer');
-    const measureLayer = document.getElementById('measureLayer');
-    const headLayer = document.getElementById('headLayer');
-    
-    const bgColorLayer = document.getElementById('bgColorLayer');
-    const bgImage = document.getElementById('bgImage');
+/* =========================================================
+   1. ХОЛСТ И СЛОИ — ссылки на DOM
+   ========================================================= */
+const container    = document.getElementById('canvasContainer');
+const zoomLayer    = document.getElementById('zoomLayer');
+const bgLayer      = document.getElementById('bgLayer');
+const backImage    = document.getElementById('backImage');
+const drawSvg      = document.getElementById('drawSvg');
+const drawGroup    = document.getElementById('drawGroup');
+const guidesGroup  = document.getElementById('guidesGroup');
 
-    // UI
-    const clearBtn = document.getElementById('clearBtn');
-    const downloadSvgBtn = document.getElementById('downloadSvgBtn');
-    const downloadPngBtn = document.getElementById('downloadPngBtn');
-    const resetZoomBtn = document.getElementById('resetZoomBtn');
-    const uploadBg = document.getElementById('uploadBg');
-    const removeBgBtn = document.getElementById('removeBgBtn');
-    const bgControls = document.getElementById('bgControls');
-    const bgOpacity = document.getElementById('bgOpacity');
-    const bgOpacityValue = document.getElementById('bgOpacityValue');
-    const bgScale = document.getElementById('bgScale');
-    const bgScaleValue = document.getElementById('bgScaleValue');
-    const bgColorInput = document.getElementById('bgColor');
-    const brushColorInput = document.getElementById('brushColor');
-    const brushSizeInput = document.getElementById('brushSize');
-    const brushSizeValue = document.getElementById('brushSizeValue');
-    const eraserMode = document.getElementById('eraserMode');
-    const paddingSizeInput = document.getElementById('paddingSize');
-    const paddingSizeValue = document.getElementById('paddingSizeValue');
-    const headCountInput = document.getElementById('headCount');
-    const headCountValue = document.getElementById('headCountValue');
-    const showGridInput = document.getElementById('showGrid');
+/* =========================================================
+   2. СОСТОЯНИЕ ЗУМА И ПАНОРАМИРОВАНИЯ
+   scale >= 1, ограничено рамками контейнера
+   ========================================================= */
+const zoomState = {
+  scale: 1,
+  tx: 0,    // сдвиг по X в пикселях (в системе контейнера)
+  ty: 0
+};
 
-    // Голова (ползунки из HTML)
-    const showHeadInput = document.getElementById('showHead');
-    const headWidthInput = document.getElementById('headWidth');
-    const headWidthValue = document.getElementById('headWidthValue');
-    const headHeightInput = document.getElementById('headHeight');
-    const headHeightValue = document.getElementById('headHeightValue');
-    const chinWidthInput = document.getElementById('chinWidth');
-    const chinWidthValue = document.getElementById('chinWidthValue');
-    const chinYInput = document.getElementById('chinY');
-    const chinYValue = document.getElementById('chinYValue');
-    
-    // Ползунки челюсти (в HTML они называются jawAttachY, jawWidth, jawAngle, jawRound)
-    const jawAttachYInput = document.getElementById('jawAttachY');
-    const jawAttachYValue = document.getElementById('jawAttachYValue');
-    const jawWidthInput = document.getElementById('jawWidth');
-    const jawWidthValue = document.getElementById('jawWidthValue');
-    const jawAngleInput = document.getElementById('jawAngle');
-    const jawAngleValue = document.getElementById('jawAngleValue');
-    const jawRoundInput = document.getElementById('jawRound');
-    const jawRoundValue = document.getElementById('jawRoundValue');
+/** Жёсткий clamp: масштаб >= 1, сдвиг не выводит холст за края */
+function clampTransform() {
+  const rect = container.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height;
 
-    const PNG_SIZE = 4096;
-    let drawing = false;
-    let currentPath = null;
-    let currentPoints = [];
-    let currentBgSrc = null; 
-    let bgNaturalWidth = 0;
-    let bgNaturalHeight = 0;
+  // Минимальный масштаб = 1
+  if (zoomState.scale < 1) zoomState.scale = 1;
 
-    // Зум
-    let scale = 1, translateX = 0, translateY = 0;
-    let startPanX = 0, startPanY = 0;
-    const activePointers = new Map();
-    let initialPinchDistance = 0;
-    let initialScale = 1;
-    let isGestureActive = false;
+  // Максимальный сдвиг: при scale>=1 холст больше/равен контейнеру
+  const maxTx = 0;
+  const minTx = w * (1 - zoomState.scale);
+  const maxTy = 0;
+  const minTy = h * (1 - zoomState.scale);
 
-    function clampTransform() {
-        if (scale < 1) scale = 1;
-        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
-        const w = wrapperRect.width, h = wrapperRect.height;
-        if (scale === 1) { translateX = 0; translateY = 0; } 
-        else {
-            translateX = Math.max(Math.min(0, w - (w * scale)), Math.min(0, translateX));
-            translateY = Math.max(Math.min(0, h - (h * scale)), Math.min(0, translateY));
-        }
-    }
-    function applyTransform() {
-        clampTransform();
-        zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    }
+  if (zoomState.tx > maxTx) zoomState.tx = maxTx;
+  if (zoomState.tx < minTx) zoomState.tx = minTx;
+  if (zoomState.ty > maxTy) zoomState.ty = maxTy;
+  if (zoomState.ty < minTy) zoomState.ty = minTy;
+}
 
-    // Подложка
-    uploadBg.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            currentBgSrc = event.target.result;
-            const tempImg = new Image();
-            tempImg.onload = () => {
-                bgNaturalWidth = tempImg.naturalWidth;
-                bgNaturalHeight = tempImg.naturalHeight;
-                bgImage.src = currentBgSrc;
-                bgImage.style.display = 'block';
-                bgControls.style.display = 'flex';
-                removeBgBtn.style.display = 'inline-block';
-                bgOpacity.value = 100; bgScale.value = 100;
-                updateBgStyle();
-            };
-            tempImg.src = currentBgSrc;
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
-    });
-    removeBgBtn.addEventListener('click', () => {
-        currentBgSrc = null; bgImage.removeAttribute('src'); bgImage.style.display = 'none';
-        bgControls.style.display = 'none'; removeBgBtn.style.display = 'none';
-    });
-    function updateBgStyle() {
-        if (!bgNaturalHeight) return;
-        bgImage.style.opacity = Number(bgOpacity.value) / 100;
-        bgImage.style.transform = `scale(${Number(bgScale.value) / 100})`;
-        bgOpacityValue.textContent = bgOpacity.value + '%';
-        bgScaleValue.textContent = bgScale.value + '%';
-    }
-    bgOpacity.addEventListener('input', updateBgStyle);
-    bgScale.addEventListener('input', updateBgStyle);
+/** Применяет трансформацию к слою */
+function applyTransform() {
+  clampTransform();
+  zoomLayer.style.transform =
+    `translate(${zoomState.tx}px, ${zoomState.ty}px) scale(${zoomState.scale})`;
+}
 
-    // Разметка
-    function getTopZone() {
-        const padding = Number(paddingSizeInput.value) / 100;
-        const heads = Number(headCountInput.value);
-        const step = (1 - padding * 2) / heads;
-        return { startY: padding, stepHeight: step, drawingHeight: 1 - padding * 2 };
-    }
+/* =========================================================
+   3. РИСОВАНИЕ — параметры и состояние
+   ========================================================= */
+const brush = {
+  color: '#e63946',
+  size: 0.005,
+  eraser: false
+};
 
-    function updateGrid() {
-        measureLayer.innerHTML = '';
-        if (!showGridInput.checked) return;
-        const { startY, stepHeight } = getTopZone();
-        const heads = Number(headCountInput.value);
+let currentPath = null;    // текущий рисуемый <path>
+let currentPoints = [];    // накопленные точки [x, y] в системе 0..1
+let isDrawing = false;
+let activePointerId = null;
 
-        for (let i = 0; i <= heads; i++) {
-            const y = startY + (i * stepHeight);
-            const line = document.createElementNS(SVG_NS, 'line');
-            line.setAttribute('x1', '0'); line.setAttribute('y1', y);
-            line.setAttribute('x2', '1'); line.setAttribute('y2', y);
-            line.setAttribute('stroke', '#000'); line.setAttribute('stroke-width', '0.002'); 
-            line.setAttribute('stroke-dasharray', '0.015, 0.015'); line.setAttribute('opacity', '0.6'); 
-            measureLayer.appendChild(line);
-        }
-    }
+const history = [];        // стек для undo
 
-    // ==========================================
-    // ОТРИСОВКА ГОЛОВЫ (МАТЕМАТИКА ИЗ СТАРОГО КОДА)
-    // ==========================================
-    function updateHead() {
-        headLayer.innerHTML = '';
-        if (!showHeadInput.checked) return;
+/* Пересчёт координат события в систему viewBox 0..1 */
+function toSvgCoords(clientX, clientY) {
+  const rect = drawSvg.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / rect.width,
+    y: (clientY - rect.top) / rect.height
+  };
+}
 
-        const { startY, stepHeight } = getTopZone();
-        
-        // Базовые пропорции головы (как в старом коде)
-        // Верх головы (0/5)
-        const skullTopBase = startY; 
-        // Низ черепа (3/5)
-        const skullBotBase = startY + stepHeight * 3 / 5; 
-        
-        const baseR = (skullBotBase - skullTopBase) / 2;
-        const skullCyBase = skullTopBase + baseR; 
+/* Построение гладкого пути из точек через квадратичные кривые Q */
+function buildPathD(points) {
+  if (points.length === 0) return '';
+  if (points.length === 1) {
+    const [p] = points;
+    return `M ${p.x} ${p.y} L ${p.x} ${p.y}`;
+  }
 
-        // Параметры черепа
-        const skullH = Number(headHeightInput.value) / 100 || 1;
-        const skullW = Number(headWidthInput.value) / 100 || 1;
-        
-        const rY = baseR * skullH;
-        const rX = baseR * skullW;
-        const headCx = 0.5; // Центр по X
-        const cy = skullCyBase;
-        
-        const skullTop = cy - rY;
-        const skullBottom = cy + rY;
+  let d = `M ${points[0].x} ${points[0].y}`;
 
-        // Параметры подбородка
-        const chinBaseY = startY + stepHeight * 4 / 5;
-        const chinYOffset = Number(chinYInput.value) / 100;
-        const chinCenterY = chinBaseY + chinYOffset * (stepHeight / 5);
+  if (points.length === 2) {
+    d += ` L ${points[1].x} ${points[1].y}`;
+    return d;
+  }
 
-        const chinWParam = Number(chinWidthInput.value) / 100;
-        const chinRParam = Number(jawRoundInput.value) / 20; // Используем скругление вместо chinR
-        
-        const chinHalfW = chinWParam * rX * 0.7;
-        
-        // Челюсть
-        const jawYParam = Number(jawAttachYInput.value) / 100;
-        const jawAttachY = skullBottom - (skullBottom - cy) * jawYParam;
+  // Сглаживание: средние точки как контрольные для Q
+  for (let i = 1; i < points.length - 1; i++) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    d += ` Q ${points[i].x} ${points[i].y} ${midX} ${midY}`;
+  }
 
-        const jawWParam = Number(jawWidthInput.value) / 100;
-        const jawBParam = Number(jawAngleInput.value) / 100;
+  // Замыкаем на последнюю точку
+  const last = points[points.length - 1];
+  d += ` L ${last.x} ${last.y}`;
 
-        // Точки крепления челюсти к кругу (математика эллипса)
-        const attachDx = Math.sqrt(Math.max(0, 1 - Math.pow((jawAttachY - cy) / rY, 2)));
-        const attachLeft  = { x: headCx - rX * attachDx, y: jawAttachY };
-        const attachRight = { x: headCx + rX * attachDx, y: jawAttachY };
+  return d;
+}
 
-        // Точки излома челюсти
-        const cornerLeft  = { x: headCx - rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
-        const cornerRight = { x: headCx + rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
+/** Создаёт новый <path> для рисования */
+function startNewPath(pt) {
+  currentPoints = [pt];
 
-        // Точки подбородка
-        let chinLeft, chinRight;
-        if (chinHalfW < 0.005) {
-            chinLeft = { x: headCx, y: chinCenterY };
-            chinRight = { x: headCx, y: chinCenterY };
-        } else {
-            chinLeft  = { x: headCx - chinHalfW, y: chinCenterY };
-            chinRight = { x: headCx + chinHalfW, y: chinCenterY };
-        }
+  currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  currentPath.setAttribute('fill', 'none');
+  currentPath.setAttribute('stroke-linecap', 'round');
+  currentPath.setAttribute('stroke-linejoin', 'round');
 
-        const strokeColor = '#ff0000';
-        const strokeWidth = '0.004';
+  if (brush.eraser) {
+    currentPath.setAttribute('stroke', bgLayer.style.backgroundColor || '#ffffff');
+  } else {
+    currentPath.setAttribute('stroke', brush.color);
+  }
 
-        // 1. ЧЕРЕП
-        const skull = document.createElementNS(SVG_NS, 'ellipse');
-        skull.setAttribute('cx', headCx);
-        skull.setAttribute('cy', cy);
-        skull.setAttribute('rx', rX);
-        skull.setAttribute('ry', rY);
-        skull.setAttribute('fill', 'none');
-        skull.setAttribute('stroke', strokeColor);
-        skull.setAttribute('stroke-width', strokeWidth);
-        headLayer.appendChild(skull);
+  currentPath.setAttribute('stroke-width', brush.size);
+  currentPath.setAttribute('d', buildPathD(currentPoints));
 
-        // 2. ПОДБОРОДОК
-        if (chinHalfW >= 0.005) {
-            const chinLine = document.createElementNS(SVG_NS, 'line');
-            chinLine.setAttribute('x1', chinLeft.x); chinLine.setAttribute('y1', chinLeft.y);
-            chinLine.setAttribute('x2', chinRight.x); chinLine.setAttribute('y2', chinRight.y);
-            chinLine.setAttribute('stroke', strokeColor);
-            chinLine.setAttribute('stroke-width', strokeWidth);
-            headLayer.appendChild(chinLine);
-        }
+  drawGroup.appendChild(currentPath);
+}
 
-        // 3. ЧЕЛЮСТЬ (с учетом скругления)
-        const roundVal = Number(jawRoundInput.value) / 20; // 0..1
+/** Обновляет d-атрибут текущего пути */
+function updatePath(pt) {
+  if (!currentPath) return;
 
-        // Левая челюсть
-        let leftPathD = `M ${attachLeft.x} ${attachLeft.y} L ${cornerLeft.x} ${cornerLeft.y} `;
-        
-        if (roundVal > 0 && chinHalfW >= 0.005) {
-            // Квадратичная кривая для скругления
-            const cpX = cornerLeft.x + (chinLeft.x - cornerLeft.x) * 0.5;
-            const cpY = cornerLeft.y + (chinLeft.y - cornerLeft.y) * 0.5;
-            leftPathD += `Q ${cpX} ${cpY} ${chinLeft.x} ${chinLeft.y}`;
-        } else {
-            leftPathD += `L ${chinLeft.x} ${chinLeft.y}`;
-        }
+  const last = currentPoints[currentPoints.length - 1];
+  const dx = pt.x - last.x;
+  const dy = pt.y - last.y;
+  // Прореживание точек для плавности и производительности
+  if (dx * dx + dy * dy < 0.00002) return;
 
-        const leftJaw = document.createElementNS(SVG_NS, 'path');
-        leftJaw.setAttribute('d', leftPathD);
-        leftJaw.setAttribute('fill', 'none');
-        leftJaw.setAttribute('stroke', strokeColor);
-        leftJaw.setAttribute('stroke-width', strokeWidth);
-        headLayer.appendChild(leftJaw);
+  currentPoints.push(pt);
+  currentPath.setAttribute('d', buildPathD(currentPoints));
+}
 
-        // Правая челюсть
-        let rightPathD = `M ${attachRight.x} ${attachRight.y} L ${cornerRight.x} ${cornerRight.y} `;
-        
-        if (roundVal > 0 && chinHalfW >= 0.005) {
-            const cpX = cornerRight.x + (chinRight.x - cornerRight.x) * 0.5;
-            const cpY = cornerRight.y + (chinRight.y - cornerRight.y) * 0.5;
-            rightPathD += `Q ${cpX} ${cpY} ${chinRight.x} ${chinRight.y}`;
-        } else {
-            rightPathD += `L ${chinRight.x} ${chinRight.y}`;
-        }
+/** Отмена текущего пути (защита от случайного рисования) */
+function cancelCurrentPath() {
+  if (currentPath && currentPath.parentNode) {
+    currentPath.parentNode.removeChild(currentPath);
+  }
+  currentPath = null;
+  currentPoints = [];
+  isDrawing = false;
+  activePointerId = null;
+}
 
-        const rightJaw = document.createElementNS(SVG_NS, 'path');
-        rightJaw.setAttribute('d', rightPathD);
-        rightJaw.setAttribute('fill', 'none');
-        rightJaw.setAttribute('stroke', strokeColor);
-        rightJaw.setAttribute('stroke-width', strokeWidth);
-        headLayer.appendChild(rightJaw);
-    }
+/* =========================================================
+   4. POINTER EVENTS — рисование, зум, панорамирование
+   ========================================================= */
+const activePointers = new Map();   // pointerId -> {x, y}
+let pinchStart = null;              // данные для pinch
+let panStart = null;                // данные для панорамирования
 
-    function updateAll() { updateGrid(); updateHead(); }
-    
-    // Слушатели
-    paddingSizeInput.addEventListener('input', (e) => { paddingSizeValue.textContent = e.target.value + '%'; updateAll(); });
-    headCountInput.addEventListener('input', (e) => { headCountValue.textContent = e.target.value; updateAll(); });
-    showGridInput.addEventListener('change', updateAll);
-    showHeadInput.addEventListener('change', updateHead);
-    
-    const headControls = [
-        [headWidthInput, headWidthValue],
-        [headHeightInput, headHeightValue],
-        [chinWidthInput, chinWidthValue],
-        [chinYInput, chinYValue],
-        [jawAttachYInput, jawAttachYValue],
-        [jawWidthInput, jawWidthValue],
-        [jawAngleInput, jawAngleValue],
-        [jawRoundInput, jawRoundValue]
-    ];
-    
-    headControls.forEach(([input, span]) => {
-        input.addEventListener('input', (e) => { span.textContent = e.target.value; updateHead(); });
-    });
+/** Количество активных касаний/указателей */
+function pointerCount() {
+  return activePointers.size;
+}
 
-    updateAll();
+/* ---------- pointerdown ---------- */
+drawSvg.addEventListener('pointerdown', (e) => {
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    // --- Рисование и Зум ---
-    function toSvgCoords(e) {
-        const rect = svg.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
-        return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
-    }
-    function getStrokeWidth() { return Number(brushSizeInput.value) / 4000; }
-    
-    function startPath(p) {
-        currentPath = document.createElementNS(SVG_NS, 'path');
-        const color = eraserMode.checked ? bgColorInput.value : brushColorInput.value;
-        currentPath.setAttribute('fill', 'none');
-        currentPath.setAttribute('stroke', color);
-        currentPath.setAttribute('stroke-width', getStrokeWidth());
-        currentPath.setAttribute('stroke-linecap', 'round');
-        currentPath.setAttribute('stroke-linejoin', 'round');
-        currentPoints = [p];
-        currentPath.setAttribute('d', `M ${p.x} ${p.y}`);
-        drawLayer.appendChild(currentPath);
-    }
-    function extendPath(p) {
-        if (!currentPath) return;
-        currentPoints.push(p);
-        let d = `M ${currentPoints[0].x} ${currentPoints[0].y}`;
-        for (let i = 1; i < currentPoints.length - 1; i++) {
-            const midX = (currentPoints[i].x + currentPoints[i + 1].x) / 2;
-            const midY = (currentPoints[i].y + currentPoints[i + 1].y) / 2;
-            d += ` Q ${currentPoints[i].x} ${currentPoints[i].y} ${midX} ${midY}`;
-        }
-        if (currentPoints.length > 1) d += ` L ${currentPoints[currentPoints.length-1].x} ${currentPoints[currentPoints.length-1].y}`;
-        currentPath.setAttribute('d', d);
-    }
+  // Второй палец → отменяем рисование, включаем зум
+  if (activePointers.size === 2) {
+    if (isDrawing) cancelCurrentPath();
+    drawSvg.setPointerCapture && drawSvg.setPointerCapture(e.pointerId);
+    initPinch();
+    return;
+  }
 
-    svg.addEventListener('pointerdown', (e) => {
-        svg.setPointerCapture(e.pointerId);
-        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        if (activePointers.size === 1) { isGestureActive = false; drawing = true; startPath(toSvgCoords(e)); } 
-        else if (activePointers.size === 2) {
-            isGestureActive = true; drawing = false; if (currentPath) { currentPath.remove(); currentPath = null; }
-            const p = Array.from(activePointers.values());
-            initialPinchDistance = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y); initialScale = scale;
-            startPanX = (p[0].x + p[1].x) / 2 - translateX; startPanY = (p[0].y + p[1].y) / 2 - translateY;
-        }
-    });
-    svg.addEventListener('pointermove', (e) => {
-        if (!activePointers.has(e.pointerId)) return;
-        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        if (isGestureActive && activePointers.size === 2) {
-            const p = Array.from(activePointers.values());
-            let newScale = initialScale * (Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y) / initialPinchDistance);
-            newScale = Math.min(newScale, 20);
-            const cx = (p[0].x + p[1].x) / 2, cy = (p[0].y + p[1].y) / 2;
-            translateX = cx - (cx - translateX) * (newScale / scale); translateY = cy - (cy - translateY) * (newScale / scale);
-            scale = newScale;
-            translateX += (cx - startPanX) - translateX; translateY += (cy - startPanY) - translateY;
-            applyTransform();
-        } else if (drawing && activePointers.size === 1) extendPath(toSvgCoords(e));
-    });
-    const upCancel = (e) => {
-        if (activePointers.has(e.pointerId)) activePointers.delete(e.pointerId);
-        if (activePointers.size === 0) { drawing = false; isGestureActive = false; currentPath = null; }
+  // Средняя кнопка / Shift+ЛКМ → панорамирование
+  const isPan = (e.button === 1) || (e.shiftKey && e.button === 0);
+  if (isPan && activePointers.size === 1) {
+    drawSvg.setPointerCapture(e.pointerId);
+    panStart = {
+      x: e.clientX,
+      y: e.clientY,
+      tx: zoomState.tx,
+      ty: zoomState.ty
     };
-    svg.addEventListener('pointerup', upCancel); svg.addEventListener('pointercancel', upCancel);
-    resetZoomBtn.addEventListener('click', () => { scale = 1; translateX = 0; translateY = 0; applyTransform(); });
-    clearBtn.addEventListener('click', () => { drawLayer.innerHTML = ''; });
-    brushSizeInput.addEventListener('input', () => { brushSizeValue.textContent = brushSizeInput.value; });
+    return;
+  }
 
-    // Экспорт
-    async function getExportSvgString() {
-        const exportSvg = document.createElementNS(SVG_NS, 'svg');
-        exportSvg.setAttribute('xmlns', SVG_NS); exportSvg.setAttribute('width', '4096'); exportSvg.setAttribute('height', '4096'); exportSvg.setAttribute('viewBox', '0 0 1 1');
-        const bgRect = document.createElementNS(SVG_NS, 'rect');
-        bgRect.setAttribute('x', '0'); bgRect.setAttribute('y', '0'); bgRect.setAttribute('width', '1'); bgRect.setAttribute('height', '1'); bgRect.setAttribute('fill', bgColorInput.value);
-        exportSvg.appendChild(bgRect);
-        if (currentBgSrc) {
-            const imgEl = document.createElementNS(SVG_NS, 'image');
-            imgEl.setAttribute('href', currentBgSrc);
-            const s = Number(bgScale.value) / 100, w = 1 * (bgNaturalWidth/bgNaturalHeight), h = 1;
-            imgEl.setAttribute('x', 0.5 - w / 2); imgEl.setAttribute('y', 0.5 - h / 2); imgEl.setAttribute('width', w); imgEl.setAttribute('height', h);
-            imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet'); imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
-            const g = document.createElementNS(SVG_NS, 'g');
-            g.setAttribute('transform', `translate(0.5, 0.5) scale(${s}) translate(-0.5, -0.5)`);
-            g.appendChild(imgEl); exportSvg.appendChild(g);
-        }
-        exportSvg.appendChild(measureLayer.cloneNode(true)); exportSvg.appendChild(headLayer.cloneNode(true));
-        const drawClone = drawLayer.cloneNode(true); drawClone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
-        exportSvg.appendChild(drawClone);
-        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + new XMLSerializer().serializeToString(exportSvg);
+  // Только ЛКМ/касание — начинаем рисовать
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  if (activePointers.size !== 1) return;
+
+  e.preventDefault();
+  drawSvg.setPointerCapture(e.pointerId);
+
+  isDrawing = true;
+  activePointerId = e.pointerId;
+
+  const pt = toSvgCoords(e.clientX, e.clientY);
+  startNewPath(pt);
+});
+
+/* ---------- pointermove ---------- */
+drawSvg.addEventListener('pointermove', (e) => {
+  if (!activePointers.has(e.pointerId)) return;
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  // Два пальца → pinch-zoom / панорамирование
+  if (activePointers.size === 2) {
+    handlePinch();
+    return;
+  }
+
+  // Панорамирование
+  if (panStart) {
+    zoomState.tx = panStart.tx + (e.clientX - panStart.x);
+    zoomState.ty = panStart.ty + (e.clientY - panStart.y);
+    applyTransform();
+    return;
+  }
+
+  // Рисование
+  if (isDrawing && e.pointerId === activePointerId) {
+    e.preventDefault();
+    const pt = toSvgCoords(e.clientX, e.clientY);
+    updatePath(pt);
+  }
+});
+
+/* ---------- pointerup / pointercancel ---------- */
+function endPointer(e) {
+  activePointers.delete(e.pointerId);
+
+  if (isDrawing && e.pointerId === activePointerId) {
+    // Финализируем путь и кладём в историю
+    if (currentPath) {
+      history.push(currentPath);
     }
-    downloadSvgBtn.addEventListener('click', async () => {
-        const blob = new Blob([await getExportSvgString()], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'drawing.svg'; a.click(); URL.revokeObjectURL(url);
-    });
-    downloadPngBtn.addEventListener('click', async () => {
-        const blob = new Blob([await getExportSvgString()], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob); const img = new Image();
-        img.onload = () => {
-            const c = document.createElement('canvas'); c.width = PNG_SIZE; c.height = PNG_SIZE;
-            c.getContext('2d').drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
-            c.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'drawing.png'; a.click(); URL.revokeObjectURL(a.href); }, 'image/png');
-            URL.revokeObjectURL(url);
-        };
-        img.src = url;
-    });
-})();
+    currentPath = null;
+    currentPoints = [];
+    isDrawing = false;
+    activePointerId = null;
+  }
+
+  if (panStart) panStart = null;
+
+  if (activePointers.size < 2) pinchStart = null;
+
+  if (activePointers.size === 0) {
+    pinchStart = null;
+    panStart = null;
+  }
+}
+
+drawSvg.addEventListener('pointerup', endPointer);
+drawSvg.addEventListener('pointercancel', endPointer);
+
+/* ---------- Колесо мыши → зум ---------- */
+container.addEventListener('wheel', (e) => {
+  e.preventDefault();
+
+  const rect = container.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const oldScale = zoomState.scale;
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  let newScale = oldScale * factor;
+  if (newScale < 1) newScale = 1;
+  if (newScale > 20) newScale = 20;
+
+  // Масштабирование относительно курсора
+  zoomState.tx = cx - (cx - zoomState.tx) * (newScale / oldScale);
+  zoomState.ty = cy - (cy - zoomState.ty) * (newScale / oldScale);
+  zoomState.scale = newScale;
+
+  applyTransform();
+}, { passive: false });
+
+/* ---------- PINCH: инициализация и обработка ---------- */
+function getPinchData() {
+  const pts = [...activePointers.values()];
+  if (pts.length < 2) return null;
+  const [a, b] = pts;
+  return {
+    dist: Math.hypot(a.x - b.x, a.y - b.y),
+    cx: (a.x + b.x) / 2,
+    cy: (a.y + b.y) / 2
+  };
+}
+
+function initPinch() {
+  const data = getPinchData();
+  if (!data) return;
+  const rect = container.getBoundingClientRect();
+  pinchStart = {
+    dist: data.dist,
+    scale: zoomState.scale,
+    tx: zoomState.tx,
+    ty: zoomState.ty,
+    // Центр жеста в системе контейнера
+    cx: data.cx - rect.left,
+    cy: data.cy - rect.top
+  };
+}
+
+function handlePinch() {
+  const data = getPinchData();
+  if (!data || !pinchStart) return;
+
+  const rect = container.getBoundingClientRect();
+  const cx = data.cx - rect.left;
+  const cy = data.cy - rect.top;
+
+  // Новый масштаб
+  let newScale = pinchStart.scale * (data.dist / pinchStart.dist);
+  if (newScale < 1) newScale = 1;
+  if (newScale > 20) newScale = 20;
+
+  // Масштабирование относительно стартового центра + панорамирование центра
+  const ratio = newScale / pinchStart.scale;
+  zoomState.scale = newScale;
+  zoomState.tx = cx - (pinchStart.cx - pinchStart.tx) * ratio;
+  zoomState.ty = cy - (pinchStart.cy - pinchStart.ty) * ratio;
+
+  applyTransform();
+}
+
+/* =========================================================
+   5. UI — кисть, фон, подложка
+   ========================================================= */
+const brushColorInput = document.getElementById('brushColor');
+const brushSizeInput  = document.getElementById('brushSize');
+const brushSizeVal    = document.getElementById('brushSizeVal');
+const bgColorInput    = document.getElementById('bgColor');
+const eraserCheckbox  = document.getElementById('eraserMode');
+
+brushColorInput.addEventListener('input', () => {
+  brush.color = brushColorInput.value;
+  eraserCheckbox.checked = false;
+  brush.eraser = false;
+});
+
+brushSizeInput.addEventListener('input', () => {
+  brush.size = parseFloat(brushSizeInput.value);
+  brushSizeVal.textContent = brush.size.toFixed(5);
+});
+
+bgColorInput.addEventListener('input', () => {
+  bgLayer.style.backgroundColor = bgColorInput.value;
+  if (brush.eraser) {
+    brush.color = bgColorInput.value;
+  }
+});
+
+eraserCheckbox.addEventListener('change', () => {
+  brush.eraser = eraserCheckbox.checked;
+});
+
+/* ----- Кнопки ----- */
+document.getElementById('btnUndo').addEventListener('click', () => {
+  const last = history.pop();
+  if (last && last.parentNode) last.parentNode.removeChild(last);
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  drawGroup.innerHTML = '';
+  history.length = 0;
+  currentPath = null;
+  currentPoints = [];
+});
+
+/* ----- Подложка: загрузка ----- */
+const imageInput   = document.getElementById('imageInput');
+const imgScale     = document.getElementById('imgScale');
+const imgScaleVal  = document.getElementById('imgScaleVal');
+const imgOpacity   = document.getElementById('imgOpacity');
+const imgOpacityVal= document.getElementById('imgOpacityVal');
+
+let backImageData = null;     // base64 подложки
+let backImageRatio = 1;       // соотношение сторон (w/h)
+
+imageInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    backImageData = ev.target.result;
+    backImage.src = backImageData;
+
+    backImage.onload = () => {
+      backImageRatio = backImage.naturalWidth / backImage.naturalHeight;
+      updateBackImage();
+    };
+  };
+  reader.readAsDataURL(file);
+});
+
+/** Обновляет размер/прозрачность подложки */
+function updateBackImage() {
+  const scale = parseInt(imgScale.value, 10) / 100;
+  const opacity = parseInt(imgOpacity.value, 10) / 100;
+
+  // 100% = картинка вписана ровно по высоте холста
+  const baseHeight = container.clientHeight;
+  const h = baseHeight * scale;
+  const w = h * backImageRatio;
+
+  backImage.style.height = h + 'px';
+  backImage.style.width  = w + 'px';
+  backImage.style.opacity = opacity;
+
+  imgScaleVal.textContent   = imgScale.value + '%';
+  imgOpacityVal.textContent = imgOpacity.value + '%';
+}
+
+imgScale.addEventListener('input', updateBackImage);
+imgOpacity.addEventListener('input', updateBackImage);
+
+/* Пересчёт при ресайзе окна */
+window.addEventListener('resize', () => {
+  applyTransform();
+  updateBackImage();
+});
+
+/* =========================================================
+   6. РАЗМЕТКА — рамка и пунктирные линии
+   ========================================================= */
+const marginInput  = document.getElementById('marginSize');
+const marginVal    = document.getElementById('marginVal');
+const headsInput   = document.getElementById('headsCount');
+const headsVal     = document.getElementById('headsVal');
+
+function drawGuides() {
+  guidesGroup.innerHTML = '';
+
+  const margin = parseFloat(marginInput.value) / 100;   // 0..0.1
+  const heads  = parseInt(headsInput.value, 10);        // 2..8
+
+  marginVal.textContent = (margin * 100).toFixed(1) + '%';
+  headsVal.textContent  = heads;
+
+  // Красная рамка зоны (верх и низ)
+  const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  frame.setAttribute('x', '0');
+  frame.setAttribute('y', margin);
+  frame.setAttribute('width', '1');
+  frame.setAttribute('height', 1 - margin * 2);
+  frame.setAttribute('fill', 'none');
+  frame.setAttribute('stroke', '#e63946');
+  frame.setAttribute('stroke-width', '0.002');
+  frame.setAttribute('vector-effect', 'non-scaling-stroke');
+  guidesGroup.appendChild(frame);
+
+  // Пунктирные линии для голов: делим пространство между отступами
+  const areaTop    = margin;
+  const areaBottom = 1 - margin;
+  const areaHeight = areaBottom - areaTop;
+  const step = areaHeight / heads;
+
+  for (let i = 1; i < heads; i++) {
+    const y = areaTop + step * i;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', '0');
+    line.setAttribute('y1', y);
+    line.setAttribute('x2', '1');
+    line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#e63946');
+    line.setAttribute('stroke-width', '0.0015');
+    line.setAttribute('stroke-dasharray', '0.01 0.01');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    guidesGroup.appendChild(line);
+  }
+}
+
+marginInput.addEventListener('input', drawGuides);
+headsInput.addEventListener('input', drawGuides);
+
+/* =========================================================
+   7. ЭКСПОРТ SVG и PNG
+   ========================================================= */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const EXPORT_SIZE = 4096;
+
+/** Собирает итоговый SVG с нуля: фон + подложка + пути */
+function buildExportSvg() {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('xmlns', SVG_NS);
+  svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  svg.setAttribute('viewBox', '0 0 1 1');
+  svg.setAttribute('width', EXPORT_SIZE);
+  svg.setAttribute('height', EXPORT_SIZE);
+
+  // --- 1. Фон ---
+  const bgRect = document.createElementNS(SVG_NS, 'rect');
+  bgRect.setAttribute('x', '0');
+  bgRect.setAttribute('y', '0');
+  bgRect.setAttribute('width', '1');
+  bgRect.setAttribute('height', '1');
+  bgRect.setAttribute('fill', bgLayer.style.backgroundColor || '#ffffff');
+  svg.appendChild(bgRect);
+
+  // --- 2. Подложка (с учётом масштаба и прозрачности) ---
+  if (backImageData) {
+    const imgScaleVal_ = parseInt(imgScale.value, 10) / 100;
+    const imgOpacityVal_ = parseInt(imgOpacity.value, 10) / 100;
+
+    // В системе viewBox 0..1 высота картинки = imgScaleVal_ (100% = высота холста)
+    // сохраняем пропорции; позиционируем по центру
+    const imgH = imgScaleVal_;
+    const imgW = imgScaleVal_ * backImageRatio;
+
+    const imgEl = document.createElementNS(SVG_NS, 'image');
+    imgEl.setAttribute('x', ((1 - imgW) / 2).toString());
+    imgEl.setAttribute('y', ((1 - imgH) / 2).toString());
+    imgEl.setAttribute('width', imgW.toString());
+    imgEl.setAttribute('height', imgH.toString());
+    imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    imgEl.setAttribute('opacity', imgOpacityVal_.toString());
+    imgEl.setAttribute('xlink:href', backImageData);
+    imgEl.setAttribute('href', backImageData);
+    svg.appendChild(imgEl);
+  }
+
+  // --- 3. Все пути ---
+  const paths = drawGroup.querySelectorAll('path');
+  paths.forEach((p) => {
+    svg.appendChild(p.cloneNode(true));
+  });
+
+  return svg;
+}
+
+/** Скачивает Blob как файл */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ----- Экспорт SVG ----- */
+document.getElementById('btnExportSvg').addEventListener('click', () => {
+  const svg = buildExportSvg();
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(svg);
+
+  // Добавляем XML-декларацию
+  if (!source.includes('<?xml')) {
+    source = '<?xml version="1.0" encoding="UTF-8"?>\n' + source;
+  }
+
+  const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+  downloadBlob(blob, 'drawing.svg');
+});
+
+/* ----- Экспорт PNG 4096×4096 ----- */
+document.getElementById('btnExportPng').addEventListener('click', () => {
+  const svg = buildExportSvg();
+  const serializer = new XMLSerializer();
+  const source = serializer.serializeToString(svg);
+
+  const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = EXPORT_SIZE;
+    canvas.height = EXPORT_SIZE;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, EXPORT_SIZE, EXPORT_SIZE);
+    ctx.drawImage(img, 0, 0, EXPORT_SIZE, EXPORT_SIZE);
+
+    canvas.toBlob((blob) => {
+      if (blob) downloadBlob(blob, 'drawing.png');
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+  img.onerror = () => {
+    alert('Ошибка экспорта PNG');
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+/* =========================================================
+   8. ИНИЦИАЛИЗАЦИЯ
+   ========================================================= */
+function init() {
+  // Фон по умолчанию
+  bgLayer.style.backgroundColor = bgColorInput.value;
+
+  // Начальное состояние подложки
+  updateBackImage();
+
+  // Разметка
+  drawGuides();
+
+  // Трансформация
+  applyTransform();
+}
+
+init();
