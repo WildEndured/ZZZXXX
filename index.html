@@ -10,11 +10,10 @@
     <div class="container">
         <h1>SVG Холст</h1>
         
-        <!-- Контейнер для зума -->
         <div class="canvas-wrapper" id="canvasWrapper">
             <div class="zoom-container" id="zoomContainer">
-                <!-- Подложка (обычный img, работает везде) -->
-                <img id="bgImage" class="bg-image" style="display: none;" alt="Подложка">
+                <!-- Подложка (обычный img) -->
+                <img id="bgImage" class="bg-image" style="display: none;" alt="Подложка" draggable="false">
                 
                 <!-- SVG холст -->
                 <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
@@ -48,7 +47,7 @@
                     <span id="bgOpacityValue">100%</span>
                 </label>
                 <label>
-                    Масштаб:
+                    Масштаб подложки:
                     <input type="range" id="bgScale" min="10" max="300" value="100">
                     <span id="bgScaleValue">100%</span>
                 </label>
