@@ -15,16 +15,18 @@
     const brushSizeValue = document.getElementById('brushSizeValue');
     const eraserMode = document.getElementById('eraserMode');
 
-    // Разрешение растеризации PNG
-    const PNG_SIZE = 4096;
+    const PNG_SIZE = 4096; // Жестко 4096х4096 для экспорта
 
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
 
-    // Пересчёт клиента в координаты viewBox 0..1
+    // Перевод координат мыши/пальца в систему viewBox (от 0 до 1)
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
+        // На случай если ширина или высота контейнера 0
+        if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
+
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
         return {
@@ -33,10 +35,10 @@
         };
     }
 
-    // Толщина в единицах viewBox: слайдер 1..100 -> 0.00025 .. 0.025
+    // Перевод толщины кисти (1-100) в единицы viewBox 0..1
     function getStrokeWidth() {
-        const v = Number(brushSizeInput.value); // 1..100
-        return v / 4000; // 100 -> 0.025 (≈ 102px при 4096)
+        const v = Number(brushSizeInput.value); 
+        return v / 4000; 
     }
 
     function startPath(p) {
@@ -87,7 +89,7 @@
         currentPoints = [];
     });
 
-    // --- Touch ---
+    // --- Тач (мобилки) ---
     svg.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const t = e.touches[0];
@@ -120,32 +122,34 @@
         brushSizeValue.textContent = brushSizeInput.value;
     });
 
-    // --- Экспорт SVG (viewBox 1×1) ---
+    // --- Экспорт SVG ---
     downloadSvgBtn.addEventListener('click', () => {
         const clone = svg.cloneNode(true);
+        // Для скачивания задаем реальные размеры 4096х4096, чтобы файл открывался нормально
         clone.setAttribute('xmlns', SVG_NS);
-        clone.setAttribute('width', '1');
-        clone.setAttribute('height', '1');
+        clone.setAttribute('width', '4096');
+        clone.setAttribute('height', '4096');
         clone.setAttribute('viewBox', '0 0 1 1');
+        
         clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
 
         const serializer = new XMLSerializer();
         let source = serializer.serializeToString(clone);
-        source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' +
-                 '<!-- SVG canvas 1x1 (unit square) -->\n' +
-                 source;
+        source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + source;
 
         const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-        downloadBlob(blob, 'drawing-1x1.svg');
+        downloadBlob(blob, 'drawing-1x1-4096.svg');
     });
 
-    // --- Экспорт PNG 4096×4096 (растеризация SVG) ---
+    // --- Экспорт PNG 4096x4096 ---
     downloadPngBtn.addEventListener('click', () => {
         const clone = svg.cloneNode(true);
         clone.setAttribute('xmlns', SVG_NS);
+        // Принудительно задаем размер 4096х4096 для растеризации
         clone.setAttribute('width', PNG_SIZE);
         clone.setAttribute('height', PNG_SIZE);
         clone.setAttribute('viewBox', '0 0 1 1');
+        
         clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
 
         const serializer = new XMLSerializer();
@@ -159,15 +163,19 @@
             canvas.width = PNG_SIZE;
             canvas.height = PNG_SIZE;
             const ctx = canvas.getContext('2d');
+            // Заливаем фон на случай прозрачности
+            ctx.fillStyle = bgColorInput.value;
+            ctx.fillRect(0, 0, PNG_SIZE, PNG_SIZE);
+            
             ctx.drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
             URL.revokeObjectURL(url);
 
             canvas.toBlob((blob) => {
-                downloadBlob(blob, 'drawing-4096-300dpi.png');
+                downloadBlob(blob, 'drawing-4096x4096.png');
             }, 'image/png');
         };
         img.onerror = () => {
-            alert('Не удалось растеризовать SVG в PNG.');
+            alert('Ошибка при создании PNG.');
             URL.revokeObjectURL(url);
         };
         img.src = url;
