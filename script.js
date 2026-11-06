@@ -15,16 +15,28 @@
     const brushSizeValue = document.getElementById('brushSizeValue');
     const eraserMode = document.getElementById('eraserMode');
 
+    // Разрешение растеризации PNG
+    const PNG_SIZE = 4096;
+
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
 
-    // Пересчёт координат клиента в координаты SVG (viewBox 0..4096)
+    // Пересчёт клиента в координаты viewBox 0..1
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 4096;
-        const y = ((e.clientY - rect.top) / rect.height) * 4096;
-        return { x, y };
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        return {
+            x: Math.max(0, Math.min(1, x)),
+            y: Math.max(0, Math.min(1, y))
+        };
+    }
+
+    // Толщина в единицах viewBox: слайдер 1..100 -> 0.00025 .. 0.025
+    function getStrokeWidth() {
+        const v = Number(brushSizeInput.value); // 1..100
+        return v / 4000; // 100 -> 0.025 (≈ 102px при 4096)
     }
 
     function startPath(p) {
@@ -32,12 +44,11 @@
         const color = eraserMode.checked ? bgColorInput.value : brushColorInput.value;
         currentPath.setAttribute('fill', 'none');
         currentPath.setAttribute('stroke', color);
-        currentPath.setAttribute('stroke-width', brushSizeInput.value);
+        currentPath.setAttribute('stroke-width', getStrokeWidth());
         currentPath.setAttribute('stroke-linecap', 'round');
         currentPath.setAttribute('stroke-linejoin', 'round');
-        if (eraserMode.checked) {
-            currentPath.setAttribute('data-eraser', 'true');
-        }
+        if (eraserMode.checked) currentPath.setAttribute('data-eraser', 'true');
+
         currentPoints = [p];
         currentPath.setAttribute('d', `M ${p.x} ${p.y}`);
         drawLayer.appendChild(currentPath);
@@ -46,7 +57,7 @@
     function extendPath(p) {
         if (!currentPath) return;
         currentPoints.push(p);
-        // Сглаживание: квадратичные кривые через середины точек
+
         let d = `M ${currentPoints[0].x} ${currentPoints[0].y}`;
         for (let i = 1; i < currentPoints.length - 1; i++) {
             const midX = (currentPoints[i].x + currentPoints[i + 1].x) / 2;
@@ -99,9 +110,7 @@
     }, { passive: false });
 
     // --- UI ---
-    clearBtn.addEventListener('click', () => {
-        drawLayer.innerHTML = '';
-    });
+    clearBtn.addEventListener('click', () => { drawLayer.innerHTML = ''; });
 
     bgColorInput.addEventListener('input', () => {
         bgRect.setAttribute('fill', bgColorInput.value);
@@ -111,38 +120,32 @@
         brushSizeValue.textContent = brushSizeInput.value;
     });
 
-    // --- Экспорт SVG ---
+    // --- Экспорт SVG (viewBox 1×1) ---
     downloadSvgBtn.addEventListener('click', () => {
-        // Клонируем SVG без временных атрибутов
         const clone = svg.cloneNode(true);
         clone.setAttribute('xmlns', SVG_NS);
-        clone.setAttribute('width', '4096');
-        clone.setAttribute('height', '4096');
-        clone.setAttribute('viewBox', '0 0 4096 4096');
-
-        // Убираем служебные атрибуты ластика
-        clone.querySelectorAll('[data-eraser]').forEach(el => {
-            el.removeAttribute('data-eraser');
-        });
+        clone.setAttribute('width', '1');
+        clone.setAttribute('height', '1');
+        clone.setAttribute('viewBox', '0 0 1 1');
+        clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
 
         const serializer = new XMLSerializer();
         let source = serializer.serializeToString(clone);
-        // Добавляем XML-декларацию и DPI-метаданные через комментарий
         source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' +
-                 `<!-- Canvas 4096x4096, 300 DPI (14.47 x 14.47 inch) -->\n` +
+                 '<!-- SVG canvas 1x1 (unit square) -->\n' +
                  source;
 
         const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-        downloadBlob(blob, 'drawing-4096.svg');
+        downloadBlob(blob, 'drawing-1x1.svg');
     });
 
-    // --- Экспорт PNG (растеризация SVG) ---
+    // --- Экспорт PNG 4096×4096 (растеризация SVG) ---
     downloadPngBtn.addEventListener('click', () => {
         const clone = svg.cloneNode(true);
         clone.setAttribute('xmlns', SVG_NS);
-        clone.setAttribute('width', '4096');
-        clone.setAttribute('height', '4096');
-        clone.setAttribute('viewBox', '0 0 4096 4096');
+        clone.setAttribute('width', PNG_SIZE);
+        clone.setAttribute('height', PNG_SIZE);
+        clone.setAttribute('viewBox', '0 0 1 1');
         clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
 
         const serializer = new XMLSerializer();
@@ -153,10 +156,10 @@
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = 4096;
-            canvas.height = 4096;
+            canvas.width = PNG_SIZE;
+            canvas.height = PNG_SIZE;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, 4096, 4096);
+            ctx.drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
             URL.revokeObjectURL(url);
 
             canvas.toBlob((blob) => {
