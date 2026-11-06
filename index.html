@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG Рисование 1×1</title>
+    <title>SVG Холст 1:1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>SVG Холст 1×1</h1>
-        <div class="canvas-wrapper">
-            <svg id="mainSvg"
-                 xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 1 1"
-                 width="1"
-                 height="1"
-                 preserveAspectRatio="xMidYMid meet">
+        <h1>SVG Холст</h1>
+        
+        <!-- Контейнер принудительно квадратный -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <!-- Убрали жесткие width/height, чтобы SVG подстраивался под контейнер -->
+            <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
                 <rect id="bgRect" x="0" y="0" width="1" height="1" fill="#ffffff"/>
                 <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
             </svg>
         </div>
+
         <div class="controls">
             <button id="clearBtn">Очистить</button>
             <button id="downloadSvgBtn">Скачать SVG</button>
-            <button id="downloadPngBtn">Скачать PNG 4096</button>
+            <button id="downloadPngBtn">Скачать PNG (4096×4096)</button>
             <label>
                 Фон:
                 <input type="color" id="bgColor" value="#ffffff">
