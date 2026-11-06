@@ -4,6 +4,7 @@
     const SVG_NS = 'http://www.w3.org/2000/svg';
     const svg = document.getElementById('mainSvg');
     const drawLayer = document.getElementById('drawLayer');
+    const measureLayer = document.getElementById('measureLayer');
     const bgRect = document.getElementById('bgRect');
 
     const clearBtn = document.getElementById('clearBtn');
@@ -15,16 +16,74 @@
     const brushSizeValue = document.getElementById('brushSizeValue');
     const eraserMode = document.getElementById('eraserMode');
 
-    const PNG_SIZE = 4096; // Жестко 4096х4096 для экспорта
+    // Новые элементы управления разметкой
+    const paddingSizeInput = document.getElementById('paddingSize');
+    const paddingSizeValue = document.getElementById('paddingSizeValue');
+    const headCountInput = document.getElementById('headCount');
+    const headCountValue = document.getElementById('headCountValue');
+    const showGridInput = document.getElementById('showGrid');
+
+    const PNG_SIZE = 4096;
 
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
 
-    // Перевод координат мыши/пальца в систему viewBox (от 0 до 1)
+    // --- Разметка (Поля и Головы) ---
+    function updateGrid() {
+        // Очищаем предыдущую разметку
+        measureLayer.innerHTML = '';
+
+        if (!showGridInput.checked) return; // Если чекбокс выключен - ничего не рисуем
+
+        // Получаем значения
+        const paddingPercent = Number(paddingSizeInput.value) / 100; // 0.00 .. 0.10
+        const heads = Number(headCountInput.value); // 2 .. 8
+
+        // Считаем координаты Y (от 0 до 1)
+        const topY = paddingPercent;
+        const bottomY = 1 - paddingPercent;
+        const drawingHeight = bottomY - topY;
+        
+        // Шаг одной головы
+        const headStep = drawingHeight / heads;
+
+        // 1. Рисуем горизонтальные линии для каждой головы
+        for (let i = 0; i <= heads; i++) {
+            const y = topY + (i * headStep);
+            
+            const line = document.createElementNS(SVG_NS, 'line');
+            line.setAttribute('x1', '0');
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', '1');
+            line.setAttribute('y2', y);
+            
+            line.setAttribute('stroke', '#000000');
+            line.setAttribute('stroke-width', '0.002'); // Толщина линии
+            line.setAttribute('stroke-dasharray', '0.01, 0.01'); // Пунктир
+            line.setAttribute('opacity', '0.3'); // Полупрозрачные, чтобы не мешали
+            
+            measureLayer.appendChild(line);
+        }
+
+        // 2. Рисуем красную рамку вокруг зоны рисования (между отступами)
+        if (paddingPercent > 0) {
+            const borderRect = document.createElementNS(SVG_NS, 'rect');
+            borderRect.setAttribute('x', '0');
+            borderRect.setAttribute('y', topY);
+            borderRect.setAttribute('width', '1');
+            borderRect.setAttribute('height', drawingHeight);
+            borderRect.setAttribute('fill', 'none');
+            borderRect.setAttribute('stroke', '#ff4444'); // Красная рамка
+            borderRect.setAttribute('stroke-width', '0.003');
+            borderRect.setAttribute('opacity', '0.5');
+            measureLayer.appendChild(borderRect);
+        }
+    }
+
+    // --- Логика рисования ---
     function toSvgCoords(e) {
         const rect = svg.getBoundingClientRect();
-        // На случай если ширина или высота контейнера 0
         if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
 
         const x = (e.clientX - rect.left) / rect.width;
@@ -35,7 +94,6 @@
         };
     }
 
-    // Перевод толщины кисти (1-100) в единицы viewBox 0..1
     function getStrokeWidth() {
         const v = Number(brushSizeInput.value); 
         return v / 4000; 
@@ -73,7 +131,7 @@
         currentPath.setAttribute('d', d);
     }
 
-    // --- Мышь ---
+    // --- Мышь и Тач ---
     svg.addEventListener('mousedown', (e) => {
         e.preventDefault();
         drawing = true;
@@ -89,7 +147,6 @@
         currentPoints = [];
     });
 
-    // --- Тач (мобилки) ---
     svg.addEventListener('touchstart', (e) => {
         e.preventDefault();
         const t = e.touches[0];
@@ -122,10 +179,25 @@
         brushSizeValue.textContent = brushSizeInput.value;
     });
 
+    // Слушатели для разметки
+    paddingSizeInput.addEventListener('input', (e) => {
+        paddingSizeValue.textContent = e.target.value + '%';
+        updateGrid();
+    });
+
+    headCountInput.addEventListener('input', (e) => {
+        headCountValue.textContent = e.target.value;
+        updateGrid();
+    });
+
+    showGridInput.addEventListener('change', updateGrid);
+
+    // Инициализация сетки при загрузке
+    updateGrid();
+
     // --- Экспорт SVG ---
     downloadSvgBtn.addEventListener('click', () => {
         const clone = svg.cloneNode(true);
-        // Для скачивания задаем реальные размеры 4096х4096, чтобы файл открывался нормально
         clone.setAttribute('xmlns', SVG_NS);
         clone.setAttribute('width', '4096');
         clone.setAttribute('height', '4096');
@@ -138,14 +210,13 @@
         source = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + source;
 
         const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
-        downloadBlob(blob, 'drawing-1x1-4096.svg');
+        downloadBlob(blob, 'drawing-with-grid.svg');
     });
 
-    // --- Экспорт PNG 4096x4096 ---
+    // --- Экспорт PNG ---
     downloadPngBtn.addEventListener('click', () => {
         const clone = svg.cloneNode(true);
         clone.setAttribute('xmlns', SVG_NS);
-        // Принудительно задаем размер 4096х4096 для растеризации
         clone.setAttribute('width', PNG_SIZE);
         clone.setAttribute('height', PNG_SIZE);
         clone.setAttribute('viewBox', '0 0 1 1');
@@ -163,10 +234,8 @@
             canvas.width = PNG_SIZE;
             canvas.height = PNG_SIZE;
             const ctx = canvas.getContext('2d');
-            // Заливаем фон на случай прозрачности
             ctx.fillStyle = bgColorInput.value;
             ctx.fillRect(0, 0, PNG_SIZE, PNG_SIZE);
-            
             ctx.drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
             URL.revokeObjectURL(url);
 
