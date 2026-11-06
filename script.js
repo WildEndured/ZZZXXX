@@ -39,18 +39,55 @@
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
-    let currentBgSrc = null; // Для хранения base64 подложки
+    let currentBgSrc = null; 
 
-    // --- Переменные зума ---
+    // --- Зум ---
+    // Начальное состояние: scale = 1 (ровно по размеру контейнера)
     let scale = 1, translateX = 0, translateY = 0;
-    let isPanning = false, startPanX = 0, startPanY = 0;
+    let startPanX = 0, startPanY = 0;
     
-    // --- Переменные для Pointer Events (Мультитач) ---
+    // Pointer events
     const activePointers = new Map();
     let initialPinchDistance = 0;
     let initialScale = 1;
-    let initialCenter = { x: 0, y: 0 };
-    let isGestureActive = false; // Флаг: идет зум/панорамирование
+    let isGestureActive = false;
+
+    // --- ОГРАНИЧЕНИЕ ЗУМА ---
+    // Не позволяем отдалить меньше 1 (100%). 
+    // И не позволяем увести холст за края (translateX/Y ограничены).
+    function clampTransform() {
+        // Минимальный масштаб = 1
+        if (scale < 1) scale = 1;
+
+        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
+        const w = wrapperRect.width;
+        const h = wrapperRect.height;
+
+        // Максимально допустимый сдвиг
+        const maxTranslateX = 0;
+        const minTranslateX = w - (w * scale);
+        
+        const maxTranslateY = 0;
+        const minTranslateY = h - (h * scale);
+
+        // Если scale === 1, сдвиг должен быть 0 (холст ровно по центру)
+        if (scale === 1) {
+            translateX = 0;
+            translateY = 0;
+        } else {
+            // Ограничиваем, чтобы не было пустых зон
+            if (translateX > maxTranslateX) translateX = maxTranslateX;
+            if (translateX < minTranslateX) translateX = minTranslateX;
+            
+            if (translateY > maxTranslateY) translateY = maxTranslateY;
+            if (translateY < minTranslateY) translateY = minTranslateY;
+        }
+    }
+
+    function applyTransform() {
+        clampTransform();
+        zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
 
     // --- Подложка ---
     uploadBg.addEventListener('change', (e) => {
@@ -60,11 +97,13 @@
         const reader = new FileReader();
         reader.onload = (event) => {
             currentBgSrc = event.target.result;
+            // ВАЖНО: устанавливаем src, а не href
             bgImage.src = currentBgSrc;
             bgImage.style.display = 'block';
             bgControls.style.display = 'flex';
             removeBgBtn.style.display = 'inline-block';
             
+            // Сброс ползунков
             bgOpacity.value = 100;
             bgScale.value = 100;
             updateBgStyle();
@@ -75,7 +114,7 @@
 
     removeBgBtn.addEventListener('click', () => {
         currentBgSrc = null;
-        bgImage.src = '';
+        bgImage.removeAttribute('src');
         bgImage.style.display = 'none';
         bgControls.style.display = 'none';
         removeBgBtn.style.display = 'none';
@@ -89,6 +128,7 @@
         bgScaleValue.textContent = bgScale.value + '%';
         
         bgImage.style.opacity = opacity;
+        // Масштабируем подложку внутри контейнера
         bgImage.style.transform = `scale(${scaleVal})`;
     }
 
@@ -175,100 +215,81 @@
         currentPath.setAttribute('d', d);
     }
 
-    // ==========================================
-    // ЕДИНАЯ СИСТЕМА ВВОДА (Pointer Events)
-    // ==========================================
-    
-    // Начинаем ввод (мышь или палец)
+    // --- ПОЙНТЕР СОБЫТИЯ ---
     svg.addEventListener('pointerdown', (e) => {
-        // Игнорируем клики правой кнопкой
         if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
         
         svg.setPointerCapture(e.pointerId);
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
         
         if (activePointers.size === 1) {
-            // Один палец/мышь -> Начинаем рисовать
             isGestureActive = false;
             drawing = true;
             startPath(toSvgCoords(e));
         } else if (activePointers.size === 2) {
-            // Два пальца -> ОТМЕНЯЕМ рисование, начинаем зум
             isGestureActive = true;
             drawing = false;
             
-            // Удаляем кривой штрих, который начали рисовать одним пальцем
+            // Удаляем случайную кляксу, если начали рисовать
             if (currentPath) {
                 currentPath.remove();
                 currentPath = null;
             }
 
-            // Инициализация зума
             const pointers = Array.from(activePointers.values());
             initialPinchDistance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
             initialScale = scale;
-            initialCenter = {
-                x: (pointers[0].x + pointers[1].x) / 2,
-                y: (pointers[0].y + pointers[1].y) / 2
-            };
             
-            // Запоминаем смещение контейнера на момент начала жеста
-            startPanX = initialCenter.x - translateX;
-            startPanY = initialCenter.y - translateY;
+            const centerX = (pointers[0].x + pointers[1].x) / 2;
+            const centerY = (pointers[0].y + pointers[1].y) / 2;
+            
+            startPanX = centerX - translateX;
+            startPanY = centerY - translateY;
         }
     });
 
-    // Движение
     svg.addEventListener('pointermove', (e) => {
         if (!activePointers.has(e.pointerId)) return;
-        
-        // Обновляем позицию текущего указателя
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
         if (isGestureActive && activePointers.size === 2) {
-            // --- РЕЖИМ ЗУМА И ПАНОРАМИРОВАНИЯ ---
             const pointers = Array.from(activePointers.values());
             const currentDistance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
-            const currentCenter = {
-                x: (pointers[0].x + pointers[1].x) / 2,
-                y: (pointers[0].y + pointers[1].y) / 2
-            };
-
-            // Вычисляем новый масштаб
-            let newScale = initialScale * (currentDistance / initialPinchDistance);
-            newScale = Math.max(0.5, Math.min(newScale, 20)); // Лимиты 0.5x .. 20x
-
-            // Вычисляем панорамирование (сдвиг центра)
-            const panX = currentCenter.x - startPanX;
-            const panY = currentCenter.y - startPanY;
-
-            // Применяем
-            scale = newScale;
-            translateX = panX;
-            translateY = panY;
             
+            let newScale = initialScale * (currentDistance / initialPinchDistance);
+            
+            // Ограничение сверху (макс 20x), снизу (1x) обрабатывается в clampTransform
+            newScale = Math.min(newScale, 20);
+            
+            const currentCenterX = (pointers[0].x + pointers[1].x) / 2;
+            const currentCenterY = (pointers[0].y + pointers[1].y) / 2;
+
+            // Формула зума относительно центра
+            translateX = currentCenterX - (currentCenterX - translateX) * (newScale / scale);
+            translateY = currentCenterY - (currentCenterY - translateY) * (newScale / scale);
+            scale = newScale;
+            
+            // Панорамирование (сдвиг двумя пальцами)
+            translateX += (currentCenterX - startPanX) - translateX;
+            translateY += (currentCenterY - startPanY) - translateY;
+
             applyTransform();
         } else if (drawing && activePointers.size === 1) {
-            // --- РЕЖИМ РИСОВАНИЯ ---
             extendPath(toSvgCoords(e));
         }
     });
 
-    // Отпускание
     const pointerUpOrCancel = (e) => {
         if (activePointers.has(e.pointerId)) {
             activePointers.delete(e.pointerId);
         }
 
         if (activePointers.size === 0) {
-            // Все пальцы отжаты
             drawing = false;
             isGestureActive = false;
             currentPath = null;
             currentPoints = [];
         } else if (activePointers.size === 1 && isGestureActive) {
-            // Остался один палец после зума. 
-            // Чтобы не начинать рисовать случайно, просто продолжаем панорамирование
             const pointer = Array.from(activePointers.values())[0];
             startPanX = pointer.x - translateX;
             startPanY = pointer.y - translateY;
@@ -278,7 +299,7 @@
     svg.addEventListener('pointerup', pointerUpOrCancel);
     svg.addEventListener('pointercancel', pointerUpOrCancel);
 
-    // Зум колесиком мыши (для ПК)
+    // --- Колесико мыши (Зум на ПК) ---
     svg.addEventListener('wheel', (e) => {
         e.preventDefault();
         const zoomFactor = 1.1;
@@ -287,7 +308,7 @@
         const mouseX = (e.clientX - rect.left) / rect.width;
         const mouseY = (e.clientY - rect.top) / rect.height;
         
-        const newScale = Math.max(0.5, Math.min(scale * delta, 20));
+        const newScale = Math.min(Math.max(scale * delta, 1), 20);
         
         translateX -= (mouseX * rect.width) * (newScale - scale);
         translateY -= (mouseY * rect.height) * (newScale - scale);
@@ -295,10 +316,7 @@
         applyTransform();
     }, { passive: false });
 
-    function applyTransform() {
-        zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-    }
-
+    // Сброс зума
     resetZoomBtn.addEventListener('click', () => {
         scale = 1; translateX = 0; translateY = 0;
         applyTransform();
@@ -330,13 +348,17 @@
         clone.setAttribute('viewBox', '0 0 1 1');
         clone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
 
-        // Если есть подложка, вставляем её прямо в SVG (иначе она потеряется)
+        // Вшиваем подложку в SVG
         if (currentBgSrc) {
             const imgEl = document.createElementNS(SVG_NS, 'image');
             imgEl.setAttribute('href', currentBgSrc);
+            
+            // Координаты и размеры для viewBox 0 0 1 1
+            // Применяем масштабирование как в CSS
             const s = Number(bgScale.value) / 100;
             const w = s, h = s;
             const x = 0.5 - w/2, y = 0.5 - h/2;
+            
             imgEl.setAttribute('x', x);
             imgEl.setAttribute('y', y);
             imgEl.setAttribute('width', w);
@@ -344,9 +366,8 @@
             imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
             
-            // Вставляем подложку ПОД рисунок, но НАД фоном
-            const firstChild = clone.children[0]; // bgRect
-            firstChild.after(imgEl);
+            const bgRectClone = clone.querySelector('#bgRect');
+            bgRectClone.after(imgEl);
         }
 
         const serializer = new XMLSerializer();
