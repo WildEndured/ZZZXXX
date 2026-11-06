@@ -1,90 +1,93 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SVG Векторный редактор</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SVG Холст</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="container">
+        <h1>SVG Холст</h1>
+        
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <!-- Обертка для зума, внутри которой строго 3 слоя -->
+            <div class="zoom-container" id="zoomContainer">
+                
+                <!-- Слой 1: Фон (цвет) -->
+                <div id="bgColorLayer" class="layer bg-color-layer" style="background-color: #ffffff;"></div>
+                
+                <!-- Слой 2: Подложка (картинка) -->
+                <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
+                
+                <!-- Слой 3: Рисование (SVG) -->
+                <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+                    <g id="measureLayer"></g>
+                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+                </svg>
 
-<div class="wrap">
-  <!-- ======================= ПАНЕЛЬ УПРАВЛЕНИЯ ======================= -->
-  <div class="panel">
-    
-    <!-- Блок 1: Кисть и Рисование -->
-    <div class="accordion open">
-      <div class="accordion-header">Кисть и Рисование</div>
-      <div class="accordion-content">
-        <label><span class="row">Цвет кисти</span><input type="color" id="brushColor" value="#e63946"></label>
-        <label><span class="row">Толщина <span class="val" id="brushSizeVal">0.005</span></span><input type="range" id="brushSize" min="0.00025" max="0.025" step="0.00025" value="0.005"></label>
-        <label class="chk"><input type="checkbox" id="eraserMode"> Режим ластика</label>
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="btnUndo" class="sec" style="flex:1;">↶ Отменить</button>
-          <button id="btnClear" class="sec" style="flex:1;">✕ Очистить</button>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Блок 2: Фон и Подложка -->
-    <div class="accordion open">
-      <div class="accordion-header">Фон и Подложка</div>
-      <div class="accordion-content">
-        <label><span class="row">Цвет фона</span><input type="color" id="bgColor" value="#ffffff"></label>
-        <hr>
-        <label><span class="row">Масштаб <span class="val" id="imgScaleVal">100%</span></span><input type="range" id="imgScale" min="10" max="300" step="1" value="100"></label>
-        <label><span class="row">Прозрачность <span class="val" id="imgOpacityVal">100%</span></span><input type="range" id="imgOpacity" min="0" max="100" step="1" value="100"></label>
-        <button id="uploadImageBtn" class="sec" style="margin-top:4px;">Загрузить картинку</button>
-        <input type="file" id="imageInput" style="display:none;" accept="image/*">
-      </div>
-    </div>
+        <div class="controls">
+            <div class="control-group">
+                <button id="clearBtn">Очистить</button>
+                <button id="downloadSvgBtn">Скачать SVG</button>
+                <button id="downloadPngBtn">Скачать PNG</button>
+                <button id="resetZoomBtn">Сбросить зум</button>
+            </div>
 
-    <!-- Блок 3: Разметка -->
-    <div class="accordion open">
-      <div class="accordion-header">Разметка (Сетка)</div>
-      <div class="accordion-content">
-        <label><span class="row">Отступ <span class="val" id="marginVal">0%</span></span><input type="range" id="marginSize" min="0" max="10" step="0.5" value="0"></label>
-        <label><span class="row">Количество голов <span class="val" id="headsVal">4</span></span><input type="range" id="headsCount" min="2" max="8" step="1" value="4"></label>
-      </div>
-    </div>
+            <div class="control-group">
+                <label class="file-label">
+                    Загрузить подложку
+                    <input type="file" id="uploadBg" accept="image/*">
+                </label>
+                <button id="removeBgBtn" style="background: #d94a4a; display: none;">Удалить подложку</button>
+            </div>
 
-    <!-- Блок 4: Экспорт -->
-    <div class="accordion open">
-      <div class="accordion-header">Экспорт</div>
-      <div class="accordion-content">
-        <div style="display:flex; gap:8px;">
-          <button id="btnExportSvg" style="flex:1;">⬇ SVG</button>
-          <button id="btnExportPng" style="flex:1;">⬇ PNG 4096</button>
+            <div class="control-group" id="bgControls" style="display: none;">
+                <label>
+                    Прозрачность:
+                    <input type="range" id="bgOpacity" min="0" max="100" value="100">
+                    <span id="bgOpacityValue">100%</span>
+                </label>
+                <label>
+                    Масштаб подложки:
+                    <input type="range" id="bgScale" min="10" max="300" value="100">
+                    <span id="bgScaleValue">100%</span>
+                </label>
+            </div>
+
+            <hr style="width: 100%; border-color: #444; margin: 5px 0;">
+
+            <div class="control-group">
+                <label>Цвет фона: <input type="color" id="bgColor" value="#ffffff"></label>
+                <label>Цвет кисти: <input type="color" id="brushColor" value="#000000"></label>
+                <label>
+                    Толщина:
+                    <input type="range" id="brushSize" min="1" max="100" value="10">
+                    <span id="brushSizeValue">10</span>
+                </label>
+                <label><input type="checkbox" id="eraserMode"> Ластик</label>
+            </div>
+
+            <hr style="width: 100%; border-color: #444; margin: 5px 0;">
+
+            <div class="control-group">
+                <label>
+                    Отступ:
+                    <input type="range" id="paddingSize" min="0" max="10" value="0">
+                    <span id="paddingSizeValue">0%</span>
+                </label>
+                <label>
+                    Головы:
+                    <input type="range" id="headCount" min="2" max="8" value="4">
+                    <span id="headCountValue">4</span>
+                </label>
+                <label><input type="checkbox" id="showGrid" checked> Разметка</label>
+            </div>
         </div>
-      </div>
     </div>
-
-  </div>
-
-  <!-- ======================= ХОЛСТ ======================= -->
-  <div class="stage">
-    <div class="canvas-wrapper">
-      <div class="canvas-container" id="canvasContainer">
-        <div class="zoom-layer" id="zoomLayer">
-          <!-- 1. Слой фона -->
-          <div class="layer layer-bg" id="bgLayer"></div>
-          <!-- 2. Слой подложки -->
-          <div class="layer layer-image" id="imgLayer">
-            <img id="backImage" alt="">
-          </div>
-          <!-- 3. Слой рисования -->
-          <div class="layer layer-draw">
-            <svg id="drawSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-              <g id="drawGroup"></g>
-              <g id="guidesGroup"></g>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
