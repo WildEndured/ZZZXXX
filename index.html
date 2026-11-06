@@ -43,12 +43,12 @@
 <div class="wrap">
   <div class="panel" id="panel"></div>
   <div class="stage">
-    <canvas id="cv" width="1024" height="2048"></canvas>
+    <canvas id="cv" width="2048" height="3072"></canvas>
   </div>
 </div>
 
 <script>
-// 1. СНАЧАЛА ИНИЦИАЛИЗИРУЕМ ПЕРЕМЕННЫЕ ХОЛСТА
+// Сначала объявляем все глобальные переменные
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let canvasWidth = canvas.width;
@@ -62,7 +62,7 @@ const valEls = {};
 
 const PROPORTIONS = { skullHeight: 3 / 5, chinLine: 4 / 5, torsoTop: 1.0, torsoBottom: 2.0 };
 
-// 2. СХЕМА ПАРАМЕТРОВ
+// Схема параметров
 const SCHEMA = (() => {
   const S = {};
   S.showRef = { type: 'checkbox', def: true, label: 'Показывать подложку', group: 'common' };
@@ -123,7 +123,6 @@ const SCHEMA = (() => {
   });
   Object.assign(S, armSide('l', -1), armSide('r', +1));
 
-  // --- НОГИ ---
   S.showLegs = { type: 'checkbox', def: true, label: 'Показывать ноги', group: 'legs' };
   S.legR = { type: 'range', def: 0.15, min: 0.05, max: 0.5, step: 0.01, fmt: 2, label: 'Радиус бедра/голени', group: 'legs' };
   S.legLw = { type: 'range', def: 1.0, min: 0.3, max: 2, step: 0.1, fmt: 1, label: 'Толщина ног', group: 'legs' };
@@ -132,7 +131,6 @@ const SCHEMA = (() => {
   S.showKneePoint = { type: 'checkbox', def: true, label: 'Точка колена', group: 'legs' };
 
   const legSide = (side, defSign) => ({
-    // Дефолтные изгибы, чтобы ноги сразу выглядели как на рисунке
     [`${side}HipAngle`]:   { type: 'range', def: defSign * 0.3, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб бедра', group: 'legs' },
     [`${side}KneeAngle`]:  { type: 'range', def: defSign * -0.3, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб колена', group: 'legs' },
     [`${side}FootX`]:      { type: 'range', def: defSign * 0.1, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение стопы X', group: 'legs' },
@@ -153,7 +151,7 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
-// 3. СБОРКА ИНТЕРФЕЙСА
+// Функции интерфейса
 function buildPanel() {
   const containerByGroup = {};
   for (const g of GROUPS) {
@@ -235,12 +233,8 @@ function makeField(key, cfg) {
 
 function formatVal(v, fmt) { if (fmt === 0) return String(Math.round(v)); return Number(v).toFixed(fmt ?? 2); }
 function updateLabels() {
-  for (const key in valEls) {
-    const { el, fmt } = valEls[key];
-    el.textContent = formatVal(ui[key].value, fmt);
-  }
+  for (const key in valEls) { const { el, fmt } = valEls[key]; el.textContent = formatVal(ui[key].value, fmt); }
 }
-
 function readParams() {
   const P = {};
   for (const key in SCHEMA) {
@@ -252,7 +246,7 @@ function readParams() {
   return P;
 }
 
-// 4. ГЕОМЕТРИЯ
+// Геометрия
 function ellipseDx(y, cy, rY) { const t = (y - cy) / rY; return Math.sqrt(Math.max(0, 1 - t * t)); }
 function jawAttachPoint(skull, param) { return skull.bottom - (skull.bottom - skull.cy) * param; }
 
@@ -359,12 +353,11 @@ function computeSkeleton(P, W, H) {
     r: buildArm({ x: shoulderRightCx, y: shoulderCy }, rWristBase,  P.rShoulderAngle,  P.rElbowAngle, wristRadius),
   };
 
-  // НОГИ (исправлено: стопы привязаны к низу холста)
+  // Ноги
   const legRadius = Math.max(1, pelvisH * P.legR);
   const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
   const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
   
-  // Точка стоп: 90% высоты холста
   const footBaseY = H * 0.90;
 
   const lFootBase = { x: hipLeftAnchor.x + P.lFootX * pelvisW, y: footBaseY + P.lFootY * pelvisH };
@@ -380,7 +373,7 @@ function computeSkeleton(P, W, H) {
   return sk;
 }
 
-// 5. ОТРИСОВКА СЛОЕВ
+// Слои отрисовки
 function renderReference(ctx, sk, P, W, H) {
   if (!refImage || !P.showRef) return;
   ctx.save(); ctx.globalAlpha = P.refOp || 0.5; ctx.drawImage(refImage, 0, 0, W, H); ctx.restore();
@@ -477,15 +470,12 @@ function renderNavel(ctx, sk, P) {
 function renderNeck(ctx, sk) {
   const head = sk.head; const neck = sk.neck;
   ctx.save();
-  // Простое рисование шеи с обрезкой по эллипсу головы
   ctx.beginPath();
   ctx.rect(0, 0, canvasWidth, neck.botY);
-  ctx.clip(); // Обрезаем всё, что ниже шеи
-  
+  ctx.clip();
   ctx.beginPath();
   ctx.ellipse(head.cx, head.cy, head.rX, head.rY, 0, 0, Math.PI * 2);
-  ctx.clip(); // Обрезаем форму головы
-  
+  ctx.clip();
   ctx.beginPath();
   ctx.moveTo(neck.cx - neck.halfW, neck.topY);
   ctx.lineTo(neck.cx - neck.halfW, neck.botY);
@@ -530,41 +520,32 @@ function drawOneArm(ctx, arm, isLeft, sk, P) {
   const { shoulder, elbow, wrist, ballRadius: br } = arm;
   const innerSign = isLeft ? 1 : -1;
   const color = P.lineColor;
-
   const dx1 = elbow.x - shoulder.x, dy1 = elbow.y - shoulder.y;
   const len1 = Math.hypot(dx1, dy1) || 1;
   const nx1 = -dy1 / len1, ny1 = dx1 / len1;
-
   const p1Outer = { x: shoulder.x + nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y + ny1 * innerSign * sk.shoulders.left.r };
   const p1Inner = { x: shoulder.x - nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y - ny1 * innerSign * sk.shoulders.left.r };
   const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
   const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
-
   ctx.beginPath(); ctx.moveTo(p1Outer.x, p1Outer.y); ctx.lineTo(p2Outer.x, p2Outer.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(p1Inner.x, p1Inner.y); ctx.lineTo(p2Inner.x, p2Inner.y); ctx.stroke();
-
   const dx2 = wrist.x - elbow.x, dy2 = wrist.y - elbow.y;
   const len2 = Math.hypot(dx2, dy2) || 1;
   const px = -dy2 / len2, py = dx2 / len2;
-
   const peakT = P.crossPos; const peakX = elbow.x + dx2 * peakT, peakY = elbow.y + dy2 * peakT;
   const maxWidth = br * P.crossW; const crossRound = P.crossRound;
-
   const elbowOuter = { x: elbow.x + px * innerSign * br, y: elbow.y + py * innerSign * br };
   const elbowInner = { x: elbow.x - px * innerSign * br, y: elbow.y - py * innerSign * br };
   const peakOuter  = { x: peakX + px * innerSign * maxWidth, y: peakY + py * innerSign * maxWidth };
   const peakInner  = { x: peakX - px * innerSign * maxWidth, y: peakY - py * innerSign * maxWidth };
   const wristOuter = { x: wrist.x + px * innerSign * br, y: wrist.y + py * innerSign * br };
   const wristInner = { x: wrist.x - px * innerSign * br, y: wrist.y - py * innerSign * br };
-
   ctx.beginPath(); ctx.moveTo(elbowOuter.x, elbowOuter.y);
   ctx.quadraticCurveTo(elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8, elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8, peakOuter.x, peakOuter.y);
   ctx.quadraticCurveTo(peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1, peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1, wristOuter.x, wristOuter.y); ctx.stroke();
-
   ctx.beginPath(); ctx.moveTo(elbowInner.x, elbowInner.y);
   ctx.quadraticCurveTo(elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRound * 0.5), elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRound * 0.5), peakInner.x, peakInner.y);
   ctx.quadraticCurveTo(peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRound), peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRound), wristInner.x, wristInner.y); ctx.stroke();
-
   if (P.showElbow) {
     ctx.beginPath(); ctx.arc(elbow.x, elbow.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
   }
@@ -572,7 +553,6 @@ function drawOneArm(ctx, arm, isLeft, sk, P) {
   if (P.showWristBall) { ctx.beginPath(); ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
-/* --- НОГИ --- */
 function renderLegs(ctx, sk, P) {
   if (!P.showLegs) return;
   const lw = Math.max(1, P.lineWidth * P.legLw);
@@ -586,29 +566,22 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   const { shoulder: hip, elbow: knee, wrist: ankle, ballRadius: br } = leg;
   const innerSign = isLeft ? 1 : -1;
   const color = P.lineColor;
-
   const dx1 = knee.x - hip.x, dy1 = knee.y - hip.y;
   const len1 = Math.hypot(dx1, dy1) || 1;
   const nx1 = -dy1 / len1, ny1 = dx1 / len1;
-
   const hipOuter = { x: hip.x + nx1 * innerSign * br, y: hip.y + ny1 * innerSign * br };
   const hipInner = { x: hip.x - nx1 * innerSign * br, y: hip.y - ny1 * innerSign * br };
   const kneeOuter = { x: knee.x + nx1 * innerSign * br, y: knee.y + ny1 * innerSign * br };
   const kneeInner = { x: knee.x - nx1 * innerSign * br, y: knee.y - ny1 * innerSign * br };
-
   ctx.beginPath(); ctx.moveTo(hipOuter.x, hipOuter.y); ctx.lineTo(kneeOuter.x, kneeOuter.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(hipInner.x, hipInner.y); ctx.lineTo(kneeInner.x, kneeInner.y); ctx.stroke();
-
   const dx2 = ankle.x - knee.x, dy2 = ankle.y - knee.y;
   const len2 = Math.hypot(dx2, dy2) || 1;
   const px = -dy2 / len2, py = dx2 / len2;
-
   const ankleOuter = { x: ankle.x + px * innerSign * br, y: ankle.y + py * innerSign * br };
   const ankleInner = { x: ankle.x - px * innerSign * br, y: ankle.y - py * innerSign * br };
-
   ctx.beginPath(); ctx.moveTo(kneeOuter.x, kneeOuter.y); ctx.lineTo(ankleOuter.x, ankleOuter.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(kneeInner.x, kneeInner.y); ctx.lineTo(ankleInner.x, ankleInner.y); ctx.stroke();
-
   if (P.showKneePoint) {
     ctx.beginPath(); ctx.arc(knee.x, knee.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
   }
@@ -616,22 +589,7 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   if (P.showAnkleBall) { ctx.beginPath(); ctx.arc(ankle.x, ankle.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
-// 6. ГЛАВНЫЙ ЦИКЛ
-const LAYERS = [
-  ['reference',   renderReference],
-  ['grid',        renderGrid],
-  ['shoulders',   renderShoulders],
-  ['clavicles',   renderClavicles],
-  ['torso',       renderTorso],
-  ['pelvis',      renderPelvis],
-  ['absLines',    renderAbsLines],
-  ['navel',       renderNavel],
-  ['neck',        renderNeck],
-  ['head',        renderHead],
-  ['arms',        renderArms],
-  ['legs',        renderLegs],
-];
-
+// ГЛАВНЫЙ ЦИКЛ
 function draw() {
   const W = canvasWidth; const H = canvasHeight;
   const P = readParams();
@@ -639,6 +597,22 @@ function draw() {
 
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
   ctx.save(); ctx.strokeStyle = P.lineColor; ctx.lineWidth = P.lineWidth; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+
+  // ВАЖНО: LAYERS объявлен здесь, после всех функций отрисовки!
+  const LAYERS = [
+    ['reference',   renderReference],
+    ['grid',        renderGrid],
+    ['shoulders',   renderShoulders],
+    ['clavicles',   renderClavicles],
+    ['torso',       renderTorso],
+    ['pelvis',      renderPelvis],
+    ['absLines',    renderAbsLines],
+    ['navel',       renderNavel],
+    ['neck',        renderNeck],
+    ['head',        renderHead],
+    ['arms',        renderArms],
+    ['legs',        renderLegs],
+  ];
 
   for (const [name, fn] of LAYERS) {
     ctx.save(); fn(ctx, sk, P, W, H); ctx.restore();
@@ -700,7 +674,7 @@ function addButtons() {
   panel.appendChild(wrap);
 }
 
-// 7. ИНИЦИАЛИЗАЦИЯ
+// Инициализация
 buildPanel();
 addButtons();
 draw();
