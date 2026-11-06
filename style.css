@@ -1,110 +1,82 @@
-:root{
-  --bg:#05080c;
-  --panel:#0f1620;
-  --line:#22303f;
-  --text:#dbe7f2;
-  --muted:#8ea3b8;
-  --accent:#4cc2ff;
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #11151c; color: #e6edf3;
+  overscroll-behavior: none;
 }
-
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  -webkit-text-size-adjust:100%;
+.app {
+  display: flex; flex-direction: column; height: 100vh; height: 100dvh;
 }
-
-.app{
-  min-height:100%;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  padding:10px;
+.canvas-wrap {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px;
+  background: radial-gradient(circle at 50% 30%, #1c2430 0%, #0d1117 80%);
 }
-
-.stage{
-  flex:1 1 auto;
-  min-height:52vh;
-  border:1px solid var(--line);
-  border-radius:14px;
-  overflow:hidden;
-  background:#0b0f14;
+#stage {
+  width: 100%; height: 100%;
+  display: block;
+  touch-action: none;
+  background: #0d1117;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #263041, 0 8px 30px rgba(0,0,0,.5);
 }
-
-#svg{
-  display:block;
-  width:100%;
-  height:100%;
-  touch-action:none;
+.panel {
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 14px 20px;
+  background: #151b24;
+  border-top: 1px solid #263041;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(0,0,0,.45);
 }
-
-.panel{
-  flex:0 0 auto;
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:10px;
-  display:grid;
-  gap:8px;
-  max-height:46vh;
-  overflow:auto;
-  -webkit-overflow-scrolling:touch;
+.panel-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; font-weight: 700; letter-spacing: .02em;
+  color: #7d8ea6; text-transform: uppercase;
+  margin: 10px 0 6px;
 }
-
-.row{
-  display:grid;
-  gap:6px;
-  color:var(--text);
-  font-size:13px;
+.badge {
+  background: #2563eb; color: #fff; border-radius: 999px;
+  padding: 2px 10px; font-size: 12px;
 }
-
-.row > span{
-  color:var(--muted);
+.row {
+  display: flex; align-items: center; gap: 10px;
+  margin: 6px 0;
 }
-
-.row b{color:var(--accent);font-weight:600}
-
-input[type="range"]{
-  width:100%;
-  height:34px;
-  accent-color:var(--accent);
-  background:transparent;
+.row span {
+  flex: 0 0 46%; font-size: 13px; color: #c3cfdd;
 }
-
-select,button{
-  width:100%;
-  min-height:40px;
-  border-radius:10px;
-  border:1px solid var(--line);
-  background:#121c27;
-  color:var(--text);
-  font:inherit;
-  padding:0 10px;
+input[type="range"] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 26px; background: transparent;
 }
-
-.actions{
-  grid-template-columns:1fr 1fr;
-  gap:8px;
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
-
-button{
-  background:#163042;
-  border-color:#24506b;
-  font-weight:600;
-  cursor:pointer;
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; margin-top: -8px;
+  border-radius: 50%; background: #fff;
+  border: 3px solid #2563eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
 }
-
-button:active{transform:translateY(1px)}
-
-@media (min-width:900px){
-  .app{
-    display:grid;
-    grid-template-columns:1fr 380px;
-    align-items:stretch;
-  }
-  .stage{min-height:calc(100vh - 20px)}
-  .panel{max-height:calc(100vh - 20px)}
+input[type="range"]::-moz-range-track {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
+input[type="range"]::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; border: 3px solid #2563eb;
+}
+button {
+  width: 100%; margin-top: 14px;
+  padding: 12px; border: 0; border-radius: 12px;
+  background: #2563eb; color: #fff;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+}
+button:active { transform: scale(.98); background: #1d4ed8; }
