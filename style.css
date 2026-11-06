@@ -15,15 +15,14 @@ body {
     align-items: center;
     gap: 15px;
     width: 100%;
-    max-width: 800px; /* Ограничиваем максимальную ширину на ПК */
+    max-width: 800px;
 }
 
 h1 { font-size: 1.4rem; font-weight: 500; }
 
-/* ЖЕСТКИЙ КВАДРАТ */
 .canvas-wrapper {
     width: 100%;
-    aspect-ratio: 1 / 1; /* Принудительно 1 к 1 */
+    aspect-ratio: 1 / 1;
     background: #fff;
     border: 2px solid #444;
     border-radius: 8px;
@@ -31,7 +30,6 @@ h1 { font-size: 1.4rem; font-weight: 500; }
     position: relative;
 }
 
-/* SVG занимает ВСЁ пространство квадратного контейнера */
 svg#mainSvg {
     position: absolute;
     top: 0;
@@ -78,4 +76,8 @@ input[type="color"] {
 input[type="range"] { width: 100px; cursor: pointer; }
 input[type="checkbox"] { cursor: pointer; }
 
-#brushSizeValue { min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
+#brushSizeValue, #paddingSizeValue, #headCountValue { 
+    min-width: 30px; 
+    text-align: center; 
+    font-variant-numeric: tabular-nums; 
+}
