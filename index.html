@@ -1,65 +1,49 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Построение головы</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Построение головы</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <div class="canvas-wrap">
-      <canvas id="c" width="4096" height="4096"></canvas>
-    </div>
-    <div class="panel">
-      <h2>Параметры</h2>
+<canvas id="canvas" width="4096" height="4096"></canvas>
 
-      <label>Рост в головах (X): <span id="vX">7.5</span>
-        <input type="range" id="X" min="4" max="12" step="0.5" value="7.5">
-      </label>
-
-      <fieldset>
-        <legend>Череп</legend>
-        <label>Высота круга: <span id="vCh">1.00</span>
-          <input type="range" id="chH" min="0.5" max="1.3" step="0.01" value="1">
-        </label>
-        <label>Ширина круга: <span id="vCw">1.00</span>
-          <input type="range" id="chW" min="0.5" max="1.3" step="0.01" value="1">
-        </label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Подбородок</legend>
-        <label>Тип:
-          <select id="chinType">
-            <option value="line">Линия</option>
-            <option value="point">Точка (аниме)</option>
-          </select>
-        </label>
-        <label>Ширина подбородка: <span id="vChW">1.00</span>
-          <input type="range" id="chinW" min="0.2" max="1.2" step="0.01" value="1">
-        </label>
-        <label>Высота подбородка: <span id="vChH">1.00</span>
-          <input type="range" id="chinH" min="0.2" max="1.5" step="0.01" value="1">
-        </label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Челюсть</legend>
-        <label>Высота крепления: <span id="vJh">0.50</span>
-          <input type="range" id="jawH" min="0" max="1" step="0.01" value="0.5">
-        </label>
-        <label>Угол челюсти: <span id="vJa">20</span>°
-          <input type="range" id="jawA" min="-60" max="80" step="1" value="20">
-        </label>
-        <label>Ширина челюсти: <span id="vJw">1.00</span>
-          <input type="range" id="jawW" min="0.2" max="1.5" step="0.01" value="1">
-        </label>
-      </fieldset>
-
-      <button id="reset">Сброс</button>
-    </div>
+<div class="controls">
+  <div class="control-group">
+    <label>Рост в головах (X): <span id="x-val">7</span></label>
+    <input type="range" id="x-slider" min="5" max="10" step="1" value="7">
   </div>
-  <script src="script.js"></script>
+  <div class="control-group">
+    <label>Ширина круга: <span id="circle-w-val">1.0</span></label>
+    <input type="range" id="circle-w-slider" min="0.5" max="1.5" step="0.05" value="1.0">
+  </div>
+  <div class="control-group">
+    <label>Высота круга: <span id="circle-h-val">1.0</span></label>
+    <input type="range" id="circle-h-slider" min="0.5" max="1.5" step="0.05" value="1.0">
+  </div>
+  <div class="control-group">
+    <label>Ширина подбородка: <span id="chin-w-val">0.3</span></label>
+    <input type="range" id="chin-w-slider" min="0.1" max="1.0" step="0.05" value="0.3">
+  </div>
+  <div class="control-group">
+    <label>Высота подбородка: <span id="chin-h-val">0.3</span></label>
+    <input type="range" id="chin-h-slider" min="0.1" max="1.0" step="0.05" value="0.3">
+  </div>
+  <div class="control-group">
+    <label>Высота крепления челюсти: <span id="jaw-h-val">0.6</span></label>
+    <input type="range" id="jaw-h-slider" min="0.2" max="1.0" step="0.05" value="0.6">
+  </div>
+  <div class="control-group">
+    <label>Угол челюсти: <span id="jaw-angle-val">60</span></label>
+    <input type="range" id="jaw-angle-slider" min="30" max="150" step="1" value="60">
+  </div>
+  <div class="control-group">
+    <label>Ширина челюсти: <span id="jaw-w-val">0.5</span></label>
+    <input type="range" id="jaw-w-slider" min="0.1" max="1.0" step="0.05" value="0.5">
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
