@@ -48,7 +48,6 @@
 </div>
 
 <script>
-// Сначала объявляем все глобальные переменные
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let canvasWidth = canvas.width;
@@ -62,7 +61,6 @@ const valEls = {};
 
 const PROPORTIONS = { skullHeight: 3 / 5, chinLine: 4 / 5, torsoTop: 1.0, torsoBottom: 2.0 };
 
-// Схема параметров
 const SCHEMA = (() => {
   const S = {};
   S.showRef = { type: 'checkbox', def: true, label: 'Показывать подложку', group: 'common' };
@@ -151,7 +149,6 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
-// Функции интерфейса
 function buildPanel() {
   const containerByGroup = {};
   for (const g of GROUPS) {
@@ -246,7 +243,6 @@ function readParams() {
   return P;
 }
 
-// Геометрия
 function ellipseDx(y, cy, rY) { const t = (y - cy) / rY; return Math.sqrt(Math.max(0, 1 - t * t)); }
 function jawAttachPoint(skull, param) { return skull.bottom - (skull.bottom - skull.cy) * param; }
 
@@ -329,24 +325,25 @@ function computeSkeleton(P, W, H) {
     trapLeftAttach, trapRightAttach, clavLeftAttach, clavRightAttach, clavTorsoAttachY,
   };
 
-  // Таз
+  // Таз (исправлено: создаем локальную переменную pelvis)
   const torsoWidth = torsoRX * 2; const torsoHeight = torsoRY * 2;
   const pelvisW = torsoHeight; const pelvisH = torsoWidth;
   const pelvisTopY = torsoBottomY; const pelvisCx = torsoCx + P.pelvisX * pelvisW;
   const pelvisXPos = pelvisCx - pelvisW / 2; const pelvisYPos = pelvisTopY;
   const maxRadius = Math.min(pelvisW, pelvisH) / 2; const cornerRadius = maxRadius * P.pelvisR;
 
-  sk.pelvis = { x: pelvisXPos, y: pelvisYPos, w: pelvisW, h: pelvisH, cx: pelvisCx, r: cornerRadius, botY: pelvisYPos + pelvisH };
+  const pelvis = { x: pelvisXPos, y: pelvisYPos, w: pelvisW, h: pelvisH, cx: pelvisCx, r: cornerRadius, botY: pelvisYPos + pelvisH };
+  sk.pelvis = pelvis;
 
   // Пупок
-  const totalTorsoPelvisH = sk.pelvis.botY - torsoTopActualY; const navelThird = totalTorsoPelvisH / 3;
+  const totalTorsoPelvisH = pelvis.botY - torsoTopActualY; const navelThird = totalTorsoPelvisH / 3;
   const navelCenterY = torsoTopActualY + navelThird * 2 + P.navelY * totalTorsoPelvisH;
   sk.navel = { x: torsoCx, y: navelCenterY, lineW: P.navelW * torsoRX * P.navelType, lineH: P.navelH * torsoRY * P.navelType, type: P.navelType };
 
   // Руки
   const wristRadius = Math.max(1, pelvisH * P.wristR);
-  const lWristBase = { x: pelvisXPos - wristRadius + P.lWristX * pelvisW, y: pelvisYPos + pelvisH - wristRadius + P.lWristY * pelvisH };
-  const rWristBase = { x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW, y: pelvisYPos + pelvisH - wristRadius + P.rWristY * pelvisH };
+  const lWristBase = { x: pelvisXPos - wristRadius + P.lWristX * pelvisW, y: pelvis.botY - wristRadius + P.lWristY * pelvisH };
+  const rWristBase = { x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW, y: pelvis.botY - wristRadius + P.rWristY * pelvisH };
   sk.arms = {
     wristRadius,
     l: buildArm({ x: shoulderLeftCx,  y: shoulderCy }, lWristBase, -P.lShoulderAngle, -P.lElbowAngle, wristRadius),
@@ -355,8 +352,8 @@ function computeSkeleton(P, W, H) {
 
   // Ноги
   const legRadius = Math.max(1, pelvisH * P.legR);
-  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: sk.pelvis.botY };
-  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: sk.pelvis.botY };
+  const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
+  const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
   
   const footBaseY = H * 0.90;
 
@@ -373,7 +370,6 @@ function computeSkeleton(P, W, H) {
   return sk;
 }
 
-// Слои отрисовки
 function renderReference(ctx, sk, P, W, H) {
   if (!refImage || !P.showRef) return;
   ctx.save(); ctx.globalAlpha = P.refOp || 0.5; ctx.drawImage(refImage, 0, 0, W, H); ctx.restore();
@@ -589,7 +585,6 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   if (P.showAnkleBall) { ctx.beginPath(); ctx.arc(ankle.x, ankle.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
-// ГЛАВНЫЙ ЦИКЛ
 function draw() {
   const W = canvasWidth; const H = canvasHeight;
   const P = readParams();
@@ -673,7 +668,6 @@ function addButtons() {
   panel.appendChild(wrap);
 }
 
-// Инициализация
 buildPanel();
 addButtons();
 draw();
