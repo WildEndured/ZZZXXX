@@ -240,13 +240,13 @@
         
         <div class="subhead">Левая нога</div>
         <label><span class="row">Смещение стопы X <span class="val" id="vLFootX">-0.2</span></span><input type="range" id="lFootX" min="-0.5" max="0.5" step="0.01" value="-0.2"></label>
-        <label><span class="row">Смещение стопы Y <span class="val" id="vLFootY">0.05</span></span><input type="range" id="lFootY" min="-0.5" max="0.5" step="0.01" value="0.05"></label>
+        <label><span class="row">Смещение стопы Y <span class="val" id="vLFootY">-0.50</span></span><input type="range" id="lFootY" min="-0.5" max="0.5" step="0.01" value="-0.50"></label>
 
         <hr style="border-color:#444; width:100%;">
 
         <div class="subhead">Правая нога</div>
         <label><span class="row">Смещение стопы X <span class="val" id="vRFootX">0.2</span></span><input type="range" id="rFootX" min="-0.5" max="0.5" step="0.01" value="0.2"></label>
-        <label><span class="row">Смещение стопы Y <span class="val" id="vRFootY">0.05</span></span><input type="range" id="rFootY" min="-0.5" max="0.5" step="0.01" value="0.05"></label>
+        <label><span class="row">Смещение стопы Y <span class="val" id="vRFootY">-0.50</span></span><input type="range" id="rFootY" min="-0.5" max="0.5" step="0.01" value="-0.50"></label>
       </div>
     </div>
 
@@ -1330,12 +1330,12 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
 
   ui.showLegs.checked = true;
-  ui.legSpacing.value = 1.50; // <-- Изменено на 1.50
+  ui.legSpacing.value = 1.50;
   ui.thighW.value = 0.35; ui.kneeR.value = 1.1; ui.ankleR.value = 0.12;
   ui.thighDip.value = 0.30; ui.calfPos.value = 0.33;
   ui.calfW.value = 1.2; ui.kneeBump.value = 0.50;
-  ui.lFootX.value = -0.2; ui.lFootY.value = 0.05;
-  ui.rFootX.value = 0.2; ui.rFootY.value = 0.05;
+  ui.lFootX.value = -0.2; ui.lFootY.value = -0.50; // <-- Изменено
+  ui.rFootX.value = 0.2; ui.rFootY.value = -0.50;  // <-- Изменено
 
   draw();
 });
