@@ -224,8 +224,7 @@
       <div class="accordion-content">
         <label class="chk"><input type="checkbox" id="showLegs" checked> Показывать ноги</label>
         
-        <!-- НОВЫЙ ПОЛЗУНОК -->
-        <label><span class="row">Расстояние между ногами <span class="val" id="vLegSpacing">1.0</span></span><input type="range" id="legSpacing" min="0" max="2" step="0.01" value="1.0"></label>
+        <label><span class="row">Расстояние между ногами <span class="val" id="vLegSpacing">1.50</span></span><input type="range" id="legSpacing" min="0" max="2" step="0.01" value="1.50"></label>
         
         <label><span class="row">Толщина бедра (доля таза) <span class="val" id="vThighW">0.35</span></span><input type="range" id="thighW" min="0.1" max="0.8" step="0.01" value="0.35"></label>
         <label><span class="row">Радиус колена (доля плеча) <span class="val" id="vKneeR">1.1</span></span><input type="range" id="kneeR" min="0.5" max="2.0" step="0.01" value="1.1"></label>
@@ -1331,7 +1330,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
 
   ui.showLegs.checked = true;
-  ui.legSpacing.value = 1.0;
+  ui.legSpacing.value = 1.50; // <-- Изменено на 1.50
   ui.thighW.value = 0.35; ui.kneeR.value = 1.1; ui.ankleR.value = 0.12;
   ui.thighDip.value = 0.30; ui.calfPos.value = 0.33;
   ui.calfW.value = 1.2; ui.kneeBump.value = 0.50;
