@@ -14,7 +14,6 @@
     const downloadPngBtn = document.getElementById('downloadPngBtn');
     const resetZoomBtn = document.getElementById('resetZoomBtn');
     
-    // Элементы подложки
     const uploadBg = document.getElementById('uploadBg');
     const removeBgBtn = document.getElementById('removeBgBtn');
     const bgControls = document.getElementById('bgControls');
@@ -40,6 +39,10 @@
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
+    
+    // Защита от случайного рисования при зуме
+    let drawTimeout = null; 
+    let isGesture = false; 
 
     // --- Зум ---
     let scale = 1, translateX = 0, translateY = 0;
@@ -56,7 +59,7 @@
         
         bgImage.setAttribute('opacity', opacity);
         
-        // Масштабирование подложки относительно центра (0.5, 0.5)
+        // Центрируем подложку при масштабировании
         const w = scaleVal;
         const h = scaleVal;
         const x = 0.5 - w / 2;
@@ -74,19 +77,17 @@
 
         const reader = new FileReader();
         reader.onload = (event) => {
+            // Используем base64 для гарантированного отображения
             bgImage.setAttribute('href', event.target.result);
             bgImage.style.display = 'block';
             bgControls.style.display = 'flex';
             removeBgBtn.style.display = 'inline-block';
             
-            // Сбрасываем ползунки при новой загрузке
             bgOpacity.value = 100;
             bgScale.value = 100;
             updateBgStyle();
         };
         reader.readAsDataURL(file);
-        
-        // Очищаем инпут, чтобы можно было загрузить тот же файл снова
         e.target.value = '';
     });
 
@@ -180,7 +181,7 @@
         currentPath.setAttribute('d', d);
     }
 
-    // --- Мышь ---
+    // --- Мышь (ПК) ---
     svg.addEventListener('mousedown', (e) => {
         e.preventDefault();
         if (e.button === 1 || e.shiftKey) {
@@ -226,54 +227,105 @@
         applyTransform();
     }, { passive: false });
 
-    // --- Тач ---
+    // --- Тач (Мобилки) ---
     let touchMode = 'none';
 
     svg.addEventListener('touchstart', (e) => {
         e.preventDefault();
+        
+        // Если коснулись ДВА пальца - зум
         if (e.touches.length === 2) {
             touchMode = 'pan';
+            isGesture = true;
+            clearTimeout(drawTimeout); // Отменяем рисование
+            if (currentPath) {
+                // Удаляем случайный штрих
+                currentPath.remove();
+                currentPath = null;
+            }
             drawing = false;
-            currentPath = null;
+            
             const t1 = e.touches[0], t2 = e.touches[1];
             initialPinchDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
             initialScale = scale;
             startPanX = (t1.clientX + t2.clientX) / 2 - translateX;
             startPanY = (t1.clientY + t2.clientY) / 2 - translateY;
-        } else if (e.touches.length === 1 && touchMode !== 'pan') {
+        } 
+        // Если коснулись ОДНИМ пальцем - начинаем рисовать, но с задержкой
+        else if (e.touches.length === 1 && touchMode !== 'pan') {
+            isGesture = false;
             touchMode = 'draw';
             const t = e.touches[0];
-            drawing = true;
-            startPath(toSvgCoords(t));
+            
+            // Задержка 150мс. Если за это время коснемся 2-м пальцем - рисование не начнется.
+            drawTimeout = setTimeout(() => {
+                if (!isGesture) {
+                    drawing = true;
+                    startPath(toSvgCoords(t));
+                }
+            }, 150);
         }
     }, { passive: false });
 
     svg.addEventListener('touchmove', (e) => {
         e.preventDefault();
+        
+        // Зум двумя пальцами
         if (touchMode === 'pan' && e.touches.length === 2) {
             const t1 = e.touches[0], t2 = e.touches[1];
             const currentDistance = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
             let newScale = initialScale * (currentDistance / initialPinchDistance);
             newScale = Math.max(1, Math.min(newScale, 20));
+            
             const centerX = (t1.clientX + t2.clientX) / 2;
             const centerY = (t1.clientY + t2.clientY) / 2;
+            
+            // Формула зума относительно центра двух пальцев
             translateX = centerX - (centerX - translateX) * (newScale / scale);
             translateY = centerY - (centerY - translateY) * (newScale / scale);
             scale = newScale;
             applyTransform();
-        } else if (touchMode === 'draw' && e.touches.length === 1 && drawing) {
-            const t = e.touches[0];
-            extendPath(toSvgCoords(t));
+        } 
+        // Рисование одним пальцем
+        else if (touchMode === 'draw' && e.touches.length === 1) {
+            // Если рисование уже началось (прошло 150мс), продолжаем
+            if (drawing) {
+                const t = e.touches[0];
+                extendPath(toSvgCoords(t));
+            } else {
+                // Если рисование еще не началось (ждем 150мс), обновляем стартовую точку
+                // чтобы линия не летела из угла
+                const t = e.touches[0];
+                if (drawTimeout) {
+                    clearTimeout(drawTimeout);
+                    drawTimeout = setTimeout(() => {
+                        if (!isGesture) {
+                            drawing = true;
+                            startPath(toSvgCoords(t));
+                        }
+                    }, 150);
+                }
+            }
         }
     }, { passive: false });
 
     svg.addEventListener('touchend', (e) => {
         e.preventDefault();
+        clearTimeout(drawTimeout);
+        
         if (e.touches.length === 0) {
             touchMode = 'none';
             drawing = false;
+            isGesture = false;
             currentPath = null;
             currentPoints = [];
+        } else if (e.touches.length === 1) {
+            // Если один палец убрали при зуме - переходим в режим панорамирования
+            if (touchMode === 'pan') {
+                const t = e.touches[0];
+                startPanX = t.clientX - translateX;
+                startPanY = t.clientY - translateY;
+            }
         }
     }, { passive: false });
 
@@ -348,7 +400,7 @@
             }, 'image/png');
         };
         img.onerror = () => {
-            alert('Ошибка при создании PNG.');
+            alert('Ошибка при создании PNG. Возможно, браузер блокирует картинку из-за политики безопасности.');
             URL.revokeObjectURL(url);
         };
         img.src = url;
