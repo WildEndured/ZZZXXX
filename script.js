@@ -1,233 +1,183 @@
-const canvas = document.getElementById('c');
+const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
 
-const S = 4096;
-const PAD = S * 0.05;          // 5% сверху и снизу
-const TOP = PAD;
-const BOT = S - PAD;
-const HEIGHT = BOT - TOP;      // общая высота рабочей области
-const CX = S / 2;
-
-const els = {
-  X: document.getElementById('X'),
-  chH: document.getElementById('chH'),
-  chW: document.getElementById('chW'),
-  chinType: document.getElementById('chinType'),
-  chinW: document.getElementById('chinW'),
-  chinH: document.getElementById('chinH'),
-  jawH: document.getElementById('jawH'),
-  jawA: document.getElementById('jawA'),
-  jawW: document.getElementById('jawW'),
-};
-const outs = {
-  X: document.getElementById('vX'),
-  chH: document.getElementById('vCh'),
-  chW: document.getElementById('vCw'),
-  chinW: document.getElementById('vChW'),
-  chinH: document.getElementById('vChH'),
-  jawH: document.getElementById('vJh'),
-  jawA: document.getElementById('vJa'),
-  jawW: document.getElementById('vJw'),
+const state = {
+  x: 7,
+  circleW: 1.0,
+  circleH: 1.0,
+  chinW: 0.3,
+  chinH: 0.3,
+  jawH: 0.6,
+  jawAngle: 60,
+  jawW: 0.5,
 };
 
-// Кривая Безье — упрощённая "прямая"
-function line(x1, y1, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
+function bind(id, key, valId, fmt) {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    state[key] = parseFloat(el.value);
+    document.getElementById(valId).textContent = fmt ? fmt(state[key]) : state[key];
+    draw();
+  });
 }
+bind('x-slider', 'x', 'x-val');
+bind('circle-w-slider', 'circleW', 'circle-w-val', v => v.toFixed(2));
+bind('circle-h-slider', 'circleH', 'circle-h-val', v => v.toFixed(2));
+bind('chin-w-slider', 'chinW', 'chin-w-val', v => v.toFixed(2));
+bind('chin-h-slider', 'chinH', 'chin-h-val', v => v.toFixed(2));
+bind('jaw-h-slider', 'jawH', 'jaw-h-val', v => v.toFixed(2));
+bind('jaw-angle-slider', 'jawAngle', 'jaw-angle-val');
+bind('jaw-w-slider', 'jawW', 'jaw-w-val', v => v.toFixed(2));
 
-// Плавная кривая через 3 точки (квадратичная)
-function curve(x1, y1, cx, cy, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.quadraticCurveTo(cx, cy, x2, y2);
-  ctx.stroke();
-}
+function draw() {
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0, 0, W, H);
 
-function drawGrid(X) {
-  const step = HEIGHT / X;
-  ctx.strokeStyle = 'rgba(120,120,140,0.25)';
+  const margin = H * 0.05;
+  const usableH = H - margin * 2;
+  const headH = usableH / state.x;
+
+  // Пропорции лица
+  const line1 = margin;                       // 0/5 верх головы
+  const line1_5 = margin + headH / 5;         // 1/5 вершина круга
+  const line3 = margin + headH * 3 / 5;       // 3/5 низ круга
+  const line4 = margin + headH * 4 / 5;       // 4/5 подбородок
+  const line5 = margin + headH;               // 5/5 низ головы
+
+  // Рисуем вспомогательные линии
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 2;
-  for (let i = 0; i <= X; i++) {
-    const y = TOP + step * i;
-    line(PAD, y, S - PAD, y);
-  }
-  // Отметка 1/5, 2/5, 3/5, 4/5 внутри первой головы — только для справки
-  ctx.strokeStyle = 'rgba(255,150,80,0.25)';
-  for (let k = 1; k <= 4; k++) {
-    const y = TOP + step * k / 5;
-    line(PAD, y, S - PAD, y);
-  }
-}
-
-function drawHead(X) {
-  const H = HEIGHT / X;                // высота одной головы (рост в головах)
-  const topOfHead = TOP;               // вершина головы
-  const unit = H / 5;                  // 1/5 головы = "шаг" делений
-
-  const chH = parseFloat(els.chH.value);
-  const chW = parseFloat(els.chW.value);
-  const chinW = parseFloat(els.chinW.value);
-  const chinH = parseFloat(els.chinH.value);
-  const jawH = parseFloat(els.jawH.value);
-  const jawA = parseFloat(els.jawA.value) * Math.PI / 180;
-  const jawW = parseFloat(els.jawW.value);
-  const chinType = els.chinType.value;
-
-  // 1/5 — вершина круга (верх черепа)
-  const circleTopY = topOfHead + unit * 1;
-  // 3/5 — низ круга (круг касается линии 3/5)
-  const circleBotY = topOfHead + unit * 3;
-  // 4/5 — линия подбородка
-  const chinLineY = topOfHead + unit * 4;
-
-  // ----- Параметры круга -----
-  // По умолчанию: вершина на 1/5, низ на 3/5 → диаметр = 2*unit, радиус = unit
-  const baseRadius = unit;             // = (3/5 - 1/5) * H / 2 = unit
-  const baseCy = (circleTopY + circleBotY) / 2;
-
-  // Высота/ширина через ползунки. Т.к. круг должен оставаться "круглым",
-  // а ползунки отдельные — рисуем эллипс.
-  const ry = baseRadius * chH;
-  const rx = baseRadius * chW;
-  const cy = circleTopY + ry;          // вершина всегда на 1/5
-  const cx = CX;
-
-  // ----- Подбородок -----
-  // Ширина подбородка: относительно радиуса
-  const chinHalf = rx * 0.18 * chinW;   // 0.18 — базовая доля ширины круга
-  const chinY = chinLineY + (chinH - 1) * unit * 0.5; // смещение по высоте
-
-  // ----- Крепление челюсти -----
-  // jawH: 0 — на уровне центра круга, 1 — на уровне низа круга
-  const jawAttachY = cy + ry * (jawH * 2 - 1) * 0.9;
-  // Широчайшая точка круга на этом уровне:
-  // x = cx ± rx * sqrt(1 - ((y - cy)/ry)^2)
-  const ny = (jawAttachY - cy) / ry;
-  const clamp = Math.max(-0.999, Math.min(0.999, ny));
-  const halfW = rx * Math.sqrt(1 - clamp * clamp) * jawW;
-
-  const attachLeft  = { x: cx - halfW, y: jawAttachY };
-  const attachRight = { x: cx + halfW, y: jawAttachY };
-
-  // Первая линия челюсти — вертикально вниз от широчайшей точки
-  const jawDropLen = unit * 0.9;        // длина вертикального сегмента
-  const left1  = { x: attachLeft.x,  y: attachLeft.y  + jawDropLen };
-  const right1 = { x: attachRight.x, y: attachRight.y + jawDropLen };
-
-  // Вторая линия: от конца первой к подбородку под углом.
-  // Угол jawA — наклон относительно вертикали. Влияет на длину/направление.
-  // Ограничим так, чтобы линия пришла в район подбородка.
-  const chinPts = chinType === 'point'
-    ? [{ x: cx, y: chinY }]
-    : [{ x: cx - chinHalf, y: chinY }, { x: cx + chinHalf, y: chinY }];
-
-  // Строим левую и правую вторые линии: цель — ближайшая точка подбородка
-  function secondLine(from, target) {
-    // Направление задаётся углом jawA относительно вертикальной линии вниз
-    // (то есть вторая линия образует угол с первой, но нам важнее попасть в подбородок).
-    // Используем угол для смещения контрольной точки кривой/прямой.
-    const dx = target.x - from.x;
-    const dy = target.y - from.y;
-    // Угол применяем как "искривление": смещаем прямую через контрольную точку
-    const mx = (from.x + target.x) / 2;
-    const my = (from.y + target.y) / 2;
-    const bend = Math.sin(jawA) * unit * 0.8;
-    return {
-      p0: from,
-      ctrl: { x: mx - bend, y: my },
-      p1: target,
-    };
+  for (let i = 0; i <= 5; i++) {
+    const y = margin + (headH * i) / 5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
   }
 
-  // ----- Рендер -----
-  ctx.clearRect(0, 0, S, S);
-  ctx.lineCap = 'round';
+  // Центр по горизонтали
+  const cx = W / 2;
 
-  // Сетка
-  drawGrid(X);
+  // --- Круг головы ---
+  // Вершина на 1/5, низ на 3/5
+  const circleTop = line1_5;
+  const circleBottom = line3;
+  const baseRadius = (circleBottom - circleTop) / 2;
+  const circleCY = (circleTop + circleBottom) / 2;
+  const radiusY = baseRadius * state.circleH;
+  const radiusX = baseRadius * state.circleW;
 
-  // Контуры головы
-  ctx.strokeStyle = '#111';
-  ctx.lineWidth = 8;
-
-  // Круг (эллипс)
+  ctx.strokeStyle = '#4fc3f7';
+  ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, circleCY, radiusX, radiusY, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Подбородок
-  ctx.strokeStyle = '#c0392b';
-  if (chinType === 'line') {
-    line(cx - chinHalf, chinY, cx + chinHalf, chinY);
-  } else {
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.arc(cx, chinY, 14, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  // Широчайшая точка круга (по горизонтали)
+  const widestX = cx + radiusX;
+  const widestXLeft = cx - radiusX;
 
-  // Линия челюсти — левая
-  ctx.strokeStyle = '#2c7be5';
-  line(attachLeft.x, attachLeft.y, left1.x, left1.y);
-  let seg = secondLine(left1, chinPts[0]);
-  curve(seg.p0.x, seg.p0.y, seg.ctrl.x, seg.ctrl.y, seg.p1.x, seg.p1.y);
+  // --- Подбородок ---
+  // Расположен на линии 4/5
+  const chinY = line4;
+  const chinWidthPx = headH * state.chinW * 0.5;
+  const chinHeightPx = headH * state.chinH * 0.3;
 
-  // правая (зеркально)
-  line(attachRight.x, attachRight.y, right1.x, right1.y);
-  const chinRightTarget = chinType === 'point' ? chinPts[0] : chinPts[1];
-  seg = secondLine(right1, chinRightTarget);
-  curve(seg.p0.x, seg.p0.y, seg.ctrl.x, seg.ctrl.y, seg.p1.x, seg.p1.y);
+  ctx.strokeStyle = '#ffb74d';
+  ctx.fillStyle = '#ffb74d';
+  ctx.lineWidth = 6;
 
-  // Пунктир: граница черепа, проходящая через точки крепления
-  ctx.save();
-  ctx.setLineDash([12, 12]);
-  ctx.strokeStyle = 'rgba(44,123,229,0.4)';
-  ctx.lineWidth = 3;
-  line(attachLeft.x, attachLeft.y, attachRight.x, attachRight.y);
-  ctx.restore();
+  // Подбородок в форме точки или линии (упрощённо — линия сверху + точка снизу)
+  const chinLeft = cx - chinWidthPx;
+  const chinRight = cx + chinWidthPx;
 
-  // Метки уровней 1/5..5/5
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.font = '28px monospace';
-  for (let k = 1; k <= 5; k++) {
-    const y = topOfHead + unit * k;
-    ctx.fillText(`${k}/5`, PAD + 20, y - 8);
-  }
-  ctx.fillText(`X = ${X} голов`, S - PAD - 260, TOP - 20);
+  // Рисуем как "U"-подобную форму: горизонтальная линия подбородка
+  ctx.beginPath();
+  ctx.moveTo(chinLeft, chinY);
+  ctx.lineTo(chinRight, chinY);
+  ctx.stroke();
+
+  // Точка подбородка (низ)
+  ctx.beginPath();
+  ctx.arc(cx, chinY + chinHeightPx, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // --- Челюсть ---
+  // Крепление на широчайшей точке, но по высоте регулируется jawH
+  // jawH определяет, на какой высоте от верха круга крепится начало челюсти
+  // 0.2 = ниже вершины, 1.0 = низ круга
+  const jawAttachY = circleTop + (circleBottom - circleTop) * state.jawH;
+  // Широчайшая точка на этой высоте (находится на эллипсе)
+  // параметрически: y = cy + rY*sin(t); x = cx + rX*cos(t)
+  // Найдём точку пересечения горизонтали jawAttachY с эллипсом справа
+  const dy = jawAttachY - circleCY;
+  const sinT = dy / radiusY;
+  const cosT = Math.sqrt(Math.max(0, 1 - sinT * sinT));
+  const jawStartX = cx + radiusX * cosT;
+  const jawStartY = jawAttachY;
+
+  // Первая линия челюсти: вниз под углом 90° от широчайшей точки
+  const jawW = headH * state.jawW * 0.5;
+  // Угол в градусах между вертикалью и второй линией
+  const angleRad = (state.jawAngle * Math.PI) / 180;
+
+  // Длина первой линии (вниз) зависит от jawW
+  const line1Len = Math.min(jawW, chinY - jawStartY);
+  const jawMidX = jawStartX;
+  const jawMidY = jawStartY + line1Len;
+
+  // Вторая линия: от конца первой к подбородку
+  // Конец второй линии — у подбородка, смещённый вправо
+  const chinEndX = cx + chinWidthPx * 0.9;
+  const chinEndY = chinY;
+
+  // Но вторая линия должна идти под углом jawAngle от первой
+  // Строим вектор от (jawMidX, jawMidY) к (chinEndX, chinEndY)
+  // Корректируем точку подбородка так, чтобы угол соответствовал
+  const dxToChin = chinEndX - jawMidX;
+  const dyToChin = chinEndY - jawMidY;
+  const lenToChin = Math.hypot(dxToChin, dyToChin);
+
+  // Угол от вертикали (вниз) до направления на подбородок
+  const baseAngle = Math.atan2(dyToChin, dxToChin); // от +X
+  // Мы хотим, чтобы вторая линия шла под углом jawAngle от вертикали (вправо вниз)
+  // Направление: вниз и вправо => angle = 90° - jawAngle от +X
+  const desiredAngle = Math.PI / 2 - angleRad;
+  const secondLen = lenToChin;
+  const jawEndX = jawMidX + Math.cos(desiredAngle) * secondLen * (dxToChin >= 0 ? 1 : -1);
+  const jawEndY = jawMidY + Math.sin(desiredAngle) * secondLen;
+
+  ctx.strokeStyle = '#81c784';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(jawStartX, jawStartY);
+  ctx.lineTo(jawMidX, jawMidY);
+  ctx.lineTo(jawEndX, jawEndY);
+  ctx.stroke();
+
+  // Зеркально слева
+  const jawStartXLeft = cx - radiusX * cosT;
+  const jawMidXLeft = jawStartXLeft;
+  const jawEndXLeft = cx - (jawEndX - cx);
+
+  ctx.beginPath();
+  ctx.moveTo(jawStartXLeft, jawStartY);
+  ctx.lineTo(jawMidXLeft, jawMidY);
+  ctx.lineTo(jawEndXLeft, jawEndY);
+  ctx.stroke();
+
+  // Центральная вертикаль
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, margin);
+  ctx.lineTo(cx, margin + headH);
+  ctx.stroke();
 }
 
-function render() {
-  const X = parseFloat(els.X.value);
-  outs.X.textContent = X.toFixed(1);
-  outs.chH.textContent = parseFloat(els.chH.value).toFixed(2);
-  outs.chW.textContent = parseFloat(els.chW.value).toFixed(2);
-  outs.chinW.textContent = parseFloat(els.chinW.value).toFixed(2);
-  outs.chinH.textContent = parseFloat(els.chinH.value).toFixed(2);
-  outs.jawH.textContent = parseFloat(els.jawH.value).toFixed(2);
-  outs.jawA.textContent = els.jawA.value;
-  outs.jawW.textContent = parseFloat(els.jawW.value).toFixed(2);
-  drawHead(X);
-}
-
-Object.values(els).forEach(el => {
-  el.addEventListener('input', render);
-  el.addEventListener('change', render);
+draw();
+window.addEventListener('resize', () => {
+  // canvas физически 4096x4096, CSS масштабирует
 });
-
-document.getElementById('reset').addEventListener('click', () => {
-  els.X.value = 7.5;
-  els.chH.value = 1;
-  els.chW.value = 1;
-  els.chinW.value = 1;
-  els.chinH.value = 1;
-  els.chinType.value = 'line';
-  els.jawH.value = 0.5;
-  els.jawA.value = 20;
-  els.jawW.value = 1;
-  render();
-});
-
-render();
