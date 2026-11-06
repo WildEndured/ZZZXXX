@@ -20,49 +20,49 @@ body {
 
 h1 { font-size: 1.4rem; font-weight: 500; }
 
-/* Контейнер, который обрезает всё лишнее */
 .canvas-wrapper {
     width: 100%;
     aspect-ratio: 1 / 1;
-    background: #fff;
+    background: #eee;
     border: 2px solid #444;
     border-radius: 8px;
     overflow: hidden;
     position: relative;
-    /* Отключаем стандартные жесты браузера (важно для тача) */
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
 }
 
-/* Контейнер для зума */
+/* Контейнер, который трансформируется */
 .zoom-container {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
     transform-origin: 0 0;
     will-change: transform;
+    /* Обязательно для позиционирования картинки */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Подложка */
+/* Подложка (внутри зум-контейнера) */
 .bg-image {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    object-fit: contain;
-    pointer-events: none; /* Клики проходят сквозь неё к SVG */
+    object-fit: contain; /* Вписываем по центру без искажений */
+    pointer-events: none;
     z-index: 1;
 }
 
-/* SVG холст */
 svg#mainSvg {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
     cursor: crosshair;
     z-index: 2;
-    /* Прозрачный фон для SVG, чтобы видеть img */
-    background: transparent; 
+    background: transparent;
 }
 
 .controls {
