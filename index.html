@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SVG Конструктор Головы</title>
+    <title>SVG Голова</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,11 +15,11 @@
                 <div id="bgColorLayer" class="layer bg-color-layer" style="background-color: #ffffff;"></div>
                 <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
                 
-                <!-- SVG Холст -->
                 <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-                    <g id="measureLayer"></g> <!-- Разметка (сетка) -->
-                    <g id="headLayer"></g>    <!-- Слой головы (болванка) -->
-                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g> <!-- Свободное рисование -->
+                    <g id="measureLayer"></g>
+                    <!-- НОВЫЙ СЛОЙ ДЛЯ ГОЛОВЫ -->
+                    <g id="headLayer"></g>
+                    <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
                 </svg>
             </div>
         </div>
@@ -56,27 +56,22 @@
 
             <hr style="width: 100%; border-color: #444; margin: 5px 0;">
 
-            <!-- УПРАВЛЕНИЕ РАЗМЕТКОЙ -->
             <div class="control-group">
                 <label>Отступ: <input type="range" id="paddingSize" min="0" max="10" value="0"><span id="paddingSizeValue">0%</span></label>
                 <label>Головы: <input type="range" id="headCount" min="2" max="8" value="4"><span id="headCountValue">4</span></label>
                 <label><input type="checkbox" id="showGrid" checked> Разметка</label>
             </div>
 
-            <!-- УПРАВЛЕНИЕ ГОЛОВОЙ (БОЛВАНКОЙ) -->
+            <!-- УПРАВЛЕНИЕ ГОЛОВОЙ -->
             <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px;">
-                <legend><input type="checkbox" id="showHead" checked> Показывать голову</legend>
+                <legend><input type="checkbox" id="showHead" checked> Голова (болванка)</legend>
                 <div class="control-group">
-                    <label>Ширина черепа: <input type="range" id="headWidth" min="50" max="200" value="100"><span id="headWidthValue">100%</span></label>
-                    <label>Высота черепа: <input type="range" id="headHeight" min="50" max="150" value="100"><span id="headHeightValue">100%</span></label>
+                    <label>Ширина: <input type="range" id="headWidth" min="10" max="100" value="30"><span id="headWidthValue">30</span></label>
+                    <label>Высота: <input type="range" id="headHeight" min="10" max="100" value="40"><span id="headHeightValue">40</span></label>
                 </div>
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Ширина подбородка: <input type="range" id="chinWidth" min="10" max="100" value="40"><span id="chinWidthValue">40%</span></label>
-                    <label>Высота подбородка: <input type="range" id="chinHeight" min="10" max="100" value="100"><span id="chinHeightValue">100%</span></label>
-                </div>
-                <div class="control-group" style="margin-top: 10px;">
-                    <label>Угол челюсти: <input type="range" id="jawAngle" min="0" max="90" value="45"><span id="jawAngleValue">45°</span></label>
-                    <label>Скругление: <input type="range" id="jawRound" min="0" max="20" value="5"><span id="jawRoundValue">5</span></label>
+                    <label>Подбородок: <input type="range" id="chinWidth" min="10" max="100" value="20"><span id="chinWidthValue">20</span></label>
+                    <label>Сдвиг Y: <input type="range" id="chinY" min="-20" max="20" value="0"><span id="chinYValue">0</span></label>
                 </div>
             </fieldset>
         </div>
