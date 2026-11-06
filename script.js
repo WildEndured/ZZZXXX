@@ -2,11 +2,14 @@
     'use strict';
 
     const SVG_NS = 'http://www.w3.org/2000/svg';
+    const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
     const svg = document.getElementById('mainSvg');
     const zoomContainer = document.getElementById('zoomContainer');
     const drawLayer = document.getElementById('drawLayer');
     const measureLayer = document.getElementById('measureLayer');
-    
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
     const bgColorLayer = document.getElementById('bgColorLayer');
     const bgImage = document.getElementById('bgImage');
 
@@ -14,7 +17,7 @@
     const downloadSvgBtn = document.getElementById('downloadSvgBtn');
     const downloadPngBtn = document.getElementById('downloadPngBtn');
     const resetZoomBtn = document.getElementById('resetZoomBtn');
-    
+
     const uploadBg = document.getElementById('uploadBg');
     const removeBgBtn = document.getElementById('removeBgBtn');
     const bgControls = document.getElementById('bgControls');
@@ -40,36 +43,32 @@
     let drawing = false;
     let currentPath = null;
     let currentPoints = [];
-    let currentBgSrc = null; 
+    let currentBgSrc = null;
 
-    // --- Зум ---
+    // --- Зум / панорамирование ---
     let scale = 1, translateX = 0, translateY = 0;
-    let startPanX = 0, startPanY = 0;
-    
+
     const activePointers = new Map();
     let initialPinchDistance = 0;
     let initialScale = 1;
     let isGestureActive = false;
 
     function clampTransform() {
-        if (scale < 1) scale = 1;
-        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
-        const w = wrapperRect.width;
-        const h = wrapperRect.height;
-        const maxTranslateX = 0;
-        const minTranslateX = w - (w * scale);
-        const maxTranslateY = 0;
-        const minTranslateY = h - (h * scale);
-
-        if (scale === 1) {
+        if (scale <= 1) {
+            scale = 1;
             translateX = 0;
             translateY = 0;
-        } else {
-            if (translateX > maxTranslateX) translateX = maxTranslateX;
-            if (translateX < minTranslateX) translateX = minTranslateX;
-            if (translateY > maxTranslateY) translateY = maxTranslateY;
-            if (translateY < minTranslateY) translateY = minTranslateY;
+            return;
         }
+        const rect = canvasWrapper.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        const minTranslateX = w - w * scale;
+        const minTranslateY = h - h * scale;
+        if (translateX > 0) translateX = 0;
+        if (translateX < minTranslateX) translateX = minTranslateX;
+        if (translateY > 0) translateY = 0;
+        if (translateY < minTranslateY) translateY = minTranslateY;
     }
 
     function applyTransform() {
@@ -77,16 +76,15 @@
         zoomContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    // --- Слой фона ---
+    // --- Фон ---
     bgColorInput.addEventListener('input', () => {
         bgColorLayer.style.backgroundColor = bgColorInput.value;
     });
 
-    // --- Слой подложки ---
+    // --- Подложка ---
     uploadBg.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (event) => {
             currentBgSrc = event.target.result;
@@ -94,7 +92,6 @@
             bgImage.style.display = 'block';
             bgControls.style.display = 'flex';
             removeBgBtn.style.display = 'inline-block';
-            
             bgOpacity.value = 100;
             bgScale.value = 100;
             updateBgStyle();
@@ -114,12 +111,9 @@
     function updateBgStyle() {
         const opacity = Number(bgOpacity.value) / 100;
         const scaleVal = Number(bgScale.value) / 100;
-        
         bgOpacityValue.textContent = bgOpacity.value + '%';
         bgScaleValue.textContent = bgScale.value + '%';
-        
         bgImage.style.opacity = opacity;
-        // Масштабируем картинку из центра, не трогая остальные слои
         bgImage.style.transform = `scale(${scaleVal})`;
     }
 
@@ -136,18 +130,19 @@
 
         const topY = paddingPercent;
         const bottomY = 1 - paddingPercent;
+        if (bottomY <= topY) return;
         const drawingHeight = bottomY - topY;
         const headStep = drawingHeight / heads;
 
         for (let i = 0; i <= heads; i++) {
-            const y = topY + (i * headStep);
+            const y = topY + i * headStep;
             const line = document.createElementNS(SVG_NS, 'line');
             line.setAttribute('x1', '0'); line.setAttribute('y1', y);
             line.setAttribute('x2', '1'); line.setAttribute('y2', y);
             line.setAttribute('stroke', '#000000');
-            line.setAttribute('stroke-width', '0.002'); 
-            line.setAttribute('stroke-dasharray', '0.015, 0.015'); 
-            line.setAttribute('opacity', '0.6'); 
+            line.setAttribute('stroke-width', '0.002');
+            line.setAttribute('stroke-dasharray', '0.015, 0.015');
+            line.setAttribute('opacity', '0.6');
             measureLayer.appendChild(line);
         }
 
@@ -156,7 +151,7 @@
             borderRect.setAttribute('x', '0'); borderRect.setAttribute('y', topY);
             borderRect.setAttribute('width', '1'); borderRect.setAttribute('height', drawingHeight);
             borderRect.setAttribute('fill', 'none');
-            borderRect.setAttribute('stroke', '#ff4444'); 
+            borderRect.setAttribute('stroke', '#ff4444');
             borderRect.setAttribute('stroke-width', '0.003');
             borderRect.setAttribute('opacity', '0.8');
             measureLayer.appendChild(borderRect);
@@ -173,7 +168,7 @@
     }
 
     function getStrokeWidth() {
-        return Number(brushSizeInput.value) / 4000; 
+        return Number(brushSizeInput.value) / 4000;
     }
 
     function startPath(p) {
@@ -208,11 +203,15 @@
 
     // --- Pointer Events ---
     svg.addEventListener('pointerdown', (e) => {
-        if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
-        
+        if (e.pointerType === 'mouse' && e.button === 1) {
+            e.preventDefault();
+            return;
+        }
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
         svg.setPointerCapture(e.pointerId);
         activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        
+
         if (activePointers.size === 1) {
             isGestureActive = false;
             drawing = true;
@@ -223,16 +222,14 @@
             if (currentPath) {
                 currentPath.remove();
                 currentPath = null;
+                currentPoints = [];
             }
-
             const pointers = Array.from(activePointers.values());
-            initialPinchDistance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
+            initialPinchDistance = Math.hypot(
+                pointers[1].x - pointers[0].x,
+                pointers[1].y - pointers[0].y
+            );
             initialScale = scale;
-            
-            const centerX = (pointers[0].x + pointers[1].x) / 2;
-            const centerY = (pointers[0].y + pointers[1].y) / 2;
-            startPanX = centerX - translateX;
-            startPanY = centerY - translateY;
         }
     });
 
@@ -242,20 +239,21 @@
 
         if (isGestureActive && activePointers.size === 2) {
             const pointers = Array.from(activePointers.values());
-            const currentDistance = Math.hypot(pointers[1].x - pointers[0].x, pointers[1].y - pointers[0].y);
-            
-            let newScale = initialScale * (currentDistance / initialPinchDistance);
-            newScale = Math.min(newScale, 20);
-            
-            const currentCenterX = (pointers[0].x + pointers[1].x) / 2;
-            const currentCenterY = (pointers[0].y + pointers[1].y) / 2;
+            const currentDistance = Math.hypot(
+                pointers[1].x - pointers[0].x,
+                pointers[1].y - pointers[0].y
+            );
+            if (initialPinchDistance <= 0) return;
+            const newScale = Math.min(Math.max(initialScale * (currentDistance / initialPinchDistance), 1), 20);
 
-            translateX = currentCenterX - (currentCenterX - translateX) * (newScale / scale);
-            translateY = currentCenterY - (currentCenterY - translateY) * (newScale / scale);
+            const rect = svg.getBoundingClientRect();
+            const cx = (pointers[0].x + pointers[1].x) / 2 - rect.left;
+            const cy = (pointers[0].y + pointers[1].y) / 2 - rect.top;
+
+            const ratio = newScale / scale;
+            translateX = cx - (cx - translateX) * ratio;
+            translateY = cy - (cy - translateY) * ratio;
             scale = newScale;
-            
-            translateX += (currentCenterX - startPanX) - translateX;
-            translateY += (currentCenterY - startPanY) - translateY;
 
             applyTransform();
         } else if (drawing && activePointers.size === 1) {
@@ -272,28 +270,29 @@
             isGestureActive = false;
             currentPath = null;
             currentPoints = [];
-        } else if (activePointers.size === 1 && isGestureActive) {
-            const pointer = Array.from(activePointers.values())[0];
-            startPanX = pointer.x - translateX;
-            startPanY = pointer.y - translateY;
         }
     };
 
     svg.addEventListener('pointerup', pointerUpOrCancel);
     svg.addEventListener('pointercancel', pointerUpOrCancel);
+    svg.addEventListener('lostpointercapture', pointerUpOrCancel);
 
     svg.addEventListener('wheel', (e) => {
         e.preventDefault();
         const zoomFactor = 1.1;
         const delta = e.deltaY < 0 ? zoomFactor : 1 / zoomFactor;
-        const rect = svg.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left) / rect.width;
-        const mouseY = (e.clientY - rect.top) / rect.height;
-        
         const newScale = Math.min(Math.max(scale * delta, 1), 20);
-        translateX -= (mouseX * rect.width) * (newScale - scale);
-        translateY -= (mouseY * rect.height) * (newScale - scale);
+        if (newScale === scale) return;
+
+        const rect = svg.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+
+        const ratio = newScale / scale;
+        translateX = cx - (cx - translateX) * ratio;
+        translateY = cy - (cy - translateY) * ratio;
         scale = newScale;
+
         applyTransform();
     }, { passive: false });
 
@@ -305,7 +304,7 @@
     // --- UI ---
     clearBtn.addEventListener('click', () => { drawLayer.innerHTML = ''; });
     brushSizeInput.addEventListener('input', () => { brushSizeValue.textContent = brushSizeInput.value; });
-    
+
     paddingSizeInput.addEventListener('input', (e) => {
         paddingSizeValue.textContent = e.target.value + '%';
         updateGrid();
@@ -319,16 +318,15 @@
     updateGrid();
 
     // --- Экспорт ---
-    // При экспорте мы собираем все 3 слоя в один SVG-файл
     async function getExportSvgString() {
-        // Создаем чистый SVG размером 4096х4096
         const exportSvg = document.createElementNS(SVG_NS, 'svg');
         exportSvg.setAttribute('xmlns', SVG_NS);
-        exportSvg.setAttribute('width', '4096');
-        exportSvg.setAttribute('height', '4096');
+        exportSvg.setAttribute('xmlns:xlink', XLINK_NS);
+        exportSvg.setAttribute('width', String(PNG_SIZE));
+        exportSvg.setAttribute('height', String(PNG_SIZE));
         exportSvg.setAttribute('viewBox', '0 0 1 1');
 
-        // 1. Слой фона
+        // 1. Фон
         const bgRect = document.createElementNS(SVG_NS, 'rect');
         bgRect.setAttribute('x', '0');
         bgRect.setAttribute('y', '0');
@@ -337,35 +335,32 @@
         bgRect.setAttribute('fill', bgColorInput.value);
         exportSvg.appendChild(bgRect);
 
-        // 2. Слой подложки
+        // 2. Подложка
         if (currentBgSrc) {
+            const s = Number(bgScale.value) / 100;
             const imgEl = document.createElementNS(SVG_NS, 'image');
             imgEl.setAttribute('href', currentBgSrc);
-            
-            const s = Number(bgScale.value) / 100;
-            const w = s, h = s;
-            const x = 0.5 - w/2, y = 0.5 - h/2;
-            
-            imgEl.setAttribute('x', x);
-            imgEl.setAttribute('y', y);
-            imgEl.setAttribute('width', w);
-            imgEl.setAttribute('height', h);
+            imgEl.setAttributeNS(XLINK_NS, 'xlink:href', currentBgSrc);
+            imgEl.setAttribute('x', String(0.5 - s / 2));
+            imgEl.setAttribute('y', String(0.5 - s / 2));
+            imgEl.setAttribute('width', String(s));
+            imgEl.setAttribute('height', String(s));
             imgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-            imgEl.setAttribute('opacity', Number(bgOpacity.value) / 100);
+            imgEl.setAttribute('opacity', String(Number(bgOpacity.value) / 100));
             exportSvg.appendChild(imgEl);
         }
 
-        // 3. Слой разметки и рисования (клонируем из текущего SVG)
-        const measureClone = measureLayer.cloneNode(true);
+        // 3. Разметка
+        exportSvg.appendChild(measureLayer.cloneNode(true));
+
+        // 4. Рисование без ластика
         const drawClone = drawLayer.cloneNode(true);
-        drawClone.querySelectorAll('[data-eraser]').forEach(el => el.removeAttribute('data-eraser'));
-        
-        exportSvg.appendChild(measureClone);
+        drawClone.querySelectorAll('[data-eraser]').forEach(el => el.remove());
         exportSvg.appendChild(drawClone);
 
         const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(exportSvg);
-        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + source;
+        return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+            + serializer.serializeToString(exportSvg);
     }
 
     downloadSvgBtn.addEventListener('click', async () => {
@@ -382,17 +377,20 @@
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = PNG_SIZE; canvas.height = PNG_SIZE;
+            canvas.width = PNG_SIZE;
+            canvas.height = PNG_SIZE;
             const ctx = canvas.getContext('2d');
+            ctx.fillStyle = bgColorInput.value;
+            ctx.fillRect(0, 0, PNG_SIZE, PNG_SIZE);
             ctx.drawImage(img, 0, 0, PNG_SIZE, PNG_SIZE);
             URL.revokeObjectURL(url);
 
             canvas.toBlob((blob) => {
-                downloadBlob(blob, 'drawing-4096.png');
+                if (blob) downloadBlob(blob, 'drawing-4096.png');
             }, 'image/png');
         };
         img.onerror = () => {
-            alert('Ошибка при создании PNG. Браузер заблокировал рендеринг картинки (CORS/taint).');
+            alert('Ошибка при создании PNG.');
             URL.revokeObjectURL(url);
         };
         img.src = url;
