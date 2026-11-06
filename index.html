@@ -2,44 +2,68 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<!-- Маркер версии для GitHub Actions. Не удалять! -->
 <meta name="build" content="DEV">
-<title>Скелет с ногами по референсу</title>
+<title>Голова, Торс, Таз, Руки и Ноги</title>
 <style>
   :root {
-    --bg: #1e1e1e; --panel: #2a2a2a; --text: #eee; --accent: #4a90d9; --border: #444;
+    --bg: #1e1e1e;
+    --panel: #2a2a2a;
+    --text: #eee;
+    --accent: #4a90d9;
+    --border: #444;
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; padding: 12px; font-family: system-ui, -apple-system, sans-serif;
-    background: var(--bg); color: var(--text); display: flex; flex-direction: column;
-    align-items: center; gap: 10px;
+    margin: 0; padding: 12px;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
   .wrap { display: flex; gap: 16px; align-items: flex-start; width: 100%; max-width: 1600px; }
+
   .panel {
-    flex: 0 0 340px; display: flex; flex-direction: column; gap: 8px;
+    flex: 0 0 340px;
+    display: flex; flex-direction: column; gap: 8px;
     background: var(--panel); padding: 12px; border-radius: 10px;
     max-height: 92vh; overflow-y: auto;
   }
-  .accordion { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #222; }
+
+  .accordion {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #222;
+  }
   .accordion-header {
-    background: #333; padding: 10px 14px; cursor: pointer; display: flex;
-    justify-content: space-between; align-items: center; font-size: 14px;
-    font-weight: 600; color: var(--accent); user-select: none;
+    background: #333; padding: 10px 14px;
+    cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    font-size: 14px; font-weight: 600; color: var(--accent);
+    user-select: none;
   }
   .accordion-header:hover { background: #3a3a3a; }
-  .accordion-header::after { content: '▼'; font-size: 10px; transition: transform 0.3s; }
-  .accordion.open .accordion-header::after { transform: rotate(-180deg); }
+  .accordion-header::after {
+    content: '▼'; font-size: 10px; transition: transform 0.3s;
+  }
+  .accordion.open .accordion-header::after {
+    transform: rotate(-180deg);
+  }
   .accordion-content {
-    display: none; padding: 12px; flex-direction: column; gap: 12px;
+    display: none; padding: 12px;
+    flex-direction: column; gap: 12px;
     border-top: 1px solid var(--border);
   }
-  .accordion.open .accordion-content { display: flex; }
+  .accordion.open .accordion-content {
+    display: flex;
+  }
+
   label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
   label .row { display: flex; justify-content: space-between; align-items: center; color: #ccc; }
   label .val { color: var(--accent); font-variant-numeric: tabular-nums; }
   input[type="range"] { width: 100%; accent-color: var(--accent); }
   input[type="color"] { width: 100%; height: 30px; border: none; border-radius: 4px; cursor: pointer; }
   .chk { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
+
   button {
     padding: 8px 12px; border-radius: 6px; border: none;
     background: var(--accent); color: #fff; font-size: 13px;
@@ -48,17 +72,22 @@
   button:hover { background: #5aa0e9; }
   button.sec { background: #444; }
   button.sec:hover { background: #555; }
+
   .subhead {
     font-size: 12px; font-weight: 600; color: var(--accent);
-    text-transform: uppercase; letter-spacing: 0.5px; margin: 4px 0 2px;
-    border-bottom: 1px solid var(--border); padding-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin: 4px 0 2px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
   }
+
   .stage {
     flex: 1; min-width: 0; max-height: 92vh; overflow: auto;
     border: 1px solid var(--border); border-radius: 8px;
     background: #000; display: flex; justify-content: center;
   }
   canvas { display: block; max-width: 100%; height: auto; }
+
   @media (max-width: 900px) {
     .wrap { flex-direction: column; align-items: center; }
     .panel { flex: 0 0 auto; width: 100%; max-height: 50vh; order: 2; }
@@ -70,6 +99,7 @@
 
 <div class="wrap">
   <div class="panel">
+
     <!-- Блок 1: Общее -->
     <div class="accordion open">
       <div class="accordion-header">Общее и Подложка</div>
@@ -127,6 +157,8 @@
         <label><span class="row">Сужение торса сверху <span class="val" id="vTorsoTop">0.60</span></span><input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60"></label>
         <label><span class="row">Сужение торса снизу <span class="val" id="vTorsoBot">0.80</span></span><input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80"></label>
         <hr style="border-color:#444; width:100%;">
+        <label><span class="row">Высота таза (доля) <span class="val" id="vPelvisH">1.0</span></span><input type="range" id="pelvisH" min="0.3" max="2.0" step="0.01" value="1.0"></label>
+        <label><span class="row">Ширина таза (доля) <span class="val" id="vPelvisW">1.0</span></span><input type="range" id="pelvisW" min="0.3" max="2.0" step="0.01" value="1.0"></label>
         <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
         <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
         <hr style="border-color:#444; width:100%;">
@@ -153,8 +185,8 @@
       </div>
     </div>
 
-    <!-- Блок 6: Руки -->
-    <div class="accordion open">
+    <!-- Блок 7: Руки -->
+    <div class="accordion">
       <div class="accordion-header">Руки</div>
       <div class="accordion-content">
         <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
@@ -185,6 +217,39 @@
         <label><span class="row">Сгиб локтя <span class="val" id="vRElbowAngle">0.10</span></span><input type="range" id="rElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
         <label><span class="row">Смещение запястья X <span class="val" id="vRWristX">0.30</span></span><input type="range" id="rWristX" min="-0.5" max="0.5" step="0.01" value="0.30"></label>
         <label><span class="row">Смещение запястья Y <span class="val" id="vRWristY">0.00</span></span><input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+      </div>
+    </div>
+
+    <!-- Блок 8: Ноги -->
+    <div class="accordion open">
+      <div class="accordion-header">Ноги</div>
+      <div class="accordion-content">
+        <label class="chk"><input type="checkbox" id="showLegs" checked> Показывать ноги</label>
+        <label><span class="row">Толщина ног <span class="val" id="vLegLw">1.0</span></span><input type="range" id="legLw" min="0.3" max="2" step="0.1" value="1.0"></label>
+        <label><span class="row">Радиус колена (доля таза) <span class="val" id="vKneeR">0.15</span></span><input type="range" id="kneeR" min="0.05" max="0.40" step="0.01" value="0.15"></label>
+        <label><span class="row">Радиус лодыжки (доля таза) <span class="val" id="vAnkleR">0.10</span></span><input type="range" id="ankleR" min="0.05" max="0.40" step="0.01" value="0.10"></label>
+        <label class="chk"><input type="checkbox" id="showKneeBall" checked> Шар колена</label>
+        <label class="chk"><input type="checkbox" id="showAnkleBall" checked> Шар лодыжки</label>
+        <label class="chk"><input type="checkbox" id="showKneePoint" checked> Точка колена</label>
+        <hr style="border-color:#444; width:100%;">
+        
+        <div class="subhead">Левая нога</div>
+        <label><span class="row">Смещение бедра X <span class="val" id="vLHipX">-0.25</span></span><input type="range" id="lHipX" min="-0.5" max="0.5" step="0.01" value="-0.25"></label>
+        <label><span class="row">Смещение бедра Y <span class="val" id="vLHipY">0.00</span></span><input type="range" id="lHipY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Сгиб бедра (в сторону) <span class="val" id="vLHipAngle">0.00</span></span><input type="range" id="lHipAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Сгиб колена <span class="val" id="vLKneeAngle">0.00</span></span><input type="range" id="lKneeAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Смещение стопы X <span class="val" id="vLAnkleX">-0.30</span></span><input type="range" id="lAnkleX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
+        <label><span class="row">Смещение стопы Y <span class="val" id="vLAnkleY">0.00</span></span><input type="range" id="lAnkleY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+
+        <hr style="border-color:#444; width:100%;">
+
+        <div class="subhead">Правая нога</div>
+        <label><span class="row">Смещение бедра X <span class="val" id="vRHipX">0.25</span></span><input type="range" id="rHipX" min="-0.5" max="0.5" step="0.01" value="0.25"></label>
+        <label><span class="row">Смещение бедра Y <span class="val" id="vRHipY">0.00</span></span><input type="range" id="rHipY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Сгиб бедра (в сторону) <span class="val" id="vRHipAngle">0.00</span></span><input type="range" id="rHipAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Сгиб колена <span class="val" id="vRKneeAngle">0.00</span></span><input type="range" id="rKneeAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
+        <label><span class="row">Смещение стопы X <span class="val" id="vRAnkleX">0.30</span></span><input type="range" id="rAnkleX" min="-0.5" max="0.5" step="0.01" value="0.30"></label>
+        <label><span class="row">Смещение стопы Y <span class="val" id="vRAnkleY">0.00</span></span><input type="range" id="rAnkleY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
       </div>
     </div>
 
@@ -247,6 +312,7 @@ const ui = {
   torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
   torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
   shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'), trapY: document.getElementById('trapY'),
+  pelvisH: document.getElementById('pelvisH'), pelvisW: document.getElementById('pelvisW'),
   pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX'),
   showHipLines: document.getElementById('showHipLines'), 
   hipGap: document.getElementById('hipGap'), 
@@ -267,7 +333,22 @@ const ui = {
   lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
   
   rShoulderAngle: document.getElementById('rShoulderAngle'), rElbowAngle: document.getElementById('rElbowAngle'),
-  rWristX: document.getElementById('rWristX'), rWristY: document.getElementById('rWristY')
+  rWristX: document.getElementById('rWristX'), rWristY: document.getElementById('rWristY'),
+
+  // Legs UI
+  showLegs: document.getElementById('showLegs'),
+  legLw: document.getElementById('legLw'),
+  kneeR: document.getElementById('kneeR'),
+  ankleR: document.getElementById('ankleR'),
+  showKneeBall: document.getElementById('showKneeBall'),
+  showAnkleBall: document.getElementById('showAnkleBall'),
+  showKneePoint: document.getElementById('showKneePoint'),
+  lHipX: document.getElementById('lHipX'), lHipY: document.getElementById('lHipY'),
+  lHipAngle: document.getElementById('lHipAngle'), lKneeAngle: document.getElementById('lKneeAngle'),
+  lAnkleX: document.getElementById('lAnkleX'), lAnkleY: document.getElementById('lAnkleY'),
+  rHipX: document.getElementById('rHipX'), rHipY: document.getElementById('rHipY'),
+  rHipAngle: document.getElementById('rHipAngle'), rKneeAngle: document.getElementById('rKneeAngle'),
+  rAnkleX: document.getElementById('rAnkleX'), rAnkleY: document.getElementById('rAnkleY')
 };
 
 const vals = {
@@ -280,6 +361,7 @@ const vals = {
   vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
   vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
   vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'), vTrapY: document.getElementById('vTrapY'),
+  vPelvisH: document.getElementById('vPelvisH'), vPelvisW: document.getElementById('vPelvisW'),
   vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX'),
   vHipGap: document.getElementById('vHipGap'), vHipGapW: document.getElementById('vHipGapW'), 
   vHipTopY: document.getElementById('vHipTopY'), vHipMidY: document.getElementById('vHipMidY'),
@@ -293,7 +375,17 @@ const vals = {
   vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
   vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
   vRShoulderAngle: document.getElementById('vRShoulderAngle'), vRElbowAngle: document.getElementById('vRElbowAngle'),
-  vRWristX: document.getElementById('vRWristX'), vRWristY: document.getElementById('vRWristY')
+  vRWristX: document.getElementById('vRWristX'), vRWristY: document.getElementById('vRWristY'),
+
+  vLegLw: document.getElementById('vLegLw'),
+  vKneeR: document.getElementById('vKneeR'),
+  vAnkleR: document.getElementById('vAnkleR'),
+  vLHipX: document.getElementById('vLHipX'), vLHipY: document.getElementById('vLHipY'),
+  vLHipAngle: document.getElementById('vLHipAngle'), vLKneeAngle: document.getElementById('vLKneeAngle'),
+  vLAnkleX: document.getElementById('vLAnkleX'), vLAnkleY: document.getElementById('vLAnkleY'),
+  vRHipX: document.getElementById('vRHipX'), vRHipY: document.getElementById('vRHipY'),
+  vRHipAngle: document.getElementById('vRHipAngle'), vRKneeAngle: document.getElementById('vRKneeAngle'),
+  vRAnkleX: document.getElementById('vRAnkleX'), vRAnkleY: document.getElementById('vRAnkleY')
 };
 
 document.getElementById('uploadBtn').addEventListener('click', () => {
@@ -320,9 +412,9 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 });
 
 // ============================================
-// ГЕОМЕТРИЯ РУКИ
+// ГЕОМЕТРИЯ КОНЕЧНОСТИ
 // ============================================
-function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
+function buildLimb(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   const dx = wristBase.x - shoulder.x;
   const dy = wristBase.y - shoulder.y;
 
@@ -343,68 +435,6 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   };
 
   return { shoulder, elbow, wrist, ballRadius };
-}
-
-// ============================================
-// НОГИ (ПО РЕФЕРЕНСУ)
-// ============================================
-function drawLeg(hipX, hipY, isLeft, pelvisW, pelvisH, lw, color) {
-    // Длина ноги (до низа экрана)
-    const legLength = pelvisH * 4.0; 
-    
-    // Направление (левая нога: -1, правая: 1)
-    const dir = isLeft ? -1 : 1;
-
-    // Точка колена (на 40% пути вниз)
-    const kneeX = hipX + dir * pelvisW * 0.15; // Уходит немного в сторону
-    const kneeY = hipY + legLength * 0.4;
-
-    // Точка стопы (в самом низу)
-    const footX = kneeX - dir * pelvisW * 0.1; // Сужается обратно к центру
-    const footY = hipY + legLength;
-
-    // --- Внутренняя линия (4, 3, 8, 7) ---
-    // Начинается ближе к центру (паху)
-    const innerStartX = hipX + dir * pelvisW * 0.1; 
-    // Точка на колене (внутренний край)
-    const innerKneeX = kneeX + dir * pelvisW * 0.05; 
-    // Точка на стопе (внутренний край)
-    const innerFootX = footX + dir * pelvisW * 0.05;
-
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    // Рисуем внутреннюю линию (с изгибом)
-    ctx.beginPath();
-    ctx.moveTo(innerStartX, hipY);
-    // Изгиб в сторону колена
-    ctx.quadraticCurveTo(innerKneeX, kneeY, innerFootX, footY);
-    ctx.stroke();
-
-    // --- Внешняя линия (1, 2, 5, 6) ---
-    // Начинается снаружи
-    const outerStartX = hipX + dir * pelvisW * 0.2; 
-    // Точка на колене (внешний край)
-    const outerKneeX = kneeX - dir * pelvisW * 0.05;
-    // Точка на стопе (внешний край)
-    const outerFootX = footX - dir * pelvisW * 0.05;
-
-    // Рисуем внешнюю линию (с изгибом)
-    ctx.beginPath();
-    ctx.moveTo(outerStartX, hipY);
-    // Изгиб в сторону колена
-    ctx.quadraticCurveTo(outerKneeX, kneeY, outerFootX, footY);
-    ctx.stroke();
-
-    // Рисуем круг на колене (красный кружок с референса)
-    ctx.beginPath();
-    ctx.arc(kneeX, kneeY, pelvisW * 0.1, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.restore();
 }
 
 function draw() {
@@ -550,8 +580,11 @@ function draw() {
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
 
-  const pelvisW = torsoHeight; 
-  const pelvisH = torsoWidth;  
+  const pelvisWidthScale = parseFloat(ui.pelvisW.value) || 1.0;
+  const pelvisHeightScale = parseFloat(ui.pelvisH.value) || 1.0;
+
+  const pelvisW = torsoHeight * pelvisWidthScale; 
+  const pelvisH = torsoWidth * pelvisHeightScale;  
   
   const pelvisR = parseFloat(ui.pelvisR.value) || 0.85;
   const pelvisX = parseFloat(ui.pelvisX.value) || 0;
@@ -630,12 +663,58 @@ function draw() {
   const wristLBase = { x: lWristBaseX, y: lWristBaseY };
   const wristRBase = { x: rWristBaseX, y: rWristBaseY };
 
-  const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
-  const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
+  const armL = buildLimb(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
+  const armR = buildLimb(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
 
   const crossPosParam = parseFloat(ui.crossPos.value) || 0.33;
   const crossWParam   = parseFloat(ui.crossW.value) || 1.5;
   const crossRoundParam = parseFloat(ui.crossRound.value) || 0.5; 
+
+  // ============================================
+  // НОГИ
+  // ============================================
+  const showLegs = ui.showLegs.checked;
+  const legLwMul = parseFloat(ui.legLw.value) || 1.0;
+  const kneeRParam = parseFloat(ui.kneeR.value) || 0.15;
+  const ankleRParam = parseFloat(ui.ankleR.value) || 0.10;
+  
+  const kneeRadius = Math.max(1, pelvisH * kneeRParam);
+  const ankleRadius = Math.max(1, pelvisH * ankleRParam);
+
+  const lHipXParam = parseFloat(ui.lHipX.value) || 0;
+  const lHipYParam = parseFloat(ui.lHipY.value) || 0;
+  const rHipXParam = parseFloat(ui.rHipX.value) || 0;
+  const rHipYParam = parseFloat(ui.rHipY.value) || 0;
+
+  const lHipAngle = parseFloat(ui.lHipAngle.value) || 0;
+  const lKneeAngle = parseFloat(ui.lKneeAngle.value) || 0;
+  const rHipAngle = parseFloat(ui.rHipAngle.value) || 0;
+  const rKneeAngle = parseFloat(ui.rKneeAngle.value) || 0;
+
+  const lAnkleXParam = parseFloat(ui.lAnkleX.value) || 0;
+  const lAnkleYParam = parseFloat(ui.lAnkleY.value) || 0;
+  const rAnkleXParam = parseFloat(ui.rAnkleX.value) || 0;
+  const rAnkleYParam = parseFloat(ui.rAnkleY.value) || 0;
+
+  const hipRadius = Math.max(1, pelvisH * 0.12);
+  
+  const lHipBaseX = pelvisXPos + pelvisW * 0.3 + lHipXParam * pelvisW;
+  const lHipBaseY = pelvisBottomY + lHipYParam * pelvisH;
+  const rHipBaseX = pelvisXPos + pelvisW * 0.7 + rHipXParam * pelvisW;
+  const rHipBaseY = pelvisBottomY + rHipYParam * pelvisH;
+
+  const lAnkleBaseX = pelvisXPos + pelvisW * 0.3 + lAnkleXParam * pelvisW;
+  const lAnkleBaseY = pelvisBottomY + pelvisH * 1.5 + lAnkleYParam * pelvisH;
+  const rAnkleBaseX = pelvisXPos + pelvisW * 0.7 + rAnkleXParam * pelvisW;
+  const rAnkleBaseY = pelvisBottomY + pelvisH * 1.5 + rAnkleYParam * pelvisH;
+
+  const hipL = { x: lHipBaseX, y: lHipBaseY };
+  const hipR = { x: rHipBaseX, y: rHipBaseY };
+  const ankleLBase = { x: lAnkleBaseX, y: lAnkleBaseY };
+  const ankleRBase = { x: rAnkleBaseX, y: rAnkleBaseY };
+
+  const legL = buildLimb(hipL, ankleLBase, -lHipAngle, -lKneeAngle, kneeRadius);
+  const legR = buildLimb(hipR, ankleRBase, rHipAngle, rKneeAngle, kneeRadius);
 
   // ============================================
   // ПОДСЕКЦИИ
@@ -987,26 +1066,163 @@ function draw() {
   }
 
   // 12. НОГИ
-  // Берем точки ровно на нижних внешних углах таза
-  const legStartY = pelvisYPos + pelvisH - cornerRadius; 
-  
-  const leftLegStartX = pelvisXPos + cornerRadius; 
-  const rightLegStartX = pelvisXPos + pelvisW - cornerRadius;
+  if (showLegs) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, lw * legLwMul);
+    ctx.setLineDash([]);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
 
-  ctx.save();
-  drawLeg(leftLegStartX, legStartY, true, pelvisW, pelvisH, lw, color);
-  drawLeg(rightLegStartX, legStartY, false, pelvisW, pelvisH, lw, color);
-  ctx.restore();
+    const drawLeg = (leg, isLeft) => {
+      const { shoulder: hip, elbow: knee, wrist: ankle, ballRadius: kneeBr } = leg;
+      const ankleBr = ankleRadius;
+      const innerSign = isLeft ? 1 : -1;
+
+      // Верхняя часть (бедро)
+      const dx1 = knee.x - hip.x;
+      const dy1 = knee.y - hip.y;
+      const len1 = Math.hypot(dx1, dy1) || 1;
+      const nx1 = -dy1 / len1;
+      const ny1 =  dx1 / len1;
+
+      const p1Outer = { x: hip.x + nx1 * innerSign * hipRadius, y: hip.y + ny1 * innerSign * hipRadius };
+      const p1Inner = { x: hip.x - nx1 * innerSign * hipRadius, y: hip.y - ny1 * innerSign * hipRadius };
+      
+      const p2Outer = { x: knee.x + nx1 * innerSign * kneeBr, y: knee.y + ny1 * innerSign * kneeBr };
+      const p2Inner = { x: knee.x - nx1 * innerSign * kneeBr, y: knee.y - ny1 * innerSign * kneeBr };
+
+      ctx.beginPath();
+      ctx.moveTo(p1Outer.x, p1Outer.y);
+      ctx.lineTo(p2Outer.x, p2Outer.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(p1Inner.x, p1Inner.y);
+      ctx.lineTo(p2Inner.x, p2Inner.y);
+      ctx.stroke();
+
+      // Нижняя часть (голень) - прямая, без расширения
+      const dx2 = ankle.x - knee.x;
+      const dy2 = ankle.y - knee.y;
+      const len2 = Math.hypot(dx2, dy2) || 1;
+      const nx2 = -dy2 / len2;
+      const ny2 =  dx2 / len2;
+
+      const kneeOuter = { x: knee.x + nx2 * innerSign * kneeBr, y: knee.y + ny2 * innerSign * kneeBr };
+      const kneeInner = { x: knee.x - nx2 * innerSign * kneeBr, y: knee.y - ny2 * innerSign * kneeBr };
+      
+      const ankleOuter = { x: ankle.x + nx2 * innerSign * ankleBr, y: ankle.y + ny2 * innerSign * ankleBr };
+      const ankleInner = { x: ankle.x - nx2 * innerSign * ankleBr, y: ankle.y - ny2 * innerSign * ankleBr };
+
+      ctx.beginPath();
+      ctx.moveTo(kneeOuter.x, kneeOuter.y);
+      ctx.lineTo(ankleOuter.x, ankleOuter.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(kneeInner.x, kneeInner.y);
+      ctx.lineTo(ankleInner.x, ankleInner.y);
+      ctx.stroke();
+
+      // Точка колена и шары
+      if (ui.showKneePoint.checked) {
+        ctx.beginPath();
+        ctx.arc(knee.x, knee.y, Math.max(3, lw * 0.8), 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      if (ui.showKneeBall.checked) {
+        ctx.beginPath();
+        ctx.arc(knee.x, knee.y, kneeBr, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (ui.showAnkleBall.checked) {
+        ctx.beginPath();
+        ctx.arc(ankle.x, ankle.y, ankleBr, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    };
+
+    drawLeg(legL, true);
+    drawLeg(legR, false);
+
+    ctx.restore();
+  }
 
   ctx.restore(); 
   updateLabels();
 }
 
 function updateLabels() {
-  // Update the labels in the UI
-  document.getElementById('vRefOp').textContent = parseFloat(ui.refOp.value).toFixed(2);
-  document.getElementById('vHeads').textContent = parseFloat(ui.heads.value).toFixed(1);
-  document.getElementById('vWidth').textContent = ui.lineWidth.value;
+  vals.vRefOp.textContent  = parseFloat(ui.refOp.value).toFixed(2);
+  vals.vHeads.textContent  = parseFloat(ui.heads.value).toFixed(1);
+  vals.vWidth.textContent  = ui.lineWidth.value;
+  vals.vSkullH.textContent = parseFloat(ui.skullH.value).toFixed(2);
+  vals.vSkullW.textContent = parseFloat(ui.skullW.value).toFixed(2);
+  vals.vSkullX.textContent = parseFloat(ui.skullX.value).toFixed(2);
+  vals.vChinY.textContent  = parseFloat(ui.chinY.value).toFixed(2);
+  vals.vChinW.textContent  = parseFloat(ui.chinW.value).toFixed(2);
+  vals.vChinR.textContent  = parseFloat(ui.chinR.value).toFixed(2);
+  vals.vJawY.textContent   = parseFloat(ui.jawY.value).toFixed(2);
+  vals.vJawW.textContent   = parseFloat(ui.jawW.value).toFixed(2);
+  vals.vJawB.textContent   = parseFloat(ui.jawB.value).toFixed(2);
+  vals.vNeckW.textContent  = parseFloat(ui.neckW.value).toFixed(2);
+  vals.vNeckX.textContent  = parseFloat(ui.neckX.value).toFixed(2);
+  vals.vTorsoH.textContent = parseFloat(ui.torsoH.value).toFixed(2);
+  vals.vTorsoW.textContent = parseFloat(ui.torsoW.value).toFixed(2);
+  vals.vTorsoX.textContent = parseFloat(ui.torsoX.value).toFixed(2);
+  vals.vTorsoTop.textContent = parseFloat(ui.torsoTop.value).toFixed(2);
+  vals.vTorsoBot.textContent = parseFloat(ui.torsoBot.value).toFixed(2);
+  vals.vShoulderY.textContent = parseFloat(ui.shoulderY.value).toFixed(2);
+  vals.vClavY.textContent = parseFloat(ui.clavY.value).toFixed(2);
+  vals.vTrapY.textContent = parseFloat(ui.trapY.value).toFixed(2);
+  vals.vPelvisH.textContent = parseFloat(ui.pelvisH.value).toFixed(2);
+  vals.vPelvisW.textContent = parseFloat(ui.pelvisW.value).toFixed(2);
+  vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
+  vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
+  vals.vHipGap.textContent = parseFloat(ui.hipGap.value).toFixed(2);
+  vals.vHipGapW.textContent = parseFloat(ui.hipGapW.value).toFixed(2);
+  vals.vHipTopY.textContent = parseFloat(ui.hipTopY.value).toFixed(2);
+  vals.vHipMidY.textContent = parseFloat(ui.hipMidY.value).toFixed(2);
+  vals.vAbsBend.textContent = parseFloat(ui.absBend.value).toFixed(2);
+  vals.vNavelType.textContent = parseFloat(ui.navelType.value).toFixed(2);
+  vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
+  vals.vNavelH.textContent = parseFloat(ui.navelH.value).toFixed(2);
+  vals.vNavelY.textContent = parseFloat(ui.navelY.value).toFixed(2);
+  
+  vals.vWristR.textContent = parseFloat(ui.wristR.value).toFixed(2);
+  vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
+  vals.vCrossPos.textContent = parseFloat(ui.crossPos.value).toFixed(2);
+  vals.vCrossW.textContent = parseFloat(ui.crossW.value).toFixed(2);
+  vals.vCrossRound.textContent = parseFloat(ui.crossRound.value).toFixed(2);
+  
+  vals.vLShoulderAngle.textContent = parseFloat(ui.lShoulderAngle.value).toFixed(2);
+  vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
+  vals.vLWristX.textContent = parseFloat(ui.lWristX.value).toFixed(2);
+  vals.vLWristY.textContent = parseFloat(ui.lWristY.value).toFixed(2);
+  vals.vRShoulderAngle.textContent = parseFloat(ui.rShoulderAngle.value).toFixed(2);
+  vals.vRElbowAngle.textContent = parseFloat(ui.rElbowAngle.value).toFixed(2);
+  vals.vRWristX.textContent = parseFloat(ui.rWristX.value).toFixed(2);
+  vals.vRWristY.textContent = parseFloat(ui.rWristY.value).toFixed(2);
+
+  vals.vLegLw.textContent = parseFloat(ui.legLw.value).toFixed(1);
+  vals.vKneeR.textContent = parseFloat(ui.kneeR.value).toFixed(2);
+  vals.vAnkleR.textContent = parseFloat(ui.ankleR.value).toFixed(2);
+  vals.vLHipX.textContent = parseFloat(ui.lHipX.value).toFixed(2);
+  vals.vLHipY.textContent = parseFloat(ui.lHipY.value).toFixed(2);
+  vals.vLHipAngle.textContent = parseFloat(ui.lHipAngle.value).toFixed(2);
+  vals.vLKneeAngle.textContent = parseFloat(ui.lKneeAngle.value).toFixed(2);
+  vals.vLAnkleX.textContent = parseFloat(ui.lAnkleX.value).toFixed(2);
+  vals.vLAnkleY.textContent = parseFloat(ui.lAnkleY.value).toFixed(2);
+  vals.vRHipX.textContent = parseFloat(ui.rHipX.value).toFixed(2);
+  vals.vRHipY.textContent = parseFloat(ui.rHipY.value).toFixed(2);
+  vals.vRHipAngle.textContent = parseFloat(ui.rHipAngle.value).toFixed(2);
+  vals.vRKneeAngle.textContent = parseFloat(ui.rKneeAngle.value).toFixed(2);
+  vals.vRAnkleX.textContent = parseFloat(ui.rAnkleX.value).toFixed(2);
+  vals.vRAnkleY.textContent = parseFloat(ui.rAnkleY.value).toFixed(2);
 }
 
 Object.values(ui).forEach(el => { 
@@ -1018,6 +1234,46 @@ Object.values(ui).forEach(el => {
 
 document.getElementById('resetBtn').addEventListener('click', () => {
   ui.heads.value = 5.0; ui.lineWidth.value = 5;
+  ui.skullH.value = 1.0; ui.skullW.value = 1.0; ui.skullX.value = 0;
+  ui.chinY.value = 0.30; ui.chinW.value = 0.00; ui.chinR.value = 0.30;
+  ui.jawY.value = 0.77; ui.jawW.value = 0.78; ui.jawB.value = 0.73;
+  ui.neckW.value = 0.30; ui.neckX.value = 0.00;
+  ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
+  ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
+  ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
+  ui.pelvisH.value = 1.0; ui.pelvisW.value = 1.0;
+  ui.pelvisR.value = 0.85; ui.pelvisX.value = 0.00;
+  ui.hipGap.value = 0.50; ui.hipGapW.value = 0.20; ui.hipTopY.value = 0.00; ui.hipMidY.value = 0.50;
+  ui.showHipLines.checked = true;
+  ui.showAbsLines.checked = true; ui.absBend.value = 0.30;
+  ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
+  ui.showHeads.checked = true; ui.showSub.checked = true;
+  
+  ui.showArms.checked = true;
+  ui.wristR.value = 0.12; ui.armLw.value = 1.0;
+  ui.showWristBall.checked = true; 
+  ui.showElbowBall.checked = true;
+  ui.showElbow.checked = true;
+  ui.crossPos.value = 0.33; ui.crossW.value = 1.5; ui.crossRound.value = 0.50;
+  ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
+  ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
+  ui.rShoulderAngle.value = 0.00; ui.rElbowAngle.value = 0.10;
+  ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
+
+  ui.showLegs.checked = true;
+  ui.legLw.value = 1.0;
+  ui.kneeR.value = 0.15;
+  ui.ankleR.value = 0.10;
+  ui.showKneeBall.checked = true;
+  ui.showAnkleBall.checked = true;
+  ui.showKneePoint.checked = true;
+  ui.lHipX.value = -0.25; ui.lHipY.value = 0.00;
+  ui.lHipAngle.value = 0.00; ui.lKneeAngle.value = 0.00;
+  ui.lAnkleX.value = -0.30; ui.lAnkleY.value = 0.00;
+  ui.rHipX.value = 0.25; ui.rHipY.value = 0.00;
+  ui.rHipAngle.value = 0.00; ui.rKneeAngle.value = 0.00;
+  ui.rAnkleX.value = 0.30; ui.rAnkleY.value = 0.00;
+
   draw();
 });
 
