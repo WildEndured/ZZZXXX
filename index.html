@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="build" content="DEV">
-<title>Скелет с линией 1</title>
+<title>Скелет с линией 1 (Исправлено)</title>
 <style>
   :root {
     --bg: #1e1e1e; --panel: #2a2a2a; --text: #eee; --accent: #4a90d9; --border: #444;
@@ -346,21 +346,22 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
 }
 
 // ============================================
-// НОГИ (ТОЛЬКО ЛИНИЯ 1)
+// НОГИ (ТОЛЬКО ЛИНИЯ 1) - ИСПРАВЛЕНО
 // ============================================
 function drawLegLine1(startX, startY, direction, pelvisW, pelvisH, lw, color) {
-    // Линия 1: Начинается от внешнего края таза и идет вниз с легким изгибом наружу.
+    // Длина ноги (уходим далеко вниз)
+    const legLength = pelvisH * 4.0; 
     
-    // Длина ноги (примерно 3 высоты таза, чтобы уйти вниз)
-    const legLength = pelvisH * 3.5;
-    
-    // Конечная точка (немного смещаем наружу)
-    const endX = startX + direction * pelvisW * 0.15;
+    // Конечная точка: уходит вниз и СУЖАЕТСЯ к центру (как на рисунке)
+    // direction = -1 для левой ноги (сужаем вправо, к центру)
+    // direction = 1 для правой ноги (сужаем влево, к центру)
+    const endX = startX - direction * pelvisW * 0.15; 
     const endY = startY + legLength;
 
-    // Точка изгиба (середина ноги, отступаем наружу для плавности)
-    const midX = startX + direction * pelvisW * 0.25;
-    const midY = startY + legLength * 0.5;
+    // Точка изгиба (посередине): делаем плавный изгиб наружу (к колену)
+    // direction = -1 (левая) -> отступаем ВЛЕВО (наружу) -> -1 * 0.2
+    const midX = startX + direction * pelvisW * 0.2;
+    const midY = startY + legLength * 0.4;
 
     ctx.save();
     ctx.strokeStyle = color;
@@ -370,7 +371,7 @@ function drawLegLine1(startX, startY, direction, pelvisW, pelvisH, lw, color) {
 
     ctx.beginPath();
     ctx.moveTo(startX, startY);
-    // Рисуем дугу через среднюю точку
+    // Рисуем дугу: сначала наружу (к колену), потом вниз и внутрь
     ctx.quadraticCurveTo(midX, midY, endX, endY);
     ctx.stroke();
 
@@ -956,17 +957,17 @@ function draw() {
     ctx.restore();
   }
 
-  // 12. ЛИНИЯ 1 (НОГИ)
-  // Берем внешние края таза
-  const legStartY = pelvisYPos + pelvisH * 0.1; // Чуть ниже верха таза
+  // 12. ЛИНИЯ 1 (НОГИ) - Исправлено
+  // Берем точки ровно на нижних внешних углах таза
+  const legStartY = pelvisYPos + pelvisH - cornerRadius; 
   
   const leftLegStartX = pelvisXPos; 
   const rightLegStartX = pelvisXPos + pelvisW;
 
   ctx.save();
-  // Левая линия 1
+  // Левая линия 1 (direction = -1, идет влево-вниз, затем сужается к центру)
   drawLegLine1(leftLegStartX, legStartY, -1, pelvisW, pelvisH, lw, color);
-  // Правая линия 1
+  // Правая линия 1 (direction = 1, идет вправо-вниз, затем сужается к центру)
   drawLegLine1(rightLegStartX, legStartY, 1, pelvisW, pelvisH, lw, color);
   ctx.restore();
 
@@ -979,7 +980,6 @@ function updateLabels() {
   document.getElementById('vRefOp').textContent = parseFloat(ui.refOp.value).toFixed(2);
   document.getElementById('vHeads').textContent = parseFloat(ui.heads.value).toFixed(1);
   document.getElementById('vWidth').textContent = ui.lineWidth.value;
-  // ... (остальные лейблы можно оставить как были, они не влияют на отрисовку)
 }
 
 Object.values(ui).forEach(el => { 
@@ -991,7 +991,6 @@ Object.values(ui).forEach(el => {
 
 document.getElementById('resetBtn').addEventListener('click', () => {
   ui.heads.value = 5.0; ui.lineWidth.value = 5;
-  // Сброс остальных параметров (можно оставить как было)
   draw();
 });
 
