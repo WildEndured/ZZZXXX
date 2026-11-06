@@ -48,6 +48,7 @@
 </div>
 
 <script>
+// 1. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ХОЛСТА (ОБЪЯВЛЯЕМ СРАЗУ)
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let canvasWidth = canvas.width;
@@ -61,6 +62,7 @@ const valEls = {};
 
 const PROPORTIONS = { skullHeight: 3 / 5, chinLine: 4 / 5, torsoTop: 1.0, torsoBottom: 2.0 };
 
+// 2. СХЕМА ПАРАМЕТРОВ
 const SCHEMA = (() => {
   const S = {};
   S.showRef = { type: 'checkbox', def: true, label: 'Показывать подложку', group: 'common' };
@@ -149,6 +151,7 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
+// 3. ФУНКЦИИ ИНТЕРФЕЙСА
 function buildPanel() {
   const containerByGroup = {};
   for (const g of GROUPS) {
@@ -243,6 +246,7 @@ function readParams() {
   return P;
 }
 
+// 4. ГЕОМЕТРИЯ И СБОРКА СКЕЛЕТА
 function ellipseDx(y, cy, rY) { const t = (y - cy) / rY; return Math.sqrt(Math.max(0, 1 - t * t)); }
 function jawAttachPoint(skull, param) { return skull.bottom - (skull.bottom - skull.cy) * param; }
 
@@ -325,7 +329,7 @@ function computeSkeleton(P, W, H) {
     trapLeftAttach, trapRightAttach, clavLeftAttach, clavRightAttach, clavTorsoAttachY,
   };
 
-  // Таз (исправлено: создаем локальную переменную pelvis)
+  // Таз
   const torsoWidth = torsoRX * 2; const torsoHeight = torsoRY * 2;
   const pelvisW = torsoHeight; const pelvisH = torsoWidth;
   const pelvisTopY = torsoBottomY; const pelvisCx = torsoCx + P.pelvisX * pelvisW;
@@ -370,6 +374,7 @@ function computeSkeleton(P, W, H) {
   return sk;
 }
 
+// 5. ОТРИСОВКА
 function renderReference(ctx, sk, P, W, H) {
   if (!refImage || !P.showRef) return;
   ctx.save(); ctx.globalAlpha = P.refOp || 0.5; ctx.drawImage(refImage, 0, 0, W, H); ctx.restore();
@@ -585,6 +590,7 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   if (P.showAnkleBall) { ctx.beginPath(); ctx.arc(ankle.x, ankle.y, br, 0, Math.PI * 2); ctx.stroke(); }
 }
 
+// 6. ГЛАВНЫЙ ЦИКЛ
 function draw() {
   const W = canvasWidth; const H = canvasHeight;
   const P = readParams();
@@ -668,6 +674,7 @@ function addButtons() {
   panel.appendChild(wrap);
 }
 
+// 7. ИНИЦИАЛИЗАЦИЯ
 buildPanel();
 addButtons();
 draw();
