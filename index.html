@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Голова (С нуля)</title>
+    <title>Голова (Чистая математика)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Голова (С нуля)</h1>
+        <h1>SVG Холст</h1>
         
         <div class="canvas-wrapper" id="canvasWrapper">
             <div class="zoom-container" id="zoomContainer">
                 <div id="bgColorLayer" class="layer bg-color-layer" style="background-color: #ffffff;"></div>
+                <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
+                
                 <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
                     <g id="measureLayer"></g>
                     <g id="headLayer"></g>
@@ -24,43 +26,57 @@
         <div class="controls">
             <div class="control-group">
                 <button id="clearBtn">Очистить рисунок</button>
-                <button id="resetZoomBtn">Сбросить зум</button>
+                <button id="downloadSvgBtn">Скачать SVG</button>
                 <button id="downloadPngBtn">Скачать PNG</button>
+                <button id="resetZoomBtn">Сбросить зум</button>
             </div>
+
+            <div class="control-group">
+                <label class="file-label">
+                    Загрузить подложку
+                    <input type="file" id="uploadBg" accept="image/*">
+                </label>
+                <button id="removeBgBtn" style="background: #d94a4a; display: none;">Удалить подложку</button>
+            </div>
+
+            <div class="control-group" id="bgControls" style="display: none;">
+                <label>Прозрачность: <input type="range" id="bgOpacity" min="0" max="100" value="100"><span id="bgOpacityValue">100%</span></label>
+                <label>Масштаб: <input type="range" id="bgScale" min="10" max="300" value="100"><span id="bgScaleValue">100%</span></label>
+            </div>
+
+            <hr style="width: 100%; border-color: #444; margin: 5px 0;">
 
             <div class="control-group">
                 <label>Фон: <input type="color" id="bgColor" value="#ffffff"></label>
-                <label>Цвет линий: <input type="color" id="lineColor" value="#ff0000"></label>
+                <label>Цвет линий: <input type="color" id="lineColor" value="#ff3b3b"></label>
                 <label>Толщина: <input type="range" id="lineWidth" min="1" max="20" value="4"><span id="lineWidthValue">4</span></label>
             </div>
 
+            <hr style="width: 100%; border-color: #444; margin: 5px 0;">
+
             <div class="control-group">
                 <label>Отступ: <input type="range" id="paddingSize" min="0" max="10" value="0"><span id="paddingSizeValue">0%</span></label>
-                <label>Головы: <input type="range" id="headCount" min="2" max="8" value="4"><span id="headCountValue">4</span></label>
+                <label>Головы: <input type="range" id="headCount" min="2" max="8" value="5"><span id="headCountValue">5</span></label>
                 <label><input type="checkbox" id="showGrid" checked> Разметка</label>
             </div>
 
-            <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px; width: 100%;">
-                <legend><input type="checkbox" id="showHead" checked> Параметры головы</legend>
+            <!-- УПРАВЛЕНИЕ ГОЛОВОЙ -->
+            <fieldset style="border: 1px solid #444; padding: 10px; border-radius: 6px; margin-top: 10px;">
+                <legend><input type="checkbox" id="showHead" checked> Голова</legend>
                 
                 <div class="control-group">
-                    <label>Ширина черепа: <input type="range" id="skullW" min="0.5" max="1.5" step="0.01" value="1.0"><span id="vSkullW">1.00</span></label>
-                    <label>Высота черепа: <input type="range" id="skullH" min="0.5" max="1.5" step="0.01" value="1.0"><span id="vSkullH">1.00</span></label>
+                    <label>Ширина черепа: <input type="range" id="headW" min="10" max="200" value="100"><span id="headWValue">100</span></label>
+                    <label>Высота черепа: <input type="range" id="headH" min="10" max="200" value="100"><span id="headHValue">100</span></label>
                 </div>
                 
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Ширина подбородка: <input type="range" id="chinW" min="0" max="1" step="0.01" value="0.4"><span id="vChinW">0.40</span></label>
-                    <label>Сдвиг подбородка: <input type="range" id="chinY" min="-0.5" max="0.5" step="0.01" value="0"><span id="vChinY">0.00</span></label>
+                    <label>Ширина подбородка: <input type="range" id="chinW" min="0" max="100" value="40"><span id="chinWValue">40</span></label>
+                    <label>Сдвиг подбородка: <input type="range" id="chinY" min="-50" max="50" value="0"><span id="chinYValue">0</span></label>
                 </div>
 
                 <div class="control-group" style="margin-top: 10px;">
-                    <label>Точка излома Y: <input type="range" id="jawBreakY" min="0" max="1" step="0.01" value="0.5"><span id="vJawBreakY">0.50</span></label>
-                    <label>Точка излома X: <input type="range" id="jawBreakX" min="0" max="1" step="0.01" value="0.8"><span id="vJawBreakX">0.80</span></label>
-                </div>
-
-                <div class="control-group" style="margin-top: 10px;">
-                    <label>Крепление к черепу Y: <input type="range" id="jawAttachY" min="0" max="1" step="0.01" value="0.5"><span id="vJawAttachY">0.50</span></label>
-                    <label>Крепление к черепу X: <input type="range" id="jawAttachX" min="0" max="1" step="0.01" value="1.0"><span id="vJawAttachX">1.00</span></label>
+                    <label>Угол челюсти: <input type="range" id="jawAngle" min="0" max="90" value="20"><span id="jawAngleValue">20</span></label>
+                    <label>Длина 1-й линии: <input type="range" id="jawLen" min="10" max="90" value="60"><span id="jawLenValue">60</span></label>
                 </div>
             </fieldset>
         </div>
