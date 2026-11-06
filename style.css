@@ -1,127 +1,161 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #1e1e1e;
-    color: #e0e0e0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
+/* ============================ БАЗА ============================ */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-    max-width: 800px;
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #1e1e24;
+  color: #eee;
+  overflow-x: hidden;
+  /* Запрет скролла при рисовании на тач-устройствах */
+  overscroll-behavior: none;
 }
 
-h1 { font-size: 1.4rem; font-weight: 500; }
+/* ============================ ПАНЕЛИ ============================ */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  padding: 8px 12px;
+  background: #2a2a33;
+  border-bottom: 1px solid #3a3a45;
+  align-items: center;
+}
 
+.toolbar .group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.toolbar .group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.toolbar input[type="color"] {
+  width: 42px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toolbar input[type="range"] {
+  width: 130px;
+  accent-color: #e63946;
+}
+
+.toolbar input[type="file"] {
+  font-size: 11px;
+  color: #ccc;
+  max-width: 160px;
+}
+
+.toolbar button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #3d3d4a;
+  color: #eee;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.toolbar button:hover {
+  background: #50505e;
+}
+
+.toolbar button:active {
+  background: #e63946;
+}
+
+/* ============================ ХОЛСТ ============================ */
 .canvas-wrapper {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background: #eee;
-    border: 2px solid #444;
-    border-radius: 8px;
-    overflow: hidden;
-    position: relative;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  /* Отключаем выделение текста при перетаскивании */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.zoom-container {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    transform-origin: 0 0;
-    will-change: transform;
+/* Контейнер строго квадратный, адаптивный */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;         /* жёсткий клэмп — ничего не выходит за края */
+  background: #000;
+  border-radius: 6px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  touch-action: none;       /* отключаем браузерные жесты */
 }
 
+/* Слой зума/панорамирования */
+.zoom-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* Общие стили слоёв */
 .layer {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.bg-color-layer { z-index: 1; }
-
-.bg-image-layer {
-    z-index: 2;
-    object-fit: contain;
-    pointer-events: none;
-    transform-origin: center center;
+.layer-bg {
+  z-index: 1;
+  background: #ffffff;
 }
 
-.draw-svg-layer {
-    z-index: 3;
-    cursor: crosshair;
-    background: transparent;
+.layer-image {
+  z-index: 2;
+  pointer-events: none;    /* подложка не ловит события */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.controls {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    background: #2a2a2a;
-    padding: 15px 20px;
-    border-radius: 8px;
-    width: 100%;
+.layer-image img {
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.control-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-    justify-content: center;
+.layer-draw {
+  z-index: 3;
 }
 
-button {
-    background: #4a90d9;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-button:hover { background: #357abd; }
-button:active { transform: scale(0.97); }
-
-.file-label {
-    background: #4a90d9;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-.file-label:hover { background: #357abd; }
-.file-label input[type="file"] { display: none; }
-
-label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-
-input[type="color"] {
-    width: 40px; height: 30px;
-    border: none; border-radius: 4px;
-    cursor: pointer; background: transparent;
-}
-input[type="range"] { width: 80px; cursor: pointer; }
-input[type="checkbox"] { cursor: pointer; }
-
-#brushSizeValue, #paddingSizeValue, #headCountValue, #bgOpacityValue, #bgScaleValue,
-#headWidthValue, #headHeightValue, #chinWidthValue, #chinYValue, 
-#jawAttachYValue, #jawWidthValue, #jawAngleValue, #jawRoundValue { 
-    min-width: 35px; 
-    text-align: center; 
-    font-variant-numeric: tabular-nums; 
+.layer-draw svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
-fieldset { width: 100%; }
-legend { padding: 0 8px; font-size: 14px; font-weight: bold; color: #4a90d9; }
+/* Красная рамка и пунктирные линии — не перехватывают события */
+#guidesGroup {
+  pointer-events: none;
+}
