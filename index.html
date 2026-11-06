@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="build" content="DEV">
-<title>Скелет с линией 1 (Исправлено)</title>
+<title>Скелет с ногами по референсу</title>
 <style>
   :root {
     --bg: #1e1e1e; --panel: #2a2a2a; --text: #eee; --accent: #4a90d9; --border: #444;
@@ -346,22 +346,30 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
 }
 
 // ============================================
-// НОГИ (ТОЛЬКО ЛИНИЯ 1) - ИСПРАВЛЕНО
+// НОГИ (ПО РЕФЕРЕНСУ)
 // ============================================
-function drawLegLine1(startX, startY, direction, pelvisW, pelvisH, lw, color) {
-    // Длина ноги (уходим далеко вниз)
+function drawLeg(hipX, hipY, isLeft, pelvisW, pelvisH, lw, color) {
+    // Длина ноги (до низа экрана)
     const legLength = pelvisH * 4.0; 
     
-    // Конечная точка: уходит вниз и СУЖАЕТСЯ к центру (как на рисунке)
-    // direction = -1 для левой ноги (сужаем вправо, к центру)
-    // direction = 1 для правой ноги (сужаем влево, к центру)
-    const endX = startX - direction * pelvisW * 0.15; 
-    const endY = startY + legLength;
+    // Направление (левая нога: -1, правая: 1)
+    const dir = isLeft ? -1 : 1;
 
-    // Точка изгиба (посередине): делаем плавный изгиб наружу (к колену)
-    // direction = -1 (левая) -> отступаем ВЛЕВО (наружу) -> -1 * 0.2
-    const midX = startX + direction * pelvisW * 0.2;
-    const midY = startY + legLength * 0.4;
+    // Точка колена (на 40% пути вниз)
+    const kneeX = hipX + dir * pelvisW * 0.15; // Уходит немного в сторону
+    const kneeY = hipY + legLength * 0.4;
+
+    // Точка стопы (в самом низу)
+    const footX = kneeX - dir * pelvisW * 0.1; // Сужается обратно к центру
+    const footY = hipY + legLength;
+
+    // --- Внутренняя линия (4, 3, 8, 7) ---
+    // Начинается ближе к центру (паху)
+    const innerStartX = hipX + dir * pelvisW * 0.1; 
+    // Точка на колене (внутренний край)
+    const innerKneeX = kneeX + dir * pelvisW * 0.05; 
+    // Точка на стопе (внутренний край)
+    const innerFootX = footX + dir * pelvisW * 0.05;
 
     ctx.save();
     ctx.strokeStyle = color;
@@ -369,10 +377,31 @@ function drawLegLine1(startX, startY, direction, pelvisW, pelvisH, lw, color) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
+    // Рисуем внутреннюю линию (с изгибом)
     ctx.beginPath();
-    ctx.moveTo(startX, startY);
-    // Рисуем дугу: сначала наружу (к колену), потом вниз и внутрь
-    ctx.quadraticCurveTo(midX, midY, endX, endY);
+    ctx.moveTo(innerStartX, hipY);
+    // Изгиб в сторону колена
+    ctx.quadraticCurveTo(innerKneeX, kneeY, innerFootX, footY);
+    ctx.stroke();
+
+    // --- Внешняя линия (1, 2, 5, 6) ---
+    // Начинается снаружи
+    const outerStartX = hipX + dir * pelvisW * 0.2; 
+    // Точка на колене (внешний край)
+    const outerKneeX = kneeX - dir * pelvisW * 0.05;
+    // Точка на стопе (внешний край)
+    const outerFootX = footX - dir * pelvisW * 0.05;
+
+    // Рисуем внешнюю линию (с изгибом)
+    ctx.beginPath();
+    ctx.moveTo(outerStartX, hipY);
+    // Изгиб в сторону колена
+    ctx.quadraticCurveTo(outerKneeX, kneeY, outerFootX, footY);
+    ctx.stroke();
+
+    // Рисуем круг на колене (красный кружок с референса)
+    ctx.beginPath();
+    ctx.arc(kneeX, kneeY, pelvisW * 0.1, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.restore();
@@ -957,18 +986,16 @@ function draw() {
     ctx.restore();
   }
 
-  // 12. ЛИНИЯ 1 (НОГИ) - Исправлено
+  // 12. НОГИ
   // Берем точки ровно на нижних внешних углах таза
   const legStartY = pelvisYPos + pelvisH - cornerRadius; 
   
-  const leftLegStartX = pelvisXPos; 
-  const rightLegStartX = pelvisXPos + pelvisW;
+  const leftLegStartX = pelvisXPos + cornerRadius; 
+  const rightLegStartX = pelvisXPos + pelvisW - cornerRadius;
 
   ctx.save();
-  // Левая линия 1 (direction = -1, идет влево-вниз, затем сужается к центру)
-  drawLegLine1(leftLegStartX, legStartY, -1, pelvisW, pelvisH, lw, color);
-  // Правая линия 1 (direction = 1, идет вправо-вниз, затем сужается к центру)
-  drawLegLine1(rightLegStartX, legStartY, 1, pelvisW, pelvisH, lw, color);
+  drawLeg(leftLegStartX, legStartY, true, pelvisW, pelvisH, lw, color);
+  drawLeg(rightLegStartX, legStartY, false, pelvisW, pelvisH, lw, color);
   ctx.restore();
 
   ctx.restore(); 
