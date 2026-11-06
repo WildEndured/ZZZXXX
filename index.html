@@ -1,49 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Построение головы</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Head Builder — SVG</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<canvas id="canvas" width="4096" height="4096"></canvas>
+  <div class="app">
+    <div class="stage" id="stage">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <pattern id="grid" width="128" height="128" patternUnits="userSpaceOnUse">
+            <path d="M128 0H0V128" fill="none" stroke="#1b2430" stroke-width="2" opacity="0.55"/>
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="4096" height="4096" fill="#0b0f14"/>
+        <rect x="0" y="0" width="4096" height="4096" fill="url(#grid)"/>
+        <g id="guides" stroke="#2b3a4a" stroke-width="3" fill="none" stroke-dasharray="12 14"></g>
+        <g id="head" stroke="#e8f0f7" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
+      </svg>
+    </div>
 
-<div class="controls">
-  <div class="control-group">
-    <label>Рост в головах (X): <span id="x-val">7</span></label>
-    <input type="range" id="x-slider" min="5" max="10" step="1" value="7">
-  </div>
-  <div class="control-group">
-    <label>Ширина круга: <span id="circle-w-val">1.0</span></label>
-    <input type="range" id="circle-w-slider" min="0.5" max="1.5" step="0.05" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Высота круга: <span id="circle-h-val">1.0</span></label>
-    <input type="range" id="circle-h-slider" min="0.5" max="1.5" step="0.05" value="1.0">
-  </div>
-  <div class="control-group">
-    <label>Ширина подбородка: <span id="chin-w-val">0.3</span></label>
-    <input type="range" id="chin-w-slider" min="0.1" max="1.0" step="0.05" value="0.3">
-  </div>
-  <div class="control-group">
-    <label>Высота подбородка: <span id="chin-h-val">0.3</span></label>
-    <input type="range" id="chin-h-slider" min="0.1" max="1.0" step="0.05" value="0.3">
-  </div>
-  <div class="control-group">
-    <label>Высота крепления челюсти: <span id="jaw-h-val">0.6</span></label>
-    <input type="range" id="jaw-h-slider" min="0.2" max="1.0" step="0.05" value="0.6">
-  </div>
-  <div class="control-group">
-    <label>Угол челюсти: <span id="jaw-angle-val">60</span></label>
-    <input type="range" id="jaw-angle-slider" min="30" max="150" step="1" value="60">
-  </div>
-  <div class="control-group">
-    <label>Ширина челюсти: <span id="jaw-w-val">0.5</span></label>
-    <input type="range" id="jaw-w-slider" min="0.1" max="1.0" step="0.05" value="0.5">
-  </div>
-</div>
+    <div class="panel">
+      <label class="row">
+        <span>Рост в головах (X): <b id="xVal">7</b></span>
+        <input id="xRange" type="range" min="3" max="12" step="1" value="7" />
+      </label>
 
-<script src="script.js"></script>
+      <label class="row">
+        <span>Круг: высота <b id="cHVal">1.00</b></span>
+        <input id="cH" type="range" min="0.4" max="1.6" step="0.01" value="1" />
+      </label>
+
+      <label class="row">
+        <span>Круг: ширина <b id="cWVal">1.00</b></span>
+        <input id="cW" type="range" min="0.4" max="1.6" step="0.01" value="1" />
+      </label>
+
+      <label class="row">
+        <span>Подбородок: тип</span>
+        <select id="chinType">
+          <option value="line">Линия</option>
+          <option value="dot">Точка (аниме)</option>
+        </select>
+      </label>
+
+      <label class="row">
+        <span>Подбородок: ширина <b id="chWVal">0.35</b></span>
+        <input id="chW" type="range" min="0.05" max="0.8" step="0.01" value="0.35" />
+      </label>
+
+      <label class="row">
+        <span>Подбородок: высота <b id="chHVal">0.06</b></span>
+        <input id="chH" type="range" min="0.01" max="0.3" step="0.01" value="0.06" />
+      </label>
+
+      <label class="row">
+        <span>Челюсть: высота крепления <b id="jYVal">0.62</b></span>
+        <input id="jY" type="range" min="0.4" max="0.85" step="0.01" value="0.62" />
+      </label>
+
+      <label class="row">
+        <span>Челюсть: угол <b id="jAVal">65</b>°</span>
+        <input id="jA" type="range" min="30" max="120" step="1" value="65" />
+      </label>
+
+      <label class="row">
+        <span>Челюсть: ширина <b id="jWVal">0.5</b></span>
+        <input id="jW" type="range" min="0.1" max="1" step="0.01" value="0.5" />
+      </label>
+
+      <div class="row actions">
+        <button id="download">Скачать SVG</button>
+        <button id="reset">Сброс</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
