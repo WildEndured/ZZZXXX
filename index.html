@@ -174,6 +174,12 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
+// Переменные объявляются здесь, чтобы не было "черного холста"
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+let canvasWidth = canvas.width;
+let canvasHeight = canvas.height;
+
 const panel = document.getElementById('panel');
 const ui = {};
 const valEls = {};
@@ -198,8 +204,6 @@ function buildPanel() {
                      '__sub:Метка на предплечье','crossPos','crossW','crossRound',
                      '__sep','__sub:Левая рука','lShoulderAngle','lElbowAngle','lWristX','lWristY',
                      '__sep','__sub:Правая рука','rShoulderAngle','rElbowAngle','rWristX','rWristY'];
-  
-  // НОВОЕ: Порядок для ног
   const orderLegs = ['showLegs','legR','legLw','showKneeBall','showAnkleBall','showKneePoint',
                      '__sep','__sub:Левая нога','lHipAngle','lKneeAngle','lFootX','lFootY',
                      '__sep','__sub:Правая нога','rHipAngle','rKneeAngle','rFootX','rFootY'];
@@ -220,24 +224,18 @@ function buildPanel() {
 }
 
 function makeSep() {
-  const hr = document.createElement('hr');
-  hr.className = 'sep';
-  return hr;
+  const hr = document.createElement('hr'); hr.className = 'sep'; return hr;
 }
 
 function makeSubhead(text) {
-  const d = document.createElement('div');
-  d.className = 'subhead';
-  d.textContent = text;
-  return d;
+  const d = document.createElement('div'); d.className = 'subhead'; d.textContent = text; return d;
 }
 
 function makeUploadRow() {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
   const btn = document.createElement('button');
-  btn.className = 'sec';
-  btn.textContent = 'Загрузить картинку';
+  btn.className = 'sec'; btn.textContent = 'Загрузить картинку';
   const file = document.createElement('input');
   file.type = 'file'; file.accept = 'image/*'; file.style.display = 'none';
   btn.addEventListener('click', () => file.click());
@@ -260,8 +258,7 @@ function makeField(key, cfg) {
   }
   if (cfg.type === 'color') {
     const label = document.createElement('label');
-    const row = document.createElement('span');
-    row.className = 'row'; row.textContent = cfg.label;
+    const row = document.createElement('span'); row.className = 'row'; row.textContent = cfg.label;
     const input = document.createElement('input');
     input.type = 'color'; input.id = key; input.value = cfg.def;
     input.addEventListener('input', scheduleDraw);
@@ -436,7 +433,7 @@ function computeSkeleton(P, W, H) {
     trapLeftAttach, trapRightAttach, clavLeftAttach, clavRightAttach, clavTorsoAttachY,
   };
 
-  // Таз (красный прямоугольник на схеме)
+  // Таз
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
   const pelvisW = torsoHeight;
@@ -466,25 +463,14 @@ function computeSkeleton(P, W, H) {
     r: buildArm({ x: shoulderRightCx, y: shoulderCy }, rWristBase,  P.rShoulderAngle,  P.rElbowAngle, wristRadius),
   };
 
-  // ---- НОГИ ----
+  // Ноги
   const legRadius = Math.max(1, pelvisH * P.legR);
-  
-  // Точки 1 и 4 на схеме (верхние углы выхода из таза)
   const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
   const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
-
-  // Стопы: уходят вниз на длину бедра + голени
-  // Длина ноги от таза до стопы = ~2.5 высоты таза
   const legLength = pelvisH * 2.5;
   
-  const lFootBase = {
-    x: hipLeftAnchor.x + P.lFootX * pelvisW,
-    y: hipLeftAnchor.y + legLength + P.lFootY * pelvisH,
-  };
-  const rFootBase = {
-    x: hipRightAnchor.x + P.rFootX * pelvisW,
-    y: hipRightAnchor.y + legLength + P.rFootY * pelvisH,
-  };
+  const lFootBase = { x: hipLeftAnchor.x + P.lFootX * pelvisW, y: hipLeftAnchor.y + legLength + P.lFootY * pelvisH };
+  const rFootBase = { x: hipRightAnchor.x + P.rFootX * pelvisW, y: hipRightAnchor.y + legLength + P.rFootY * pelvisH };
 
   sk.legs = {
     legRadius,
@@ -503,7 +489,6 @@ function computeSkeleton(P, W, H) {
    ============================================================ */
 let refImage = null;
 
-// ВАЖНО: legs добавлены в самый конец, чтобы рисоваться ПОВЕРХ таза
 const LAYERS = [
   ['reference',   renderReference],
   ['grid',        renderGrid],
@@ -516,7 +501,7 @@ const LAYERS = [
   ['neck',        renderNeck],
   ['head',        renderHead],
   ['arms',        renderArms],
-  ['legs',        renderLegs], // <-- В самом конце!
+  ['legs',        renderLegs],
 ];
 
 function renderReference(ctx, sk, P, W, H) {
@@ -748,7 +733,6 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   const innerSign = isLeft ? 1 : -1;
   const color = P.lineColor;
 
-  // Бедро (hip -> knee)
   const dx1 = knee.x - hip.x, dy1 = knee.y - hip.y;
   const len1 = Math.hypot(dx1, dy1) || 1;
   const nx1 = -dy1 / len1, ny1 = dx1 / len1;
@@ -758,11 +742,9 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   const kneeOuter = { x: knee.x + nx1 * innerSign * br, y: knee.y + ny1 * innerSign * br };
   const kneeInner = { x: knee.x - nx1 * innerSign * br, y: knee.y - ny1 * innerSign * br };
 
-  // Линии бедра
   ctx.beginPath(); ctx.moveTo(hipOuter.x, hipOuter.y); ctx.lineTo(kneeOuter.x, kneeOuter.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(hipInner.x, hipInner.y); ctx.lineTo(kneeInner.x, kneeInner.y); ctx.stroke();
 
-  // Голень (knee -> ankle)
   const dx2 = ankle.x - knee.x, dy2 = ankle.y - knee.y;
   const len2 = Math.hypot(dx2, dy2) || 1;
   const px = -dy2 / len2, py = dx2 / len2;
@@ -770,11 +752,9 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
   const ankleOuter = { x: ankle.x + px * innerSign * br, y: ankle.y + py * innerSign * br };
   const ankleInner = { x: ankle.x - px * innerSign * br, y: ankle.y - py * innerSign * br };
 
-  // Линии голени
   ctx.beginPath(); ctx.moveTo(kneeOuter.x, kneeOuter.y); ctx.lineTo(ankleOuter.x, ankleOuter.y); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(kneeInner.x, kneeInner.y); ctx.lineTo(ankleInner.x, ankleInner.y); ctx.stroke();
 
-  // Точки
   if (P.showKneePoint) {
     ctx.beginPath(); ctx.arc(knee.x, knee.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
     ctx.fillStyle = color; ctx.fill();
@@ -786,11 +766,6 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
 /* ============================================================
    ГЛАВНЫЙ ЦИКЛ
    ============================================================ */
-const canvas = document.getElementById('cv');
-const ctx = canvas.getContext('2d');
-let canvasWidth = canvas.width;
-let canvasHeight = canvas.height;
-
 function draw() {
   const W = canvasWidth; const H = canvasHeight;
   const P = readParams();
@@ -860,9 +835,12 @@ function addButtons() {
   panel.appendChild(wrap);
 }
 
-buildPanel();
-addButtons();
-draw();
+// Инициализация после полной загрузки DOM
+window.addEventListener('DOMContentLoaded', () => {
+  buildPanel();
+  addButtons();
+  draw();
+});
 </script>
 </body>
 </html>
