@@ -11,16 +11,21 @@
         <h1>SVG Холст</h1>
         
         <div class="canvas-wrapper" id="canvasWrapper">
+            <!-- Обертка для зума, внутри которой строго 3 слоя -->
             <div class="zoom-container" id="zoomContainer">
-                <!-- Подложка (обычный img) -->
-                <img id="bgImage" class="bg-image" style="display: none;" alt="Подложка" draggable="false">
                 
-                <!-- SVG холст -->
-                <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-                    <rect id="bgRect" x="0" y="0" width="1" height="1" fill="#ffffff"/>
+                <!-- Слой 1: Фон (цвет) -->
+                <div id="bgColorLayer" class="layer bg-color-layer" style="background-color: #ffffff;"></div>
+                
+                <!-- Слой 2: Подложка (картинка) -->
+                <img id="bgImage" class="layer bg-image-layer" style="display: none;" alt="Подложка" draggable="false">
+                
+                <!-- Слой 3: Рисование (SVG) -->
+                <svg id="mainSvg" class="layer draw-svg-layer" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
                     <g id="measureLayer"></g>
                     <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
                 </svg>
+
             </div>
         </div>
 
@@ -56,8 +61,8 @@
             <hr style="width: 100%; border-color: #444; margin: 5px 0;">
 
             <div class="control-group">
-                <label>Фон: <input type="color" id="bgColor" value="#ffffff"></label>
-                <label>Цвет: <input type="color" id="brushColor" value="#000000"></label>
+                <label>Цвет фона: <input type="color" id="bgColor" value="#ffffff"></label>
+                <label>Цвет кисти: <input type="color" id="brushColor" value="#000000"></label>
                 <label>
                     Толщина:
                     <input type="range" id="brushSize" min="1" max="100" value="10">
