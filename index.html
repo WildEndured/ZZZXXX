@@ -174,16 +174,19 @@ const GROUPS = [
   { id: 'legs',   title: 'Ноги', open: true },
 ];
 
-// Переменные объявляются здесь, чтобы не было "черного холста"
+// Глобальные переменные (объявлены до функций)
 const canvas = document.getElementById('cv');
 const ctx = canvas.getContext('2d');
 let canvasWidth = canvas.width;
 let canvasHeight = canvas.height;
+let refImage = null;
+let rafPending = false;
 
 const panel = document.getElementById('panel');
 const ui = {};
 const valEls = {};
 
+// --- Функции UI ---
 function buildPanel() {
   const containerByGroup = {};
   for (const g of GROUPS) {
@@ -308,7 +311,7 @@ function readParams() {
 }
 
 /* ============================================================
-   ГЕОМЕТРИЯ
+   ГЕОМЕТРИЯ И СБОРКА СКЕЛЕТА
    ============================================================ */
 function ellipseDx(y, cy, rY) {
   const t = (y - cy) / rY;
@@ -340,9 +343,6 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   return { shoulder, elbow, wrist, ballRadius };
 }
 
-/* ============================================================
-   СБОРКА СКЕЛЕТА
-   ============================================================ */
 function computeSkeleton(P, W, H) {
   const sk = {};
   const cx = W / 2;
@@ -463,14 +463,16 @@ function computeSkeleton(P, W, H) {
     r: buildArm({ x: shoulderRightCx, y: shoulderCy }, rWristBase,  P.rShoulderAngle,  P.rElbowAngle, wristRadius),
   };
 
-  // Ноги
+  // Ноги (Фикс: теперь стопы всегда внизу холста, чтобы их было видно)
   const legRadius = Math.max(1, pelvisH * P.legR);
   const hipLeftAnchor  = { x: pelvisXPos + pelvis.w * 0.25, y: pelvis.botY };
   const hipRightAnchor = { x: pelvisXPos + pelvis.w * 0.75, y: pelvis.botY };
-  const legLength = pelvisH * 2.5;
   
-  const lFootBase = { x: hipLeftAnchor.x + P.lFootX * pelvisW, y: hipLeftAnchor.y + legLength + P.lFootY * pelvisH };
-  const rFootBase = { x: hipRightAnchor.x + P.rFootX * pelvisW, y: hipRightAnchor.y + legLength + P.rFootY * pelvisH };
+  // Высота, на которой будут находиться стопы (чуть выше низа холста)
+  const feetBaseY = H - (H * 0.05); 
+
+  const lFootBase = { x: hipLeftAnchor.x + P.lFootX * pelvisW, y: feetBaseY + P.lFootY * pelvisH };
+  const rFootBase = { x: hipRightAnchor.x + P.rFootX * pelvisW, y: feetBaseY + P.rFootY * pelvisH };
 
   sk.legs = {
     legRadius,
@@ -485,10 +487,8 @@ function computeSkeleton(P, W, H) {
 }
 
 /* ============================================================
-   РЕНДЕР-СЛОИ
+   РЕНДЕР
    ============================================================ */
-let refImage = null;
-
 const LAYERS = [
   ['reference',   renderReference],
   ['grid',        renderGrid],
@@ -764,7 +764,7 @@ function drawOneLeg(ctx, leg, isLeft, sk, P) {
 }
 
 /* ============================================================
-   ГЛАВНЫЙ ЦИКЛ
+   ГЛАВНЫЙ ЦИКЛ И ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
 function draw() {
   const W = canvasWidth; const H = canvasHeight;
@@ -781,7 +781,6 @@ function draw() {
   updateLabels();
 }
 
-let rafPending = false;
 function scheduleDraw() {
   if (rafPending) return;
   rafPending = true;
@@ -835,12 +834,10 @@ function addButtons() {
   panel.appendChild(wrap);
 }
 
-// Инициализация после полной загрузки DOM
-window.addEventListener('DOMContentLoaded', () => {
-  buildPanel();
-  addButtons();
-  draw();
-});
+// Запуск
+buildPanel();
+addButtons();
+draw();
 </script>
 </body>
 </html>
