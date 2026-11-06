@@ -28,41 +28,47 @@ h1 { font-size: 1.4rem; font-weight: 500; }
     border-radius: 8px;
     overflow: hidden;
     position: relative;
+    /* Отключаем дефолтные жесты браузера на этом контейнере */
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
 }
 
-/* Контейнер, который трансформируется */
+/* Зум-контейнер, в котором лежат 3 слоя */
 .zoom-container {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
     transform-origin: 0 0;
     will-change: transform;
-    /* Обязательно для позиционирования картинки */
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-/* Подложка (внутри зум-контейнера) */
-.bg-image {
+/* Общие стили для всех слоев */
+.layer {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    object-fit: contain; /* Вписываем по центру без искажений */
-    pointer-events: none;
+}
+
+/* 1. Слой фона */
+.bg-color-layer {
     z-index: 1;
+    /* Цвет задается из JS */
 }
 
-svg#mainSvg {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    cursor: crosshair;
+/* 2. Слой подложки */
+.bg-image-layer {
     z-index: 2;
-    background: transparent;
+    object-fit: contain; /* Картинка не искажается, вписывается по центру */
+    pointer-events: none; /* Клики проходят сквозь картинку */
+    transform-origin: center center; /* Для масштабирования подложки из центра */
+}
+
+/* 3. Слой рисования (SVG) */
+.draw-svg-layer {
+    z-index: 3;
+    cursor: crosshair;
+    background: transparent; /* Прозрачный, чтобы видеть нижние слои */
 }
 
 .controls {
