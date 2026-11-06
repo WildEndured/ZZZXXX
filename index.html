@@ -409,7 +409,7 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
 }
 
 // ============================================
-// ГЕОМЕТРИЯ НОГИ
+// ГЕОМЕТРИЯ НОГИ (ОБНОВЛЕНО ПО РЕФЕРЕНСУ)
 // ============================================
 function drawLeg(hip, isLeft, pelvisW, pelvisH, lw, color) {
     const topW = parseFloat(ui.legTopW.value) || 0.5;
@@ -424,6 +424,7 @@ function drawLeg(hip, isLeft, pelvisW, pelvisH, lw, color) {
     
     const showKneeCircle = ui.showKneeCircle.checked;
 
+    // Ширины в пикселях
     const wTop = pelvisW * topW;
     const wKnee = pelvisW * kneeW;
     const wAnkle = pelvisW * ankleW;
@@ -434,48 +435,46 @@ function drawLeg(hip, isLeft, pelvisW, pelvisH, lw, color) {
     // Опорные точки
     const hipPt = { x: hip.x, y: hip.y };
     
-    // Колено
+    // Колено (находится на 1.5 pelvisH ниже бедра + смещение)
     const kneeY = hipPt.y + pelvisH * 1.5 + kneeYOffset * pelvisH;
     const kneeX = hipPt.x + direction * (pelvisW * 0.15) + direction * kneeXOffset * pelvisW;
     const kneePt = { x: kneeX, y: kneeY };
 
-    // Стопа (лодыжка)
+    // Стопа (лодыжка) (находится на 1.6 pelvisH ниже колена + смещение)
     const ankleY = kneePt.y + pelvisH * 1.6 + footYOffset * pelvisH;
     const ankleX = kneePt.x + direction * (pelvisW * 0.1) + direction * footXOffset * pelvisW;
     const anklePt = { x: ankleX, y: ankleY };
 
-    // Углы и векторы
-    const dx1 = kneePt.x - hipPt.x;
-    const dy1 = kneePt.y - hipPt.y;
-    const len1 = Math.hypot(dx1, dy1) || 1;
-    const nx1 = -dy1 / len1;
-    const ny1 = dx1 / len1;
-    
-    const dx2 = anklePt.x - kneePt.x;
-    const dy2 = anklePt.y - kneePt.y;
-    const len2 = Math.hypot(dx2, dy2) || 1;
-    const nx2 = -dy2 / len2;
-    const ny2 = dx2 / len2;
+    // Рассчитываем ширину для каждой секции
+    const halfWTop = wTop / 2;
+    const halfWKnee = wKnee / 2;
+    const halfWAnkle = wAnkle / 2;
 
-    // Точки для бедра
-    const hipInner = { x: hipPt.x + nx1 * wTop / 2, y: hipPt.y + ny1 * wTop / 2 };
-    const hipOuter = { x: hipPt.x - nx1 * wTop / 2, y: hipPt.y - ny1 * wTop / 2 };
+    // --- Точки для Наружной линии (1, 2, 5, 6) ---
+    // 1: Внешний верх бедра
+    const outerHip = { x: hipPt.x - direction * halfWTop, y: hipPt.y };
+    // 2: Изгиб наружу
+    const outerMidHip = { 
+        x: outerHip.x - direction * (pelvisW * hipBend), 
+        y: hipPt.y + (kneePt.y - hipPt.y) * 0.4 
+    };
+    // 5: Внешняя сторона колена
+    const outerKnee = { x: kneePt.x - direction * halfWKnee, y: kneePt.y };
+    // 6: Внешняя сторона лодыжки
+    const outerAnkle = { x: anklePt.x - direction * halfWAnkle, y: anklePt.y };
 
-    // Точки для колена (соединение бедра и голени)
-    const kneeInner = { x: kneePt.x + nx1 * wKnee / 2, y: kneePt.y + ny1 * wKnee / 2 };
-    const kneeOuter = { x: kneePt.x - nx1 * wKnee / 2, y: kneePt.y - ny1 * wKnee / 2 };
-    
-    const kneeInner2 = { x: kneePt.x + nx2 * wKnee / 2, y: kneePt.y + ny2 * wKnee / 2 };
-    const kneeOuter2 = { x: kneePt.x - nx2 * wKnee / 2, y: kneePt.y - ny2 * wKnee / 2 };
-
-    // Точки для лодыжки
-    const ankleInner = { x: anklePt.x + nx2 * wAnkle / 2, y: anklePt.y + ny2 * wAnkle / 2 };
-    const ankleOuter = { x: anklePt.x - nx2 * wAnkle / 2, y: anklePt.y - ny2 * wAnkle / 2 };
-
-    // Изгиб наружу для бедра (используем кривые Безье)
-    const midHipY = hipPt.y + (kneePt.y - hipPt.y) * 0.5;
-    const midHipX_Outer = hipOuter.x + direction * hipBend * pelvisW;
-    const midHipX_Inner = hipInner.x + direction * hipBend * pelvisW * 0.2;
+    // --- Точки для Внутренней линии (4, 3, 8, 7) ---
+    // 4: Внутренний верх бедра
+    const innerHip = { x: hipPt.x + direction * halfWTop, y: hipPt.y };
+    // 3: Внутренний изгиб (под коленом, икра)
+    const innerMidHip = { 
+        x: innerHip.x + direction * (pelvisW * hipBend * 0.5), 
+        y: hipPt.y + (kneePt.y - hipPt.y) * 0.4 
+    };
+    // 8: Внутренняя сторона колена
+    const innerKnee = { x: kneePt.x + direction * halfWKnee, y: kneePt.y };
+    // 7: Внутренняя сторона лодыжки
+    const innerAnkle = { x: anklePt.x + direction * halfWAnkle, y: anklePt.y };
 
     ctx.save();
     ctx.strokeStyle = color;
@@ -483,43 +482,44 @@ function drawLeg(hip, isLeft, pelvisW, pelvisH, lw, color) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    // Рисуем контур ноги
+    // 1. Рисуем НАРУЖНУЮ линию (Бедро -> Колено -> Голень)
     ctx.beginPath();
-    // Наружная сторона
-    ctx.moveTo(hipOuter.x, hipOuter.y);
-    ctx.quadraticCurveTo(midHipX_Outer, midHipY, kneeOuter.x, kneeOuter.y);
-    // Внутренняя сторона
-    ctx.moveTo(hipInner.x, hipInner.y);
-    ctx.quadraticCurveTo(midHipX_Inner, midHipY, kneeInner.x, kneeInner.y);
-    
-    // Переход от колена к голени (внутренняя)
-    ctx.moveTo(kneeInner.x, kneeInner.y);
-    ctx.quadraticCurveTo(kneePt.x + nx2 * wKnee * 0.3, kneePt.y + ny2 * wKnee * 0.3, ankleInner.x, ankleInner.y);
-    // Переход от колена к голени (наружная)
-    ctx.moveTo(kneeOuter.x, kneeOuter.y);
-    ctx.quadraticCurveTo(kneePt.x - nx2 * wKnee * 0.3, kneePt.y - ny2 * wKnee * 0.3, ankleOuter.x, ankleOuter.y);
-
+    ctx.moveTo(outerHip.x, outerHip.y);
+    // Кривая бедра (наружу)
+    ctx.quadraticCurveTo(outerMidHip.x, outerMidHip.y, outerKnee.x, outerKnee.y);
+    // Кривая голени (вниз к лодыжке)
+    ctx.quadraticCurveTo(outerKnee.x, outerKnee.y + (anklePt.y - kneePt.y) * 0.4, outerAnkle.x, outerAnkle.y);
     ctx.stroke();
 
-    // Рисуем шар колена
+    // 2. Рисуем ВНУТРЕННЮЮ линию (Бедро -> Колено -> Голень)
+    ctx.beginPath();
+    ctx.moveTo(innerHip.x, innerHip.y);
+    // Кривая бедра (внутренняя, с легким изгибом к центру)
+    ctx.quadraticCurveTo(innerMidHip.x, innerMidHip.y, innerKnee.x, innerKnee.y);
+    // Кривая голени (вниз к лодыжке)
+    ctx.quadraticCurveTo(innerKnee.x, innerKnee.y + (anklePt.y - kneePt.y) * 0.4, innerAnkle.x, innerAnkle.y);
+    ctx.stroke();
+
+    // 3. Шар колена (Красный кружок с референса)
     if (showKneeCircle) {
         ctx.beginPath();
         ctx.arc(kneePt.x, kneePt.y, rKnee, 0, Math.PI * 2);
         ctx.stroke();
     }
 
-    // Рисуем стопу (простой контур)
+    // 4. Стопа (простой контур)
     const footLen = pelvisW * 0.5;
-    const footW = wAnkle * 0.8;
-    
-    // Стопа смотрит вниз/в стороны в зависимости от направления
-    const toePt = { x: anklePt.x + direction * (pelvisW * 0.1), y: anklePt.y + pelvisH * 0.4 };
     
     ctx.beginPath();
-    ctx.moveTo(ankleOuter.x, ankleOuter.y);
-    ctx.lineTo(ankleInner.x, ankleInner.y);
-    ctx.lineTo(anklePt.x + direction * (footLen * 0.2), anklePt.y + pelvisH * 0.4); // toe inner
-    ctx.lineTo(anklePt.x + direction * (footLen * 0.8), anklePt.y + pelvisH * 0.4); // toe outer
+    // Внешняя сторона стопы
+    ctx.moveTo(outerAnkle.x, outerAnkle.y);
+    // Носок
+    const toeX = anklePt.x + direction * (footLen * 0.5);
+    const toeY = anklePt.y + pelvisH * 0.4;
+    ctx.lineTo(toeX, toeY);
+    // Внутренняя сторона стопы
+    ctx.lineTo(innerAnkle.x, innerAnkle.y);
+    // Пятка (замыкаем)
     ctx.closePath();
     ctx.stroke();
 
@@ -1107,13 +1107,12 @@ function draw() {
 
   // 12. НОГИ
   if (ui.showLegs.checked) {
-    const legHipLeft = { x: pelvisXPos + pelvisW * 0.2, y: pelvisBottomY };
-    const legHipRight = { x: pelvisXPos + pelvisW * 0.8, y: pelvisBottomY };
+    // Позиции бедер (берем чуть внутри от краев таза)
+    const legHipLeft = { x: pelvisXPos + pelvisW * 0.25, y: pelvisBottomY };
+    const legHipRight = { x: pelvisXPos + pelvisW * 0.75, y: pelvisBottomY };
     
     ctx.save();
-    // Рисуем левую ногу (слева на экране, это правая нога персонажа)
     drawLeg(legHipLeft, true, pelvisW, pelvisH, lw, color);
-    // Рисуем правую ногу
     drawLeg(legHipRight, false, pelvisW, pelvisH, lw, color);
     ctx.restore();
   }
