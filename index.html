@@ -80,6 +80,7 @@
     border-bottom: 1px solid var(--border);
     padding-bottom: 4px;
   }
+  .sep { border: none; border-top: 1px solid #444; width: 100%; }
 
   .stage {
     flex: 1; min-width: 0; max-height: 92vh; overflow: auto;
@@ -98,126 +99,7 @@
 <body>
 
 <div class="wrap">
-  <div class="panel">
-
-    <!-- Блок 1: Общее -->
-    <div class="accordion open">
-      <div class="accordion-header">Общее и Подложка</div>
-      <div class="accordion-content">
-        <label class="chk"><input type="checkbox" id="showRef" checked> Показывать подложку</label>
-        <label><span class="row">Прозрачность <span class="val" id="vRefOp">0.50</span></span><input type="range" id="refOp" min="0" max="1" step="0.05" value="0.5"></label>
-        <button id="uploadBtn" class="sec">Загрузить картинку</button>
-        <input type="file" id="fileInput" style="display:none;" accept="image/*">
-        <label><span class="row">Рост в головах <span class="val" id="vHeads">5.0</span></span><input type="range" id="heads" min="3" max="12" step="0.1" value="5.0"></label>
-        <label><span class="row">Цвет линий</span><input type="color" id="lineColor" value="#ff3b3b"></label>
-        <label><span class="row">Толщина <span class="val" id="vWidth">5</span></span><input type="range" id="lineWidth" min="1" max="30" step="1" value="5"></label>
-        <label class="chk"><input type="checkbox" id="showHeads" checked> Показывать секции</label>
-        <label class="chk"><input type="checkbox" id="showSub" checked> Показывать подсекции</label>
-      </div>
-    </div>
-
-    <!-- Блок 2: Голова -->
-    <div class="accordion">
-      <div class="accordion-header">Голова (Череп и Челюсть)</div>
-      <div class="accordion-content">
-        <label><span class="row">Высота черепа <span class="val" id="vSkullH">1.00</span></span><input type="range" id="skullH" min="0.3" max="1.6" step="0.01" value="1.0"></label>
-        <label><span class="row">Ширина черепа <span class="val" id="vSkullW">1.00</span></span><input type="range" id="skullW" min="0.5" max="1.6" step="0.01" value="1.0"></label>
-        <label><span class="row">Смещение по X <span class="val" id="vSkullX">0.00</span></span><input type="range" id="skullX" min="-0.5" max="0.5" step="0.01" value="0"></label>
-        <hr style="border-color:#444; width:100%;">
-        <label><span class="row">Высота подбородка <span class="val" id="vChinY">0.30</span></span><input type="range" id="chinY" min="-0.5" max="1.0" step="0.01" value="0.30"></label>
-        <label><span class="row">Ширина подбородка <span class="val" id="vChinW">0.00</span></span><input type="range" id="chinW" min="0" max="1" step="0.01" value="0.00"></label>
-        <label><span class="row">Округлость <span class="val" id="vChinR">0.30</span></span><input type="range" id="chinR" min="0" max="1" step="0.01" value="0.30"></label>
-        <hr style="border-color:#444; width:100%;">
-        <label><span class="row">Крепление челюсти (A) <span class="val" id="vJawY">0.77</span></span><input type="range" id="jawY" min="0" max="1" step="0.01" value="0.77"></label>
-        <label><span class="row">Ширина угла (B) <span class="val" id="vJawW">0.78</span></span><input type="range" id="jawW" min="0.3" max="1.2" step="0.01" value="0.78"></label>
-        <label><span class="row">Высота угла (B) <span class="val" id="vJawB">0.73</span></span><input type="range" id="jawB" min="0" max="1" step="0.01" value="0.73"></label>
-      </div>
-    </div>
-
-    <!-- Блок 3: Шея и Плечи -->
-    <div class="accordion">
-      <div class="accordion-header">Шея, Плечи и Ключицы</div>
-      <div class="accordion-content">
-        <label><span class="row">Ширина шеи <span class="val" id="vNeckW">0.30</span></span><input type="range" id="neckW" min="0.1" max="0.8" step="0.01" value="0.30"></label>
-        <label><span class="row">Смещение шеи по X <span class="val" id="vNeckX">0.00</span></span><input type="range" id="neckX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        <hr style="border-color:#444; width:100%;">
-        <label><span class="row">Смещение плеч по Y <span class="val" id="vShoulderY">0.00</span></span><input type="range" id="shoulderY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Высота ключиц <span class="val" id="vClavY">0.80</span></span><input type="range" id="clavY" min="0" max="1" step="0.01" value="0.80"></label>
-        <label><span class="row">Трапеция (у шеи) <span class="val" id="vTrapY">0.50</span></span><input type="range" id="trapY" min="0" max="1" step="0.01" value="0.50"></label>
-      </div>
-    </div>
-
-    <!-- Блок 4: Торс и Таз -->
-    <div class="accordion">
-      <div class="accordion-header">Торс и Таз</div>
-      <div class="accordion-content">
-        <label><span class="row">Высота торса <span class="val" id="vTorsoH">0.85</span></span><input type="range" id="torsoH" min="0.5" max="1.3" step="0.01" value="0.85"></label>
-        <label><span class="row">Ширина торса <span class="val" id="vTorsoW">1.50</span></span><input type="range" id="torsoW" min="0.5" max="2.00" step="0.01" value="1.50"></label>
-        <label><span class="row">Смещение торса по X <span class="val" id="vTorsoX">0.00</span></span><input type="range" id="torsoX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Сужение торса сверху <span class="val" id="vTorsoTop">0.60</span></span><input type="range" id="torsoTop" min="0.1" max="1" step="0.01" value="0.60"></label>
-        <label><span class="row">Сужение торса снизу <span class="val" id="vTorsoBot">0.80</span></span><input type="range" id="torsoBot" min="0.1" max="1" step="0.01" value="0.80"></label>
-        <hr style="border-color:#444; width:100%;">
-        <label><span class="row">Скругление таза <span class="val" id="vPelvisR">0.85</span></span><input type="range" id="pelvisR" min="0" max="1.00" step="0.01" value="0.85"></label>
-        <label><span class="row">Смещение таза по X <span class="val" id="vPelvisX">0.00</span></span><input type="range" id="pelvisX" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-        <hr style="border-color:#444; width:100%;">
-        <label class="chk"><input type="checkbox" id="showAbsLines" checked> Линии от пупка к плечам</label>
-        <label><span class="row">Изгиб линий <span class="val" id="vAbsBend">0.30</span></span><input type="range" id="absBend" min="0" max="1" step="0.01" value="0.30"></label>
-      </div>
-    </div>
-
-    <!-- Блок 5: Пупок -->
-    <div class="accordion">
-      <div class="accordion-header">Пупок</div>
-      <div class="accordion-content">
-        <label class="chk"><input type="checkbox" id="showNavel" checked> Показывать пупок</label>
-        <label><span class="row">Тип (Точка → Линия) <span class="val" id="vNavelType">0.50</span></span><input type="range" id="navelType" min="0" max="1" step="0.01" value="0.50"></label>
-        <label><span class="row">Ширина линии <span class="val" id="vNavelW">0.04</span></span><input type="range" id="navelW" min="0" max="1" step="0.01" value="0.04"></label>
-        <label><span class="row">Высота линии <span class="val" id="vNavelH">0.23</span></span><input type="range" id="navelH" min="0" max="1" step="0.01" value="0.23"></label>
-        <label><span class="row">Смещение по Y <span class="val" id="vNavelY">-0.05</span></span><input type="range" id="navelY" min="-0.5" max="0.5" step="0.01" value="-0.05"></label>
-      </div>
-    </div>
-
-    <!-- Блок 7: Руки -->
-    <div class="accordion open">
-      <div class="accordion-header">Руки</div>
-      <div class="accordion-content">
-        <label class="chk"><input type="checkbox" id="showArms" checked> Показывать руки</label>
-        <label><span class="row">Радиус запястья (доля таза) <span class="val" id="vWristR">0.12</span></span><input type="range" id="wristR" min="0.05" max="0.40" step="0.01" value="0.12"></label>
-        <label><span class="row">Толщина рук <span class="val" id="vArmLw">1.0</span></span><input type="range" id="armLw" min="0.3" max="2" step="0.1" value="1.0"></label>
-        <label class="chk"><input type="checkbox" id="showWristBall" checked> Шар запястья</label>
-        <label class="chk"><input type="checkbox" id="showElbowBall" checked> Шар локтя (как запястье)</label>
-        <label class="chk"><input type="checkbox" id="showElbow" checked> Точка локтя</label>
-        <hr style="border-color:#444; width:100%;">
-        
-        <div class="subhead">Метка (расширение) на предплечье</div>
-        <label><span class="row">Позиция (локоть → запястье) <span class="val" id="vCrossPos">0.33</span></span><input type="range" id="crossPos" min="0.1" max="0.9" step="0.01" value="0.33"></label>
-        <label><span class="row">Ширина расширения <span class="val" id="vCrossW">1.5</span></span><input type="range" id="crossW" min="0" max="3" step="0.01" value="1.5"></label>
-        <label><span class="row">Вогнутость (внутр.) <span class="val" id="vCrossRound">0.50</span></span><input type="range" id="crossRound" min="0" max="1" step="0.01" value="0.50"></label>
-        
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Левая рука</div>
-        <label><span class="row">Сгиб плеча <span class="val" id="vLShoulderAngle">0.00</span></span><input type="range" id="lShoulderAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Сгиб локтя <span class="val" id="vLElbowAngle">0.10</span></span><input type="range" id="lElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
-        <label><span class="row">Смещение запястья X <span class="val" id="vLWristX">-0.30</span></span><input type="range" id="lWristX" min="-0.5" max="0.5" step="0.01" value="-0.30"></label>
-        <label><span class="row">Смещение запястья Y <span class="val" id="vLWristY">0.00</span></span><input type="range" id="lWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-
-        <hr style="border-color:#444; width:100%;">
-
-        <div class="subhead">Правая рука</div>
-        <label><span class="row">Сгиб плеча <span class="val" id="vRShoulderAngle">0.00</span></span><input type="range" id="rShoulderAngle" min="-1.5" max="1.5" step="0.01" value="0.00"></label>
-        <label><span class="row">Сгиб локтя <span class="val" id="vRElbowAngle">0.10</span></span><input type="range" id="rElbowAngle" min="-1.5" max="1.5" step="0.01" value="0.10"></label>
-        <label><span class="row">Смещение запястья X <span class="val" id="vRWristX">0.30</span></span><input type="range" id="rWristX" min="-0.5" max="0.5" step="0.01" value="0.30"></label>
-        <label><span class="row">Смещение запястья Y <span class="val" id="vRWristY">0.00</span></span><input type="range" id="rWristY" min="-0.5" max="0.5" step="0.01" value="0.00"></label>
-      </div>
-    </div>
-
-    <div style="display:flex; gap:10px; margin-top:10px;">
-      <button id="resetBtn" class="sec" style="flex:1;">Сбросить</button>
-      <button id="downloadBtn" style="flex:1;">Скачать PNG</button>
-    </div>
-  </div>
-
+  <div class="panel" id="panel"></div>
   <div class="stage">
     <canvas id="cv" width="4096" height="4096"></canvas>
   </div>
@@ -236,109 +118,307 @@
       const res = await fetch(window.location.href, { cache: 'no-store' });
       const text = await res.text();
       const match = text.match(/<meta name="build" content="([^"]+)"/);
-      
       if (match && match[1] !== currentBuild) {
-        console.log('Обнаружено обновление. Перезагрузка...');
         window.location.href = window.location.pathname + '?updated=' + Date.now();
       }
     } catch (e) {}
   }, 60000);
 })();
 
-// --- Аккордеоны ---
-document.querySelectorAll('.accordion-header').forEach(header => {
-  header.addEventListener('click', () => {
-    header.parentElement.classList.toggle('open');
+/* ============================================================
+   КОНСТАНТЫ ПРОПОРЦИЙ
+   ============================================================ */
+const PROPORTIONS = {
+  skullHeight: 3 / 5,
+  chinLine:    4 / 5,
+  torsoTop:    1.0,
+  torsoBottom: 2.0,
+};
+
+/* ============================================================
+   ДЕКЛАРАТИВНАЯ СХЕМА ПАРАМЕТРОВ
+   ============================================================ */
+const SCHEMA = (() => {
+  const S = {};
+
+  // ---- Общее и подложка ----
+  S.showRef = { type: 'checkbox', def: true, label: 'Показывать подложку', group: 'common' };
+  S.refOp = { type: 'range', def: 0.5, min: 0, max: 1, step: 0.05, fmt: 2, label: 'Прозрачность', group: 'common' };
+  S.heads = { type: 'range', def: 5.0, min: 3, max: 12, step: 0.1, fmt: 1, label: 'Рост в головах', group: 'common' };
+  S.lineColor = { type: 'color', def: '#ff3b3b', label: 'Цвет линий', group: 'common' };
+  S.lineWidth = { type: 'range', def: 5, min: 1, max: 30, step: 1, fmt: 0, label: 'Толщина', group: 'common' };
+  S.showHeads = { type: 'checkbox', def: true, label: 'Показывать секции', group: 'common' };
+  S.showSub = { type: 'checkbox', def: true, label: 'Показывать подсекции', group: 'common' };
+
+  // ---- Голова ----
+  S.skullH = { type: 'range', def: 1.0, min: 0.3, max: 1.6, step: 0.01, fmt: 2, label: 'Высота черепа', group: 'head' };
+  S.skullW = { type: 'range', def: 1.0, min: 0.5, max: 1.6, step: 0.01, fmt: 2, label: 'Ширина черепа', group: 'head' };
+  S.skullX = { type: 'range', def: 0, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение по X', group: 'head' };
+  S.chinY  = { type: 'range', def: 0.30, min: -0.5, max: 1.0, step: 0.01, fmt: 2, label: 'Высота подбородка', group: 'head' };
+  S.chinW  = { type: 'range', def: 0.00, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Ширина подбородка', group: 'head' };
+  S.chinR  = { type: 'range', def: 0.30, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Округлость', group: 'head' };
+  S.jawY   = { type: 'range', def: 0.77, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Крепление челюсти (A)', group: 'head' };
+  S.jawW   = { type: 'range', def: 0.78, min: 0.3, max: 1.2, step: 0.01, fmt: 2, label: 'Ширина угла (B)', group: 'head' };
+  S.jawB   = { type: 'range', def: 0.73, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота угла (B)', group: 'head' };
+
+  // ---- Шея и плечи ----
+  S.neckW = { type: 'range', def: 0.30, min: 0.1, max: 0.8, step: 0.01, fmt: 2, label: 'Ширина шеи', group: 'neck' };
+  S.neckX = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение шеи по X', group: 'neck' };
+  S.shoulderY = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение плеч по Y', group: 'neck' };
+  S.clavY = { type: 'range', def: 0.80, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота ключиц', group: 'neck' };
+  S.trapY = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Трапеция (у шеи)', group: 'neck' };
+
+  // ---- Торс и таз ----
+  S.torsoH   = { type: 'range', def: 0.85, min: 0.5, max: 1.3, step: 0.01, fmt: 2, label: 'Высота торса', group: 'torso' };
+  S.torsoW   = { type: 'range', def: 1.50, min: 0.5, max: 2.00, step: 0.01, fmt: 2, label: 'Ширина торса', group: 'torso' };
+  S.torsoX   = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение торса по X', group: 'torso' };
+  S.torsoTop = { type: 'range', def: 0.60, min: 0.1, max: 1, step: 0.01, fmt: 2, label: 'Сужение торса сверху', group: 'torso' };
+  S.torsoBot = { type: 'range', def: 0.80, min: 0.1, max: 1, step: 0.01, fmt: 2, label: 'Сужение торса снизу', group: 'torso' };
+  S.pelvisR  = { type: 'range', def: 0.85, min: 0, max: 1.00, step: 0.01, fmt: 2, label: 'Скругление таза', group: 'torso' };
+  S.pelvisX  = { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение таза по X', group: 'torso' };
+  S.showAbsLines = { type: 'checkbox', def: true, label: 'Линии от пупка к плечам', group: 'torso' };
+  S.absBend = { type: 'range', def: 0.30, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Изгиб линий', group: 'torso' };
+
+  // ---- Пупок ----
+  S.showNavel = { type: 'checkbox', def: true, label: 'Показывать пупок', group: 'navel' };
+  S.navelType = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Тип (Точка → Линия)', group: 'navel' };
+  S.navelW    = { type: 'range', def: 0.04, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Ширина линии', group: 'navel' };
+  S.navelH    = { type: 'range', def: 0.23, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Высота линии', group: 'navel' };
+  S.navelY    = { type: 'range', def: -0.05, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение по Y', group: 'navel' };
+
+  // ---- Руки: общее ----
+  S.showArms = { type: 'checkbox', def: true, label: 'Показывать руки', group: 'arms' };
+  S.wristR   = { type: 'range', def: 0.12, min: 0.05, max: 0.40, step: 0.01, fmt: 2, label: 'Радиус запястья (доля таза)', group: 'arms' };
+  S.armLw    = { type: 'range', def: 1.0, min: 0.3, max: 2, step: 0.1, fmt: 1, label: 'Толщина рук', group: 'arms' };
+  S.showWristBall = { type: 'checkbox', def: true, label: 'Шар запястья', group: 'arms' };
+  S.showElbowBall = { type: 'checkbox', def: true, label: 'Шар локтя (как запястье)', group: 'arms' };
+  S.showElbow     = { type: 'checkbox', def: true, label: 'Точка локтя', group: 'arms' };
+  S.crossPos   = { type: 'range', def: 0.33, min: 0.1, max: 0.9, step: 0.01, fmt: 2, label: 'Позиция метки (локоть → запястье)', group: 'arms' };
+  S.crossW     = { type: 'range', def: 1.5, min: 0, max: 3, step: 0.01, fmt: 2, label: 'Ширина расширения', group: 'arms' };
+  S.crossRound = { type: 'range', def: 0.50, min: 0, max: 1, step: 0.01, fmt: 2, label: 'Вогнутость (внутр.)', group: 'arms' };
+
+  // ---- Руки: левая и правая (генерируются) ----
+  const armSide = (side, defSign) => ({
+    [`${side}ShoulderAngle`]: { type: 'range', def: 0.00, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб плеча', group: 'arms' },
+    [`${side}ElbowAngle`]:    { type: 'range', def: 0.10, min: -1.5, max: 1.5, step: 0.01, fmt: 2, label: 'Сгиб локтя', group: 'arms' },
+    [`${side}WristX`]:        { type: 'range', def: defSign * 0.30, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение запястья X', group: 'arms' },
+    [`${side}WristY`]:        { type: 'range', def: 0.00, min: -0.5, max: 0.5, step: 0.01, fmt: 2, label: 'Смещение запястья Y', group: 'arms' },
   });
-});
+  Object.assign(S, armSide('l', -1), armSide('r', +1));
 
-// --- Основной код ---
-let canvasW = 4096;
-const canvasH = 4096;
-let refImage = null;
+  return S;
+})();
 
-const canvas = document.getElementById('cv');
-const ctx = canvas.getContext('2d');
+/* ============================================================
+   ОПИСАНИЕ ГРУПП (заголовки аккордеонов)
+   ============================================================ */
+const GROUPS = [
+  { id: 'common', title: 'Общее и Подложка', open: true },
+  { id: 'head',   title: 'Голова (Череп и Челюсть)' },
+  { id: 'neck',   title: 'Шея, Плечи и Ключицы' },
+  { id: 'torso',  title: 'Торс и Таз' },
+  { id: 'navel',  title: 'Пупок' },
+  { id: 'arms',   title: 'Руки', open: true },
+];
 
-const ui = {
-  showRef: document.getElementById('showRef'), refOp: document.getElementById('refOp'),
-  heads: document.getElementById('heads'), lineColor: document.getElementById('lineColor'), lineWidth: document.getElementById('lineWidth'),
-  showHeads: document.getElementById('showHeads'), showSub: document.getElementById('showSub'),
-  skullH: document.getElementById('skullH'), skullW: document.getElementById('skullW'), skullX: document.getElementById('skullX'),
-  chinY: document.getElementById('chinY'), chinW: document.getElementById('chinW'), chinR: document.getElementById('chinR'),
-  jawY: document.getElementById('jawY'), jawW: document.getElementById('jawW'), jawB: document.getElementById('jawB'),
-  neckW: document.getElementById('neckW'), neckX: document.getElementById('neckX'),
-  torsoH: document.getElementById('torsoH'), torsoW: document.getElementById('torsoW'), torsoX: document.getElementById('torsoX'),
-  torsoTop: document.getElementById('torsoTop'), torsoBot: document.getElementById('torsoBot'),
-  shoulderY: document.getElementById('shoulderY'), clavY: document.getElementById('clavY'), trapY: document.getElementById('trapY'),
-  pelvisR: document.getElementById('pelvisR'), pelvisX: document.getElementById('pelvisX'),
-  showAbsLines: document.getElementById('showAbsLines'), absBend: document.getElementById('absBend'),
-  showNavel: document.getElementById('showNavel'), navelType: document.getElementById('navelType'), 
-  navelW: document.getElementById('navelW'), navelH: document.getElementById('navelH'), navelY: document.getElementById('navelY'),
-  
-  showArms: document.getElementById('showArms'), wristR: document.getElementById('wristR'),
-  showWristBall: document.getElementById('showWristBall'), showElbowBall: document.getElementById('showElbowBall'),
-  showElbow: document.getElementById('showElbow'), armLw: document.getElementById('armLw'),
-  
-  crossPos: document.getElementById('crossPos'), crossW: document.getElementById('crossW'), crossRound: document.getElementById('crossRound'),
-  
-  lShoulderAngle: document.getElementById('lShoulderAngle'), lElbowAngle: document.getElementById('lElbowAngle'),
-  lWristX: document.getElementById('lWristX'), lWristY: document.getElementById('lWristY'),
-  
-  rShoulderAngle: document.getElementById('rShoulderAngle'), rElbowAngle: document.getElementById('rElbowAngle'),
-  rWristX: document.getElementById('rWristX'), rWristY: document.getElementById('rWristY')
-};
+/* ============================================================
+   ПОСТРОЕНИЕ UI ИЗ СХЕМЫ
+   ============================================================ */
+const panel = document.getElementById('panel');
+const ui = {};       // { key: HTMLInputElement }
+const valEls = {};   // { key: HTMLElement(val) }
 
-const vals = {
-  vRefOp: document.getElementById('vRefOp'),
-  vHeads: document.getElementById('vHeads'), vWidth: document.getElementById('vWidth'),
-  vSkullH: document.getElementById('vSkullH'), vSkullW: document.getElementById('vSkullW'), vSkullX: document.getElementById('vSkullX'),
-  vChinY: document.getElementById('vChinY'), vChinW: document.getElementById('vChinW'), vChinR: document.getElementById('vChinR'),
-  vJawY: document.getElementById('vJawY'), vJawW: document.getElementById('vJawW'), vJawB: document.getElementById('vJawB'),
-  vNeckW: document.getElementById('vNeckW'), vNeckX: document.getElementById('vNeckX'),
-  vTorsoH: document.getElementById('vTorsoH'), vTorsoW: document.getElementById('vTorsoW'), vTorsoX: document.getElementById('vTorsoX'),
-  vTorsoTop: document.getElementById('vTorsoTop'), vTorsoBot: document.getElementById('vTorsoBot'),
-  vShoulderY: document.getElementById('vShoulderY'), vClavY: document.getElementById('vClavY'), vTrapY: document.getElementById('vTrapY'),
-  vPelvisR: document.getElementById('vPelvisR'), vPelvisX: document.getElementById('vPelvisX'),
-  vAbsBend: document.getElementById('vAbsBend'),
-  vNavelType: document.getElementById('vNavelType'), vNavelW: document.getElementById('vNavelW'), 
-  vNavelH: document.getElementById('vNavelH'), vNavelY: document.getElementById('vNavelY'),
-  
-  vWristR: document.getElementById('vWristR'), vArmLw: document.getElementById('vArmLw'),
-  vCrossPos: document.getElementById('vCrossPos'), vCrossW: document.getElementById('vCrossW'), vCrossRound: document.getElementById('vCrossRound'),
-  
-  vLShoulderAngle: document.getElementById('vLShoulderAngle'), vLElbowAngle: document.getElementById('vLElbowAngle'),
-  vLWristX: document.getElementById('vLWristX'), vLWristY: document.getElementById('vLWristY'),
-  vRShoulderAngle: document.getElementById('vRShoulderAngle'), vRElbowAngle: document.getElementById('vRElbowAngle'),
-  vRWristX: document.getElementById('vRWristX'), vRWristY: document.getElementById('vRWristY')
-};
-
-document.getElementById('uploadBtn').addEventListener('click', () => {
-  document.getElementById('fileInput').click();
-});
-
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const img = new Image();
-    img.onload = () => {
-      refImage = img;
-      const ratio = img.width / img.height;
-      canvasW = Math.round(canvasH * ratio);
-      canvas.width = canvasW;
-      canvas.height = canvasH;
-      draw();
-    };
-    img.src = event.target.result;
+function buildPanel() {
+  const subhead = {
+    common: [],
+    head: [],
+    neck: [],
+    torso: [],
+    navel: [],
+    arms: [
+      { type: 'subhead', text: 'Метка (расширение) на предплечье' },
+      { type: 'subhead', text: 'Левая рука' },
+      { type: 'subhead', text: 'Правая рука' },
+    ],
   };
-  reader.readAsDataURL(file);
-});
+  // расставим подзаголовки в arm-группе логично: перед crossPos — «Метка», перед l* — «Левая», перед r* — «Правая»
 
-// ============================================
-// ГЕОМЕТРИЯ РУКИ
-// ============================================
+  const containerByGroup = {};
+  for (const g of GROUPS) {
+    const acc = document.createElement('div');
+    acc.className = 'accordion' + (g.open ? ' open' : '');
+    acc.innerHTML = `<div class="accordion-header">${g.title}</div><div class="accordion-content"></div>`;
+    panel.appendChild(acc);
+    acc.querySelector('.accordion-header').addEventListener('click', () => acc.classList.toggle('open'));
+    containerByGroup[g.id] = acc.querySelector('.accordion-content');
+  }
+
+  // Порядок отрисовки элементов внутри arms:
+  // showArms, wristR, armLw, showWristBall, showElbowBall, showElbow,
+  // [subhead Метка], crossPos, crossW, crossRound,
+  // [subhead Левая], lShoulderAngle, lElbowAngle, lWristX, lWristY,
+  // [subhead Правая], rShoulderAngle, rElbowAngle, rWristX, rWristY
+
+  const orderCommon = ['showRef','refOp','__upload','heads','lineColor','lineWidth','showHeads','showSub'];
+  const orderHead = ['skullH','skullW','skullX','__sep','chinY','chinW','chinR','__sep','jawY','jawW','jawB'];
+  const orderNeck = ['neckW','neckX','__sep','shoulderY','clavY','trapY'];
+  const orderTorso = ['torsoH','torsoW','torsoX','torsoTop','torsoBot','__sep','pelvisR','pelvisX','__sep','showAbsLines','absBend'];
+  const orderNavel = ['showNavel','navelType','navelW','navelH','navelY'];
+  const orderArms = ['showArms','wristR','armLw','showWristBall','showElbowBall','showElbow',
+                     '__sub:Метка (расширение) на предплечье','crossPos','crossW','crossRound',
+                     '__sep','__sub:Левая рука','lShoulderAngle','lElbowAngle','lWristX','lWristY',
+                     '__sep','__sub:Правая рука','rShoulderAngle','rElbowAngle','rWristX','rWristY'];
+
+  const order = { common: orderCommon, head: orderHead, neck: orderNeck, torso: orderTorso, navel: orderNavel, arms: orderArms };
+
+  for (const g of GROUPS) {
+    const box = containerByGroup[g.id];
+    for (const item of order[g.id]) {
+      if (item === '__sep') { box.appendChild(makeSep()); continue; }
+      if (item === '__upload') { box.appendChild(makeUploadRow()); continue; }
+      if (item.startsWith('__sub:')) { box.appendChild(makeSubhead(item.slice(6))); continue; }
+      const cfg = SCHEMA[item];
+      if (!cfg) continue;
+      box.appendChild(makeField(item, cfg));
+    }
+  }
+}
+
+function makeSep() {
+  const hr = document.createElement('hr');
+  hr.className = 'sep';
+  return hr;
+}
+
+function makeSubhead(text) {
+  const d = document.createElement('div');
+  d.className = 'subhead';
+  d.textContent = text;
+  return d;
+}
+
+function makeUploadRow() {
+  const wrap = document.createElement('div');
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
+  wrap.style.gap = '6px';
+
+  const btn = document.createElement('button');
+  btn.className = 'sec';
+  btn.textContent = 'Загрузить картинку';
+  const file = document.createElement('input');
+  file.type = 'file';
+  file.accept = 'image/*';
+  file.style.display = 'none';
+
+  btn.addEventListener('click', () => file.click());
+  file.addEventListener('change', onFileChange);
+
+  wrap.appendChild(btn);
+  wrap.appendChild(file);
+  return wrap;
+}
+
+function makeField(key, cfg) {
+  if (cfg.type === 'checkbox') {
+    const label = document.createElement('label');
+    label.className = 'chk';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.id = key;
+    input.checked = !!cfg.def;
+    input.addEventListener('input', scheduleDraw);
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(cfg.label));
+    ui[key] = input;
+    return label;
+  }
+
+  if (cfg.type === 'color') {
+    const label = document.createElement('label');
+    const row = document.createElement('span');
+    row.className = 'row';
+    row.textContent = cfg.label;
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.id = key;
+    input.value = cfg.def;
+    input.addEventListener('input', scheduleDraw);
+    label.appendChild(row);
+    label.appendChild(input);
+    ui[key] = input;
+    return label;
+  }
+
+  // range
+  const label = document.createElement('label');
+  const row = document.createElement('span');
+  row.className = 'row';
+  const txt = document.createElement('span');
+  txt.textContent = cfg.label;
+  const val = document.createElement('span');
+  val.className = 'val';
+  val.id = 'v_' + key;
+  val.textContent = formatVal(cfg.def, cfg.fmt);
+  row.appendChild(txt);
+  row.appendChild(val);
+
+  const input = document.createElement('input');
+  input.type = 'range';
+  input.id = key;
+  input.min = cfg.min;
+  input.max = cfg.max;
+  input.step = cfg.step;
+  input.value = cfg.def;
+  input.addEventListener('input', () => { scheduleDraw(); });
+  input.addEventListener('change', () => { scheduleDraw(); });
+
+  label.appendChild(row);
+  label.appendChild(input);
+
+  ui[key] = input;
+  valEls[key] = { el: val, fmt: cfg.fmt };
+  return label;
+}
+
+function formatVal(v, fmt) {
+  if (fmt === 0) return String(Math.round(v));
+  return Number(v).toFixed(fmt ?? 2);
+}
+
+function updateLabels() {
+  for (const key in valEls) {
+    const { el, fmt } = valEls[key];
+    el.textContent = formatVal(ui[key].value, fmt);
+  }
+}
+
+/* ============================================================
+   ЧТЕНИЕ ПАРАМЕТРОВ
+   ============================================================ */
+function readParams() {
+  const P = {};
+  for (const key in SCHEMA) {
+    const cfg = SCHEMA[key];
+    if (cfg.type === 'checkbox') P[key] = ui[key].checked;
+    else if (cfg.type === 'color') P[key] = ui[key].value;
+    else P[key] = parseFloat(ui[key].value);
+  }
+  return P;
+}
+
+/* ============================================================
+   МАТЕМАТИКА / ГЕОМЕТРИЯ
+   ============================================================ */
+function ellipseDx(y, cy, rY) {
+  const t = (y - cy) / rY;
+  return Math.sqrt(Math.max(0, 1 - t * t));
+}
+
+function jawAttachPoint(skull, param) {
+  return skull.bottom - (skull.bottom - skull.cy) * param;
+}
+
 function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   const dx = wristBase.x - shoulder.x;
   const dy = wristBase.y - shoulder.y;
@@ -362,622 +442,638 @@ function buildArm(shoulder, wristBase, shoulderAngle, elbowAngle, ballRadius) {
   return { shoulder, elbow, wrist, ballRadius };
 }
 
-function draw() {
-  const W = canvasW, H = canvasH;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, W, H);
+/* ============================================================
+   СБОРКА СКЕЛЕТА (все координаты — без ctx)
+   ============================================================ */
+function computeSkeleton(P, W, H) {
+  const sk = {};
+  const cx = W / 2;
+  const headStep = H / P.heads;
 
-  if (refImage && ui.showRef.checked) {
-    ctx.save();
-    ctx.globalAlpha = parseFloat(ui.refOp.value) || 0.5;
-    ctx.drawImage(refImage, 0, 0, W, H);
-    ctx.restore();
-  }
-
-  const n = parseFloat(ui.heads.value) || 5.0;
-  const color = ui.lineColor.value;
-  const lw = parseInt(ui.lineWidth.value) || 5;
-
-  const headStep = H / n;
-  const headLines = [];
-  for (let i = 0; i <= n; i++) headLines.push(i * headStep);
-
-  const cx = W / 2; 
-
-  // Сетка секций
-  if (ui.showHeads.checked) {
-    ctx.save();
-    ctx.strokeStyle = 'rgba(180,180,180,0.7)'; ctx.lineWidth = 2; ctx.setLineDash([20, 20]);
-    ctx.beginPath();
-    for (const y of headLines) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // --- Голова ---
-  const skullTopBase = 0; 
-  const skullBotBase = headStep * 3 / 5; 
-  const baseR = (skullBotBase - skullTopBase) / 2;
-  const skullCyBase  = skullTopBase + baseR; 
-
-  const skullH = parseFloat(ui.skullH.value) || 1;
-  const skullW = parseFloat(ui.skullW.value) || 1;
-  const skullX = parseFloat(ui.skullX.value) || 0;
-
-  const rY = baseR * skullH;
-  const rX = baseR * skullW;
-  const headCx = cx + skullX * rX; 
-  const cy = skullCyBase;
-  
+  // ---------- ГОЛОВА ----------
+  const baseR = headStep * PROPORTIONS.skullHeight / 2;
+  const rX = baseR * P.skullW;
+  const rY = baseR * P.skullH;
+  const cy = baseR;
+  const headCx = cx + P.skullX * rX;
   const skullTop = cy - rY;
   const skullBottom = cy + rY;
 
-  const chinBaseY = headStep * 4 / 5;
-  const chinYOffset = parseFloat(ui.chinY.value) || 0;
-  const chinCenterY = chinBaseY + chinYOffset * (headStep / 5);
+  const chinBaseY = headStep * PROPORTIONS.chinLine;
+  const chinCenterY = chinBaseY + P.chinY * (headStep / 5);
+  const chinHalfW = P.chinW * rX * 0.7;
+  const chinRound = P.chinR * chinHalfW;
 
-  const chinWParam = parseFloat(ui.chinW.value) || 0;
-  const chinRParam = parseFloat(ui.chinR.value) || 0;
-  const chinHalfW = chinWParam * rX * 0.7;
-  const chinRound = chinRParam * chinHalfW;
-
-  const jawYParam = parseFloat(ui.jawY.value) || 0.77;
-  const jawAttachY = skullBottom - (skullBottom - cy) * jawYParam;
-
-  const jawWParam = parseFloat(ui.jawW.value) || 0.78;
-  const jawBParam = parseFloat(ui.jawB.value) || 0.73;
-
-  const attachDx = Math.sqrt(Math.max(0, 1 - Math.pow((jawAttachY - cy) / rY, 2)));
+  const jawAttachY = jawAttachPoint({ bottom: skullBottom, cy }, P.jawY);
+  const attachDx = ellipseDx(jawAttachY, cy, rY);
   const attachLeft  = { x: headCx - rX * attachDx, y: jawAttachY };
   const attachRight = { x: headCx + rX * attachDx, y: jawAttachY };
 
-  const cornerLeft  = { x: headCx - rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
-  const cornerRight = { x: headCx + rX * jawWParam, y: jawAttachY + (chinCenterY - jawAttachY) * jawBParam };
+  const cornerLeft  = { x: headCx - rX * P.jawW, y: jawAttachY + (chinCenterY - jawAttachY) * P.jawB };
+  const cornerRight = { x: headCx + rX * P.jawW, y: jawAttachY + (chinCenterY - jawAttachY) * P.jawB };
 
   let chinLeft, chinRight;
   if (chinHalfW < 1.5) {
-    chinLeft = { x: headCx, y: chinCenterY };
-    chinRight = { x: headCx, y: chinCenterY };
+    chinLeft = chinRight = { x: headCx, y: chinCenterY };
   } else {
     chinLeft  = { x: headCx - chinHalfW, y: chinCenterY };
     chinRight = { x: headCx + chinHalfW, y: chinCenterY };
   }
 
-  // --- Шея ---
-  const neckWParam = parseFloat(ui.neckW.value) || 0.3;
-  const neckXParam = parseFloat(ui.neckX.value) || 0;
-  const neckHalfW = rX * neckWParam;
-  const neckCx = headCx + neckXParam * rX;
-  const neckTopY = chinCenterY - (headStep / 10); 
-  const neckBotY = headStep; 
+  sk.head = {
+    cx: headCx, cy, rX, rY,
+    top: skullTop, bottom: skullBottom,
+    leftEdge:  (y) => ({ x: headCx - rX * ellipseDx(y, cy, rY), y }),
+    rightEdge: (y) => ({ x: headCx + rX * ellipseDx(y, cy, rY), y }),
+    chin: { centerY: chinCenterY, halfW: chinHalfW, round: chinRound, left: chinLeft, right: chinRight },
+    jaw:  { attachY: jawAttachY, attachLeft, attachRight, cornerLeft, cornerRight },
+  };
 
-  // --- Торс ---
-  const tH = parseFloat(ui.torsoH.value) || 0.85;
-  const tW = parseFloat(ui.torsoW.value) || 1.5;
-  const tX = parseFloat(ui.torsoX.value) || 0;
-  const tTop = parseFloat(ui.torsoTop.value) || 0.6;
-  const tBot = parseFloat(ui.torsoBot.value) || 0.8;
+  // ---------- ШЕЯ ----------
+  const neckHalfW = rX * P.neckW;
+  const neckCx = headCx + P.neckX * rX;
+  const neckTopY = chinCenterY - headStep / 10;
+  const neckBotY = headStep;
 
-  const torsoTopY = headStep; 
-  const torsoBotY = headStep * 2; 
-  
+  // ---------- ТОРС ----------
+  const torsoTopY = headStep * PROPORTIONS.torsoTop;
+  const torsoBotY = headStep * PROPORTIONS.torsoBottom;
   const baseTorsoH = torsoBotY - torsoTopY;
-  const baseTorsoW = rX * 1.5; 
+  const baseTorsoW = rX * 1.5;
 
-  const torsoCenterY = torsoTopY + (baseTorsoH * tH) / 2;
-  const torsoRX = (baseTorsoW * tW) / 2;
-  const torsoRY = (baseTorsoH * tH) / 2;
-  const torsoCx = cx + tX * torsoRX;
+  const torsoCenterY = torsoTopY + (baseTorsoH * P.torsoH) / 2;
+  const torsoRX = (baseTorsoW * P.torsoW) / 2;
+  const torsoRY = (baseTorsoH * P.torsoH) / 2;
+  const torsoCx = cx + P.torsoX * torsoRX;
 
   const torsoTopActualY = torsoCenterY - torsoRY;
   const torsoBottomY = torsoCenterY + torsoRY;
 
-  // --- Плечи ---
-  const shoulderYParam = parseFloat(ui.shoulderY.value) || 0;
-  const clavYParam = parseFloat(ui.clavY.value) || 0.8;
-  const trapYParam = parseFloat(ui.trapY.value) || 0.5;
-  
+  const torso = {
+    cx: torsoCx, cy: torsoCenterY, rX: torsoRX, rY: torsoRY,
+    topY: torsoTopActualY, botY: torsoBottomY,
+    topSqueeze: P.torsoTop, botSqueeze: P.torsoBot,
+  };
+  sk.torso = torso;
+
+  // ---------- ПЛЕЧИ / КЛЮЧИЦЫ / ТРАПЕЦИИ ----------
   const torsoSubStep = (torsoBottomY - torsoTopActualY) / 3;
-  
-  const shoulderCy = torsoTopActualY + (torsoSubStep / 2) + (shoulderYParam * torsoSubStep);
+  const shoulderCy = torsoTopActualY + torsoSubStep / 2 + P.shoulderY * torsoSubStep;
   const shoulderRadius = torsoSubStep / 2;
 
   const dyNorm = (shoulderCy - torsoCenterY) / torsoRY;
   const torsoWidthAtShoulder = torsoRX * Math.sqrt(Math.max(0, 1 - dyNorm * dyNorm));
-  
-  const shoulderLeftCx = torsoCx - torsoWidthAtShoulder - shoulderRadius;
+  const shoulderLeftCx  = torsoCx - torsoWidthAtShoulder - shoulderRadius;
   const shoulderRightCx = torsoCx + torsoWidthAtShoulder + shoulderRadius;
 
-  // --- Ключицы и Трапеции ---
-  const neckBaseY = neckBotY - (headStep * 0.1 * (1 - trapYParam)); 
-  const neckBaseLeftX = neckCx - neckHalfW;
+  const neckBaseY = neckBotY - headStep * 0.1 * (1 - P.trapY);
+  const neckBaseLeftX  = neckCx - neckHalfW;
   const neckBaseRightX = neckCx + neckHalfW;
 
-  const trapLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
+  const trapLeftAttach  = { x: shoulderLeftCx + shoulderRadius * 0.2,  y: shoulderCy - shoulderRadius };
   const trapRightAttach = { x: shoulderRightCx - shoulderRadius * 0.2, y: shoulderCy - shoulderRadius };
 
-  const clavLeftAttach = { x: shoulderLeftCx + shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
-  const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * clavYParam };
-
+  const clavLeftAttach  = { x: shoulderLeftCx + shoulderRadius * 0.9,  y: shoulderCy - shoulderRadius * P.clavY };
+  const clavRightAttach = { x: shoulderRightCx - shoulderRadius * 0.9, y: shoulderCy - shoulderRadius * P.clavY };
   const clavTorsoAttachY = torsoTopActualY + torsoRY * 0.2;
 
-  // --- Таз ---
+  sk.neck = {
+    cx: neckCx, halfW: neckHalfW,
+    topY: neckTopY, botY: neckBotY, baseY: neckBaseY,
+    baseLeftX: neckBaseLeftX, baseRightX: neckBaseRightX,
+  };
+  sk.shoulders = {
+    left:  { cx: shoulderLeftCx,  cy: shoulderCy, r: shoulderRadius },
+    right: { cx: shoulderRightCx, cy: shoulderCy, r: shoulderRadius },
+    trapLeftAttach, trapRightAttach,
+    clavLeftAttach, clavRightAttach, clavTorsoAttachY,
+  };
+
+  // ---------- ТАЗ ----------
   const torsoWidth = torsoRX * 2;
   const torsoHeight = torsoRY * 2;
-
-  const pelvisW = torsoHeight; 
-  const pelvisH = torsoWidth;  
-  
-  const pelvisR = parseFloat(ui.pelvisR.value) || 0.85;
-  const pelvisX = parseFloat(ui.pelvisX.value) || 0;
-  
+  const pelvisW = torsoHeight;
+  const pelvisH = torsoWidth;
   const pelvisTopY = torsoBottomY;
-  const pelvisCx = torsoCx + pelvisX * pelvisW; 
-  
+  const pelvisCx = torsoCx + P.pelvisX * pelvisW;
   const pelvisXPos = pelvisCx - pelvisW / 2;
   const pelvisYPos = pelvisTopY;
-  
   const maxRadius = Math.min(pelvisW, pelvisH) / 2;
-  const cornerRadius = maxRadius * pelvisR;
+  const cornerRadius = maxRadius * P.pelvisR;
 
-  // ============================================
-  // ПУПОК
-  // ============================================
-  const totalTorsoPelvisH = (pelvisYPos + pelvisH) - torsoTopActualY;
+  const pelvis = {
+    x: pelvisXPos, y: pelvisYPos, w: pelvisW, h: pelvisH,
+    cx: pelvisCx, r: cornerRadius,
+    botY: pelvisYPos + pelvisH,
+  };
+  sk.pelvis = pelvis;
+
+  // ---------- ПУПОК ----------
+  const totalTorsoPelvisH = pelvis.botY - torsoTopActualY;
   const navelThird = totalTorsoPelvisH / 3;
-  
-  let navelCenterY = torsoTopActualY + navelThird * 2;
-  navelCenterY += (parseFloat(ui.navelY.value) || 0) * totalTorsoPelvisH;
-  
-  const navelType = parseFloat(ui.navelType.value) || 0; 
-  const navelLineW = (parseFloat(ui.navelW.value) || 0.2) * torsoRX * navelType; 
-  const navelLineH = (parseFloat(ui.navelH.value) || 0.2) * torsoRY * navelType; 
+  const navelCenterY = torsoTopActualY + navelThird * 2 + P.navelY * totalTorsoPelvisH;
+  sk.navel = {
+    x: torsoCx, y: navelCenterY,
+    lineW: P.navelW * torsoRX * P.navelType,
+    lineH: P.navelH * torsoRY * P.navelType,
+    type: P.navelType,
+  };
 
-  // ============================================
-  // РУКИ
-  // ============================================
-  const showArms = ui.showArms.checked;
-  const wristRParam  = parseFloat(ui.wristR.value)  || 0.12;
-  const armLwMul     = parseFloat(ui.armLw.value)   || 1.0;
+  // ---------- РУКИ ----------
+  const wristRadius = Math.max(1, pelvisH * P.wristR);
+  const lWristBase = {
+    x: pelvisXPos - wristRadius + P.lWristX * pelvisW,
+    y: pelvis.botY - wristRadius + P.lWristY * pelvisH,
+  };
+  const rWristBase = {
+    x: pelvisXPos + pelvisW + wristRadius + P.rWristX * pelvisW,
+    y: pelvis.botY - wristRadius + P.rWristY * pelvisH,
+  };
 
-  const wristRadius = Math.max(1, pelvisH * wristRParam);
+  sk.arms = {
+    wristRadius,
+    l: buildArm({ x: shoulderLeftCx,  y: shoulderCy }, lWristBase, -P.lShoulderAngle, -P.lElbowAngle, wristRadius),
+    r: buildArm({ x: shoulderRightCx, y: shoulderCy }, rWristBase,  P.rShoulderAngle,  P.rElbowAngle, wristRadius),
+  };
 
-  const lWristXParam = parseFloat(ui.lWristX.value) || 0;
-  const lWristYParam = parseFloat(ui.lWristY.value) || 0;
-  const rWristXParam = parseFloat(ui.rWristX.value) || 0;
-  const rWristYParam = parseFloat(ui.rWristY.value) || 0;
+  // ---------- СЕКЦИИ (для сетки) ----------
+  sk.grid = { headLines: Array.from({ length: Math.floor(P.heads) + 1 }, (_, i) => i * headStep) };
 
-  const lShoulderAngle = parseFloat(ui.lShoulderAngle.value) || 0;
-  const lElbowAngle    = parseFloat(ui.lElbowAngle.value)    || 0;
-  const rShoulderAngle = parseFloat(ui.rShoulderAngle.value) || 0;
-  const rElbowAngle    = parseFloat(ui.rElbowAngle.value)    || 0;
+  return sk;
+}
 
-  const lWristBaseX = pelvisXPos - wristRadius + lWristXParam * pelvisW;
-  const lWristBaseY = pelvisBottomY - wristRadius + lWristYParam * pelvisH;
-  const rWristBaseX = pelvisXPos + pelvisW + wristRadius + rWristXParam * pelvisW;
-  const rWristBaseY = pelvisBottomY - wristRadius + rWristYParam * pelvisH;
+/* ============================================================
+   РЕНДЕР-СЛОИ
+   ============================================================ */
+let refImage = null;
 
-  const shoulderL = { x: shoulderLeftCx, y: shoulderCy };
-  const shoulderR = { x: shoulderRightCx, y: shoulderCy };
-  const wristLBase = { x: lWristBaseX, y: lWristBaseY };
-  const wristRBase = { x: rWristBaseX, y: rWristBaseY };
+const LAYERS = [
+  ['reference',   renderReference],
+  ['grid',        renderGrid],
+  ['shoulders',   renderShoulders],
+  ['clavicles',   renderClavicles],
+  ['torso',       renderTorso],
+  ['pelvis',      renderPelvis],
+  ['absLines',    renderAbsLines],
+  ['navel',       renderNavel],
+  ['neck',        renderNeck],
+  ['head',        renderHead],
+  ['arms',        renderArms],
+  // новые слои просто добавляются здесь
+];
 
-  const armL = buildArm(shoulderL, wristLBase, -lShoulderAngle, -lElbowAngle, wristRadius);
-  const armR = buildArm(shoulderR, wristRBase,  rShoulderAngle,  rElbowAngle, wristRadius);
+function renderReference(ctx, sk, P, W, H) {
+  if (!refImage || !P.showRef) return;
+  ctx.save();
+  ctx.globalAlpha = P.refOp || 0.5;
+  ctx.drawImage(refImage, 0, 0, W, H);
+  ctx.restore();
+}
 
-  const crossPosParam = parseFloat(ui.crossPos.value) || 0.33;
-  const crossWParam   = parseFloat(ui.crossW.value) || 1.5;
-  const crossRoundParam = parseFloat(ui.crossRound.value) || 0.5; 
-
-  // ============================================
-  // ПОДСЕКЦИИ
-  // ============================================
-  if (ui.showSub.checked) {
+function renderGrid(ctx, sk, P, W) {
+  if (P.showHeads) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(100,150,255,0.8)'; 
-    ctx.lineWidth = 2; 
+    ctx.strokeStyle = 'rgba(180,180,180,0.7)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([20, 20]);
+    ctx.beginPath();
+    for (const y of sk.grid.headLines) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (P.showSub) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(100,150,255,0.8)';
+    ctx.lineWidth = 2;
     ctx.setLineDash([10, 15]);
 
-    const headTopSubY = skullTop;
-    const headBotSubY = chinCenterY;
-    const headSubCount = 5;
-    const headSubStep = (headBotSubY - headTopSubY) / headSubCount;
+    // Голова: 5 подсекций
+    const head = sk.head;
+    const headTopSubY = head.top;
+    const headBotSubY = head.chin.centerY;
+    const headSubStep = (headBotSubY - headTopSubY) / 5;
     ctx.beginPath();
-    for (let i = 1; i < headSubCount; i++) {
+    for (let i = 1; i < 5; i++) {
       const y = headTopSubY + headSubStep * i;
       ctx.moveTo(0, y); ctx.lineTo(W, y);
     }
     ctx.stroke();
 
-    const torsoTopSubY = torsoTopActualY;
-    const torsoBotSubY = torsoBottomY;
-    const torsoSubCount = 3;
-    const torsoSubStepDraw = (torsoBotSubY - torsoTopSubY) / torsoSubCount;
+    // Торс: 3 подсекции
+    const t = sk.torso;
+    const tStep = (t.botY - t.topY) / 3;
     ctx.beginPath();
-    for (let i = 1; i < torsoSubCount; i++) {
-      const y = torsoTopSubY + torsoSubStepDraw * i;
+    for (let i = 1; i < 3; i++) {
+      const y = t.topY + tStep * i;
       ctx.moveTo(0, y); ctx.lineTo(W, y);
     }
     ctx.stroke();
 
-    const pelvisTopSubY = pelvisYPos;
-    const pelvisBotSubY = pelvisYPos + pelvisH;
-    const pelvisSubCount = 2;
-    const pelvisSubStep = (pelvisBotSubY - pelvisTopSubY) / pelvisSubCount;
+    // Таз: 2 подсекции
+    const p = sk.pelvis;
+    const pStep = p.h / 2;
     ctx.beginPath();
-    for (let i = 1; i < pelvisSubCount; i++) {
-      const y = pelvisTopSubY + pelvisSubStep * i;
+    for (let i = 1; i < 2; i++) {
+      const y = p.y + pStep * i;
       ctx.moveTo(0, y); ctx.lineTo(W, y);
     }
     ctx.stroke();
 
     ctx.restore();
   }
+}
 
-  // ============================================
-  // ФИГУРЫ
-  // ============================================
+function renderShoulders(ctx, sk, P) {
   ctx.save();
-  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(sk.shoulders.left.cx,  sk.shoulders.left.cy,  sk.shoulders.left.r,  0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(sk.shoulders.right.cx, sk.shoulders.right.cy, sk.shoulders.right.r, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
 
-  // 1. Плечи
-  ctx.beginPath();
-  ctx.arc(shoulderLeftCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(shoulderRightCx, shoulderCy, shoulderRadius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // 2. Трапеции
-  ctx.beginPath();
-  ctx.moveTo(trapLeftAttach.x, trapLeftAttach.y);
-  ctx.lineTo(neckBaseLeftX, neckBaseY);
-  ctx.moveTo(trapRightAttach.x, trapRightAttach.y);
-  ctx.lineTo(neckBaseRightX, neckBaseY);
-  ctx.stroke();
-
-  // 3. Ключицы
-  ctx.beginPath();
-  ctx.moveTo(clavLeftAttach.x, clavLeftAttach.y);
-  ctx.lineTo(torsoCx, clavTorsoAttachY);
-  ctx.moveTo(clavRightAttach.x, clavRightAttach.y);
-  ctx.lineTo(torsoCx, clavTorsoAttachY);
-  ctx.stroke();
-
-  // 4. Торс
-  ctx.beginPath();
-  ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
-  ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
-  ctx.bezierCurveTo(torsoCx + torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx + torsoRX * tBot, torsoCenterY + torsoRY, torsoCx, torsoCenterY + torsoRY);
-  ctx.bezierCurveTo(torsoCx - torsoRX * tBot, torsoCenterY + torsoRY, torsoCx - torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx - torsoRX, torsoCenterY);
-  ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
-  ctx.stroke();
-
-  // 5. Таз
-  ctx.beginPath();
-  ctx.moveTo(pelvisXPos + cornerRadius, pelvisYPos);
-  ctx.lineTo(pelvisXPos + pelvisW - cornerRadius, pelvisYPos);
-  ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos, pelvisXPos + pelvisW, pelvisYPos + cornerRadius);
-  ctx.lineTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH - cornerRadius);
-  ctx.quadraticCurveTo(pelvisXPos + pelvisW, pelvisYPos + pelvisH, pelvisXPos + pelvisW - cornerRadius, pelvisYPos + pelvisH);
-  ctx.lineTo(pelvisXPos + cornerRadius, pelvisYPos + pelvisH);
-  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos + pelvisH, pelvisXPos, pelvisYPos + pelvisH - cornerRadius);
-  ctx.lineTo(pelvisXPos, pelvisYPos + cornerRadius);
-  ctx.quadraticCurveTo(pelvisXPos, pelvisYPos, pelvisXPos + cornerRadius, pelvisYPos);
-  ctx.stroke();
-
-  // 6. Линии пресса
-  if (ui.showAbsLines.checked) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(torsoCx, torsoCenterY - torsoRY);
-    ctx.bezierCurveTo(torsoCx + torsoRX * tTop, torsoCenterY - torsoRY, torsoCx + torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx + torsoRX, torsoCenterY);
-    ctx.bezierCurveTo(torsoCx + torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx + torsoRX * tBot, torsoCenterY + torsoRY, torsoCx, torsoCenterY + torsoRY);
-    ctx.bezierCurveTo(torsoCx - torsoRX * tBot, torsoCenterY + torsoRY, torsoCx - torsoRX, torsoCenterY + torsoRY * 0.5, torsoCx - torsoRX, torsoCenterY);
-    ctx.bezierCurveTo(torsoCx - torsoRX, torsoCenterY - torsoRY * 0.2, torsoCx - torsoRX * tTop, torsoCenterY - torsoRY, torsoCx, torsoCenterY - torsoRY);
-    ctx.closePath();
-    ctx.clip();
-
-    const absBendParam = parseFloat(ui.absBend.value) || 0.3;
-    
-    ctx.beginPath();
-    ctx.moveTo(torsoCx, navelCenterY);
-    const ctrlLeftX = torsoCx - (torsoCx - trapLeftAttach.x) * absBendParam;
-    const ctrlLeftY = navelCenterY - (navelCenterY - trapLeftAttach.y) * 0.5;
-    ctx.quadraticCurveTo(ctrlLeftX, ctrlLeftY, trapLeftAttach.x, trapLeftAttach.y);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(torsoCx, navelCenterY);
-    const ctrlRightX = torsoCx + (trapRightAttach.x - torsoCx) * absBendParam;
-    const ctrlRightY = navelCenterY - (navelCenterY - trapRightAttach.y) * 0.5;
-    ctx.quadraticCurveTo(ctrlRightX, ctrlRightY, trapRightAttach.x, trapRightAttach.y);
-    ctx.stroke();
-    
-    ctx.restore();
-  }
-
-  // 7. Пупок
-  if (ui.showNavel.checked) {
-    ctx.save();
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
-    ctx.lineWidth = lw;
-
-    if (navelType < 0.05) {
-      ctx.beginPath();
-      ctx.arc(torsoCx, navelCenterY, Math.max(3, lw * 1.5), 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.ellipse(torsoCx, navelCenterY, Math.max(1, navelLineW / 2), Math.max(1, navelLineH / 2), 0, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // 8. Шея
+function renderClavicles(ctx, sk, P) {
+  const s = sk.shoulders;
+  const n = sk.neck;
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, W, neckBotY); 
-  ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2);
-  ctx.moveTo(attachLeft.x, attachLeft.y);
-  ctx.lineTo(cornerLeft.x, cornerLeft.y);
-  if (chinHalfW < 1.5) {
-    ctx.lineTo(headCx, chinCenterY);
-    ctx.lineTo(cornerRight.x, cornerRight.y);
-  } else {
-    ctx.lineTo(chinLeft.x, chinLeft.y);
-    ctx.lineTo(chinRight.x, chinRight.y);
-    ctx.lineTo(cornerRight.x, cornerRight.y);
-  }
-  ctx.lineTo(attachRight.x, attachRight.y);
-  ctx.closePath();
-  ctx.clip('evenodd');
 
+  // Трапеции
   ctx.beginPath();
-  ctx.moveTo(neckCx - neckHalfW, neckTopY);
-  ctx.lineTo(neckCx - neckHalfW, neckBotY);
-  ctx.lineTo(neckCx + neckHalfW, neckBotY);
-  ctx.lineTo(neckCx + neckHalfW, neckTopY);
+  ctx.moveTo(s.trapLeftAttach.x, s.trapLeftAttach.y);
+  ctx.lineTo(n.baseLeftX, n.baseY);
+  ctx.moveTo(s.trapRightAttach.x, s.trapRightAttach.y);
+  ctx.lineTo(n.baseRightX, n.baseY);
   ctx.stroke();
-  ctx.restore(); 
 
-  // 9. Голова
+  // Ключицы
+  ctx.beginPath();
+  ctx.moveTo(s.clavLeftAttach.x, s.clavLeftAttach.y);
+  ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
+  ctx.moveTo(s.clavRightAttach.x, s.clavRightAttach.y);
+  ctx.lineTo(sk.torso.cx, s.clavTorsoAttachY);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function torsoPath(t) {
+  const p = new Path2D();
+  p.moveTo(t.cx, t.cy - t.rY);
+  p.bezierCurveTo(t.cx + t.rX * t.topSqueeze, t.cy - t.rY, t.cx + t.rX, t.cy - t.rY * 0.2, t.cx + t.rX, t.cy);
+  p.bezierCurveTo(t.cx + t.rX, t.cy + t.rY * 0.5, t.cx + t.rX * t.botSqueeze, t.cy + t.rY, t.cx, t.cy + t.rY);
+  p.bezierCurveTo(t.cx - t.rX * t.botSqueeze, t.cy + t.rY, t.cx - t.rX, t.cy + t.rY * 0.5, t.cx - t.rX, t.cy);
+  p.bezierCurveTo(t.cx - t.rX, t.cy - t.rY * 0.2, t.cx - t.rX * t.topSqueeze, t.cy - t.rY, t.cx, t.cy - t.rY);
+  return p;
+}
+
+function renderTorso(ctx, sk) {
   ctx.save();
-  ctx.strokeStyle = color; ctx.lineWidth = lw;
+  ctx.stroke(torsoPath(sk.torso));
+  ctx.restore();
+}
 
-  ctx.beginPath(); ctx.ellipse(headCx, cy, rX, rY, 0, 0, Math.PI * 2); ctx.stroke();
+function pelvisPath(p) {
+  const path = new Path2D();
+  path.moveTo(p.x + p.r, p.y);
+  path.lineTo(p.x + p.w - p.r, p.y);
+  path.quadraticCurveTo(p.x + p.w, p.y, p.x + p.w, p.y + p.r);
+  path.lineTo(p.x + p.w, p.y + p.h - p.r);
+  path.quadraticCurveTo(p.x + p.w, p.y + p.h, p.x + p.w - p.r, p.y + p.h);
+  path.lineTo(p.x + p.r, p.y + p.h);
+  path.quadraticCurveTo(p.x, p.y + p.h, p.x, p.y + p.h - p.r);
+  path.lineTo(p.x, p.y + p.r);
+  path.quadraticCurveTo(p.x, p.y, p.x + p.r, p.y);
+  return path;
+}
 
+function renderPelvis(ctx, sk) {
+  ctx.save();
+  ctx.stroke(pelvisPath(sk.pelvis));
+  ctx.restore();
+}
+
+function renderAbsLines(ctx, sk, P) {
+  if (!P.showAbsLines) return;
+  const t = sk.torso;
+  const nav = sk.navel;
+  const s = sk.shoulders;
+
+  ctx.save();
+  ctx.clip(torsoPath(t));
+
+  const bend = P.absBend;
   ctx.beginPath();
-  ctx.moveTo(attachLeft.x, attachLeft.y);
-  ctx.lineTo(cornerLeft.x, cornerLeft.y);
-  ctx.lineTo(chinHalfW < 1.5 ? headCx : chinLeft.x, chinHalfW < 1.5 ? chinCenterY : chinLeft.y);
+  ctx.moveTo(t.cx, nav.y);
+  ctx.quadraticCurveTo(
+    t.cx - (t.cx - s.trapLeftAttach.x) * bend,
+    nav.y - (nav.y - s.trapLeftAttach.y) * 0.5,
+    s.trapLeftAttach.x, s.trapLeftAttach.y
+  );
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(attachRight.x, attachRight.y);
-  ctx.lineTo(cornerRight.x, cornerRight.y);
-  ctx.lineTo(chinHalfW < 1.5 ? headCx : chinRight.x, chinHalfW < 1.5 ? chinCenterY : chinRight.y);
+  ctx.moveTo(t.cx, nav.y);
+  ctx.quadraticCurveTo(
+    t.cx + (s.trapRightAttach.x - t.cx) * bend,
+    nav.y - (nav.y - s.trapRightAttach.y) * 0.5,
+    s.trapRightAttach.x, s.trapRightAttach.y
+  );
   ctx.stroke();
 
-  if (chinHalfW < 1.5) {
-    ctx.beginPath(); ctx.arc(headCx, chinCenterY, Math.max(3, lw), 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.restore();
+}
+
+function renderNavel(ctx, sk, P) {
+  if (!P.showNavel) return;
+  const nav = sk.navel;
+  const lw = P.lineWidth;
+
+  ctx.save();
+  ctx.strokeStyle = P.lineColor;
+  ctx.fillStyle = P.lineColor;
+  ctx.lineWidth = lw;
+
+  if (nav.type < 0.05) {
+    ctx.beginPath();
+    ctx.arc(nav.x, nav.y, Math.max(3, lw * 1.5), 0, Math.PI * 2);
+    ctx.fill();
   } else {
     ctx.beginPath();
-    ctx.moveTo(chinLeft.x, chinLeft.y);
-    if (chinRound < 1) ctx.lineTo(chinRight.x, chinRight.y);
-    else ctx.quadraticCurveTo(headCx, chinCenterY + (chinRound / chinHalfW) * chinHalfW * 0.8, chinRight.x, chinRight.y);
+    ctx.ellipse(nav.x, nav.y, Math.max(1, nav.lineW / 2), Math.max(1, nav.lineH / 2), 0, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
+}
 
-  // 10. РУКИ
-  if (showArms) {
+function renderNeck(ctx, sk) {
+  const head = sk.head;
+  const neck = sk.neck;
+
+  // Путь шеи = прямоугольник сверху до neck.botY минус эллипс головы
+  const clip = new Path2D();
+  clip.rect(0, 0, canvasWidth, neck.botY);
+  clip.ellipse(head.cx, head.cy, head.rX, head.rY, 0, 0, Math.PI * 2);
+
+  ctx.save();
+  ctx.clip(clip, 'evenodd');
+
+  ctx.beginPath();
+  ctx.moveTo(neck.cx - neck.halfW, neck.topY);
+  ctx.lineTo(neck.cx - neck.halfW, neck.botY);
+  ctx.lineTo(neck.cx + neck.halfW, neck.botY);
+  ctx.lineTo(neck.cx + neck.halfW, neck.topY);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function renderHead(ctx, sk, P) {
+  const h = sk.head;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(h.cx, h.cy, h.rX, h.rY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Левая сторона челюсти
+  ctx.beginPath();
+  ctx.moveTo(h.jaw.attachLeft.x, h.jaw.attachLeft.y);
+  ctx.lineTo(h.jaw.cornerLeft.x, h.jaw.cornerLeft.y);
+  ctx.lineTo(h.chin.halfW < 1.5 ? h.cx : h.chin.left.x, h.chin.halfW < 1.5 ? h.chin.centerY : h.chin.left.y);
+  ctx.stroke();
+
+  // Правая сторона челюсти
+  ctx.beginPath();
+  ctx.moveTo(h.jaw.attachRight.x, h.jaw.attachRight.y);
+  ctx.lineTo(h.jaw.cornerRight.x, h.jaw.cornerRight.y);
+  ctx.lineTo(h.chin.halfW < 1.5 ? h.cx : h.chin.right.x, h.chin.halfW < 1.5 ? h.chin.centerY : h.chin.right.y);
+  ctx.stroke();
+
+  // Подбородок
+  if (h.chin.halfW < 1.5) {
+    ctx.beginPath();
+    ctx.arc(h.cx, h.chin.centerY, Math.max(3, P.lineWidth), 0, Math.PI * 2);
+    ctx.fillStyle = P.lineColor;
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(h.chin.left.x, h.chin.left.y);
+    if (h.chin.round < 1) {
+      ctx.lineTo(h.chin.right.x, h.chin.right.y);
+    } else {
+      ctx.quadraticCurveTo(h.cx, h.chin.centerY + (h.chin.round / h.chin.halfW) * h.chin.halfW * 0.8, h.chin.right.x, h.chin.right.y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function renderArms(ctx, sk, P) {
+  if (!P.showArms) return;
+  const lw = Math.max(1, P.lineWidth * P.armLw);
+
+  ctx.save();
+  ctx.lineWidth = lw;
+  ctx.setLineDash([]);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  drawOneArm(ctx, sk.arms.l, true,  sk, P);
+  drawOneArm(ctx, sk.arms.r, false, sk, P);
+
+  ctx.restore();
+}
+
+function drawOneArm(ctx, arm, isLeft, sk, P) {
+  const { shoulder, elbow, wrist, ballRadius: br } = arm;
+  const innerSign = isLeft ? 1 : -1;
+  const color = P.lineColor;
+
+  // Плечо → локоть
+  const dx1 = elbow.x - shoulder.x;
+  const dy1 = elbow.y - shoulder.y;
+  const len1 = Math.hypot(dx1, dy1) || 1;
+  const nx1 = -dy1 / len1;
+  const ny1 =  dx1 / len1;
+
+  const p1Outer = { x: shoulder.x + nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y + ny1 * innerSign * sk.shoulders.left.r };
+  const p1Inner = { x: shoulder.x - nx1 * innerSign * sk.shoulders.left.r, y: shoulder.y - ny1 * innerSign * sk.shoulders.left.r };
+  const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
+  const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
+
+  ctx.beginPath(); ctx.moveTo(p1Outer.x, p1Outer.y); ctx.lineTo(p2Outer.x, p2Outer.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p1Inner.x, p1Inner.y); ctx.lineTo(p2Inner.x, p2Inner.y); ctx.stroke();
+
+  // Локоть → запястье (с расширением)
+  const dx2 = wrist.x - elbow.x;
+  const dy2 = wrist.y - elbow.y;
+  const len2 = Math.hypot(dx2, dy2) || 1;
+  const px = -dy2 / len2;
+  const py =  dx2 / len2;
+
+  const peakT = P.crossPos;
+  const peakX = elbow.x + dx2 * peakT;
+  const peakY = elbow.y + dy2 * peakT;
+  const maxWidth = br * P.crossW;
+  const crossRound = P.crossRound;
+
+  const elbowOuter = { x: elbow.x + px * innerSign * br, y: elbow.y + py * innerSign * br };
+  const elbowInner = { x: elbow.x - px * innerSign * br, y: elbow.y - py * innerSign * br };
+  const peakOuter  = { x: peakX + px * innerSign * maxWidth, y: peakY + py * innerSign * maxWidth };
+  const peakInner  = { x: peakX - px * innerSign * maxWidth, y: peakY - py * innerSign * maxWidth };
+  const wristOuter = { x: wrist.x + px * innerSign * br, y: wrist.y + py * innerSign * br };
+  const wristInner = { x: wrist.x - px * innerSign * br, y: wrist.y - py * innerSign * br };
+
+  ctx.beginPath();
+  ctx.moveTo(elbowOuter.x, elbowOuter.y);
+  ctx.quadraticCurveTo(
+    elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8,
+    elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8,
+    peakOuter.x, peakOuter.y
+  );
+  ctx.quadraticCurveTo(
+    peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1,
+    peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1,
+    wristOuter.x, wristOuter.y
+  );
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(elbowInner.x, elbowInner.y);
+  ctx.quadraticCurveTo(
+    elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRound * 0.5),
+    elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRound * 0.5),
+    peakInner.x, peakInner.y
+  );
+  ctx.quadraticCurveTo(
+    peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRound),
+    peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRound),
+    wristInner.x, wristInner.y
+  );
+  ctx.stroke();
+
+  // Точки и шары
+  if (P.showElbow) {
+    ctx.beginPath();
+    ctx.arc(elbow.x, elbow.y, Math.max(3, P.lineWidth * 0.8), 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  if (P.showElbowBall) {
+    ctx.beginPath(); ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2); ctx.stroke();
+  }
+  if (P.showWristBall) {
+    ctx.beginPath(); ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
+/* ============================================================
+   ГЛАВНЫЙ ЦИКЛ ОТРИСОВКИ
+   ============================================================ */
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+let canvasWidth = canvas.width;
+let canvasHeight = canvas.height;
+
+function draw() {
+  const W = canvasWidth;
+  const H = canvasHeight;
+  const P = readParams();
+  const sk = computeSkeleton(P, W, H);
+
+  // фон
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // общие стили линий
+  ctx.save();
+  ctx.strokeStyle = P.lineColor;
+  ctx.lineWidth = P.lineWidth;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  for (const [name, fn] of LAYERS) {
     ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(1, lw * armLwMul);
-    ctx.setLineDash([]);
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-
-    const drawArm = (arm, isLeft) => {
-      const { shoulder, elbow, wrist, ballRadius: br } = arm;
-      const innerSign = isLeft ? 1 : -1;
-
-      const dx1 = elbow.x - shoulder.x;
-      const dy1 = elbow.y - shoulder.y;
-      const len1 = Math.hypot(dx1, dy1) || 1;
-      const nx1 = -dy1 / len1;
-      const ny1 =  dx1 / len1;
-
-      const p1Outer = { x: shoulder.x + nx1 * innerSign * shoulderRadius, y: shoulder.y + ny1 * innerSign * shoulderRadius };
-      const p1Inner = { x: shoulder.x - nx1 * innerSign * shoulderRadius, y: shoulder.y - ny1 * innerSign * shoulderRadius };
-      
-      const p2Outer = { x: elbow.x + nx1 * innerSign * br, y: elbow.y + ny1 * innerSign * br };
-      const p2Inner = { x: elbow.x - nx1 * innerSign * br, y: elbow.y - ny1 * innerSign * br };
-
-      ctx.beginPath();
-      ctx.moveTo(p1Outer.x, p1Outer.y);
-      ctx.lineTo(p2Outer.x, p2Outer.y);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(p1Inner.x, p1Inner.y);
-      ctx.lineTo(p2Inner.x, p2Inner.y);
-      ctx.stroke();
-
-      const dx2 = wrist.x - elbow.x;
-      const dy2 = wrist.y - elbow.y;
-      const len2 = Math.hypot(dx2, dy2) || 1;
-      const ux = dx2 / len2;
-      const uy = dy2 / len2;
-      const px = -uy;
-      const py =  ux;
-
-      const peakT = crossPosParam; 
-      const peakX = elbow.x + dx2 * peakT;
-      const peakY = elbow.y + dy2 * peakT;
-      const maxWidth = br * crossWParam;
-
-      const elbowOuter = { x: elbow.x + px * innerSign * br, y: elbow.y + py * innerSign * br };
-      const elbowInner = { x: elbow.x - px * innerSign * br, y: elbow.y - py * innerSign * br };
-      
-      const peakOuter = { x: peakX + px * innerSign * maxWidth, y: peakY + py * innerSign * maxWidth };
-      const peakInner = { x: peakX - px * innerSign * maxWidth, y: peakY - py * innerSign * maxWidth };
-
-      const wristOuter = { x: wrist.x + px * innerSign * br, y: wrist.y + py * innerSign * br };
-      const wristInner = { x: wrist.x - px * innerSign * br, y: wrist.y - py * innerSign * br };
-
-      ctx.beginPath();
-      ctx.moveTo(elbowOuter.x, elbowOuter.y);
-      ctx.quadraticCurveTo(
-        elbow.x + dx2 * (peakT * 0.5) + px * innerSign * maxWidth * 0.8, 
-        elbow.y + dy2 * (peakT * 0.5) + py * innerSign * maxWidth * 0.8, 
-        peakOuter.x, peakOuter.y
-      );
-      ctx.quadraticCurveTo(
-        peakX + dx2 * (1 - peakT) * 0.5 + px * innerSign * br * 1.1, 
-        peakY + dy2 * (1 - peakT) * 0.5 + py * innerSign * br * 1.1,
-        wristOuter.x, wristOuter.y
-      );
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(elbowInner.x, elbowInner.y);
-      ctx.quadraticCurveTo(
-        elbow.x + dx2 * (peakT * 0.5) - px * innerSign * maxWidth * (1 - crossRoundParam * 0.5), 
-        elbow.y + dy2 * (peakT * 0.5) - py * innerSign * maxWidth * (1 - crossRoundParam * 0.5), 
-        peakInner.x, peakInner.y
-      );
-      ctx.quadraticCurveTo(
-        peakX + dx2 * (1 - peakT) * 0.5 - px * innerSign * br * (1 - crossRoundParam), 
-        peakY + dy2 * (1 - peakT) * 0.5 - py * innerSign * br * (1 - crossRoundParam),
-        wristInner.x, wristInner.y
-      );
-      ctx.stroke();
-
-      if (ui.showElbow.checked) {
-        ctx.beginPath();
-        ctx.arc(elbow.x, elbow.y, Math.max(3, lw * 0.8), 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-      }
-
-      if (ui.showElbowBall.checked) {
-        ctx.beginPath();
-        ctx.arc(elbow.x, elbow.y, br, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-
-      if (ui.showWristBall.checked) {
-        ctx.beginPath();
-        ctx.arc(wrist.x, wrist.y, br, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-    };
-
-    drawArm(armL, true);
-    drawArm(armR, false);
-
+    fn(ctx, sk, P, W, H);
     ctx.restore();
   }
 
-  ctx.restore(); 
+  ctx.restore();
+
   updateLabels();
 }
 
-function updateLabels() {
-  vals.vRefOp.textContent  = parseFloat(ui.refOp.value).toFixed(2);
-  vals.vHeads.textContent  = parseFloat(ui.heads.value).toFixed(1);
-  vals.vWidth.textContent  = ui.lineWidth.value;
-  vals.vSkullH.textContent = parseFloat(ui.skullH.value).toFixed(2);
-  vals.vSkullW.textContent = parseFloat(ui.skullW.value).toFixed(2);
-  vals.vSkullX.textContent = parseFloat(ui.skullX.value).toFixed(2);
-  vals.vChinY.textContent  = parseFloat(ui.chinY.value).toFixed(2);
-  vals.vChinW.textContent  = parseFloat(ui.chinW.value).toFixed(2);
-  vals.vChinR.textContent  = parseFloat(ui.chinR.value).toFixed(2);
-  vals.vJawY.textContent   = parseFloat(ui.jawY.value).toFixed(2);
-  vals.vJawW.textContent   = parseFloat(ui.jawW.value).toFixed(2);
-  vals.vJawB.textContent   = parseFloat(ui.jawB.value).toFixed(2);
-  vals.vNeckW.textContent  = parseFloat(ui.neckW.value).toFixed(2);
-  vals.vNeckX.textContent  = parseFloat(ui.neckX.value).toFixed(2);
-  vals.vTorsoH.textContent = parseFloat(ui.torsoH.value).toFixed(2);
-  vals.vTorsoW.textContent = parseFloat(ui.torsoW.value).toFixed(2);
-  vals.vTorsoX.textContent = parseFloat(ui.torsoX.value).toFixed(2);
-  vals.vTorsoTop.textContent = parseFloat(ui.torsoTop.value).toFixed(2);
-  vals.vTorsoBot.textContent = parseFloat(ui.torsoBot.value).toFixed(2);
-  vals.vShoulderY.textContent = parseFloat(ui.shoulderY.value).toFixed(2);
-  vals.vClavY.textContent = parseFloat(ui.clavY.value).toFixed(2);
-  vals.vTrapY.textContent = parseFloat(ui.trapY.value).toFixed(2);
-  vals.vPelvisR.textContent = parseFloat(ui.pelvisR.value).toFixed(2);
-  vals.vPelvisX.textContent = parseFloat(ui.pelvisX.value).toFixed(2);
-  vals.vAbsBend.textContent = parseFloat(ui.absBend.value).toFixed(2);
-  vals.vNavelType.textContent = parseFloat(ui.navelType.value).toFixed(2);
-  vals.vNavelW.textContent = parseFloat(ui.navelW.value).toFixed(2);
-  vals.vNavelH.textContent = parseFloat(ui.navelH.value).toFixed(2);
-  vals.vNavelY.textContent = parseFloat(ui.navelY.value).toFixed(2);
-  
-  vals.vWristR.textContent = parseFloat(ui.wristR.value).toFixed(2);
-  vals.vArmLw.textContent = parseFloat(ui.armLw.value).toFixed(1);
-  vals.vCrossPos.textContent = parseFloat(ui.crossPos.value).toFixed(2);
-  vals.vCrossW.textContent = parseFloat(ui.crossW.value).toFixed(2);
-  vals.vCrossRound.textContent = parseFloat(ui.crossRound.value).toFixed(2);
-  
-  vals.vLShoulderAngle.textContent = parseFloat(ui.lShoulderAngle.value).toFixed(2);
-  vals.vLElbowAngle.textContent = parseFloat(ui.lElbowAngle.value).toFixed(2);
-  vals.vLWristX.textContent = parseFloat(ui.lWristX.value).toFixed(2);
-  vals.vLWristY.textContent = parseFloat(ui.lWristY.value).toFixed(2);
-  vals.vRShoulderAngle.textContent = parseFloat(ui.rShoulderAngle.value).toFixed(2);
-  vals.vRElbowAngle.textContent = parseFloat(ui.rElbowAngle.value).toFixed(2);
-  vals.vRWristX.textContent = parseFloat(ui.rWristX.value).toFixed(2);
-  vals.vRWristY.textContent = parseFloat(ui.rWristY.value).toFixed(2);
+let rafPending = false;
+function scheduleDraw() {
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    rafPending = false;
+    draw();
+  });
 }
 
-Object.values(ui).forEach(el => { 
-  if(el) {
-    el.addEventListener('input', draw); 
-    el.addEventListener('change', draw); 
-  }
-});
+/* ============================================================
+   ЗАГРУЗКА КАРТИНКИ
+   ============================================================ */
+function onFileChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      refImage = img;
+      const ratio = img.width / img.height;
+      canvasWidth = Math.round(canvasHeight * ratio);
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      draw();
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
-document.getElementById('resetBtn').addEventListener('click', () => {
-  ui.heads.value = 5.0; ui.lineWidth.value = 5;
-  ui.skullH.value = 1.0; ui.skullW.value = 1.0; ui.skullX.value = 0;
-  ui.chinY.value = 0.30; ui.chinW.value = 0.00; ui.chinR.value = 0.30;
-  ui.jawY.value = 0.77; ui.jawW.value = 0.78; ui.jawB.value = 0.73;
-  ui.neckW.value = 0.30; ui.neckX.value = 0.00;
-  ui.torsoH.value = 0.85; ui.torsoW.value = 1.50; ui.torsoX.value = 0.00;
-  ui.torsoTop.value = 0.60; ui.torsoBot.value = 0.80;
-  ui.shoulderY.value = 0.00; ui.clavY.value = 0.80; ui.trapY.value = 0.50;
-  ui.pelvisR.value = 0.85; ui.pelvisX.value = 0.00;
-  ui.showAbsLines.checked = true; ui.absBend.value = 0.30;
-  ui.showNavel.checked = true; ui.navelType.value = 0.50; ui.navelW.value = 0.04; ui.navelH.value = 0.23; ui.navelY.value = -0.05;
-  ui.showHeads.checked = true; ui.showSub.checked = true;
-  
-  ui.showArms.checked = true;
-  ui.wristR.value = 0.12; ui.armLw.value = 1.0;
-  ui.showWristBall.checked = true; 
-  ui.showElbowBall.checked = true;
-  ui.showElbow.checked = true;
-  ui.crossPos.value = 0.33; ui.crossW.value = 1.5; ui.crossRound.value = 0.50;
-  ui.lShoulderAngle.value = 0.00; ui.lElbowAngle.value = 0.10;
-  ui.lWristX.value = -0.30; ui.lWristY.value = 0.00;
-  ui.rShoulderAngle.value = 0.00; ui.rElbowAngle.value = 0.10;
-  ui.rWristX.value = 0.30; ui.rWristY.value = 0.00;
+/* ============================================================
+   КНОПКИ
+   ============================================================ */
+function addButtons() {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex; gap:10px; margin-top:10px;';
 
-  draw();
-});
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'sec';
+  resetBtn.style.flex = '1';
+  resetBtn.textContent = 'Сбросить';
+  resetBtn.addEventListener('click', () => {
+    for (const key in SCHEMA) {
+      const cfg = SCHEMA[key];
+      const el = ui[key];
+      if (cfg.type === 'checkbox') el.checked = !!cfg.def;
+      else el.value = cfg.def;
+    }
+    draw();
+  });
 
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = `body_${canvasW}x${canvasH}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-});
+  const dlBtn = document.createElement('button');
+  dlBtn.style.flex = '1';
+  dlBtn.textContent = 'Скачать PNG';
+  dlBtn.addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = `body_${canvasWidth}x${canvasHeight}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
 
-canvas.width = canvasW;
-canvas.height = canvasH;
+  wrap.appendChild(resetBtn);
+  wrap.appendChild(dlBtn);
+  panel.appendChild(wrap);
+}
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+buildPanel();
+addButtons();
 draw();
 </script>
 </body>
