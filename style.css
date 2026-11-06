@@ -11,27 +11,30 @@ html, body {
   background: #1e1e24;
   color: #eee;
   overflow-x: hidden;
-  /* Запрет скролла при рисовании на тач-устройствах */
+  /* Запрет скролла/оттягивания при рисовании на тач-устройствах */
   overscroll-behavior: none;
+  touch-action: manipulation;
 }
 
 /* ============================ ПАНЕЛИ ============================ */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
-  padding: 8px 12px;
+  gap: 10px;
+  padding: 10px;
   background: #2a2a33;
   border-bottom: 1px solid #3a3a45;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .toolbar .group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 13px;
   color: #bbb;
+  /* Чтобы элементы не сжимались слишком сильно */
+  flex: 1 1 auto; 
 }
 
 .toolbar .group label {
@@ -42,8 +45,9 @@ html, body {
 }
 
 .toolbar input[type="color"] {
-  width: 42px;
-  height: 28px;
+  width: 100%;
+  max-width: 50px;
+  height: 32px;
   border: none;
   border-radius: 4px;
   background: none;
@@ -52,41 +56,38 @@ html, body {
 }
 
 .toolbar input[type="range"] {
-  width: 130px;
+  width: 100%;
+  min-width: 100px;
   accent-color: #e63946;
 }
 
 .toolbar input[type="file"] {
   font-size: 11px;
   color: #ccc;
-  max-width: 160px;
+  max-width: 100%;
 }
 
 .toolbar button {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: 5px;
   background: #3d3d4a;
   color: #eee;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   transition: background .15s;
+  width: 100%;
 }
 
-.toolbar button:hover {
-  background: #50505e;
-}
-
-.toolbar button:active {
-  background: #e63946;
-}
+.toolbar button:hover { background: #50505e; }
+.toolbar button:active { background: #e63946; }
 
 /* ============================ ХОЛСТ ============================ */
 .canvas-wrapper {
   display: flex;
   justify-content: center;
   padding: 10px;
-  /* Отключаем выделение текста при перетаскивании */
+  width: 100%;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -97,11 +98,11 @@ html, body {
   width: 100%;
   max-width: 800px;
   aspect-ratio: 1 / 1;
-  overflow: hidden;         /* жёсткий клэмп — ничего не выходит за края */
+  overflow: hidden;
   background: #000;
   border-radius: 6px;
   box-shadow: 0 4px 24px rgba(0,0,0,.5);
-  touch-action: none;       /* отключаем браузерные жесты */
+  touch-action: none; /* отключаем браузерные жесты внутри холста */
 }
 
 /* Слой зума/панорамирования */
@@ -131,7 +132,7 @@ html, body {
 
 .layer-image {
   z-index: 2;
-  pointer-events: none;    /* подложка не ловит события */
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,7 +156,43 @@ html, body {
   touch-action: none;
 }
 
-/* Красная рамка и пунктирные линии — не перехватывают события */
 #guidesGroup {
   pointer-events: none;
+}
+
+/* ============================ МОБИЛЬНАЯ АДАПТАЦИЯ ============================ */
+@media (max-width: 768px) {
+  .toolbar {
+    /* На мобильных делаем элементы шире, чтобы по 2-3 в ряд */
+    justify-content: space-between;
+    padding: 8px;
+  }
+  
+  .toolbar .group {
+    /* Каждый блок занимает примерно половину ширины */
+    flex: 1 1 45%;
+    min-width: 140px;
+  }
+
+  /* Кнопки экспорта делаем на всю ширину в один ряд */
+  .toolbar .group:has(button) {
+    flex: 1 1 100%;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .toolbar button {
+    width: auto; /* Возвращаем авто-ширину для кнопок */
+    flex: 1;
+  }
+
+  .canvas-wrapper {
+    padding: 5px;
+  }
+}
+
+@media (max-width: 400px) {
+  .toolbar .group {
+    flex: 1 1 100%; /* На очень узких экранах — по одному элементу в ряд */
+  }
 }
