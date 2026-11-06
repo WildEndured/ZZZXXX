@@ -45,7 +45,7 @@
     const chinYInput = document.getElementById('chinY');
     const chinYValue = document.getElementById('chinYValue');
     
-    // Новые ползунки челюсти
+    // Ползунки челюсти
     const jawAttachYInput = document.getElementById('jawAttachY');
     const jawAttachYValue = document.getElementById('jawAttachYValue');
     const jawWidthInput = document.getElementById('jawWidth');
@@ -161,7 +161,7 @@
         const yCircleBottom = startY + unit * 3; // 3/5
         const yChinBase = startY + unit * 4;     // 4/5
         
-        // Центр круга
+        // Центр круга и радиус
         const circleCenterY = (yTop + yCircleBottom) / 2;
         const baseRadiusY = (yCircleBottom - yTop) / 2; 
         
@@ -173,7 +173,7 @@
         const attachYPercent = Number(jawAttachYInput.value) / 100;
         const jawWidthPercent = Number(jawWidthInput.value) / 100;
         const jawAngleDeg = Number(jawAngleInput.value);
-        const jawRound = Number(jawRoundInput.value) / 100; // Для скругления
+        const jawRound = Number(jawRoundInput.value) / 20; // Для плавности (от 0 до 1)
 
         // Радиусы
         const rx = baseRadiusY * headW;
@@ -208,37 +208,33 @@
         headLayer.appendChild(chinLine);
 
         // 3. ЧЕЛЮСТЬ
-        // Вычисляем высоту, на которой крепится челюсть (от 0% до 100% между центром круга и низом)
-        const jawAttachY = circleCenterY + (ry * 2) * attachYPercent; // ry*2 — это полная высота круга
+        // Вычисляем Y крепления: 0% = центр круга, 100% = низ круга (yCircleBottom)
+        const jawAttachY = circleCenterY + (yCircleBottom - circleCenterY) * attachYPercent;
         
-        // Ширина крепления (насколько далеко от центра по X)
-        // Если jawWidth = 100, крепим к самому краю круга. Если 0 - к центру.
+        // Вычисляем X крепления: 0% = центр, 100% = край круга (cx +/- rx)
         const actualJawWidthX = rx * jawWidthPercent;
-
         const jawStartLeftX = cx - actualJawWidthX;
         const jawStartRightX = cx + actualJawWidthX;
 
         // Точка излома
         const angleRad = (jawAngleDeg * Math.PI) / 180;
-        
-        // Длина первой линии (до излома)
+        // Длина первой линии до излома (берем 60% пути до подбородка)
         const line1Length = (actualChinY - jawAttachY) * 0.6;
 
-        // Левая челюсть
-        // Первая линия идет вниз и немного вправо (угол)
+        // --- ЛЕВАЯ ЧЕЛЮСТЬ ---
+        // Идем вниз и под углом внутрь
         const jawMidLeftX = jawStartLeftX + Math.sin(angleRad) * line1Length;
         const jawMidLeftY = jawAttachY + Math.cos(angleRad) * line1Length;
 
-        // Проверяем скругление
         let leftJawPathStr = `M ${jawStartLeftX} ${jawAttachY} L ${jawMidLeftX} ${jawMidLeftY} `;
         
         if (jawRound > 0) {
-            // Квадратичная кривая (Q) для скругления перехода к подбородку
-            const cpX = jawMidLeftX + (chinLeftX - jawMidLeftX) * jawRound;
-            const cpY = actualChinY - (actualChinY - jawMidLeftY) * jawRound;
+            // Контрольная точка для квадратичной кривой (Q)
+            // Смещаем её к центру подбородка
+            const cpX = jawMidLeftX + (chinLeftX - jawMidLeftX) * 0.5;
+            const cpY = jawMidLeftY + (actualChinY - jawMidLeftY) * 0.5;
             leftJawPathStr += `Q ${cpX} ${cpY} ${chinLeftX} ${actualChinY}`;
         } else {
-            // Жесткий угол
             leftJawPathStr += `L ${chinLeftX} ${actualChinY}`;
         }
 
@@ -249,15 +245,15 @@
         leftJawPath.setAttribute('stroke-width', strokeWidth);
         headLayer.appendChild(leftJawPath);
 
-        // Правая челюсть (зеркально)
+        // --- ПРАВАЯ ЧЕЛЮСТЬ ---
         const jawMidRightX = jawStartRightX - Math.sin(angleRad) * line1Length;
         const jawMidRightY = jawAttachY + Math.cos(angleRad) * line1Length;
 
         let rightJawPathStr = `M ${jawStartRightX} ${jawAttachY} L ${jawMidRightX} ${jawMidRightY} `;
         
         if (jawRound > 0) {
-            const cpX = jawMidRightX + (chinRightX - jawMidRightX) * jawRound;
-            const cpY = actualChinY - (actualChinY - jawMidRightY) * jawRound;
+            const cpX = jawMidRightX + (chinRightX - jawMidRightX) * 0.5;
+            const cpY = jawMidRightY + (actualChinY - jawMidRightY) * 0.5;
             rightJawPathStr += `Q ${cpX} ${cpY} ${chinRightX} ${actualChinY}`;
         } else {
             rightJawPathStr += `L ${chinRightX} ${actualChinY}`;
