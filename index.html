@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVG Холст 1:1</title>
+    <title>SVG Холст с разметкой</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,17 +12,23 @@
         
         <!-- Контейнер принудительно квадратный -->
         <div class="canvas-wrapper" id="canvasWrapper">
-            <!-- Убрали жесткие width/height, чтобы SVG подстраивался под контейнер -->
             <svg id="mainSvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+                <!-- Фон -->
                 <rect id="bgRect" x="0" y="0" width="1" height="1" fill="#ffffff"/>
+                
+                <!-- Слой разметки (поля и головы) -->
+                <g id="measureLayer"></g>
+                
+                <!-- Слой рисования -->
                 <g id="drawLayer" fill="none" stroke-linecap="round" stroke-linejoin="round"></g>
             </svg>
         </div>
 
         <div class="controls">
-            <button id="clearBtn">Очистить</button>
+            <button id="clearBtn">Очистить рисунок</button>
             <button id="downloadSvgBtn">Скачать SVG</button>
             <button id="downloadPngBtn">Скачать PNG (4096×4096)</button>
+            
             <label>
                 Фон:
                 <input type="color" id="bgColor" value="#ffffff">
@@ -38,6 +44,22 @@
             </label>
             <label>
                 <input type="checkbox" id="eraserMode"> Ластик
+            </label>
+            
+            <hr style="width: 100%; border-color: #444; margin: 5px 0;">
+
+            <label>
+                Отступ (0-10%):
+                <input type="range" id="paddingSize" min="0" max="10" value="0">
+                <span id="paddingSizeValue">0%</span>
+            </label>
+            <label>
+                Рост (головы):
+                <input type="range" id="headCount" min="2" max="8" value="4">
+                <span id="headCountValue">4</span>
+            </label>
+            <label>
+                <input type="checkbox" id="showGrid" checked> Показывать разметку
             </label>
         </div>
     </div>
