@@ -87,10 +87,10 @@
       round: 0.00
     },
     chest: {
-      height: 1.00,
-      width: 0.90,
+      height: 0.85,
+      width: 1.00,
       offset: 0.00,
-      topNarrow: 0.50,
+      topNarrow: 0.70,
       bottomWide: 1.00
     },
     brush: { color: '#000000', width: 3 },
