@@ -1,496 +1,508 @@
-(function() {
-    'use strict';
-
-    // ============================================================
-    // 1. ИНИЦИАЛИЗАЦИЯ И DOM
-    // ============================================================
-    const zoomContainer = document.getElementById('zoomContainer');
-    const bgLayer = document.getElementById('bgLayer');
-    const bgImage = document.getElementById('bgImage');
-    const drawSvg = document.getElementById('drawSvg');
-    const drawGroup = document.getElementById('drawGroup');
-    const gridGroup = document.getElementById('gridGroup');
-
-    const brushSizeInput = document.getElementById('brushSize');
-    const undoBtn = document.getElementById('undoBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const loadImgBtn = document.getElementById('loadImgBtn');
-    const fileInput = document.getElementById('fileInput');
-    const bgScaleInput = document.getElementById('bgScale');
-    const bgOpacityInput = document.getElementById('bgOpacity');
-    const bgColorInput = document.getElementById('bgColor');
-    const marginTopInput = document.getElementById('marginTop');
-    const headsCountInput = document.getElementById('headsCount');
-    const downloadSvgBtn = document.getElementById('downloadSvgBtn');
-    const downloadPngBtn = document.getElementById('downloadPngBtn');
-
-    // ============================================================
-    // 2. СОСТОЯНИЕ
-    // ============================================================
-    const state = {
-        scale: 1,
-        translateX: 0,
-        translateY: 0,
-        minScale: 1,
-        maxScale: 20,
-
-        isDrawing: false,
-        currentPath: null,
-        currentPoints: [],
-        brushSize: 0.005,
-        isEraser: false,
-
-        bgImageData: null,
-        bgScale: 1, // 1 = 100%
-        bgOpacity: 1,
-        bgColor: '#ffffff',
-
-        marginTop: 5,
-        headsCount: 4,
-
-        pointers: new Map(),
-        isPinching: false,
-        pinchStartDist: 0,
-        pinchStartScale: 1,
-        pinchStartCenter: { x: 0, y: 0 },
-        pinchStartTranslate: { x: 0, y: 0 },
-
-        isPanning: false,
-        panStart: { x: 0, y: 0 },
-        panStartTranslate: { x: 0, y: 0 },
-
-        drawPointerId: null
-    };
-
-    // ============================================================
-    // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-    // ============================================================
-
-    function getSvgCoords(clientX, clientY) {
-        const rect = drawSvg.getBoundingClientRect();
-        return {
-            x: (clientX - rect.left) / rect.width,
-            y: (clientY - rect.top) / rect.height
-        };
-    }
-
-    function applyTransform() {
-        zoomContainer.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`;
-    }
-
-    function clampPan() {
-        const wrapper = zoomContainer.parentElement;
-        const parentRect = wrapper.getBoundingClientRect();
-        
-        // Базовый размер контейнера (до масштабирования)
-        const baseW = zoomContainer.offsetWidth;
-        const baseH = zoomContainer.offsetHeight;
-        if (!baseW || !baseH) return;
-
-        const scaledW = baseW * state.scale;
-        const scaledH = baseH * state.scale;
-
-        let minX, maxX, minY, maxY;
-
-        // Если холст меньше обертки — центрируем
-        if (scaledW <= parentRect.width) {
-            minX = maxX = (parentRect.width - scaledW) / 2;
-        } else {
-            minX = parentRect.width - scaledW;
-            maxX = 0;
-        }
-
-        if (scaledH <= parentRect.height) {
-            minY = maxY = (parentRect.height - scaledH) / 2;
-        } else {
-            minY = parentRect.height - scaledH;
-            maxY = 0;
-        }
-
-        state.translateX = Math.max(minX, Math.min(maxX, state.translateX));
-        state.translateY = Math.max(minY, Math.min(maxY, state.translateY));
-    }
-
-    function updateTransform() {
-        clampPan();
-        applyTransform();
-    }
-
-    // ============================================================
-    // 4. ЗУМ И ПАНОРАМИРОВАНИЕ
-    // ============================================================
-
-    zoomContainer.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = -e.deltaY;
-        const zoomFactor = 1.1;
-        let newScale = state.scale * (delta > 0 ? zoomFactor : 1 / zoomFactor);
-        newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
-
-        const rect = zoomContainer.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        const containerX = (mouseX - state.translateX) / state.scale;
-        const containerY = (mouseY - state.translateY) / state.scale;
-
-        state.translateX = mouseX - containerX * newScale;
-        state.translateY = mouseY - containerY * newScale;
-        state.scale = newScale;
-
-        updateTransform();
-    }, { passive: false });
-
-    zoomContainer.addEventListener('pointerdown', (e) => {
-        state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-        if (state.pointers.size === 2 && state.isDrawing) {
-            cancelDrawing();
-        }
-
-        if (state.pointers.size === 2) {
-            e.preventDefault();
-            state.isPinching = true;
-            state.isDrawing = false;
-            const pts = Array.from(state.pointers.values());
-            state.pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-            state.pinchStartScale = state.scale;
-            state.pinchStartCenter = {
-                x: (pts[0].x + pts[1].x) / 2,
-                y: (pts[0].y + pts[1].y) / 2
-            };
-            state.pinchStartTranslate = { x: state.translateX, y: state.translateY };
-            return;
-        }
-
-        if (state.pointers.size === 1) {
-            // Панорамирование: средняя кнопка или Shift+ЛКМ
-            if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
-                e.preventDefault();
-                state.isPanning = true;
-                state.panStart = { x: e.clientX, y: e.clientY };
-                state.panStartTranslate = { x: state.translateX, y: state.translateY };
-                return;
-            }
-            // Рисование
-            if (e.button === 0 || e.pointerType === 'touch') {
-                e.preventDefault();
-                startDrawing(e);
-            }
-        }
-    });
-
-    zoomContainer.addEventListener('pointermove', (e) => {
-        if (!state.pointers.has(e.pointerId)) return;
-        state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-        if (state.isPinching && state.pointers.size === 2) {
-            e.preventDefault();
-            const pts = Array.from(state.pointers.values());
-            const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-            const center = {
-                x: (pts[0].x + pts[1].x) / 2,
-                y: (pts[0].y + pts[1].y) / 2
-            };
-
-            let newScale = state.pinchStartScale * (dist / state.pinchStartDist);
-            newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
-
-            const rect = zoomContainer.getBoundingClientRect();
-            const centerX = center.x - rect.left;
-            const centerY = center.y - rect.top;
-            const startCenterX = state.pinchStartCenter.x - rect.left;
-            const startCenterY = state.pinchStartCenter.y - rect.top;
-
-            const containerX = (startCenterX - state.pinchStartTranslate.x) / state.pinchStartScale;
-            const containerY = (startCenterY - state.pinchStartTranslate.y) / state.pinchStartScale;
-
-            state.translateX = centerX - containerX * newScale;
-            state.translateY = centerY - containerY * newScale;
-            state.scale = newScale;
-
-            updateTransform();
-            return;
-        }
-
-        if (state.isPanning) {
-            e.preventDefault();
-            const dx = e.clientX - state.panStart.x;
-            const dy = e.clientY - state.panStart.y;
-            state.translateX = state.panStartTranslate.x + dx;
-            state.translateY = state.panStartTranslate.y + dy;
-            updateTransform();
-            return;
-        }
-
-        if (state.isDrawing && e.pointerId === state.drawPointerId) {
-            e.preventDefault();
-            continueDrawing(e);
-        }
-    });
-
-    const onPointerEnd = (e) => {
-        state.pointers.delete(e.pointerId);
-        if (state.isPinching && state.pointers.size < 2) state.isPinching = false;
-        if (state.isPanning) state.isPanning = false;
-        if (state.isDrawing && e.pointerId === state.drawPointerId) endDrawing();
-        if (state.pointers.size === 0) {
-            state.isPinching = false;
-            state.isPanning = false;
-        }
-    };
-
-    zoomContainer.addEventListener('pointerup', onPointerEnd);
-    zoomContainer.addEventListener('pointercancel', (e) => {
-        if (state.isDrawing && e.pointerId === state.drawPointerId) cancelDrawing();
-        onPointerEnd(e);
-    });
-
-    // ============================================================
-    // 5. РИСОВАНИЕ
-    // ============================================================
-
-    function startDrawing(e) {
-        if (state.isDrawing) return;
-        state.isDrawing = true;
-        state.drawPointerId = e.pointerId;
-        state.currentPoints = [];
-
-        const coords = getSvgCoords(e.clientX, e.clientY);
-        state.currentPoints.push(coords);
-
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('stroke', state.isEraser ? state.bgColor : '#000000');
-        path.setAttribute('stroke-width', state.brushSize);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('stroke-linejoin', 'round');
-        drawGroup.appendChild(path);
-        state.currentPath = path;
-        updatePath();
-    }
-
-    function continueDrawing(e) {
-        if (!state.isDrawing || !state.currentPath) return;
-        state.currentPoints.push(getSvgCoords(e.clientX, e.clientY));
-        updatePath();
-    }
-
-    function updatePath() {
-        if (!state.currentPath || state.currentPoints.length < 2) return;
-        const pts = state.currentPoints;
-        let d = `M ${pts[0].x} ${pts[0].y}`;
-        for (let i = 1; i < pts.length; i++) {
-            const xc = (pts[i - 1].x + pts[i].x) / 2;
-            const yc = (pts[i - 1].y + pts[i].y) / 2;
-            d += ` Q ${pts[i - 1].x} ${pts[i - 1].y} ${xc} ${yc}`;
-        }
-        if (pts.length > 1) d += ` L ${pts[pts.length - 1].x} ${pts[pts.length - 1].y}`;
-        state.currentPath.setAttribute('d', d);
-    }
-
-    function endDrawing() {
-        state.isDrawing = false;
-        state.drawPointerId = null;
-        state.currentPath = null;
-        state.currentPoints = [];
-    }
-
-    function cancelDrawing() {
-        if (state.currentPath) state.currentPath.remove();
-        state.isDrawing = false;
-        state.drawPointerId = null;
-        state.currentPath = null;
-        state.currentPoints = [];
-    }
-
-    // ============================================================
-    // 6. ИНТЕРФЕЙС
-    // ============================================================
-
-    undoBtn.addEventListener('click', () => {
-        const paths = drawGroup.querySelectorAll('path');
-        if (paths.length > 0) paths[paths.length - 1].remove();
-    });
-
-    clearBtn.addEventListener('click', () => drawGroup.innerHTML = '');
-
-    brushSizeInput.addEventListener('input', (e) => {
-        state.brushSize = parseFloat(e.target.value);
-    });
-
-    // ============================================================
-    // 7. ПОДЛОЖКА И ФОН
-    // ============================================================
-
-    loadImgBtn.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            state.bgImageData = ev.target.result;
-            bgImage.src = state.bgImageData;
-            bgImage.style.display = 'block';
-            updateBgImage();
-        };
-        reader.readAsDataURL(file);
-        fileInput.value = '';
-    });
-
-    function updateBgImage() {
-        if (!state.bgImageData) return;
-        // 100% = высота картинки равна высоте холста
-        bgImage.style.height = `${state.bgScale * 100}%`;
-        bgImage.style.opacity = state.bgOpacity;
-    }
-
-    bgScaleInput.addEventListener('input', (e) => {
-        state.bgScale = parseFloat(e.target.value) / 100;
-        updateBgImage();
-    });
-
-    bgOpacityInput.addEventListener('input', (e) => {
-        state.bgOpacity = parseFloat(e.target.value) / 100;
-        updateBgImage();
-    });
-
-    bgColorInput.addEventListener('input', (e) => {
-        state.bgColor = e.target.value;
-        bgLayer.style.backgroundColor = state.bgColor;
-    });
-
-    // ============================================================
-    // 8. СЕТКА
-    // ============================================================
-
-    function updateGrid() {
-        gridGroup.innerHTML = '';
-        const margin = state.marginTop / 100;
-        const heads = state.headsCount;
-        const zoneTop = margin;
-        const zoneHeight = 1 - margin * 2;
-
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', '0');
-        rect.setAttribute('y', zoneTop);
-        rect.setAttribute('width', '1');
-        rect.setAttribute('height', zoneHeight);
-        rect.classList.add('grid-border');
-        gridGroup.appendChild(rect);
-
-        for (let i = 1; i < heads; i++) {
-            const y = zoneTop + (zoneHeight * i) / heads;
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', '0');
-            line.setAttribute('y1', y);
-            line.setAttribute('x2', '1');
-            line.setAttribute('y2', y);
-            line.classList.add('grid-line');
-            gridGroup.appendChild(line);
-        }
-    }
-
-    marginTopInput.addEventListener('input', (e) => {
-        state.marginTop = parseFloat(e.target.value);
-        updateGrid();
-    });
-
-    headsCountInput.addEventListener('input', (e) => {
-        state.headsCount = parseInt(e.target.value);
-        updateGrid();
-    });
-
-    // ============================================================
-    // 9. ЭКСПОРТ
-    // ============================================================
-
-    function buildExportSVG() {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-        svg.setAttribute('viewBox', '0 0 1 1');
-        svg.setAttribute('width', '4096');
-        svg.setAttribute('height', '4096');
-
-        // Фон
-        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        bgRect.setAttribute('width', '1');
-        bgRect.setAttribute('height', '1');
-        bgRect.setAttribute('fill', state.bgColor);
-        svg.appendChild(bgRect);
-
-        // Подложка
-        if (state.bgImageData && bgImage.naturalWidth) {
-            const aspect = bgImage.naturalWidth / bgImage.naturalHeight;
-            const imgHeight = state.bgScale;
-            const imgWidth = imgHeight * aspect;
-            const x = (1 - imgWidth) / 2;
-            
-            const imageEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-            imageEl.setAttribute('x', x);
-            imageEl.setAttribute('y', '0');
-            imageEl.setAttribute('width', imgWidth);
-            imageEl.setAttribute('height', imgHeight);
-            imageEl.setAttribute('opacity', state.bgOpacity);
-            imageEl.setAttribute('preserveAspectRatio', 'none');
-            imageEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', state.bgImageData);
-            svg.appendChild(imageEl);
-        }
-
-        // Пути
-        drawGroup.querySelectorAll('path').forEach(p => {
-            svg.appendChild(p.cloneNode(true));
-        });
-
-        return svg;
-    }
-
-    downloadSvgBtn.addEventListener('click', () => {
-        const svgString = new XMLSerializer().serializeToString(buildExportSVG());
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'drawing.svg';
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-
-    downloadPngBtn.addEventListener('click', () => {
-        const svgString = new XMLSerializer().serializeToString(buildExportSVG());
-        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-
-        const img = new Image();
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 4096;
-            canvas.height = 4096;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, 4096, 4096);
-
-            canvas.toBlob((pngBlob) => {
-                const pngUrl = URL.createObjectURL(pngBlob);
-                const a = document.createElement('a');
-                a.href = pngUrl;
-                a.download = 'drawing.png';
-                a.click();
-                URL.revokeObjectURL(pngUrl);
-                URL.revokeObjectURL(url);
-            }, 'image/png');
-        };
-        img.src = url;
-    });
-
-    // ============================================================
-    // 10. СТАРТ
-    // ============================================================
-    bgLayer.style.backgroundColor = state.bgColor;
-    updateGrid();
+(() => {
+  'use strict';
+  
+  const viewportWrapper = document.getElementById('viewportWrapper');
+  const viewport = document.getElementById('viewport');
+  const stage = document.getElementById('stage');
+  const layerBg = document.getElementById('layerBg');
+  const underlayImg = document.getElementById('underlayImg');
+  const drawSvg = document.getElementById('drawSvg');
+  const drawGroup = document.getElementById('drawGroup');
+  const guideGroup = document.getElementById('guideGroup');
+  const zoomInfo = document.getElementById('zoomInfo');
+  
+  const fileInput = document.getElementById('fileInput');
+  const btnLoadImage = document.getElementById('btnLoadImage');
+  const underlayScale = document.getElementById('underlayScale');
+  const underlayScaleVal = document.getElementById('underlayScaleVal');
+  const underlayOpacity = document.getElementById('underlayOpacity');
+  const underlayOpacityVal = document.getElementById('underlayOpacityVal');
+  const bgColor = document.getElementById('bgColor');
+  const padding = document.getElementById('padding');
+  const paddingVal = document.getElementById('paddingVal');
+  const heads = document.getElementById('heads');
+  const headsVal = document.getElementById('headsVal');
+  const brushSize = document.getElementById('brushSize');
+  const brushSizeVal = document.getElementById('brushSizeVal');
+  const brushColor = document.getElementById('brushColor');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnClear = document.getElementById('btnClear');
+  const btnExportSVG = document.getElementById('btnExportSVG');
+  const btnExportPNG = document.getElementById('btnExportPNG');
+  
+  // ==== Состояние ====
+  const state = {
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    minScale: 1,
+    maxScale: 20,
+    underlayBase64: null,
+    underlayNaturalW: 0,
+    underlayNaturalH: 0,
+    drawPaths: []
+  };
+
+  // ==== Подгонка квадратного холста ====
+  function resizeCanvas() {
+    const rect = viewportWrapper.getBoundingClientRect();
+    // Находим минимальную сторону, чтобы вписать квадрат
+    const size = Math.min(rect.width, rect.height) - (window.innerWidth <= 768 ? 10 : 20);
+    viewport.style.width = size + 'px';
+    viewport.style.height = size + 'px';
     
-    // Первичный расчет трансформации после полной загрузки DOM
-    setTimeout(updateTransform, 50);
-    window.addEventListener('resize', updateTransform);
-
+    applyTransform();
+    updateUnderlay();
+    renderGuides();
+  }
+  
+  // ==== Клампинг зума/панорамирования ====
+  function clamp() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const sw = vw * state.scale;
+    const sh = vh * state.scale;
+    
+    if (sw <= vw) {
+      state.tx = (vw - sw) / 2;
+    } else {
+      state.tx = Math.min(0, Math.max(vw - sw, state.tx));
+    }
+    if (sh <= vh) {
+      state.ty = (vh - sh) / 2;
+    } else {
+      state.ty = Math.min(0, Math.max(vh - sh, state.ty));
+    }
+  }
+  
+  function applyTransform() {
+    clamp();
+    stage.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    zoomInfo.textContent = Math.round(state.scale * 100) + '%';
+  }
+  
+  function zoomAt(clientX, clientY, newScale) {
+    newScale = Math.min(state.maxScale, Math.max(state.minScale, newScale));
+    const rect = viewport.getBoundingClientRect();
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    const sx = (px - state.tx) / state.scale;
+    const sy = (py - state.ty) / state.scale;
+    state.scale = newScale;
+    state.tx = px - sx * state.scale;
+    state.ty = py - sy * state.scale;
+    applyTransform();
+  }
+  
+  // ==== Руководство ====
+  function renderGuides() {
+    guideGroup.innerHTML = '';
+    const pad = parseFloat(padding.value) / 100;
+    const n = parseInt(heads.value, 10);
+    const topY = pad;
+    const botY = 1 - pad;
+    
+    if (pad > 0) {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', '0');
+      rect.setAttribute('y', topY);
+      rect.setAttribute('width', '1');
+      rect.setAttribute('height', botY - topY);
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute('stroke', 'red');
+      rect.setAttribute('stroke-width', '1');
+      rect.setAttribute('vector-effect', 'non-scaling-stroke');
+      guideGroup.appendChild(rect);
+    }
+    
+    const zoneH = botY - topY;
+    for (let i = 1; i < n; i++) {
+      const y = topY + zoneH * (i / n);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '0');
+      line.setAttribute('y1', y);
+      line.setAttribute('x2', '1');
+      line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'red');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '6 4');
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      guideGroup.appendChild(line);
+    }
+  }
+  
+  // ==== Подложка ====
+  function updateUnderlay() {
+    if (!state.underlayBase64) return;
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const scalePct = parseFloat(underlayScale.value) / 100;
+    const baseH = vh;
+    const baseW = baseH * (state.underlayNaturalW / state.underlayNaturalH);
+    const w = baseW * scalePct;
+    const h = baseH * scalePct;
+    underlayImg.style.width = w + 'px';
+    underlayImg.style.height = h + 'px';
+    underlayImg.style.opacity = parseFloat(underlayOpacity.value) / 100;
+  }
+  
+  btnLoadImage.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        state.underlayBase64 = ev.target.result;
+        state.underlayNaturalW = img.naturalWidth;
+        state.underlayNaturalH = img.naturalHeight;
+        underlayImg.src = ev.target.result;
+        underlayImg.style.display = 'block';
+        updateUnderlay();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  underlayScale.addEventListener('input', () => {
+    underlayScaleVal.textContent = underlayScale.value;
+    updateUnderlay();
+  });
+  underlayOpacity.addEventListener('input', () => {
+    underlayOpacityVal.textContent = underlayOpacity.value;
+    updateUnderlay();
+  });
+  
+  bgColor.addEventListener('input', () => {
+    layerBg.style.background = bgColor.value;
+  });
+  
+  padding.addEventListener('input', () => {
+    paddingVal.textContent = padding.value;
+    renderGuides();
+  });
+  heads.addEventListener('input', () => {
+    headsVal.textContent = heads.value;
+    renderGuides();
+  });
+  
+  brushSize.addEventListener('input', () => {
+    brushSizeVal.textContent = brushSize.value;
+  });
+  
+  // ==== Рисование ====
+  let isDrawing = false;
+  let currentPath = null;
+  let currentPoints = [];
+  let activePointerId = null;
+  
+  const pointers = new Map();
+  let gestureMode = null;
+  let gestureStart = null;
+  
+  function screenToSvg(clientX, clientY) {
+    const rect = drawSvg.getBoundingClientRect();
+    const x = (clientX - rect.left) / rect.width;
+    const y = (clientY - rect.top) / rect.height;
+    return { x, y };
+  }
+  
+  function startPath(clientX, clientY) {
+    const { x, y } = screenToSvg(clientX, clientY);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', brushColor.value);
+    path.setAttribute('stroke-width', brushSize.value);
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    path.setAttribute('d', `M ${x} ${y}`);
+    drawGroup.appendChild(path);
+    currentPath = path;
+    currentPoints = [{ x, y }];
+  }
+  
+  function extendPath(clientX, clientY) {
+    if (!currentPath) return;
+    const { x, y } = screenToSvg(clientX, clientY);
+    currentPoints.push({ x, y });
+    let d = `M ${currentPoints[0].x} ${currentPoints[0].y}`;
+    for (let i = 1; i < currentPoints.length; i++) {
+      d += ` L ${currentPoints[i].x} ${currentPoints[i].y}`;
+    }
+    currentPath.setAttribute('d', d);
+  }
+  
+  function finishPath() {
+    if (currentPath) {
+      state.drawPaths.push({
+        d: currentPath.getAttribute('d'),
+        color: currentPath.getAttribute('stroke'),
+        width: currentPath.getAttribute('stroke-width'),
+        vectorEffect: 'non-scaling-stroke'
+      });
+    }
+    currentPath = null;
+    currentPoints = [];
+  }
+  
+  function cancelPath() {
+    if (currentPath && currentPath.parentNode) {
+      currentPath.parentNode.removeChild(currentPath);
+    }
+    currentPath = null;
+    currentPoints = [];
+  }
+  
+  function getPinchInfo() {
+    const pts = Array.from(pointers.values());
+    if (pts.length < 2) return null;
+    const [a, b] = pts;
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    return {
+      dist: Math.hypot(dx, dy),
+      midX: (a.x + b.x) / 2,
+      midY: (a.y + b.y) / 2
+    };
+  }
+  
+  drawSvg.addEventListener('pointerdown', (e) => {
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    
+    if (pointers.size === 1) {
+      if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
+      if (e.pointerType === 'mouse' && (e.button === 1 || (e.button === 0 && e.shiftKey))) {
+        gestureMode = 'pan';
+        gestureStart = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startTx: state.tx, startTy: state.ty };
+        drawSvg.setPointerCapture(e.pointerId);
+        e.preventDefault();
+        return;
+      }
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      isDrawing = true;
+      activePointerId = e.pointerId;
+      drawSvg.setPointerCapture(e.pointerId);
+      startPath(e.clientX, e.clientY);
+      e.preventDefault();
+    } else if (pointers.size === 2) {
+      if (isDrawing) {
+        cancelPath();
+        isDrawing = false;
+        activePointerId = null;
+      }
+      gestureMode = 'pinch';
+      const info = getPinchInfo();
+      gestureStart = { dist: info.dist, midX: info.midX, midY: info.midY, startScale: state.scale, startTx: state.tx, startTy: state.ty };
+      e.preventDefault();
+    }
+  });
+  
+  drawSvg.addEventListener('pointermove', (e) => {
+    if (pointers.has(e.pointerId)) {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    
+    if (gestureMode === 'pinch' && pointers.size >= 2) {
+      const info = getPinchInfo();
+      const ratio = info.dist / gestureStart.dist;
+      const newScale = Math.min(state.maxScale, Math.max(state.minScale, gestureStart.startScale * ratio));
+      
+      const rect = viewport.getBoundingClientRect();
+      const px = info.midX - rect.left;
+      const py = info.midY - rect.top;
+      const smx = (gestureStart.midX - rect.left - gestureStart.startTx) / gestureStart.startScale;
+      const smy = (gestureStart.midY - rect.top - gestureStart.startTy) / gestureStart.startScale;
+      
+      state.scale = newScale;
+      state.tx = px - smx * newScale;
+      state.ty = py - smy * newScale;
+      applyTransform();
+      e.preventDefault();
+      return;
+    }
+    
+    if (gestureMode === 'pan' && gestureStart && gestureStart.pointerId === e.pointerId) {
+      state.tx = gestureStart.startTx + (e.clientX - gestureStart.startX);
+      state.ty = gestureStart.startTy + (e.clientY - gestureStart.startY);
+      applyTransform();
+      e.preventDefault();
+      return;
+    }
+    
+    if (isDrawing && e.pointerId === activePointerId) {
+      extendPath(e.clientX, e.clientY);
+      e.preventDefault();
+    }
+  });
+  
+  function handlePointerEnd(e) {
+    pointers.delete(e.pointerId);
+    if (gestureMode === 'pinch' && pointers.size < 2) {
+      gestureMode = null;
+      gestureStart = null;
+    } else if (gestureMode === 'pan') {
+      gestureMode = null;
+      gestureStart = null;
+    }
+    if (isDrawing && e.pointerId === activePointerId) {
+      finishPath();
+      isDrawing = false;
+      activePointerId = null;
+    }
+  }
+  
+  drawSvg.addEventListener('pointerup', handlePointerEnd);
+  drawSvg.addEventListener('pointercancel', (e) => {
+    if (isDrawing && e.pointerId === activePointerId) cancelPath();
+    handlePointerEnd(e);
+  });
+  
+  viewport.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = Math.exp(-e.deltaY * 0.0015);
+    zoomAt(e.clientX, e.clientY, state.scale * factor);
+  }, { passive: false });
+  
+  // ==== Undo / Clear ====
+  btnUndo.addEventListener('click', () => {
+    if (state.drawPaths.length === 0) return;
+    state.drawPaths.pop();
+    redrawPaths();
+  });
+  
+  function redrawPaths() {
+    drawGroup.innerHTML = '';
+    for (const p of state.drawPaths) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', p.d);
+      path.setAttribute('stroke', p.color);
+      path.setAttribute('stroke-width', p.width);
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+      drawGroup.appendChild(path);
+    }
+  }
+  
+  btnClear.addEventListener('click', () => {
+    if (!confirm('Очистить всё?')) return;
+    state.drawPaths = [];
+    drawGroup.innerHTML = '';
+  });
+  
+  // ==== Экспорт ====
+  function buildExportSVG() {
+    const SIZE = 4096;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('xmlns', ns);
+    svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    svg.setAttribute('width', SIZE);
+    svg.setAttribute('height', SIZE);
+    svg.setAttribute('viewBox', '0 0 1 1');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    
+    const bg = document.createElementNS(ns, 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', '0');
+    bg.setAttribute('width', '1');
+    bg.setAttribute('height', '1');
+    bg.setAttribute('fill', bgColor.value);
+    svg.appendChild(bg);
+    
+    if (state.underlayBase64 && state.underlayNaturalW && state.underlayNaturalH) {
+      const scalePct = parseFloat(underlayScale.value) / 100;
+      const h = 1 * scalePct;
+      const w = h * (state.underlayNaturalW / state.underlayNaturalH);
+      const x = (1 - w) / 2;
+      const y = (1 - h) / 2;
+      const img = document.createElementNS(ns, 'image');
+      img.setAttribute('x', x);
+      img.setAttribute('y', y);
+      img.setAttribute('width', w);
+      img.setAttribute('height', h);
+      img.setAttribute('opacity', parseFloat(underlayOpacity.value) / 100);
+      img.setAttribute('preserveAspectRatio', 'none');
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.underlayBase64);
+      img.setAttribute('href', state.underlayBase64);
+      svg.appendChild(img);
+    }
+    
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('fill', 'none');
+    for (const p of state.drawPaths) {
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', p.d);
+      path.setAttribute('stroke', p.color);
+      path.setAttribute('stroke-width', p.width);
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('vector-effect', 'non-scaling-stroke');
+      g.appendChild(path);
+    }
+    svg.appendChild(g);
+    
+    return new XMLSerializer().serializeToString(svg);
+  }
+  
+  function download(filename, content, mime) {
+    const blob = new Blob([content], { type: mime || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  
+  btnExportSVG.addEventListener('click', () => {
+    const svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + buildExportSVG();
+    download('drawing.svg', svgStr, 'image/svg+xml');
+  });
+  
+  btnExportPNG.addEventListener('click', () => {
+    const svgStr = buildExportSVG();
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const SIZE = 4096;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => {
+        if (!blob) { alert('Ошибка экспорта PNG'); return; }
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u;
+        a.download = 'drawing.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(u), 1000);
+      }, 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert('Ошибка рендеринга SVG в PNG'); };
+    img.src = url;
+  });
+  
+  // ==== Инициализация ====
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+  
+  layerBg.style.background = bgColor.value;
+  
+  const ro = new ResizeObserver(resizeCanvas);
+  ro.observe(viewportWrapper);
+  
 })();
