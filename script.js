@@ -443,19 +443,17 @@
 
     // ===== Ноги (Колени и Лодыжки) =====
     
-    // Колени: 1 голова вниз от таза
-    const kneeOffsetY = headH;
-    
-    // Лодыжки: на нижней границе рабочей зоны (y1)
-    const ankleBaseY = y1;
+    // Базовое Y для коленей: низ таза + высота головы
+    const kneeBaseY = pelvisBottomY + headH;
+    // Базовое Y для лодыжек: базовое Y коленей + высота головы
+    const ankleBaseY = kneeBaseY + headH;
 
     // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
-    const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
-    const kneeLeftCx_base = wristLeftCx; // Выравниваем по X запястья
+    const kneeLeftCx_base = wristLeftCx; 
     
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
-    const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
+    const kneeLeftCy = kneeBaseY + (state.kneeLeft.y * sectionH);
 
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     kneeLeft.setAttribute('cx', String(kneeLeftCx));
@@ -468,11 +466,10 @@
     gridGroup.appendChild(kneeLeft);
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
-    const ankleLeftCy_base = ankleBaseY - ankleLeftRadiusPx; // Касается низа
     const ankleLeftCx_base = kneeLeftCx_base;
 
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
-    const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
+    const ankleLeftCy = ankleBaseY + (state.ankleLeft.y * sectionH);
 
     const ankleLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     ankleLeft.setAttribute('cx', String(ankleLeftCx));
@@ -486,11 +483,10 @@
 
     // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
-    const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
 
     const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
-    const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
+    const kneeRightCy = kneeBaseY + (state.kneeRight.y * sectionH);
 
     const kneeRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     kneeRight.setAttribute('cx', String(kneeRightCx));
@@ -503,11 +499,10 @@
     gridGroup.appendChild(kneeRight);
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
-    const ankleRightCy_base = ankleBaseY - ankleRightRadiusPx;
     const ankleRightCx_base = kneeRightCx_base;
 
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
-    const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
+    const ankleRightCy = ankleBaseY + (state.ankleRight.y * sectionH);
 
     const ankleRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     ankleRight.setAttribute('cx', String(ankleRightCx));
