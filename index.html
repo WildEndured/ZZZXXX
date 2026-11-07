@@ -11,29 +11,24 @@
 <body>
     <div class="app">
         <header class="toolbar">
-            <button id="btnClear" class="btn" title="Очистить">🗑</button>
-            <button id="btnSave" class="btn" title="Сохранить">💾</button>
-            <button id="btnEraser" class="btn" title="Ластик">⌫</button>
-            <div class="colors" id="colors">
-                <button class="color active" data-color="#000000" style="background:#000000"></button>
-                <button class="color" data-color="#ff0000" style="background:#ff0000"></button>
-                <button class="color" data-color="#00ff00" style="background:#00ff00"></button>
-                <button class="color" data-color="#0000ff" style="background:#0000ff"></button>
-                <button class="color" data-color="#ffff00" style="background:#ffff00"></button>
-                <button class="color" data-color="#ff00ff" style="background:#ff00ff"></button>
-                <button class="color" data-color="#00ffff" style="background:#00ffff"></button>
-            </div>
-            <input type="range" id="brushSize" min="1" max="100" value="10">
-            <span id="sizeLabel">10</span>
+            <button id="btn-undo" class="tool-btn" title="Отменить">↶</button>
+            <button id="btn-redo" class="tool-btn" title="Повторить">↷</button>
+            <button id="btn-clear" class="tool-btn" title="Очистить">🗑</button>
+            <button id="btn-eraser" class="tool-btn" title="Ластик">◻</button>
+            <input type="color" id="color-picker" value="#000000" class="color-input">
+            <input type="range" id="brush-size" min="1" max="100" value="5" class="size-slider">
+            <span id="size-label">5</span>
+            <button id="btn-download" class="tool-btn" title="Скачать">⬇</button>
         </header>
 
-        <div class="canvas-wrapper" id="canvasWrapper">
-            <canvas id="canvas" width="4096" height="4096"></canvas>
-        </div>
+        <main class="canvas-container" id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </main>
 
-        <footer class="statusbar">
-            <span id="status">4096 × 4096 · 300 DPI · 1:1</span>
-        </footer>
+        <div class="info">
+            <span id="coord-info">0, 0</span>
+            <span id="zoom-info">100%</span>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
