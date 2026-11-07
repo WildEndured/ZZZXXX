@@ -49,75 +49,88 @@
         </label>
       </section>
 
-      <section class="block">
-        <h3>Голова</h3>
-        <label>Ширина: <span id="headWidthVal">65%</span>
-          <input type="range" id="headWidth" min="10" max="100" value="65">
-        </label>
-        <label>Высота: <span id="headHeightVal">65%</span>
-          <input type="range" id="headHeight" min="10" max="100" value="65">
-        </label>
-        <label>Смещение от верха: <span id="headOffsetVal">0%</span>
-          <input type="range" id="headOffset" min="-50" max="100" value="0">
-        </label>
-      </section>
+      <!-- АККОРДЕОН: ГОЛОВА -->
+      <details class="accordion" open>
+        <summary>Голова</summary>
+        <div class="accordion-content">
+          <section class="block border-none">
+            <h4>Основное</h4>
+            <label>Ширина: <span id="headWidthVal">65%</span>
+              <input type="range" id="headWidth" min="10" max="100" value="65">
+            </label>
+            <label>Высота: <span id="headHeightVal">65%</span>
+              <input type="range" id="headHeight" min="10" max="100" value="65">
+            </label>
+            <label>Смещение от верха: <span id="headOffsetVal">0%</span>
+              <input type="range" id="headOffset" min="-50" max="100" value="0">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Подбородок</h4>
+            <label>Подбородок (Y): <span id="chinYVal">85%</span>
+              <input type="range" id="chinY" min="0" max="100" value="85">
+            </label>
+            <label>Ширина подбородка: <span id="chinWidthVal">1%</span>
+              <input type="range" id="chinWidth" min="0" max="10" value="1">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Челюсть</h4>
+            <label>Высота крепления к кругу: <span id="jawAttachYVal">55%</span>
+              <input type="range" id="jawAttachY" min="0" max="100" value="55">
+            </label>
+            <label>Высота челюсти (спуск): <span id="jawHeightVal">80%</span>
+              <input type="range" id="jawHeight" min="0" max="100" value="80">
+            </label>
+            <label>Угол челюсти (скулы): <span id="jawAngleVal">20%</span>
+              <input type="range" id="jawAngle" min="-50" max="50" value="20">
+            </label>
+            <label>Скругление челюсти: <span id="jawRoundVal">0%</span>
+              <input type="range" id="jawRound" min="0" max="100" value="0">
+            </label>
+          </section>
+        </div>
+      </details>
 
-      <section class="block">
-        <h3>Челюсть и подбородок</h3>
-        <label>Подбородок (Y): <span id="chinYVal">85%</span>
-          <input type="range" id="chinY" min="0" max="100" value="85">
-        </label>
-        <label>Ширина подбородка: <span id="chinWidthVal">1%</span>
-          <input type="range" id="chinWidth" min="0" max="10" value="1">
-        </label>
-        <label>Высота крепления к кругу: <span id="jawAttachYVal">55%</span>
-          <input type="range" id="jawAttachY" min="0" max="100" value="55">
-        </label>
-        <label>Высота челюсти (спуск): <span id="jawHeightVal">80%</span>
-          <input type="range" id="jawHeight" min="0" max="100" value="80">
-        </label>
-        <label>Угол челюсти (скулы): <span id="jawAngleVal">20%</span>
-          <input type="range" id="jawAngle" min="-50" max="50" value="20">
-        </label>
-        <label>Скругление челюсти: <span id="jawRoundVal">0%</span>
-          <input type="range" id="jawRound" min="0" max="100" value="0">
-        </label>
-      </section>
-
-      <section class="block">
-        <h3>Грудная клетка</h3>
-        <label>Высота: <span id="chestHeightVal">85%</span>
-          <input type="range" id="chestHeight" min="10" max="150" value="85">
-        </label>
-        <label>Ширина: <span id="chestWidthVal">100%</span>
-          <input type="range" id="chestWidth" min="10" max="100" value="100">
-        </label>
-        <label>Смещение по Y: <span id="chestOffsetVal">0%</span>
-          <input type="range" id="chestOffset" min="-50" max="50" value="0">
-        </label>
-        <label>Сужение сверху: <span id="chestTopNarrowVal">70%</span>
-          <input type="range" id="chestTopNarrow" min="10" max="100" value="70">
-        </label>
-        <label>Расширение снизу: <span id="chestBottomWideVal">100%</span>
-          <input type="range" id="chestBottomWide" min="50" max="150" value="100">
-        </label>
-      </section>
-
-      <section class="block">
-        <h3>Таз</h3>
-        <label>Корректировка ширины: <span id="pelvisWidthModVal">100%</span>
-          <input type="range" id="pelvisWidthMod" min="10" max="150" value="100">
-        </label>
-        <label>Корректировка высоты: <span id="pelvisHeightModVal">100%</span>
-          <input type="range" id="pelvisHeightMod" min="10" max="150" value="100">
-        </label>
-        <label>Смещение по Y: <span id="pelvisOffsetVal">0%</span>
-          <input type="range" id="pelvisOffset" min="-50" max="50" value="0">
-        </label>
-        <label>Скругление углов: <span id="pelvisRoundVal">20%</span>
-          <input type="range" id="pelvisRound" min="0" max="100" value="20">
-        </label>
-      </section>
+      <!-- АККОРДЕОН: ТОРС -->
+      <details class="accordion" open>
+        <summary>Торс</summary>
+        <div class="accordion-content">
+          <section class="block border-none">
+            <h4>Грудная клетка</h4>
+            <label>Высота: <span id="chestHeightVal">85%</span>
+              <input type="range" id="chestHeight" min="10" max="150" value="85">
+            </label>
+            <label>Ширина: <span id="chestWidthVal">100%</span>
+              <input type="range" id="chestWidth" min="10" max="100" value="100">
+            </label>
+            <label>Смещение по Y: <span id="chestOffsetVal">0%</span>
+              <input type="range" id="chestOffset" min="-50" max="50" value="0">
+            </label>
+            <label>Сужение сверху: <span id="chestTopNarrowVal">70%</span>
+              <input type="range" id="chestTopNarrow" min="10" max="100" value="70">
+            </label>
+            <label>Расширение снизу: <span id="chestBottomWideVal">100%</span>
+              <input type="range" id="chestBottomWide" min="50" max="150" value="100">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Таз</h4>
+            <label>Корректировка ширины: <span id="pelvisWidthModVal">100%</span>
+              <input type="range" id="pelvisWidthMod" min="10" max="150" value="100">
+            </label>
+            <label>Корректировка высоты: <span id="pelvisHeightModVal">100%</span>
+              <input type="range" id="pelvisHeightMod" min="10" max="150" value="100">
+            </label>
+            <label>Смещение по Y: <span id="pelvisOffsetVal">0%</span>
+              <input type="range" id="pelvisOffset" min="-50" max="50" value="0">
+            </label>
+            <label>Скругление углов: <span id="pelvisRoundVal">20%</span>
+              <input type="range" id="pelvisRound" min="0" max="100" value="20">
+            </label>
+          </section>
+        </div>
+      </details>
 
       <section class="block">
         <h3>Кисть</h3>
