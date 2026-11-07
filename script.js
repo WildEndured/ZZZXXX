@@ -62,6 +62,20 @@
   const pelvisRound = document.getElementById('pelvisRound');
   const pelvisRoundVal = document.getElementById('pelvisRoundVal');
 
+  const elbowLeftX = document.getElementById('elbowLeftX');
+  const elbowLeftXVal = document.getElementById('elbowLeftXVal');
+  const elbowLeftY = document.getElementById('elbowLeftY');
+  const elbowLeftYVal = document.getElementById('elbowLeftYVal');
+  const elbowLeftR = document.getElementById('elbowLeftR');
+  const elbowLeftRVal = document.getElementById('elbowLeftRVal');
+
+  const elbowRightX = document.getElementById('elbowRightX');
+  const elbowRightXVal = document.getElementById('elbowRightXVal');
+  const elbowRightY = document.getElementById('elbowRightY');
+  const elbowRightYVal = document.getElementById('elbowRightYVal');
+  const elbowRightR = document.getElementById('elbowRightR');
+  const elbowRightRVal = document.getElementById('elbowRightRVal');
+
   const wristLeftX = document.getElementById('wristLeftX');
   const wristLeftXVal = document.getElementById('wristLeftXVal');
   const wristLeftY = document.getElementById('wristLeftY');
@@ -122,6 +136,8 @@
       offset: 0.00,
       round: 0.20
     },
+    elbowLeft: { x: 0, y: 0, r: 0.08 },
+    elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 },
     wristRight: { x: 0.20, y: 0, r: 0.10 },
     brush: { color: '#000000', width: 3 },
@@ -326,13 +342,12 @@
     pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(pelvisRect);
 
-    // ===== Запястья =====
-    const wristLeftRadiusPx = state.wristLeft.r * sectionH;
-    const wristRightRadiusPx = state.wristRight.r * sectionH;
+    // ===== Запястья и Локти =====
     const pelvisBottomY = pelvisY0 + pelvisH;
 
-    // Левое запястье
-    // Низ круга совпадает с низом таза => cy = pelvisBottomY - radius
+    // --- Левая сторона ---
+    // Запястье (низ на уровне низа таза)
+    const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = cx - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
 
@@ -346,7 +361,30 @@
     wristLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristLeft);
 
-    // Правое запястье
+    // Локоть (посередине между плечом и запястьем)
+    const shoulderLeftCy = shoulderCy; // плечо на одной высоте для обеих сторон
+    const elbowLeftRadiusPx = state.elbowLeft.r * sectionH;
+    
+    const elbowLeftCx_base = (shoulderLeftCx + wristLeftCx) / 2;
+    const elbowLeftCy_base = (shoulderLeftCy + wristLeftCy) / 2;
+    
+    const elbowLeftCx = elbowLeftCx_base + (state.elbowLeft.x * sectionH);
+    const elbowLeftCy = elbowLeftCy_base + (state.elbowLeft.y * sectionH);
+
+    const elbowLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    elbowLeft.setAttribute('cx', String(elbowLeftCx));
+    elbowLeft.setAttribute('cy', String(elbowLeftCy));
+    elbowLeft.setAttribute('r', String(elbowLeftRadiusPx));
+    elbowLeft.setAttribute('fill', 'none');
+    elbowLeft.setAttribute('stroke', '#ff0000');
+    elbowLeft.setAttribute('stroke-width', '1');
+    elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(elbowLeft);
+
+
+    // --- Правая сторона ---
+    // Запястье
+    const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = cx + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
 
@@ -359,6 +397,27 @@
     wristRight.setAttribute('stroke-width', '1');
     wristRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristRight);
+
+    // Локоть
+    const shoulderRightCy = shoulderCy;
+    const elbowRightRadiusPx = state.elbowRight.r * sectionH;
+    
+    const elbowRightCx_base = (shoulderRightCx + wristRightCx) / 2;
+    const elbowRightCy_base = (shoulderRightCy + wristRightCy) / 2;
+    
+    const elbowRightCx = elbowRightCx_base + (state.elbowRight.x * sectionH);
+    const elbowRightCy = elbowRightCy_base + (state.elbowRight.y * sectionH);
+
+    const elbowRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    elbowRight.setAttribute('cx', String(elbowRightCx));
+    elbowRight.setAttribute('cy', String(elbowRightCy));
+    elbowRight.setAttribute('r', String(elbowRightRadiusPx));
+    elbowRight.setAttribute('fill', 'none');
+    elbowRight.setAttribute('stroke', '#ff0000');
+    elbowRight.setAttribute('stroke-width', '1');
+    elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(elbowRight);
+
 
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
@@ -853,6 +912,42 @@
   pelvisRound.addEventListener('input', () => {
     state.pelvis.round = parseInt(pelvisRound.value, 10) / 100;
     pelvisRoundVal.textContent = pelvisRound.value + '%';
+    renderGrid();
+  });
+
+  elbowLeftX.addEventListener('input', () => {
+    state.elbowLeft.x = parseInt(elbowLeftX.value, 10) / 100;
+    elbowLeftXVal.textContent = elbowLeftX.value + '%';
+    renderGrid();
+  });
+
+  elbowLeftY.addEventListener('input', () => {
+    state.elbowLeft.y = parseInt(elbowLeftY.value, 10) / 100;
+    elbowLeftYVal.textContent = elbowLeftY.value + '%';
+    renderGrid();
+  });
+
+  elbowLeftR.addEventListener('input', () => {
+    state.elbowLeft.r = parseInt(elbowLeftR.value, 10) / 100;
+    elbowLeftRVal.textContent = elbowLeftR.value + '%';
+    renderGrid();
+  });
+
+  elbowRightX.addEventListener('input', () => {
+    state.elbowRight.x = parseInt(elbowRightX.value, 10) / 100;
+    elbowRightXVal.textContent = elbowRightX.value + '%';
+    renderGrid();
+  });
+
+  elbowRightY.addEventListener('input', () => {
+    state.elbowRight.y = parseInt(elbowRightY.value, 10) / 100;
+    elbowRightYVal.textContent = elbowRightY.value + '%';
+    renderGrid();
+  });
+
+  elbowRightR.addEventListener('input', () => {
+    state.elbowRight.r = parseInt(elbowRightR.value, 10) / 100;
+    elbowRightRVal.textContent = elbowRightR.value + '%';
     renderGrid();
   });
 
