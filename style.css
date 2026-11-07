@@ -125,18 +125,6 @@ button.danger { background: #d9534f; }
   pointer-events: none;
 }
 
-/* Стили для разметки пропорций головы */
-.guide-text {
-  font-family: system-ui, sans-serif;
-  font-size: 14px;
-  fill: #00aaff;
-  font-weight: bold;
-  pointer-events: none;
-  opacity: 0.8;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Мобильная адаптация */
 @media (max-width: 768px) {
   #app { flex-direction: column; }
   #viewportWrapper { padding: 5px; }
@@ -149,4 +137,4 @@ button.danger { background: #d9534f; }
     overflow-y: auto;
   }
   #viewportWrapper { order: 1; }
-                              }
+}
