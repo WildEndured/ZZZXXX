@@ -1,643 +1,642 @@
 (function () {
-    'use strict';
+  'use strict';
 
-    // ---------- DOM ----------
-    const workspace = document.getElementById('workspace');
-    const viewport = document.getElementById('viewport');
-    const zoomContainer = document.getElementById('zoomContainer');
-    const bgLayer = document.getElementById('bgLayer');
-    const underlayLayer = document.getElementById('underlayLayer');
-    const drawSvg = document.getElementById('drawSvg');
-    const staticGroup = document.getElementById('staticGroup');
-    const drawGroup = document.getElementById('drawGroup');
+  // ===== DOM =====
+  const viewport = document.getElementById('viewport');
+  const zoomContainer = document.getElementById('zoomContainer');
+  const bgLayer = document.getElementById('bgLayer');
+  const underlayLayer = document.getElementById('underlayLayer');
+  const drawLayer = document.getElementById('drawLayer');
+  const gridGroup = document.getElementById('gridGroup');
+  const drawGroup = document.getElementById('drawGroup');
 
-    const bgColorInput = document.getElementById('bgColor');
-    const underlayFileInput = document.getElementById('underlayFile');
-    const underlayScaleInput = document.getElementById('underlayScale');
-    const underlayScaleVal = document.getElementById('underlayScaleVal');
-    const underlayOpacityInput = document.getElementById('underlayOpacity');
-    const underlayOpacityVal = document.getElementById('underlayOpacityVal');
-    const gridMarginInput = document.getElementById('gridMargin');
-    const gridMarginVal = document.getElementById('gridMarginVal');
-    const headsInput = document.getElementById('heads');
-    const headsVal = document.getElementById('headsVal');
-    const brushSizeInput = document.getElementById('brushSize');
-    const brushSizeVal = document.getElementById('brushSizeVal');
-    const brushColorInput = document.getElementById('brushColor');
+  const fileInput = document.getElementById('fileInput');
+  const underlayScale = document.getElementById('underlayScale');
+  const underlayScaleVal = document.getElementById('underlayScaleVal');
+  const underlayOpacity = document.getElementById('underlayOpacity');
+  const underlayOpacityVal = document.getElementById('underlayOpacityVal');
+  const bgColorInput = document.getElementById('bgColor');
+  const gridPad = document.getElementById('gridPad');
+  const gridPadVal = document.getElementById('gridPadVal');
+  const heads = document.getElementById('heads');
+  const headsVal = document.getElementById('headsVal');
+  const brushColor = document.getElementById('brushColor');
+  const brushWidth = document.getElementById('brushWidth');
+  const brushWidthVal = document.getElementById('brushWidthVal');
+  const undoBtn = document.getElementById('undoBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const exportSvgBtn = document.getElementById('exportSvgBtn');
+  const exportPngBtn = document.getElementById('exportPngBtn');
 
-    const undoBtn = document.getElementById('undoBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const exportSvgBtn = document.getElementById('exportSvgBtn');
-    const exportPngBtn = document.getElementById('exportPngBtn');
+  // ===== Состояние =====
+  const state = {
+    canvasSize: 800,          // размер квадрата (CSS px)
+    scale: 1,
+    tx: 0,
+    ty: 0,
+    minScale: 1,
+    maxScale: 20,
+    bgColor: '#ffffff',
+    underlay: {
+      src: null,
+      imgW: 0,
+      imgH: 0,
+      scale: 1.0,
+      opacity: 1.0
+    },
+    gridPad: 0.05,
+    heads: 4,
+    brush: { color: '#000000', width: 3 },
+    paths: [] // {d, color, width}
+  };
 
-    // ---------- State ----------
-    const state = {
-        scale: 1,
-        tx: 0,
-        ty: 0,
-        bgColor: '#ffffff',
-        underlayDataUrl: null,
-        underlayImg: null,
-        underlayScale: 1,      // 100% = вписана по высоте
-        underlayOpacity: 1,
-        gridMargin: 0.05,
-        heads: 4,
-        brushSize: 4,
-        brushColor: '#000000',
-        paths: []              // массив SVG path элементов
+  // ===== Построение холста =====
+  function updateCanvasSize() {
+    const rect = viewport.getBoundingClientRect();
+    const size = Math.min(rect.width, rect.height);
+    state.canvasSize = size;
+    zoomContainer.style.width = size + 'px';
+    zoomContainer.style.height = size + 'px';
+    // Центрируем контейнер в viewport
+    const left = (rect.width - size) / 2;
+    const top = (rect.height - size) / 2;
+    // Смещаем сам контейнер (позиционирование внутри viewport)
+    zoomContainer.style.position = 'absolute';
+    zoomContainer.style.left = left + 'px';
+    zoomContainer.style.top = top + 'px';
+    applyTransform();
+    renderGrid();
+  }
+
+  // ===== Трансформация =====
+  function applyTransform() {
+    const s = state.scale;
+    const size = state.canvasSize;
+    // clamp панорамирование
+    const scaled = size * s;
+    const minTx = size - scaled;
+    const minTy = size - scaled;
+    state.tx = Math.min(0, Math.max(minTx, state.tx));
+    state.ty = Math.min(0, Math.max(minTy, state.ty));
+    zoomContainer.style.transform =
+      `translate(${state.tx}px, ${state.ty}px) scale(${s})`;
+    // Но transform-origin = 0 0, а сам контейнер уже в левом верхнем положении
+    // Сначала translate, потом scale — так и работает (translate применяется до scale)
+  }
+
+  // ===== Сетка =====
+  function renderGrid() {
+    while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
+    const pad = state.gridPad;
+
+    // Красная рамка зоны (отступ от верха и низа)
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '0');
+    rect.setAttribute('y', String(pad));
+    rect.setAttribute('width', '1');
+    rect.setAttribute('height', String(1 - 2 * pad));
+    rect.setAttribute('fill', 'none');
+    rect.setAttribute('stroke', '#ff0000');
+    rect.setAttribute('stroke-width', '1');
+    rect.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(rect);
+
+    // Горизонтальные пунктирные линии
+    const n = state.heads;
+    const y0 = pad;
+    const y1 = 1 - pad;
+    const span = y1 - y0;
+    for (let i = 1; i < n; i++) {
+      const y = y0 + span * (i / n);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '0');
+      line.setAttribute('x2', '1');
+      line.setAttribute('y1', String(y));
+      line.setAttribute('y2', String(y));
+      line.setAttribute('stroke', '#ff0000');
+      line.setAttribute('stroke-width', '1');
+      line.setAttribute('stroke-dasharray', '4 4');
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      gridGroup.appendChild(line);
+    }
+  }
+
+  // ===== Подложка =====
+  function applyUnderlay() {
+    if (!state.underlay.src) {
+      underlayLayer.style.display = 'none';
+      return;
+    }
+    underlayLayer.style.display = 'block';
+    underlayLayer.src = state.underlay.src;
+    underlayLayer.style.opacity = String(state.underlay.opacity);
+
+    // 100% = картинка вписана ровно по высоте квадратного холста
+    // Т.е. высота картинки = высота контейнера (внутренние координаты 0..1)
+    // Реальный масштаб: коэффициент умножения к базовой вписанной по высоте
+    const mul = state.underlay.scale;
+    // Вписываем по высоте: imgH_display = canvasSize * mul (в px)
+    // Ширина = imgW * (canvasSize * mul / imgH)
+    // Мы работаем через transform картинки, центрируя её.
+    // Проще: зафиксируем размеры картинки в процентах от контейнера.
+    const dispH = mul * 100;                 // % от высоты контейнера
+    const dispW = (state.underlay.imgW / state.underlay.imgH) * dispH;
+    underlayLayer.style.width = dispW + '%';
+    underlayLayer.style.height = dispH + '%';
+    underlayLayer.style.left = ((100 - dispW) / 2) + '%';
+    underlayLayer.style.top = ((100 - dispH) / 2) + '%';
+    underlayLayer.style.transform = 'none';
+    underlayLayer.style.objectFit = 'fill';
+  }
+
+  // ===== Координаты =====
+  function clientToCanvas(clientX, clientY) {
+    const rect = zoomContainer.getBoundingClientRect();
+    const x = (clientX - rect.left) / rect.width;
+    const y = (clientY - rect.top) / rect.height;
+    return { x, y };
+  }
+
+  function clientToContainerPx(clientX, clientY) {
+    const rect = zoomContainer.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  // ===== Рисование =====
+  const pointers = new Map();
+  let drawing = false;
+  let currentPath = null;
+  let currentPathEl = null;
+  let activePointerId = null;
+  let gestureActive = false;
+  let gestureStart = null;
+
+  function beginPath(p) {
+    const c = clientToCanvas(p.x, p.y);
+    currentPath = {
+      d: `M ${c.x} ${c.y}`,
+      color: state.brush.color,
+      width: state.brush.width
     };
+    currentPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    currentPathEl.setAttribute('fill', 'none');
+    currentPathEl.setAttribute('stroke', currentPath.color);
+    currentPathEl.setAttribute('stroke-width', String(currentPath.width));
+    currentPathEl.setAttribute('stroke-linecap', 'round');
+    currentPathEl.setAttribute('stroke-linejoin', 'round');
+    currentPathEl.setAttribute('vector-effect', 'non-scaling-stroke');
+    currentPathEl.setAttribute('d', currentPath.d);
+    drawGroup.appendChild(currentPathEl);
+  }
 
-    const MIN_SCALE = 1;
-    const MAX_SCALE = 20;
+  function extendPath(p) {
+    if (!currentPath) return;
+    const c = clientToCanvas(p.x, p.y);
+    currentPath.d += ` L ${c.x} ${c.y}`;
+    currentPathEl.setAttribute('d', currentPath.d);
+  }
 
-    // ---------- Viewport (квадрат) ----------
-    function resizeViewport() {
-        const rect = workspace.getBoundingClientRect();
-        const size = Math.min(rect.width, rect.height);
-        viewport.style.width = size + 'px';
-        viewport.style.height = size + 'px';
-        applyTransform();
+  function commitPath() {
+    if (currentPath && currentPathEl) {
+      state.paths.push(currentPath);
     }
+    currentPath = null;
+    currentPathEl = null;
+    drawing = false;
+    activePointerId = null;
+  }
 
-    // ---------- Transform ----------
-    function applyTransform() {
-        zoomContainer.style.transform =
-            `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+  function cancelPath() {
+    if (currentPathEl && currentPathEl.parentNode) {
+      currentPathEl.parentNode.removeChild(currentPathEl);
     }
+    currentPath = null;
+    currentPathEl = null;
+    drawing = false;
+    activePointerId = null;
+  }
 
-    function clampPan() {
-        const vRect = viewport.getBoundingClientRect();
-        const w = vRect.width;
-        const h = vRect.height;
-        const scaledW = w * state.scale;
-        const scaledH = h * state.scale;
+  // ===== Жесты зума/панорамирования =====
+  function startGesture() {
+    const pts = Array.from(pointers.values());
+    if (pts.length < 2) return;
+    gestureActive = true;
+    const [a, b] = pts;
+    const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    gestureStart = {
+      dist,
+      midX,
+      midY,
+      scale: state.scale,
+      tx: state.tx,
+      ty: state.ty,
+      // мировая точка под серединой (в координатах контейнера до scale)
+      worldX: (midX - zoomContainer.getBoundingClientRect().left - state.tx) / state.scale,
+      worldY: (midY - zoomContainer.getBoundingClientRect().top - state.ty) / state.scale
+    };
+  }
 
-        const minTx = w - scaledW; // <= 0
-        const minTy = h - scaledH;
-        const maxTx = 0;
-        const maxTy = 0;
+  function updateGesture() {
+    const pts = Array.from(pointers.values());
+    if (pts.length < 2 || !gestureStart) return;
+    const [a, b] = pts;
+    const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
 
-        state.tx = Math.min(maxTx, Math.max(minTx, state.tx));
-        state.ty = Math.min(maxTy, Math.max(minTy, state.ty));
-    }
+    let newScale = gestureStart.scale * (dist / gestureStart.dist);
+    newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-    function zoomAt(clientX, clientY, newScale) {
-        const vRect = viewport.getBoundingClientRect();
-        const localX = clientX - vRect.left;
-        const localY = clientY - vRect.top;
+    const rect = zoomContainer.getBoundingClientRect();
+    // Хотим, чтобы мировая точка оказалась под текущей серединой
+    // Позиция контейнера (левый верх) в client-координатах:
+    // containerLeft = rect.left - state.tx (до применения нового tx)... 
+    // Проще пересчитать через viewport-координаты:
+    // Контейнер исходно стоит в левом верхнем углу viewport? Нет — мы его позиционируем
+    // отдельно (left/top для центрирования). Возьмём базовое смещение без transform:
+    const baseRect = zoomContainer.getBoundingClientRect();
+    // Позиция до transform (визуально): left = baseRect.left - state.tx, top = baseRect.top - state.ty
+    const baseLeft = baseRect.left - state.tx;
+    const baseTop = baseRect.top - state.ty;
 
-        newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
-        if (newScale === state.scale) return;
+    // Новая tx/ty, чтобы точка worldX (в локальных px до scale) оказалась под mid
+    // midX = baseLeft + tx + worldX * newScale
+    const newTx = midX - baseLeft - gestureStart.worldX * newScale;
+    const newTy = midY - baseTop - gestureStart.worldY * newScale;
 
-        // Точка в координатах контейнера (до зума)
-        const cx = (localX - state.tx) / state.scale;
-        const cy = (localY - state.ty) / state.scale;
+    state.scale = newScale;
+    state.tx = newTx;
+    state.ty = newTy;
+    applyTransform();
+  }
 
-        state.scale = newScale;
-        state.tx = localX - cx * state.scale;
-        state.ty = localY - cy * state.scale;
+  // ===== Pointer Events =====
+  function onPointerDown(e) {
+    // Мы слушаем на zoomContainer
+    const isMiddle = e.button === 1;
+    const isShiftLeft = e.button === 0 && e.shiftKey;
+    const isTouch = e.pointerType === 'touch';
+    const isLeft = e.button === 0;
 
-        clampPan();
-        applyTransform();
-    }
-
-    // ---------- Pointer handling ----------
-    const pointers = new Map();
-    let mode = null; // 'draw' | 'pan' | 'pinch' | null
-    let activeDrawPointerId = null;
-    let currentPath = null;
-    let currentPathD = '';
-
-    // pinch state
-    let pinchStartDist = 0;
-    let pinchStartScale = 1;
-    let pinchStartCenter = { x: 0, y: 0 };
-    let pinchStartTx = 0;
-    let pinchStartTy = 0;
-
-    // pan state
-    let panStart = { x: 0, y: 0, tx: 0, ty: 0 };
-
-    function svgPointFromEvent(evt) {
-        // Преобразуем клиентские координаты в SVG координаты (0..1)
-        const vRect = viewport.getBoundingClientRect();
-        const localX = evt.clientX - vRect.left;
-        const localY = evt.clientY - vRect.top;
-        // В координатах контейнера
-        const cx = (localX - state.tx) / state.scale;
-        const cy = (localY - state.ty) / state.scale;
-        // viewport — квадрат, size = vRect.width (== height)
-        const size = vRect.width;
-        return { x: cx / size, y: cy / size };
-    }
-
-    function isInsideViewport(evt) {
-        const r = viewport.getBoundingClientRect();
-        return evt.clientX >= r.left && evt.clientX <= r.right &&
-               evt.clientY >= r.top && evt.clientY <= r.bottom;
-    }
-
-    function getDistance(p1, p2) {
-        const dx = p1.x - p2.x;
-        const dy = p1.y - p2.y;
-        return Math.hypot(dx, dy);
-    }
-
-    function getCenter(p1, p2) {
-        return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-    }
-
-    function cancelCurrentPath() {
-        if (currentPath && currentPath.parentNode) {
-            currentPath.parentNode.removeChild(currentPath);
-        }
-        currentPath = null;
-        currentPathD = '';
-    }
-
-    function startDraw(evt) {
-        cancelCurrentPath();
-        const p = svgPointFromEvent(evt);
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', state.brushColor);
-        path.setAttribute('stroke-width', state.brushSize);
-        path.setAttribute('stroke-linecap', 'round');
-        path.setAttribute('stroke-linejoin', 'round');
-        path.setAttribute('vector-effect', 'non-scaling-stroke');
-        currentPathD = `M ${p.x.toFixed(5)} ${p.y.toFixed(5)}`;
-        path.setAttribute('d', currentPathD);
-        drawGroup.appendChild(path);
-        currentPath = path;
-        activeDrawPointerId = evt.pointerId;
-        mode = 'draw';
-    }
-
-    function extendDraw(evt) {
-        if (!currentPath) return;
-        const p = svgPointFromEvent(evt);
-        currentPathD += ` L ${p.x.toFixed(5)} ${p.y.toFixed(5)}`;
-        currentPath.setAttribute('d', currentPathD);
-    }
-
-    function endDraw() {
-        if (currentPath) {
-            const d = currentPath.getAttribute('d');
-            const hasMotion = /\sL\s/.test(d);
-            if (!hasMotion) {
-                // Одиночная точка - рисуем маленький кружок
-                const m = /M\s+([\d.]+)\s+([\d.]+)/.exec(d);
-                if (m) {
-                    const x = parseFloat(m[1]);
-                    const y = parseFloat(m[2]);
-                    const r = 0.0005 * state.brushSize;
-                    currentPath.setAttribute('d', `M ${x} ${y} L ${x + 0.000001} ${y}`);
-                }
-            }
-            state.paths.push(currentPath);
-        }
-        currentPath = null;
-        currentPathD = '';
-        activeDrawPointerId = null;
-        if (mode === 'draw') mode = null;
-    }
-
-    function undo() {
-        const last = state.paths.pop();
-        if (last && last.parentNode) {
-            last.parentNode.removeChild(last);
-        }
-    }
-
-    function clearAll() {
-        while (drawGroup.firstChild) drawGroup.removeChild(drawGroup.firstChild);
-        state.paths = [];
-        cancelCurrentPath();
-    }
-
-    // ---------- Pointer events ----------
-    viewport.addEventListener('pointerdown', (evt) => {
-        if (!isInsideViewport(evt)) return;
-
-        // Начинаем захват
-        try { viewport.setPointerCapture(evt.pointerId); } catch (e) {}
-
-        pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY, pointerType: evt.pointerType, button: evt.button });
-
-        // Средняя кнопка мыши или Shift+ЛКМ -> pan
-        const isPanButton = (evt.pointerType === 'mouse') && (evt.button === 1 || (evt.button === 0 && evt.shiftKey));
-        // На тач: 2 пальца -> zoom/pan
-        // Обычное рисование: ЛКМ мыши или 1 палец
-
-        if (pointers.size >= 2) {
-            // Второй палец — отменяем рисование и переходим в pinch
-            if (mode === 'draw') {
-                cancelCurrentPath();
-                state.paths = state.paths.filter(p => p !== currentPath);
-                activeDrawPointerId = null;
-            }
-            const pts = Array.from(pointers.values());
-            const p1 = pts[0], p2 = pts[1];
-            pinchStartDist = getDistance(p1, p2);
-            pinchStartScale = state.scale;
-            const c = getCenter(p1, p2);
-            const vRect = viewport.getBoundingClientRect();
-            pinchStartCenter = { x: c.x - vRect.left, y: c.y - vRect.top };
-            pinchStartTx = state.tx;
-            pinchStartTy = state.ty;
-            mode = 'pinch';
-            evt.preventDefault();
-            return;
-        }
-
-        if (isPanButton) {
-            mode = 'pan';
-            panStart = { x: evt.clientX, y: evt.clientY, tx: state.tx, ty: state.ty };
-            evt.preventDefault();
-            return;
-        }
-
-        // Рисование
-        if (evt.pointerType === 'mouse' && evt.button !== 0) return;
-        if (mode === null || mode === 'draw') {
-            startDraw(evt);
-            evt.preventDefault();
-        }
-    });
-
-    viewport.addEventListener('pointermove', (evt) => {
-        if (!pointers.has(evt.pointerId)) return;
-        pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY, pointerType: evt.pointerType, button: evt.button });
-
-        if (mode === 'pinch' && pointers.size >= 2) {
-            const pts = Array.from(pointers.values());
-            const p1 = pts[0], p2 = pts[1];
-            const dist = getDistance(p1, p2);
-            const center = getCenter(p1, p2);
-            const vRect = viewport.getBoundingClientRect();
-            const centerLocal = { x: center.x - vRect.left, y: center.y - vRect.top };
-
-            if (pinchStartDist > 0) {
-                const ratio = dist / pinchStartDist;
-                let newScale = pinchStartScale * ratio;
-                newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
-
-                // Точка под центром в контейнере (изначально)
-                const cx = (pinchStartCenter.x - pinchStartTx) / pinchStartScale;
-                const cy = (pinchStartCenter.y - pinchStartTy) / pinchStartScale;
-
-                // Также учитываем смещение центра
-                const centerDeltaX = centerLocal.x - pinchStartCenter.x;
-                const centerDeltaY = centerLocal.y - pinchStartCenter.y;
-
-                state.scale = newScale;
-                state.tx = centerLocal.x - cx * newScale;
-                state.ty = centerLocal.y - cy * newScale;
-                // Добавляем смещение центра (панорамирование)
-                state.tx += centerDeltaX * 0; // уже учтено через centerLocal
-                // На самом деле centerLocal - актуальный центр, используем его
-                state.tx = centerLocal.x - cx * newScale;
-                state.ty = centerLocal.y - cy * newScale;
-
-                clampPan();
-                applyTransform();
-            }
-            evt.preventDefault();
-            return;
-        }
-
-        if (mode === 'pan') {
-            const dx = evt.clientX - panStart.x;
-            const dy = evt.clientY - panStart.y;
-            state.tx = panStart.tx + dx;
-            state.ty = panStart.ty + dy;
-            clampPan();
-            applyTransform();
-            evt.preventDefault();
-            return;
-        }
-
-        if (mode === 'draw' && evt.pointerId === activeDrawPointerId) {
-            extendDraw(evt);
-            evt.preventDefault();
-        }
-    });
-
-    function handlePointerEnd(evt) {
-        pointers.delete(evt.pointerId);
-
-        if (mode === 'draw' && evt.pointerId === activeDrawPointerId) {
-            endDraw();
-        }
-
-        if (mode === 'pinch') {
-            if (pointers.size === 1) {
-                // Остался один палец — переходим в pan с ним
-                const remaining = Array.from(pointers.entries())[0];
-                const [id, p] = remaining;
-                panStart = { x: p.x, y: p.y, tx: state.tx, ty: state.ty };
-                mode = 'pan';
-            } else if (pointers.size === 0) {
-                mode = null;
-            }
-        }
-
-        if (mode === 'pan' && pointers.size === 0) {
-            mode = null;
-        }
-    }
-
-    viewport.addEventListener('pointerup', handlePointerEnd);
-    viewport.addEventListener('pointercancel', handlePointerEnd);
-    viewport.addEventListener('lostpointercapture', (evt) => {
-        if (pointers.has(evt.pointerId)) handlePointerEnd(evt);
-    });
-
-    // Wheel zoom (ПК)
-    viewport.addEventListener('wheel', (evt) => {
-        evt.preventDefault();
-        if (!isInsideViewport(evt)) return;
-        const factor = Math.exp(-evt.deltaY * 0.0015);
-        const newScale = state.scale * factor;
-        zoomAt(evt.clientX, evt.clientY, newScale);
-    }, { passive: false });
-
-    // Запрет контекстного меню при рисовании
-    viewport.addEventListener('contextmenu', (e) => e.preventDefault());
-
-    // ---------- Static grid (красная рамка + головы) ----------
-    function renderStatic() {
-        staticGroup.innerHTML = '';
-
-        // Красная рамка зоны
-        const m = state.gridMargin;
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', m);
-        rect.setAttribute('y', m);
-        rect.setAttribute('width', (1 - 2 * m).toFixed(5));
-        rect.setAttribute('height', (1 - 2 * m).toFixed(5));
-        rect.setAttribute('fill', 'none');
-        rect.setAttribute('stroke', '#ff2b2b');
-        rect.setAttribute('stroke-width', 1.5);
-        rect.setAttribute('vector-effect', 'non-scaling-stroke');
-        staticGroup.appendChild(rect);
-
-        // Пунктирные линии голов (вертикальные) в пределах красной рамки
-        const heads = state.heads;
-        const y1 = m;
-        const y2 = 1 - m;
-        for (let i = 1; i < heads; i++) {
-            const x = i / heads;
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x.toFixed(5));
-            line.setAttribute('y1', y1.toFixed(5));
-            line.setAttribute('x2', x.toFixed(5));
-            line.setAttribute('y2', y2.toFixed(5));
-            line.setAttribute('stroke', '#ff2b2b');
-            line.setAttribute('stroke-width', 1);
-            line.setAttribute('stroke-dasharray', '6 4');
-            line.setAttribute('vector-effect', 'non-scaling-stroke');
-            staticGroup.appendChild(line);
-        }
-    }
-
-    // ---------- UI bindings ----------
-    bgColorInput.addEventListener('input', (e) => {
-        state.bgColor = e.target.value;
-        bgLayer.style.background = state.bgColor;
-    });
-
-    underlayFileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            state.underlayDataUrl = reader.result;
-            const img = new Image();
-            img.onload = () => {
-                state.underlayImg = img;
-                underlayLayer.src = reader.result;
-                underlayLayer.style.display = 'block';
-                applyUnderlayStyle();
-            };
-            img.src = reader.result;
+    // Панорамирование: средняя кнопка или Shift+ЛКМ (мышь), либо второй палец
+    if (isMiddle || isShiftLeft) {
+      e.preventDefault();
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, pan: true });
+      zoomContainer.setPointerCapture(e.pointerId);
+      if (pointers.size === 1) {
+        gestureStart = null; // одиночное панорамирование будем делать отдельно
+        panStart = {
+          x: e.clientX,
+          y: e.clientY,
+          tx: state.tx,
+          ty: state.ty
         };
-        reader.readAsDataURL(file);
-    });
-
-    function applyUnderlayStyle() {
-        underlayLayer.style.opacity = state.underlayOpacity;
-        // Масштаб относительно «вписана по высоте»
-        // object-fit: contain вписывает по обоим сторонам, но нам нужно ровно по высоте
-        // Используем transform внутри абсолютного позиционирования
-        underlayLayer.style.objectFit = 'fill';
-        underlayLayer.style.width = '100%';
-        underlayLayer.style.height = '100%';
-
-        if (!state.underlayImg) {
-            underlayLayer.style.transform = '';
-            return;
-        }
-        // Базовая вписанность по высоте:
-        // реальная ширина при object-fit: contain по высоте:
-        const vw = 1; // условно
-        const vh = 1;
-        const iw = state.underlayImg.naturalWidth;
-        const ih = state.underlayImg.naturalHeight;
-        // размер при вписывании по высоте (100%)
-        // высота = 1, ширина = iw/ih
-        const baseW = iw / ih;
-        // scale применяем к этому
-        const finalScale = state.underlayScale;
-        // Итоговые размеры в долях контейнера:
-        const w = baseW * finalScale;
-        const h = 1 * finalScale;
-        // Центрирование
-        underlayLayer.style.transformOrigin = 'center center';
-        underlayLayer.style.transform = `scale(${finalScale})`;
-        // Но scale от центра не даст желаемого для широких картинок при масштабе <1,
-        // т.к. ширина уменьшится пропорционально. Это правильно: при 100% высота = контейнер.
-        // Для точного контроля используем width/height + translate.
-        underlayLayer.style.transform = '';
-        // Пересчитаем через width/height:
-        const pxW = (baseW * finalScale) * 100;
-        const pxH = (1 * finalScale) * 100;
-        underlayLayer.style.width = pxW + '%';
-        underlayLayer.style.height = pxH + '%';
-        underlayLayer.style.left = '50%';
-        underlayLayer.style.top = '50%';
-        underlayLayer.style.transform = 'translate(-50%, -50%)';
-        underlayLayer.style.objectFit = 'fill';
+        panning = true;
+      }
+      return;
     }
 
-    underlayScaleInput.addEventListener('input', (e) => {
-        state.underlayScale = parseInt(e.target.value, 10) / 100;
-        underlayScaleVal.textContent = e.target.value;
-        applyUnderlayStyle();
-    });
+    // Обычный тач/ЛКМ
+    if (!isTouch && !isLeft) return;
 
-    underlayOpacityInput.addEventListener('input', (e) => {
-        state.underlayOpacity = parseInt(e.target.value, 10) / 100;
-        underlayOpacityVal.textContent = e.target.value;
-        applyUnderlayStyle();
-    });
+    e.preventDefault();
 
-    gridMarginInput.addEventListener('input', (e) => {
-        state.gridMargin = parseInt(e.target.value, 10) / 100;
-        gridMarginVal.textContent = e.target.value;
-        renderStatic();
-    });
-
-    headsInput.addEventListener('input', (e) => {
-        state.heads = parseInt(e.target.value, 10);
-        headsVal.textContent = e.target.value;
-        renderStatic();
-    });
-
-    brushSizeInput.addEventListener('input', (e) => {
-        state.brushSize = parseInt(e.target.value, 10);
-        brushSizeVal.textContent = e.target.value;
-    });
-
-    brushColorInput.addEventListener('input', (e) => {
-        state.brushColor = e.target.value;
-    });
-
-    undoBtn.addEventListener('click', undo);
-    clearBtn.addEventListener('click', clearAll);
-
-    // ---------- Экспорт ----------
-    function buildExportSvg() {
-        const NS = 'http://www.w3.org/2000/svg';
-        const svg = document.createElementNS(NS, 'svg');
-        svg.setAttribute('xmlns', NS);
-        svg.setAttribute('viewBox', '0 0 1 1');
-        svg.setAttribute('width', '4096');
-        svg.setAttribute('height', '4096');
-        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-        // 1. Фон
-        const bg = document.createElementNS(NS, 'rect');
-        bg.setAttribute('x', '0');
-        bg.setAttribute('y', '0');
-        bg.setAttribute('width', '1');
-        bg.setAttribute('height', '1');
-        bg.setAttribute('fill', state.bgColor);
-        svg.appendChild(bg);
-
-        // 2. Подложка
-        if (state.underlayDataUrl && state.underlayImg) {
-            const iw = state.underlayImg.naturalWidth;
-            const ih = state.underlayImg.naturalHeight;
-            const baseW = iw / ih; // ширина при высоте 1
-            const w = baseW * state.underlayScale;
-            const h = 1 * state.underlayScale;
-            const x = 0.5 - w / 2;
-            const y = 0.5 - h / 2;
-
-            const imgEl = document.createElementNS(NS, 'image');
-            imgEl.setAttribute('href', state.underlayDataUrl);
-            imgEl.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.underlayDataUrl);
-            imgEl.setAttribute('x', x.toFixed(6));
-            imgEl.setAttribute('y', y.toFixed(6));
-            imgEl.setAttribute('width', w.toFixed(6));
-            imgEl.setAttribute('height', h.toFixed(6));
-            imgEl.setAttribute('preserveAspectRatio', 'none');
-            imgEl.setAttribute('opacity', state.underlayOpacity);
-            svg.appendChild(imgEl);
-        }
-
-        // 3. Статичные линии (рамка и головы) — переносим как есть
-        // Клонируем staticGroup
-        const staticClone = staticGroup.cloneNode(true);
-        // Убедимся, что внутри все элементы SVG namespace (они уже)
-        svg.appendChild(staticClone);
-
-        // 4. Пути рисования
-        const drawClone = drawGroup.cloneNode(true);
-        svg.appendChild(drawClone);
-
-        return svg;
+    if (drawing && activePointerId !== null && e.pointerId !== activePointerId) {
+      // Появился второй палец во время рисования — отменяем путь
+      cancelPath();
     }
 
-    function svgToString(svgEl) {
-        const serializer = new XMLSerializer();
-        return '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(svgEl);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    zoomContainer.setPointerCapture(e.pointerId);
+
+    if (pointers.size >= 2) {
+      // Жест
+      if (drawing) cancelPath();
+      startGesture();
+      return;
     }
 
-    function downloadBlob(blob, filename) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    // Один палец — рисование
+    drawing = true;
+    activePointerId = e.pointerId;
+    beginPath({ x: e.clientX, y: e.clientY });
+  }
+
+  let panning = false;
+  let panStart = null;
+
+  function onPointerMove(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size >= 2) {
+      if (gestureActive) {
+        e.preventDefault();
+        updateGesture();
+      }
+      return;
     }
 
-    exportSvgBtn.addEventListener('click', () => {
-        try {
-            const svgEl = buildExportSvg();
-            const str = svgToString(svgEl);
-            const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
-            downloadBlob(blob, 'canvas.svg');
-        } catch (e) {
-            console.error(e);
-            alert('Ошибка экспорта SVG: ' + e.message);
-        }
+    if (panning && panStart) {
+      e.preventDefault();
+      state.tx = panStart.tx + (e.clientX - panStart.x);
+      state.ty = panStart.ty + (e.clientY - panStart.y);
+      applyTransform();
+      return;
+    }
+
+    if (drawing && e.pointerId === activePointerId) {
+      e.preventDefault();
+      extendPath({ x: e.clientX, y: e.clientY });
+    }
+  }
+
+  function onPointerUp(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+
+    if (panning && panStart && pointers.size === 0) {
+      panning = false;
+      panStart = null;
+    }
+
+    if (drawing && e.pointerId === activePointerId) {
+      commitPath();
+    }
+
+    if (pointers.size < 2) {
+      gestureActive = false;
+      gestureStart = null;
+      panning = false;
+      panStart = null;
+    }
+
+    try { zoomContainer.releasePointerCapture(e.pointerId); } catch (_) {}
+  }
+
+  zoomContainer.addEventListener('pointerdown', onPointerDown);
+  zoomContainer.addEventListener('pointermove', onPointerMove);
+  zoomContainer.addEventListener('pointerup', onPointerUp);
+  zoomContainer.addEventListener('pointercancel', onPointerUp);
+  zoomContainer.addEventListener('pointerleave', (e) => {
+    // Не отпускаем, если pointercapture активен
+  });
+
+  // Блокируем контекстное меню на средней кнопке
+  zoomContainer.addEventListener('mousedown', (e) => {
+    if (e.button === 1) e.preventDefault();
+  });
+
+  // ===== Зум колесом (ПК) =====
+  zoomContainer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = zoomContainer.getBoundingClientRect();
+    const mx = e.clientX - rect.left; // px в контейнере (после transform)
+    const my = e.clientY - rect.top;
+    // Точка в локальных координатах до scale
+    const worldX = (mx - state.tx) / state.scale;
+    const worldY = (my - state.ty) / state.scale;
+
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    let newScale = state.scale * factor;
+    newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
+
+    // Хотим, чтобы worldX (в локальных px) осталась под курсором
+    // Итоговый clientX = rect.left - tx_old + tx + worldX*scale ... 
+    // Проще через базовую позицию:
+    // После применения transform: clientX = baseLeft + tx + worldX*newScale,
+    // где baseLeft = rect.left - state.tx (позиция контейнера без transform)
+    const baseLeft = rect.left - state.tx;
+    const baseTop = rect.top - state.ty;
+    state.tx = (e.clientX - baseLeft) - worldX * newScale;
+    state.ty = (e.clientY - baseTop) - worldY * newScale;
+    state.scale = newScale;
+    applyTransform();
+  }, { passive: false });
+
+  // ===== UI обработчики =====
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        state.underlay.src = ev.target.result;
+        state.underlay.imgW = img.naturalWidth;
+        state.underlay.imgH = img.naturalHeight;
+        applyUnderlay();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  underlayScale.addEventListener('input', () => {
+    state.underlay.scale = parseInt(underlayScale.value, 10) / 100;
+    underlayScaleVal.textContent = underlayScale.value + '%';
+    applyUnderlay();
+  });
+
+  underlayOpacity.addEventListener('input', () => {
+    state.underlay.opacity = parseInt(underlayOpacity.value, 10) / 100;
+    underlayOpacityVal.textContent = underlayOpacity.value + '%';
+    applyUnderlay();
+  });
+
+  bgColorInput.addEventListener('input', () => {
+    state.bgColor = bgColorInput.value;
+    bgLayer.style.background = state.bgColor;
+  });
+
+  gridPad.addEventListener('input', () => {
+    state.gridPad = parseInt(gridPad.value, 10) / 100;
+    gridPadVal.textContent = gridPad.value + '%';
+    renderGrid();
+  });
+
+  heads.addEventListener('input', () => {
+    state.heads = parseInt(heads.value, 10);
+    headsVal.textContent = String(state.heads);
+    renderGrid();
+  });
+
+  brushColor.addEventListener('input', () => {
+    state.brush.color = brushColor.value;
+  });
+
+  brushWidth.addEventListener('input', () => {
+    state.brush.width = parseInt(brushWidth.value, 10);
+    brushWidthVal.textContent = String(state.brush.width);
+  });
+
+  undoBtn.addEventListener('click', () => {
+    if (state.paths.length === 0) return;
+    state.paths.pop();
+    redrawAllPaths();
+  });
+
+  clearBtn.addEventListener('click', () => {
+    state.paths = [];
+    redrawAllPaths();
+  });
+
+  function redrawAllPaths() {
+    while (drawGroup.firstChild) drawGroup.removeChild(drawGroup.firstChild);
+    state.paths.forEach((p) => {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke', p.color);
+      el.setAttribute('stroke-width', String(p.width));
+      el.setAttribute('stroke-linecap', 'round');
+      el.setAttribute('stroke-linejoin', 'round');
+      el.setAttribute('vector-effect', 'non-scaling-stroke');
+      el.setAttribute('d', p.d);
+      drawGroup.appendChild(el);
+    });
+  }
+
+  // ===== Экспорт =====
+  function buildExportSVG() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('xmlns', NS);
+    svg.setAttribute('viewBox', '0 0 1 1');
+    svg.setAttribute('width', '1024');
+    svg.setAttribute('height', '1024');
+
+    // Фон
+    const bg = document.createElementNS(NS, 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', '0');
+    bg.setAttribute('width', '1');
+    bg.setAttribute('height', '1');
+    bg.setAttribute('fill', state.bgColor);
+    svg.appendChild(bg);
+
+    // Подложка
+    if (state.underlay.src) {
+      const mul = state.underlay.scale;
+      const ratio = state.underlay.imgW / state.underlay.imgH;
+      const h = mul;              // высота в единицах viewBox
+      const w = ratio * h;
+      const x = (1 - w) / 2;
+      const y = (1 - h) / 2;
+      const img = document.createElementNS(NS, 'image');
+      img.setAttribute('href', state.underlay.src);
+      img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.underlay.src);
+      img.setAttribute('x', String(x));
+      img.setAttribute('y', String(y));
+      img.setAttribute('width', String(w));
+      img.setAttribute('height', String(h));
+      img.setAttribute('preserveAspectRatio', 'none');
+      img.setAttribute('opacity', String(state.underlay.opacity));
+      svg.appendChild(img);
+    }
+
+    // Пути
+    state.paths.forEach((p) => {
+      const el = document.createElementNS(NS, 'path');
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke', p.color);
+      el.setAttribute('stroke-width', String(p.width));
+      el.setAttribute('stroke-linecap', 'round');
+      el.setAttribute('stroke-linejoin', 'round');
+      el.setAttribute('vector-effect', 'non-scaling-stroke');
+      el.setAttribute('d', p.d);
+      svg.appendChild(el);
     });
 
-    exportPngBtn.addEventListener('click', () => {
-        try {
-            const svgEl = buildExportSvg();
-            const str = svgToString(svgEl);
-            const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 4096;
-                canvas.height = 4096;
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, 4096, 4096);
-                ctx.drawImage(img, 0, 0, 4096, 4096);
-                URL.revokeObjectURL(url);
-                canvas.toBlob((pngBlob) => {
-                    if (pngBlob) downloadBlob(pngBlob, 'canvas.png');
-                }, 'image/png');
-            };
-            img.onerror = (e) => {
-                URL.revokeObjectURL(url);
-                alert('Ошибка загрузки SVG для PNG');
-            };
-            img.src = url;
-        } catch (e) {
-            console.error(e);
-            alert('Ошибка экспорта PNG: ' + e.message);
-        }
+    return new XMLSerializer().serializeToString(svg);
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  exportSvgBtn.addEventListener('click', () => {
+    const svgString = buildExportSVG();
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    downloadBlob(blob, 'drawing.svg');
+  });
+
+  exportPngBtn.addEventListener('click', () => {
+    const SIZE = 4096;
+    const svgString = buildExportSVG();
+
+    // Устанавливаем явные размеры для рендера
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
+    const svgEl = doc.documentElement;
+    svgEl.setAttribute('width', String(SIZE));
+    svgEl.setAttribute('height', String(SIZE));
+    const finalSvg = new XMLSerializer().serializeToString(svgEl);
+
+    const svgBlob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, SIZE, SIZE);
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, 'drawing.png');
+      }, 'image/png');
+    };
+    img.onerror = (err) => {
+      console.error('PNG export error', err);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  // ===== Инициализация =====
+  function init() {
+    bgLayer.style.background = state.bgColor;
+    underlayLayer.style.display = 'none';
+    renderGrid();
+    updateCanvasSize();
+    // Размеры могут поменяться после загрузки шрифтов/лейаута
+    requestAnimationFrame(updateCanvasSize);
+  }
+
+  let resizeRAF = null;
+  window.addEventListener('resize', () => {
+    if (resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(() => {
+      // Сохраняем видимую центральную точку при ресайзе — упрощённо сбросим трансформ к 1
+      state.scale = 1;
+      state.tx = 0;
+      state.ty = 0;
+      updateCanvasSize();
     });
+  });
 
-    // ---------- Init ----------
-    function init() {
-        bgLayer.style.background = state.bgColor;
-        underlayLayer.style.display = 'none';
-        renderStatic();
-        resizeViewport();
+  // Предотвращаем скролл/жесты на всей странице
+  document.addEventListener('touchmove', (e) => {
+    if (e.target.closest('#panel')) return;
+    e.preventDefault();
+  }, { passive: false });
 
-        window.addEventListener('resize', resizeViewport);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(resizeViewport, 100);
-        });
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('gesturechange', (e) => e.preventDefault());
+  document.addEventListener('gestureend', (e) => e.preventDefault());
 
-        // Запрещаем скролл/зум браузера при касаниях вне панели
-        document.addEventListener('gesturestart', (e) => e.preventDefault());
-        document.addEventListener('touchmove', (e) => {
-            // Разрешаем только внутри sidebar (для его скролла)
-            if (e.target.closest && e.target.closest('.sidebar')) return;
-            e.preventDefault();
-        }, { passive: false });
-    }
-
-    init();
+  init();
 })();
