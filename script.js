@@ -50,6 +50,8 @@
   const chestTopNarrowVal = document.getElementById('chestTopNarrowVal');
   const chestBottomWide = document.getElementById('chestBottomWide');
   const chestBottomWideVal = document.getElementById('chestBottomWideVal');
+  const chestBottomHeight = document.getElementById('chestBottomHeight');
+  const chestBottomHeightVal = document.getElementById('chestBottomHeightVal');
 
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
@@ -88,7 +90,8 @@
       width: 0.90,
       offset: 0.00,
       topNarrow: 0.50,
-      bottomWide: 1.00
+      bottomWide: 1.00,
+      bottomHeight: 1.00
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -209,25 +212,35 @@
 
     // ===== Грудная клетка (яйцо во второй секции) =====
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
-    const chestHeight = sectionH;
-    const chestRx = (headW * state.chest.width) / 2;
     
-    // Контрольные точки для ширины
-    const narrowFactor = state.chest.topNarrow; // 0..1
-    const wideFactor = state.chest.bottomWide;  // 0..1.5
+    // Общая высота яйца. Привязываем низ к секции.
+    // Если bottomHeight = 1.0, низ совпадает с нижней границей секции.
+    const chestTotalH = sectionH * state.chest.bottomHeight; 
+    const chestMidY = chestY0 + chestTotalH * 0.5; // Условная "талия" (середина)
+
+    const chestRx = (headW * state.chest.width) / 2;
+    const narrowFactor = state.chest.topNarrow;
+    const wideFactor = state.chest.bottomWide;
 
     const cpTopX = chestRx * narrowFactor;
     const cpBottomX = chestRx * wideFactor;
 
+    // Контрольные точки для верхней дуги (макушка -> талия)
+    const cpTopY1 = chestY0 + chestTotalH * 0.15;
+    const cpTopY2 = chestMidY;
+    
+    // Контрольные точки для нижней дуги (талия -> низ)
+    const cpBotY1 = chestMidY;
+    const cpBotY2 = chestY0 + chestTotalH * 0.85;
+
     const chestPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     
-    // Строим path
     const d = `
       M ${cx} ${chestY0}
-      C ${cx + cpTopX} ${chestY0}, ${cx + chestRx} ${chestY0 + chestHeight * 0.3}, ${cx + chestRx} ${chestY0 + chestHeight * 0.6}
-      C ${cx + chestRx} ${chestY0 + chestHeight * 0.9}, ${cx + cpBottomX} ${chestY0 + chestHeight}, ${cx} ${chestY0 + chestHeight}
-      C ${cx - cpBottomX} ${chestY0 + chestHeight}, ${cx - chestRx} ${chestY0 + chestHeight * 0.9}, ${cx - chestRx} ${chestY0 + chestHeight * 0.6}
-      C ${cx - chestRx} ${chestY0 + chestHeight * 0.3}, ${cx - cpTopX} ${chestY0}, ${cx} ${chestY0}
+      C ${cx + cpTopX} ${cpTopY1}, ${cx + chestRx} ${cpTopY2}, ${cx + chestRx} ${chestMidY}
+      C ${cx + chestRx} ${cpBotY1}, ${cx + cpBottomX} ${cpBotY2}, ${cx} ${chestY0 + chestTotalH}
+      C ${cx - cpBottomX} ${cpBotY2}, ${cx - chestRx} ${cpBotY1}, ${cx - chestRx} ${chestMidY}
+      C ${cx - chestRx} ${cpTopY2}, ${cx - cpTopX} ${cpTopY1}, ${cx} ${chestY0}
       Z
     `;
     chestPath.setAttribute('d', d.trim());
@@ -700,6 +713,12 @@
   chestBottomWide.addEventListener('input', () => {
     state.chest.bottomWide = parseInt(chestBottomWide.value, 10) / 100;
     chestBottomWideVal.textContent = chestBottomWide.value + '%';
+    renderGrid();
+  });
+
+  chestBottomHeight.addEventListener('input', () => {
+    state.chest.bottomHeight = parseInt(chestBottomHeight.value, 10) / 100;
+    chestBottomHeightVal.textContent = chestBottomHeight.value + '%';
     renderGrid();
   });
 
