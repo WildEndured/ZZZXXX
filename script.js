@@ -30,58 +30,89 @@
 
   // ===== Состояние =====
   const state = {
-    canvasSize: 800,          // размер квадрата (CSS px)
+    canvasSize: 800,
     scale: 1,
     tx: 0,
     ty: 0,
     minScale: 1,
     maxScale: 20,
     bgColor: '#ffffff',
-    underlay: {
-      src: null,
-      imgW: 0,
-      imgH: 0,
-      scale: 1.0,
-      opacity: 1.0
-    },
+    underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
     gridPad: 0.05,
     heads: 4,
     brush: { color: '#000000', width: 3 },
-    paths: [] // {d, color, width}
+    paths: []
   };
 
-  // ===== Построение холста =====
+  // ===== Вспомогательные =====
+  // Базовое смещение контейнера (при scale=1, tx=ty=0), чтобы он был по центру viewport
+  function getBaseOffset() {
+    const vp = viewport.getBoundingClientRect();
+    const size = state.canvasSize;
+    return {
+      x: (vp.width - size) / 2,
+      y: (vp.height - size) / 2
+    };
+  }
+
+  // ===== Размер холста =====
   function updateCanvasSize() {
-    const rect = viewport.getBoundingClientRect();
-    const size = Math.min(rect.width, rect.height);
+    const vp = viewport.getBoundingClientRect();
+    const size = Math.max(1, Math.min(vp.width, vp.height));
     state.canvasSize = size;
     zoomContainer.style.width = size + 'px';
     zoomContainer.style.height = size + 'px';
-    // Центрируем контейнер в viewport
-    const left = (rect.width - size) / 2;
-    const top = (rect.height - size) / 2;
-    // Смещаем сам контейнер (позиционирование внутри viewport)
-    zoomContainer.style.position = 'absolute';
-    zoomContainer.style.left = left + 'px';
-    zoomContainer.style.top = top + 'px';
+    // Сбрасываем трансформ к исходному (центр, scale=1)
+    state.scale = 1;
+    state.tx = 0;
+    state.ty = 0;
     applyTransform();
-    renderGrid();
   }
 
-  // ===== Трансформация =====
+  // ===== Применение трансформа =====
   function applyTransform() {
-    const s = state.scale;
     const size = state.canvasSize;
-    // clamp панорамирование
+    const s = state.scale;
+    const base = getBaseOffset();
+
+    // Итоговое смещение левого верхнего угла контейнера относительно viewport:
+    // base + tx
+    // При scale=1, tx=0: контейнер по центру (base).
+    // При zoom: масштабируем от левого верхнего угла, но хотим чтобы точка (base + tx)
+    // оставалась "привязкой". transform-origin: 0 0 => масштаб от левого верхнего угла
+    // без учёта base, поэтому добавляем base к translate.
+    const finalLeft = base.x + state.tx;
+    const finalTop = base.y + state.ty;
+
+    // clamp: контейнер не должен выходить за viewport, если scaled >= размер viewport
+    // Левая граница: finalLeft <= 0 (если scaled >= vp.width), иначе центрируем
+    const vp = viewport.getBoundingClientRect();
     const scaled = size * s;
-    const minTx = size - scaled;
-    const minTy = size - scaled;
-    state.tx = Math.min(0, Math.max(minTx, state.tx));
-    state.ty = Math.min(0, Math.max(minTy, state.ty));
+    let minTx, maxTx, minTy, maxTy;
+    if (scaled >= vp.width) {
+      // контейнер больше viewport: не выходим за края
+      minTx = 0 - base.x;               // левый край = 0
+      maxTx = vp.width - scaled - base.x; // правый край = vp.width
+    } else {
+      // контейнер меньше viewport: центрируем (только одна позиция)
+      minTx = (vp.width - scaled) / 2 - base.x;
+      maxTx = minTx;
+    }
+    if (scaled >= vp.height) {
+      minTy = 0 - base.y;
+      maxTy = vp.height - scaled - base.y;
+    } else {
+      minTy = (vp.height - scaled) / 2 - base.y;
+      maxTy = minTy;
+    }
+
+    state.tx = Math.min(maxTx, Math.max(minTx, state.tx));
+    state.ty = Math.min(maxTy, Math.max(minTy, state.ty));
+
+    const left = base.x + state.tx;
+    const top = base.y + state.ty;
     zoomContainer.style.transform =
-      `translate(${state.tx}px, ${state.ty}px) scale(${s})`;
-    // Но transform-origin = 0 0, а сам контейнер уже в левом верхнем положении
-    // Сначала translate, потом scale — так и работает (translate применяется до scale)
+      `translate(${left}px, ${top}px) scale(${s})`;
   }
 
   // ===== Сетка =====
@@ -89,7 +120,6 @@
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
     const pad = state.gridPad;
 
-    // Красная рамка зоны (отступ от верха и низа)
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', '0');
     rect.setAttribute('y', String(pad));
@@ -101,7 +131,6 @@
     rect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(rect);
 
-    // Горизонтальные пунктирные линии
     const n = state.heads;
     const y0 = pad;
     const y1 = 1 - pad;
@@ -131,35 +160,37 @@
     underlayLayer.src = state.underlay.src;
     underlayLayer.style.opacity = String(state.underlay.opacity);
 
-    // 100% = картинка вписана ровно по высоте квадратного холста
-    // Т.е. высота картинки = высота контейнера (внутренние координаты 0..1)
-    // Реальный масштаб: коэффициент умножения к базовой вписанной по высоте
     const mul = state.underlay.scale;
-    // Вписываем по высоте: imgH_display = canvasSize * mul (в px)
-    // Ширина = imgW * (canvasSize * mul / imgH)
-    // Мы работаем через transform картинки, центрируя её.
-    // Проще: зафиксируем размеры картинки в процентах от контейнера.
-    const dispH = mul * 100;                 // % от высоты контейнера
-    const dispW = (state.underlay.imgW / state.underlay.imgH) * dispH;
+    const ratio = state.underlay.imgW / state.underlay.imgH;
+    const dispH = mul * 100;      // % от высоты контейнера
+    const dispW = ratio * dispH;  // % от высоты
     underlayLayer.style.width = dispW + '%';
     underlayLayer.style.height = dispH + '%';
     underlayLayer.style.left = ((100 - dispW) / 2) + '%';
     underlayLayer.style.top = ((100 - dispH) / 2) + '%';
-    underlayLayer.style.transform = 'none';
+    underlayLayer.style.right = 'auto';
+    underlayLayer.style.bottom = 'auto';
     underlayLayer.style.objectFit = 'fill';
+    underlayLayer.style.transform = 'none';
   }
 
   // ===== Координаты =====
-  function clientToCanvas(clientX, clientY) {
+  // Возвращает точку в локальных координатах контейнера в px (0..size)
+  function clientToLocal(clientX, clientY) {
     const rect = zoomContainer.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width;
-    const y = (clientY - rect.top) / rect.height;
-    return { x, y };
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
   }
 
-  function clientToContainerPx(clientX, clientY) {
-    const rect = zoomContainer.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
+  // В координаты viewBox 0..1
+  function clientToCanvas(clientX, clientY) {
+    const p = clientToLocal(clientX, clientY);
+    return {
+      x: p.x / state.canvasSize,
+      y: p.y / state.canvasSize
+    };
   }
 
   // ===== Рисование =====
@@ -170,9 +201,11 @@
   let activePointerId = null;
   let gestureActive = false;
   let gestureStart = null;
+  let panning = false;
+  let panStart = null;
 
-  function beginPath(p) {
-    const c = clientToCanvas(p.x, p.y);
+  function beginPath(clientX, clientY) {
+    const c = clientToCanvas(clientX, clientY);
     currentPath = {
       d: `M ${c.x} ${c.y}`,
       color: state.brush.color,
@@ -189,17 +222,15 @@
     drawGroup.appendChild(currentPathEl);
   }
 
-  function extendPath(p) {
+  function extendPath(clientX, clientY) {
     if (!currentPath) return;
-    const c = clientToCanvas(p.x, p.y);
+    const c = clientToCanvas(clientX, clientY);
     currentPath.d += ` L ${c.x} ${c.y}`;
     currentPathEl.setAttribute('d', currentPath.d);
   }
 
   function commitPath() {
-    if (currentPath && currentPathEl) {
-      state.paths.push(currentPath);
-    }
+    if (currentPath && currentPathEl) state.paths.push(currentPath);
     currentPath = null;
     currentPathEl = null;
     drawing = false;
@@ -216,7 +247,7 @@
     activePointerId = null;
   }
 
-  // ===== Жесты зума/панорамирования =====
+  // ===== Жесты =====
   function startGesture() {
     const pts = Array.from(pointers.values());
     if (pts.length < 2) return;
@@ -225,16 +256,21 @@
     const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
     const midX = (a.x + b.x) / 2;
     const midY = (a.y + b.y) / 2;
+
+    // Точка в локальных координатах контейнера (до scale), под серединой
+    const local = clientToLocal(midX, midY);
+    // Переводим в "мировые" координаты контейнера (0..size без scale)
+    const worldX = (local.x) / state.scale;
+    const worldY = (local.y) / state.scale;
+
     gestureStart = {
       dist,
-      midX,
-      midY,
       scale: state.scale,
-      tx: state.tx,
-      ty: state.ty,
-      // мировая точка под серединой (в координатах контейнера до scale)
-      worldX: (midX - zoomContainer.getBoundingClientRect().left - state.tx) / state.scale,
-      worldY: (midY - zoomContainer.getBoundingClientRect().top - state.ty) / state.scale
+      // запоминаем положение "мира" под серединой
+      worldX,
+      worldY,
+      midX,
+      midY
     };
   }
 
@@ -249,62 +285,48 @@
     let newScale = gestureStart.scale * (dist / gestureStart.dist);
     newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-    const rect = zoomContainer.getBoundingClientRect();
-    // Хотим, чтобы мировая точка оказалась под текущей серединой
-    // Позиция контейнера (левый верх) в client-координатах:
-    // containerLeft = rect.left - state.tx (до применения нового tx)... 
-    // Проще пересчитать через viewport-координаты:
-    // Контейнер исходно стоит в левом верхнем углу viewport? Нет — мы его позиционируем
-    // отдельно (left/top для центрирования). Возьмём базовое смещение без transform:
-    const baseRect = zoomContainer.getBoundingClientRect();
-    // Позиция до transform (визуально): left = baseRect.left - state.tx, top = baseRect.top - state.ty
-    const baseLeft = baseRect.left - state.tx;
-    const baseTop = baseRect.top - state.ty;
-
-    // Новая tx/ty, чтобы точка worldX (в локальных px до scale) оказалась под mid
-    // midX = baseLeft + tx + worldX * newScale
-    const newTx = midX - baseLeft - gestureStart.worldX * newScale;
-    const newTy = midY - baseTop - gestureStart.worldY * newScale;
+    // Хотим, чтобы точка worldX*newScale оказалась под midX (в client coords).
+    // Ранее: midX = rect.left + worldX*scale  =>  rect.left = midX - worldX*scale
+    // Теперь rect.left_new = midX - worldX*newScale
+    // rect.left = base.x + tx  =>  tx = rect.left - base.x
+    // Аналогично top.
+    const base = getBaseOffset();
+    // rect.left при новом масштабе:
+    const newLeft = midX - gestureStart.worldX * newScale;
+    const newTop = midY - gestureStart.worldY * newScale;
 
     state.scale = newScale;
-    state.tx = newTx;
-    state.ty = newTy;
+    state.tx = newLeft - base.x;
+    state.ty = newTop - base.y;
     applyTransform();
   }
 
-  // ===== Pointer Events =====
+  // ===== Pointer events =====
   function onPointerDown(e) {
-    // Мы слушаем на zoomContainer
     const isMiddle = e.button === 1;
     const isShiftLeft = e.button === 0 && e.shiftKey;
     const isTouch = e.pointerType === 'touch';
     const isLeft = e.button === 0;
 
-    // Панорамирование: средняя кнопка или Shift+ЛКМ (мышь), либо второй палец
     if (isMiddle || isShiftLeft) {
       e.preventDefault();
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, pan: true });
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       zoomContainer.setPointerCapture(e.pointerId);
       if (pointers.size === 1) {
-        gestureStart = null; // одиночное панорамирование будем делать отдельно
-        panStart = {
-          x: e.clientX,
-          y: e.clientY,
-          tx: state.tx,
-          ty: state.ty
-        };
         panning = true;
+        panStart = { x: e.clientX, y: e.clientY, tx: state.tx, ty: state.ty };
+      } else if (pointers.size >= 2) {
+        if (drawing) cancelPath();
+        panning = false;
+        startGesture();
       }
       return;
     }
 
-    // Обычный тач/ЛКМ
     if (!isTouch && !isLeft) return;
-
     e.preventDefault();
 
     if (drawing && activePointerId !== null && e.pointerId !== activePointerId) {
-      // Появился второй палец во время рисования — отменяем путь
       cancelPath();
     }
 
@@ -312,20 +334,16 @@
     zoomContainer.setPointerCapture(e.pointerId);
 
     if (pointers.size >= 2) {
-      // Жест
       if (drawing) cancelPath();
+      panning = false;
       startGesture();
       return;
     }
 
-    // Один палец — рисование
     drawing = true;
     activePointerId = e.pointerId;
-    beginPath({ x: e.clientX, y: e.clientY });
+    beginPath(e.clientX, e.clientY);
   }
-
-  let panning = false;
-  let panStart = null;
 
   function onPointerMove(e) {
     if (!pointers.has(e.pointerId)) return;
@@ -349,7 +367,7 @@
 
     if (drawing && e.pointerId === activePointerId) {
       e.preventDefault();
-      extendPath({ x: e.clientX, y: e.clientY });
+      extendPath(e.clientX, e.clientY);
     }
   }
 
@@ -357,18 +375,13 @@
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
 
-    if (panning && panStart && pointers.size === 0) {
-      panning = false;
-      panStart = null;
-    }
-
-    if (drawing && e.pointerId === activePointerId) {
-      commitPath();
-    }
+    if (drawing && e.pointerId === activePointerId) commitPath();
 
     if (pointers.size < 2) {
       gestureActive = false;
       gestureStart = null;
+    }
+    if (pointers.size === 0) {
       panning = false;
       panStart = null;
     }
@@ -380,43 +393,32 @@
   zoomContainer.addEventListener('pointermove', onPointerMove);
   zoomContainer.addEventListener('pointerup', onPointerUp);
   zoomContainer.addEventListener('pointercancel', onPointerUp);
-  zoomContainer.addEventListener('pointerleave', (e) => {
-    // Не отпускаем, если pointercapture активен
-  });
-
-  // Блокируем контекстное меню на средней кнопке
   zoomContainer.addEventListener('mousedown', (e) => {
     if (e.button === 1) e.preventDefault();
   });
 
-  // ===== Зум колесом (ПК) =====
+  // ===== Колесо =====
   zoomContainer.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const rect = zoomContainer.getBoundingClientRect();
-    const mx = e.clientX - rect.left; // px в контейнере (после transform)
-    const my = e.clientY - rect.top;
-    // Точка в локальных координатах до scale
-    const worldX = (mx - state.tx) / state.scale;
-    const worldY = (my - state.ty) / state.scale;
+    const local = clientToLocal(e.clientX, e.clientY);
+    const worldX = local.x / state.scale;
+    const worldY = local.y / state.scale;
 
     const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
     let newScale = state.scale * factor;
     newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-    // Хотим, чтобы worldX (в локальных px) осталась под курсором
-    // Итоговый clientX = rect.left - tx_old + tx + worldX*scale ... 
-    // Проще через базовую позицию:
-    // После применения transform: clientX = baseLeft + tx + worldX*newScale,
-    // где baseLeft = rect.left - state.tx (позиция контейнера без transform)
-    const baseLeft = rect.left - state.tx;
-    const baseTop = rect.top - state.ty;
-    state.tx = (e.clientX - baseLeft) - worldX * newScale;
-    state.ty = (e.clientY - baseTop) - worldY * newScale;
+    const base = getBaseOffset();
+    const newLeft = e.clientX - worldX * newScale;
+    const newTop = e.clientY - worldY * newScale;
+
     state.scale = newScale;
+    state.tx = newLeft - base.x;
+    state.ty = newTop - base.y;
     applyTransform();
   }, { passive: false });
 
-  // ===== UI обработчики =====
+  // ===== UI =====
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -507,7 +509,6 @@
     svg.setAttribute('width', '1024');
     svg.setAttribute('height', '1024');
 
-    // Фон
     const bg = document.createElementNS(NS, 'rect');
     bg.setAttribute('x', '0');
     bg.setAttribute('y', '0');
@@ -516,11 +517,10 @@
     bg.setAttribute('fill', state.bgColor);
     svg.appendChild(bg);
 
-    // Подложка
     if (state.underlay.src) {
       const mul = state.underlay.scale;
       const ratio = state.underlay.imgW / state.underlay.imgH;
-      const h = mul;              // высота в единицах viewBox
+      const h = mul;
       const w = ratio * h;
       const x = (1 - w) / 2;
       const y = (1 - h) / 2;
@@ -536,7 +536,6 @@
       svg.appendChild(img);
     }
 
-    // Пути
     state.paths.forEach((p) => {
       const el = document.createElementNS(NS, 'path');
       el.setAttribute('fill', 'none');
@@ -573,7 +572,6 @@
     const SIZE = 4096;
     const svgString = buildExportSVG();
 
-    // Устанавливаем явные размеры для рендера
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, 'image/svg+xml');
     const svgEl = doc.documentElement;
@@ -611,24 +609,18 @@
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
     renderGrid();
-    updateCanvasSize();
-    // Размеры могут поменяться после загрузки шрифтов/лейаута
-    requestAnimationFrame(updateCanvasSize);
+    // Дать браузеру пересчитать layout
+    requestAnimationFrame(() => {
+      updateCanvasSize();
+    });
   }
 
   let resizeRAF = null;
   window.addEventListener('resize', () => {
     if (resizeRAF) cancelAnimationFrame(resizeRAF);
-    resizeRAF = requestAnimationFrame(() => {
-      // Сохраняем видимую центральную точку при ресайзе — упрощённо сбросим трансформ к 1
-      state.scale = 1;
-      state.tx = 0;
-      state.ty = 0;
-      updateCanvasSize();
-    });
+    resizeRAF = requestAnimationFrame(updateCanvasSize);
   });
 
-  // Предотвращаем скролл/жесты на всей странице
   document.addEventListener('touchmove', (e) => {
     if (e.target.closest('#panel')) return;
     e.preventDefault();
