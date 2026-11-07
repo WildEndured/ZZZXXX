@@ -1,83 +1,80 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Редактор холста</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Адаптивный холст для рисования</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app">
-        <main class="workspace" id="workspace">
-            <div class="viewport" id="viewport">
-                <div class="zoom-container" id="zoomContainer">
-                    <div class="layer layer-bg" id="bgLayer"></div>
-                    <img class="layer layer-underlay" id="underlayLayer" alt="подложка" draggable="false">
-                    <svg class="layer layer-draw" id="drawSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-                        <g id="staticGroup"></g>
-                        <g id="drawGroup"></g>
-                    </svg>
-                </div>
-            </div>
-        </main>
-
-        <aside class="sidebar">
-            <div class="panel">
-                <h1>Холст</h1>
-
-                <div class="field">
-                    <label>Фон</label>
-                    <input type="color" id="bgColor" value="#ffffff">
-                </div>
-
-                <div class="field">
-                    <label>Подложка</label>
-                    <input type="file" id="underlayFile" accept="image/*">
-                </div>
-
-                <div class="field">
-                    <label>Масштаб подложки: <span id="underlayScaleVal">100</span>%</label>
-                    <input type="range" id="underlayScale" min="10" max="300" value="100">
-                </div>
-
-                <div class="field">
-                    <label>Прозрачность подложки: <span id="underlayOpacityVal">100</span>%</label>
-                    <input type="range" id="underlayOpacity" min="0" max="100" value="100">
-                </div>
-
-                <div class="field">
-                    <label>Отступ сетки: <span id="gridMarginVal">5</span>%</label>
-                    <input type="range" id="gridMargin" min="0" max="10" value="5">
-                </div>
-
-                <div class="field">
-                    <label>Количество голов: <span id="headsVal">4</span></label>
-                    <input type="range" id="heads" min="2" max="8" value="4">
-                </div>
-
-                <div class="field">
-                    <label>Толщина кисти: <span id="brushSizeVal">4</span></label>
-                    <input type="range" id="brushSize" min="1" max="50" value="4">
-                </div>
-
-                <div class="field">
-                    <label>Цвет кисти</label>
-                    <input type="color" id="brushColor" value="#000000">
-                </div>
-
-                <div class="actions">
-                    <button id="undoBtn">Undo</button>
-                    <button id="clearBtn" class="danger">Очистить всё</button>
-                </div>
-
-                <div class="actions">
-                    <button id="exportSvgBtn">Скачать SVG</button>
-                    <button id="exportPngBtn">Скачать PNG</button>
-                </div>
-            </div>
-        </aside>
+<div id="app">
+  <!-- Рабочая область (viewport) -->
+  <div id="viewport">
+    <div id="zoomContainer">
+      <div id="bgLayer"></div>
+      <img id="underlayLayer" alt="" draggable="false">
+      <svg id="drawLayer" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <g id="gridGroup"></g>
+        <g id="drawGroup"></g>
+      </svg>
     </div>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- Боковая панель управления -->
+  <aside id="panel">
+    <div class="panel-inner">
+      <section class="block">
+        <h3>Подложка</h3>
+        <input type="file" id="fileInput" accept="image/*">
+        <label>Масштаб: <span id="underlayScaleVal">100%</span>
+          <input type="range" id="underlayScale" min="10" max="300" value="100">
+        </label>
+        <label>Прозрачность: <span id="underlayOpacityVal">100%</span>
+          <input type="range" id="underlayOpacity" min="0" max="100" value="100">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Фон</h3>
+        <label>Цвет фона
+          <input type="color" id="bgColor" value="#ffffff">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Сетка</h3>
+        <label>Отступ (0–10%): <span id="gridPadVal">5%</span>
+          <input type="range" id="gridPad" min="0" max="10" value="5">
+        </label>
+        <label>Голов (2–8): <span id="headsVal">4</span>
+          <input type="range" id="heads" min="2" max="8" value="4">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Кисть</h3>
+        <label>Цвет кисти
+          <input type="color" id="brushColor" value="#000000">
+        </label>
+        <label>Толщина: <span id="brushWidthVal">3</span>
+          <input type="range" id="brushWidth" min="1" max="20" value="3">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Действия</h3>
+        <div class="btn-row">
+          <button id="undoBtn">Undo</button>
+          <button id="clearBtn">Очистить всё</button>
+        </div>
+        <div class="btn-row">
+          <button id="exportSvgBtn">Скачать SVG</button>
+          <button id="exportPngBtn">Скачать PNG</button>
+        </div>
+      </section>
+    </div>
+  </aside>
+</div>
+<script src="script.js"></script>
 </body>
 </html>
