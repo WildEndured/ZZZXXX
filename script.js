@@ -137,11 +137,11 @@
       gridGroup.appendChild(line);
     }
 
-    // Круг: диаметр = 3/5 высоты верхней секции, по центру по X
+    // Круг: диаметр = 3/5 высоты секции, касается верхней линии секции
     const sectionH = span / n;
+    const r = (3 / 10) * sectionH;      // половина от 3/5
     const cx = 0.5;
-    const cy = y0 + sectionH / 2;
-    const r = (sectionH * 3) / 10;
+    const cy = y0 + r;                  // верхняя точка круга = y0
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', String(cx));
