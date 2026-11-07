@@ -90,6 +90,34 @@
   const wristRightR = document.getElementById('wristRightR');
   const wristRightRVal = document.getElementById('wristRightRVal');
 
+  const kneeLeftX = document.getElementById('kneeLeftX');
+  const kneeLeftXVal = document.getElementById('kneeLeftXVal');
+  const kneeLeftY = document.getElementById('kneeLeftY');
+  const kneeLeftYVal = document.getElementById('kneeLeftYVal');
+  const kneeLeftR = document.getElementById('kneeLeftR');
+  const kneeLeftRVal = document.getElementById('kneeLeftRVal');
+
+  const kneeRightX = document.getElementById('kneeRightX');
+  const kneeRightXVal = document.getElementById('kneeRightXVal');
+  const kneeRightY = document.getElementById('kneeRightY');
+  const kneeRightYVal = document.getElementById('kneeRightYVal');
+  const kneeRightR = document.getElementById('kneeRightR');
+  const kneeRightRVal = document.getElementById('kneeRightRVal');
+
+  const ankleLeftX = document.getElementById('ankleLeftX');
+  const ankleLeftXVal = document.getElementById('ankleLeftXVal');
+  const ankleLeftY = document.getElementById('ankleLeftY');
+  const ankleLeftYVal = document.getElementById('ankleLeftYVal');
+  const ankleLeftR = document.getElementById('ankleLeftR');
+  const ankleLeftRVal = document.getElementById('ankleLeftRVal');
+
+  const ankleRightX = document.getElementById('ankleRightX');
+  const ankleRightXVal = document.getElementById('ankleRightXVal');
+  const ankleRightY = document.getElementById('ankleRightY');
+  const ankleRightYVal = document.getElementById('ankleRightYVal');
+  const ankleRightR = document.getElementById('ankleRightR');
+  const ankleRightRVal = document.getElementById('ankleRightRVal');
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -140,6 +168,10 @@
     elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 },
     wristRight: { x: 0.20, y: 0, r: 0.10 },
+    kneeLeft: { x: 0, y: 0, r: 0.08 },
+    kneeRight: { x: 0, y: 0, r: 0.08 },
+    ankleLeft: { x: 0, y: 0, r: 0.06 },
+    ankleRight: { x: 0, y: 0, r: 0.06 },
     brush: { color: '#000000', width: 3 },
     paths: []
   };
@@ -342,11 +374,10 @@
     pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(pelvisRect);
 
-    // ===== Запястья и Локти =====
+    // ===== Руки (Запястья и Локти) =====
     const pelvisBottomY = pelvisY0 + pelvisH;
 
-    // --- Левая сторона ---
-    // Запястье (низ на уровне низа таза)
+    // Левая рука
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = cx - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
@@ -361,13 +392,10 @@
     wristLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristLeft);
 
-    // Локоть (посередине между плечом и запястьем)
-    const shoulderLeftCy = shoulderCy; // плечо на одной высоте для обеих сторон
+    const shoulderLeftCy = shoulderCy;
     const elbowLeftRadiusPx = state.elbowLeft.r * sectionH;
-    
     const elbowLeftCx_base = (shoulderLeftCx + wristLeftCx) / 2;
     const elbowLeftCy_base = (shoulderLeftCy + wristLeftCy) / 2;
-    
     const elbowLeftCx = elbowLeftCx_base + (state.elbowLeft.x * sectionH);
     const elbowLeftCy = elbowLeftCy_base + (state.elbowLeft.y * sectionH);
 
@@ -381,9 +409,7 @@
     elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowLeft);
 
-
-    // --- Правая сторона ---
-    // Запястье
+    // Правая рука
     const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = cx + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
@@ -398,13 +424,10 @@
     wristRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristRight);
 
-    // Локоть
     const shoulderRightCy = shoulderCy;
     const elbowRightRadiusPx = state.elbowRight.r * sectionH;
-    
     const elbowRightCx_base = (shoulderRightCx + wristRightCx) / 2;
     const elbowRightCy_base = (shoulderRightCy + wristRightCy) / 2;
-    
     const elbowRightCx = elbowRightCx_base + (state.elbowRight.x * sectionH);
     const elbowRightCy = elbowRightCy_base + (state.elbowRight.y * sectionH);
 
@@ -418,6 +441,81 @@
     elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowRight);
 
+    // ===== Ноги (Колени и Лодыжки) =====
+    
+    // Отступ в одну голову от таза
+    const kneeOffsetY = headH;
+    const ankleOffsetY = headH;
+
+    // --- Левая нога ---
+    const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
+    const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
+    const kneeLeftCx_base = wristLeftCx; // Выравниваем по X запястья (или центра ноги)
+    
+    const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
+    const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
+
+    const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    kneeLeft.setAttribute('cx', String(kneeLeftCx));
+    kneeLeft.setAttribute('cy', String(kneeLeftCy));
+    kneeLeft.setAttribute('r', String(kneeLeftRadiusPx));
+    kneeLeft.setAttribute('fill', 'none');
+    kneeLeft.setAttribute('stroke', '#ff0000');
+    kneeLeft.setAttribute('stroke-width', '1');
+    kneeLeft.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(kneeLeft);
+
+    const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
+    const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
+    const ankleLeftCx_base = kneeLeftCx_base;
+
+    const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
+    const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
+
+    const ankleLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ankleLeft.setAttribute('cx', String(ankleLeftCx));
+    ankleLeft.setAttribute('cy', String(ankleLeftCy));
+    ankleLeft.setAttribute('r', String(ankleLeftRadiusPx));
+    ankleLeft.setAttribute('fill', 'none');
+    ankleLeft.setAttribute('stroke', '#ff0000');
+    ankleLeft.setAttribute('stroke-width', '1');
+    ankleLeft.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(ankleLeft);
+
+    // --- Правая нога ---
+    const kneeRightRadiusPx = state.kneeRight.r * sectionH;
+    const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
+    const kneeRightCx_base = wristRightCx;
+
+    const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
+    const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
+
+    const kneeRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    kneeRight.setAttribute('cx', String(kneeRightCx));
+    kneeRight.setAttribute('cy', String(kneeRightCy));
+    kneeRight.setAttribute('r', String(kneeRightRadiusPx));
+    kneeRight.setAttribute('fill', 'none');
+    kneeRight.setAttribute('stroke', '#ff0000');
+    kneeRight.setAttribute('stroke-width', '1');
+    kneeRight.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(kneeRight);
+
+    const ankleRightRadiusPx = state.ankleRight.r * sectionH;
+    const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
+    const ankleRightCx_base = kneeRightCx_base;
+
+    const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
+    const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
+
+    const ankleRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ankleRight.setAttribute('cx', String(ankleRightCx));
+    ankleRight.setAttribute('cy', String(ankleRightCy));
+    ankleRight.setAttribute('r', String(ankleRightRadiusPx));
+    ankleRight.setAttribute('fill', 'none');
+    ankleRight.setAttribute('stroke', '#ff0000');
+    ankleRight.setAttribute('stroke-width', '1');
+    ankleRight.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(ankleRight);
 
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
@@ -984,6 +1082,78 @@
   wristRightR.addEventListener('input', () => {
     state.wristRight.r = parseInt(wristRightR.value, 10) / 100;
     wristRightRVal.textContent = wristRightR.value + '%';
+    renderGrid();
+  });
+
+  kneeLeftX.addEventListener('input', () => {
+    state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100;
+    kneeLeftXVal.textContent = kneeLeftX.value + '%';
+    renderGrid();
+  });
+
+  kneeLeftY.addEventListener('input', () => {
+    state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100;
+    kneeLeftYVal.textContent = kneeLeftY.value + '%';
+    renderGrid();
+  });
+
+  kneeLeftR.addEventListener('input', () => {
+    state.kneeLeft.r = parseInt(kneeLeftR.value, 10) / 100;
+    kneeLeftRVal.textContent = kneeLeftR.value + '%';
+    renderGrid();
+  });
+
+  kneeRightX.addEventListener('input', () => {
+    state.kneeRight.x = parseInt(kneeRightX.value, 10) / 100;
+    kneeRightXVal.textContent = kneeRightX.value + '%';
+    renderGrid();
+  });
+
+  kneeRightY.addEventListener('input', () => {
+    state.kneeRight.y = parseInt(kneeRightY.value, 10) / 100;
+    kneeRightYVal.textContent = kneeRightY.value + '%';
+    renderGrid();
+  });
+
+  kneeRightR.addEventListener('input', () => {
+    state.kneeRight.r = parseInt(kneeRightR.value, 10) / 100;
+    kneeRightRVal.textContent = kneeRightR.value + '%';
+    renderGrid();
+  });
+
+  ankleLeftX.addEventListener('input', () => {
+    state.ankleLeft.x = parseInt(ankleLeftX.value, 10) / 100;
+    ankleLeftXVal.textContent = ankleLeftX.value + '%';
+    renderGrid();
+  });
+
+  ankleLeftY.addEventListener('input', () => {
+    state.ankleLeft.y = parseInt(ankleLeftY.value, 10) / 100;
+    ankleLeftYVal.textContent = ankleLeftY.value + '%';
+    renderGrid();
+  });
+
+  ankleLeftR.addEventListener('input', () => {
+    state.ankleLeft.r = parseInt(ankleLeftR.value, 10) / 100;
+    ankleLeftRVal.textContent = ankleLeftR.value + '%';
+    renderGrid();
+  });
+
+  ankleRightX.addEventListener('input', () => {
+    state.ankleRight.x = parseInt(ankleRightX.value, 10) / 100;
+    ankleRightXVal.textContent = ankleRightX.value + '%';
+    renderGrid();
+  });
+
+  ankleRightY.addEventListener('input', () => {
+    state.ankleRight.y = parseInt(ankleRightY.value, 10) / 100;
+    ankleRightYVal.textContent = ankleRightY.value + '%';
+    renderGrid();
+  });
+
+  ankleRightR.addEventListener('input', () => {
+    state.ankleRight.r = parseInt(ankleRightR.value, 10) / 100;
+    ankleRightRVal.textContent = ankleRightR.value + '%';
     renderGrid();
   });
 
