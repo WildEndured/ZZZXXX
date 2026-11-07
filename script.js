@@ -42,6 +42,15 @@
   const jawRound = document.getElementById('jawRound');
   const jawRoundVal = document.getElementById('jawRoundVal');
 
+  const chestWidth = document.getElementById('chestWidth');
+  const chestWidthVal = document.getElementById('chestWidthVal');
+  const chestOffset = document.getElementById('chestOffset');
+  const chestOffsetVal = document.getElementById('chestOffsetVal');
+  const chestTopNarrow = document.getElementById('chestTopNarrow');
+  const chestTopNarrowVal = document.getElementById('chestTopNarrowVal');
+  const chestBottomWide = document.getElementById('chestBottomWide');
+  const chestBottomWideVal = document.getElementById('chestBottomWideVal');
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -74,6 +83,12 @@
       height: 0.80,
       angle: 0.20,
       round: 0.00
+    },
+    chest: {
+      width: 0.90,
+      offset: 0.00,
+      topNarrow: 0.50,
+      bottomWide: 1.00
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -192,35 +207,35 @@
     ellipse.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(ellipse);
 
-    // ===== Яйцевидный эллипс (во второй секции) =====
-    // Привязываем верх и низ яйца строго к границам секции
-    const eggTopY = y0 + sectionH;
-    const eggBottomY = y0 + 2 * sectionH;
+    // ===== Грудная клетка (яйцо во второй секции) =====
+    const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
+    const chestHeight = sectionH;
+    const chestRx = (headW * state.chest.width) / 2;
     
-    // Высота яйца равна высоте секции
-    const eggHeight = sectionH;
-    // Ширина (чуть уже головы, чтобы смотрелось естественно, например 90% от ширины головы)
-    const eggRx = (headW * 0.9) / 2; 
+    // Контрольные точки для ширины
+    const narrowFactor = state.chest.topNarrow; // 0..1
+    const wideFactor = state.chest.bottomWide;  // 0..1.5
 
-    // Форма яйца: верх уже, низ шире.
-    // Используем кубические кривые (C).
-    const eggPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const cpTopX = chestRx * narrowFactor;
+    const cpBottomX = chestRx * wideFactor;
+
+    const chestPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     
-    // d: start at top center -> curve right -> curve bottom -> curve left -> back to top
+    // Строим path
     const d = `
-      M ${cx} ${eggTopY}
-      C ${cx + eggRx * 0.5} ${eggTopY}, ${cx + eggRx} ${eggTopY + eggHeight * 0.3}, ${cx + eggRx} ${eggTopY + eggHeight * 0.6}
-      C ${cx + eggRx} ${eggTopY + eggHeight * 0.9}, ${cx + eggRx * 0.4} ${eggBottomY}, ${cx} ${eggBottomY}
-      C ${cx - eggRx * 0.4} ${eggBottomY}, ${cx - eggRx} ${eggTopY + eggHeight * 0.9}, ${cx - eggRx} ${eggTopY + eggHeight * 0.6}
-      C ${cx - eggRx} ${eggTopY + eggHeight * 0.3}, ${cx - eggRx * 0.5} ${eggTopY}, ${cx} ${eggTopY}
+      M ${cx} ${chestY0}
+      C ${cx + cpTopX} ${chestY0}, ${cx + chestRx} ${chestY0 + chestHeight * 0.3}, ${cx + chestRx} ${chestY0 + chestHeight * 0.6}
+      C ${cx + chestRx} ${chestY0 + chestHeight * 0.9}, ${cx + cpBottomX} ${chestY0 + chestHeight}, ${cx} ${chestY0 + chestHeight}
+      C ${cx - cpBottomX} ${chestY0 + chestHeight}, ${cx - chestRx} ${chestY0 + chestHeight * 0.9}, ${cx - chestRx} ${chestY0 + chestHeight * 0.6}
+      C ${cx - chestRx} ${chestY0 + chestHeight * 0.3}, ${cx - cpTopX} ${chestY0}, ${cx} ${chestY0}
       Z
     `;
-    eggPath.setAttribute('d', d.trim());
-    eggPath.setAttribute('fill', 'none');
-    eggPath.setAttribute('stroke', '#ff0000');
-    eggPath.setAttribute('stroke-width', '1');
-    eggPath.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(eggPath);
+    chestPath.setAttribute('d', d.trim());
+    chestPath.setAttribute('fill', 'none');
+    chestPath.setAttribute('stroke', '#ff0000');
+    chestPath.setAttribute('stroke-width', '1');
+    chestPath.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(chestPath);
 
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
@@ -661,6 +676,30 @@
   jawRound.addEventListener('input', () => {
     state.jaw.round = parseInt(jawRound.value, 10) / 100;
     jawRoundVal.textContent = jawRound.value + '%';
+    renderGrid();
+  });
+
+  chestWidth.addEventListener('input', () => {
+    state.chest.width = parseInt(chestWidth.value, 10) / 100;
+    chestWidthVal.textContent = chestWidth.value + '%';
+    renderGrid();
+  });
+
+  chestOffset.addEventListener('input', () => {
+    state.chest.offset = parseInt(chestOffset.value, 10) / 100;
+    chestOffsetVal.textContent = chestOffset.value + '%';
+    renderGrid();
+  });
+
+  chestTopNarrow.addEventListener('input', () => {
+    state.chest.topNarrow = parseInt(chestTopNarrow.value, 10) / 100;
+    chestTopNarrowVal.textContent = chestTopNarrow.value + '%';
+    renderGrid();
+  });
+
+  chestBottomWide.addEventListener('input', () => {
+    state.chest.bottomWide = parseInt(chestBottomWide.value, 10) / 100;
+    chestBottomWideVal.textContent = chestBottomWide.value + '%';
     renderGrid();
   });
 
