@@ -254,16 +254,11 @@
     gridGroup.appendChild(chestPath);
 
     // ===== Таз =====
-    // Ширина таза = высота грудной клетки * модификатор
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
-    // Высота таза = ширина грудной клетки * модификатор
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
-    
-    // Таз крепится к грудной клетке (координата Y — это низ грудной клетки + смещение)
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
     const pelvisX0 = cx - pelvisW / 2;
 
-    // Радиус скругления
     const rxRadius = Math.min(pelvisW * state.pelvis.round, pelvisH / 2);
 
     const pelvisRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
