@@ -1,129 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SVG Векторный Редактор</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SVG Векторный Редактор</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Панель управления (слева на десктопе, снизу на мобильном) -->
-        <aside class="control-panel" id="controlPanel">
-            
-            <!-- Аккордеон: Кисть -->
-            <div class="accordion">
-                <button class="accordion-header active">
-                    <span>Кисть</span>
-                    <span class="icon">▼</span>
-                </button>
-                <div class="accordion-content" style="display: block;">
-                    <div class="control-group">
-                        <label for="brushSize">Толщина кисти: <span id="brushSizeVal">0.005</span></label>
-                        <input type="range" id="brushSize" min="0.00025" max="0.025" step="0.00025" value="0.005">
-                    </div>
-                    <div class="control-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="eraserMode"> Ластик
-                        </label>
-                    </div>
-                    <div class="button-group">
-                        <button id="undoBtn" class="btn">Отменить</button>
-                        <button id="clearBtn" class="btn btn-danger">Очистить</button>
-                    </div>
-                </div>
-            </div>
+  <div class="app">
+    <!-- Панель управления -->
+    <aside class="panel">
+      <h2>Инструменты</h2>
 
-            <!-- Аккордеон: Фон -->
-            <div class="accordion">
-                <button class="accordion-header active">
-                    <span>Фон</span>
-                    <span class="icon">▼</span>
-                </button>
-                <div class="accordion-content" style="display: block;">
-                    <div class="control-group">
-                        <label for="bgColor">Цвет фона</label>
-                        <input type="color" id="bgColor" value="#ffffff">
-                    </div>
-                </div>
-            </div>
+      <div class="group">
+        <label>Кисть / Ластик</label>
+        <div class="btn-row">
+          <button id="toolBrush" class="active">Кисть</button>
+          <button id="toolEraser">Ластик</button>
+        </div>
+      </div>
 
-            <!-- Аккордеон: Подложка -->
-            <div class="accordion">
-                <button class="accordion-header active">
-                    <span>Подложка</span>
-                    <span class="icon">▼</span>
-                </button>
-                <div class="accordion-content" style="display: block;">
-                    <div class="control-group">
-                        <button id="uploadBtn" class="btn">Загрузить картинку</button>
-                        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                    </div>
-                    <div class="control-group">
-                        <label for="bgImageScale">Масштаб: <span id="bgImageScaleVal">100</span>%</label>
-                        <input type="range" id="bgImageScale" min="10" max="300" step="1" value="100">
-                    </div>
-                    <div class="control-group">
-                        <label for="bgImageOpacity">Прозрачность: <span id="bgImageOpacityVal">100</span>%</label>
-                        <input type="range" id="bgImageOpacity" min="0" max="100" step="1" value="100">
-                    </div>
-                </div>
-            </div>
+      <div class="group">
+        <label>Толщина: <span id="sizeVal">0.005</span></label>
+        <input type="range" id="sizeRange" min="0.00025" max="0.025" step="0.00025" value="0.005">
+      </div>
 
-            <!-- Аккордеон: Разметка -->
-            <div class="accordion">
-                <button class="accordion-header active">
-                    <span>Разметка</span>
-                    <span class="icon">▼</span>
-                </button>
-                <div class="accordion-content" style="display: block;">
-                    <div class="control-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="gridEnabled"> Включить разметку
-                        </label>
-                    </div>
-                    <div class="control-group">
-                        <label for="gridPadding">Отступ: <span id="gridPaddingVal">5</span>%</label>
-                        <input type="range" id="gridPadding" min="0" max="10" step="1" value="5">
-                    </div>
-                    <div class="control-group">
-                        <label for="gridHeads">Количество голов: <span id="gridHeadsVal">3</span></label>
-                        <input type="range" id="gridHeads" min="2" max="8" step="1" value="3">
-                    </div>
-                </div>
-            </div>
+      <div class="group">
+        <label>Цвет кисти</label>
+        <input type="color" id="brushColor" value="#000000">
+      </div>
 
-            <!-- Аккордеон: Экспорт -->
-            <div class="accordion">
-                <button class="accordion-header active">
-                    <span>Экспорт</span>
-                    <span class="icon">▼</span>
-                </button>
-                <div class="accordion-content" style="display: block;">
-                    <div class="button-group vertical">
-                        <button id="exportSvgBtn" class="btn">Скачать SVG</button>
-                        <button id="exportPngBtn" class="btn">Скачать PNG (4096x4096)</button>
-                    </div>
-                </div>
-            </div>
+      <div class="group">
+        <button id="undoBtn">Отменить</button>
+        <button id="clearBtn">Очистить</button>
+      </div>
 
-        </aside>
+      <hr>
 
-        <!-- Контейнер холста (справа на десктопе, сверху на мобильном) -->
-        <main class="canvas-container" id="canvasContainer">
-            <div class="zoom-wrapper" id="zoomWrapper">
-                <!-- Слой 1: Фон -->
-                <div class="layer background-layer" id="bgLayer"></div>
-                <!-- Слой 2: Подложка -->
-                <img class="layer overlay-layer" id="bgImageLayer" src="" alt="" style="display: none;">
-                <!-- Слой 3: Рисование -->
-                <svg class="layer drawing-layer" id="drawingSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-                    <g id="gridGroup" style="display: none;"></g>
-                    <g id="drawGroup"></g>
-                </svg>
-            </div>
-        </main>
-    </div>
-    <script src="script.js"></script>
+      <h2>Фон и подложка</h2>
+      <div class="group">
+        <label>Цвет фона</label>
+        <input type="color" id="bgColor" value="#ffffff">
+      </div>
+
+      <div class="group">
+        <button id="uploadBtn">Загрузить картинку</button>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+      </div>
+
+      <div class="group">
+        <label>Масштаб подложки: <span id="imgScaleVal">100</span>%</label>
+        <input type="range" id="imgScale" min="10" max="300" value="100">
+      </div>
+
+      <div class="group">
+        <label>Прозрачность: <span id="imgOpacityVal">100</span>%</label>
+        <input type="range" id="imgOpacity" min="0" max="100" value="100">
+      </div>
+
+      <hr>
+
+      <h2>Разметка</h2>
+      <div class="group">
+        <label>Отступ: <span id="marginVal">5</span>%</label>
+        <input type="range" id="marginRange" min="0" max="10" value="5">
+      </div>
+
+      <div class="group">
+        <label>Голов: <span id="headsVal">4</span></label>
+        <input type="range" id="headsRange" min="2" max="8" value="4">
+      </div>
+
+      <hr>
+
+      <h2>Экспорт</h2>
+      <div class="group">
+        <button id="exportSvg">Скачать SVG</button>
+        <button id="exportPng">Скачать PNG (4096)</button>
+      </div>
+    </aside>
+
+    <!-- Контейнер зума -->
+    <main class="stage" id="stage">
+      <div class="zoom-container" id="zoomContainer">
+        <!-- Слой 1: фон -->
+        <div class="layer-bg" id="bgLayer"></div>
+        <!-- Слой 2: подложка -->
+        <img class="layer-img" id="imgLayer" alt="" draggable="false">
+        <!-- Слой 3: рисование -->
+        <svg class="layer-svg" id="svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+          <g id="gridGroup"></g>
+          <g id="drawGroup"></g>
+        </svg>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
