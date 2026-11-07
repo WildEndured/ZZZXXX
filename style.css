@@ -88,6 +88,64 @@ html, body {
   padding: 10px;
 }
 
+/* Аккордеоны */
+.accordion {
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  background: #151515;
+  overflow: hidden;
+}
+
+.accordion summary {
+  padding: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fff;
+  cursor: pointer;
+  background: #1e1e1e;
+  list-style: none; /* Убираем стандартную стрелку */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.accordion summary::after {
+  content: '+';
+  font-size: 18px;
+  color: #888;
+  line-height: 1;
+}
+
+.accordion[open] summary::after {
+  content: '−';
+}
+
+.accordion-content {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.block.border-none {
+  border: none;
+  padding: 0;
+}
+
+.block h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
 .block h3 {
   font-size: 13px;
   text-transform: uppercase;
