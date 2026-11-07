@@ -10,6 +10,7 @@
   const drawLayer = document.getElementById('drawLayer');
   const drawGroup = document.getElementById('drawGroup');
   const gridGroup = document.getElementById('gridGroup');
+  const headGroup = document.getElementById('headGroup');
 
   const fileInput = document.getElementById('fileInput');
   const imgScale = document.getElementById('imgScale');
@@ -30,6 +31,7 @@
   const headsVal = document.getElementById('headsVal');
   const brushVal = document.getElementById('brushVal');
 
+  // Ползунки головы
   const skullW = document.getElementById('skullW');
   const skullH = document.getElementById('skullH');
   const chinW = document.getElementById('chinW');
@@ -37,7 +39,6 @@
   const jawAttach = document.getElementById('jawAttach');
   const jawW = document.getElementById('jawW');
   const jawRound = document.getElementById('jawRound');
-
   const skullWVal = document.getElementById('skullWVal');
   const skullHVal = document.getElementById('skullHVal');
   const chinWVal = document.getElementById('chinWVal');
@@ -52,19 +53,14 @@
   const MAX_SCALE = 20;
   const WHEEL_ZOOM_STEP = 1.15;
 
-  // Толщины в единицах viewBox (0 0 1 1). 0.005 ~ 20px при 4096.
-  const STROKE_MAIN = 0.005;
-  const STROKE_THIN = 0.004;
-  const STROKE_AUX  = 0.0015;
-
   // ========== Состояние ==========
   const state = {
     scale: 1,
     tx: 0,
     ty: 0,
     imageDataUrl: null,
-    imageNaturalRatio: 1,
-    paths: [],
+    imageNaturalRatio: 1, // w/h
+    paths: [], // стек путей для undo
   };
 
   // ========== Геометрия холста ==========
@@ -77,7 +73,7 @@
     clampPan();
     applyTransform();
     redrawGrid();
-    applyOverlayStyles();
+    redrawHead();
   }
 
   // ========== Трансформация ==========
@@ -91,7 +87,7 @@
     const h = viewport.clientHeight;
     const scaledW = w * state.scale;
     const scaledH = h * state.scale;
-    const minTx = w - scaledW;
+    const minTx = w - scaledW; // <= 0
     const minTy = h - scaledH;
     state.tx = Math.min(0, Math.max(minTx, state.tx));
     state.ty = Math.min(0, Math.max(minTy, state.ty));
@@ -108,7 +104,7 @@
   }
 
   // ========== Указатели ==========
-  const pointers = new Map();
+  const pointers = new Map(); // id -> {x, y} (в локальных координатах viewport)
   let gestureState = null;
 
   function localPoint(clientX, clientY) {
@@ -122,10 +118,7 @@
     const py = clientY - r.top;
     const cx = (px - state.tx) / state.scale;
     const cy = (py - state.ty) / state.scale;
-    return {
-      x: cx / r.width,
-      y: cy / r.height,
-    };
+    return { x: cx / r.width, y: cy / r.height };
   }
 
   // ========== Рисование ==========
@@ -140,8 +133,9 @@
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('stroke-linejoin', 'round');
-    // толщина в пикселях экрана (при scale=1)
-    path.setAttribute('stroke-width', brushSize.value);
+    const w = viewport.clientWidth || 1;
+    const sw = brushSize.value / w;
+    path.setAttribute('stroke-width', sw);
     currentPoints = [p];
     path.setAttribute('d', `M ${p.x} ${p.y} L ${p.x} ${p.y}`);
     drawGroup.appendChild(path);
@@ -178,20 +172,22 @@
     viewport.setPointerCapture?.(e.pointerId);
     pointers.set(e.pointerId, localPoint(e.clientX, e.clientY));
 
-    const isPanMouse = e.pointerType === 'mouse' && (e.button === 1 || (e.button === 0 && e.shiftKey));
+    const isPanMouse = e.pointerType === 'mouse' &&
+      (e.button === 1 || (e.button === 0 && e.shiftKey));
 
     if (pointers.size === 1) {
       if (isPanMouse) {
         gestureState = {
           mode: 'pan',
-          startX: e.clientX,
-          startY: e.clientY,
+          startClientX: e.clientX,
+          startClientY: e.clientY,
           startTx: state.tx,
           startTy: state.ty,
         };
         e.preventDefault();
         return;
       }
+      // Рисование
       gestureState = { mode: 'draw' };
       startDrawing(e.clientX, e.clientY);
     } else if (pointers.size === 2) {
@@ -203,7 +199,7 @@
       const dy = pts[1].y - pts[0].y;
       gestureState = {
         mode: 'zoom',
-        startDist: Math.hypot(dx, dy),
+        startDist: Math.hypot(dx, dy) || 1,
         startScale: state.scale,
         startTx: state.tx,
         startTy: state.ty,
@@ -227,8 +223,8 @@
       continueDrawing(e.clientX, e.clientY);
       e.preventDefault();
     } else if (gestureState.mode === 'pan') {
-      const dx = e.clientX - gestureState.startX;
-      const dy = e.clientY - gestureState.startY;
+      const dx = e.clientX - gestureState.startClientX;
+      const dy = e.clientY - gestureState.startClientY;
       state.tx = gestureState.startTx + dx;
       state.ty = gestureState.startTy + dy;
       clampPan();
@@ -274,19 +270,21 @@
     } else if (gestureState.mode === 'pan') {
       if (pointers.size === 0) gestureState = null;
     } else if (gestureState.mode === 'zoom') {
-      if (pointers.size < 2) {
-        if (pointers.size === 1) {
-          const [pt] = pointers.values();
-          gestureState = {
-            mode: 'pan',
-            startX: pt.x,
-            startY: pt.y,
-            startTx: state.tx,
-            startTy: state.ty,
-          };
-        } else {
-          gestureState = null;
-        }
+      if (pointers.size === 1) {
+        // Остался один палец — переходим в панорамирование от этого пальца
+        const [pt] = pointers.values();
+        // pt — локальные координаты, но pan мы считаем через client.
+        // Пересчитаем: client = local + rect.left/top
+        const r = viewport.getBoundingClientRect();
+        gestureState = {
+          mode: 'pan',
+          startClientX: pt.x + r.left,
+          startClientY: pt.y + r.top,
+          startTx: state.tx,
+          startTy: state.ty,
+        };
+      } else {
+        gestureState = null;
       }
     }
   }
@@ -299,7 +297,7 @@
     if (pointers.size === 0) gestureState = null;
   }
 
-  // ========== Колесо мыши ==========
+  // ========== Колесо мыши (зум) ==========
   function onWheel(e) {
     e.preventDefault();
     const r = viewport.getBoundingClientRect();
@@ -309,21 +307,13 @@
     setScale(state.scale * factor, cx, cy);
   }
 
-  // ========== Сетка + голова ==========
-  function ellipseXAtY(cx, cy, rx, ry, y) {
-    const t = (y - cy) / ry;
-    const inside = 1 - t * t;
-    if (inside <= 0) return 0;
-    return rx * Math.sqrt(inside);
-  }
-
+  // ========== Сетка ==========
   function redrawGrid() {
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
     if (!viewport.clientWidth) return;
 
     const margin = parseFloat(marginRange.value) / 100;
     const heads = parseInt(headsRange.value, 10);
-    const usable = 1 - margin * 2;
 
     // Красная рамка зоны
     if (margin > 0) {
@@ -331,134 +321,149 @@
       rect.setAttribute('x', 0);
       rect.setAttribute('y', margin);
       rect.setAttribute('width', 1);
-      rect.setAttribute('height', usable);
+      rect.setAttribute('height', 1 - margin * 2);
       rect.setAttribute('fill', 'none');
       rect.setAttribute('stroke', 'red');
-      rect.setAttribute('stroke-width', STROKE_MAIN);
+      rect.setAttribute('stroke-width', 2);
+      rect.setAttribute('vector-effect', 'non-scaling-stroke');
       rect.setAttribute('pointer-events', 'none');
       gridGroup.appendChild(rect);
     }
 
     // Горизонтальные пунктирные линии
+    const top = margin;
+    const bottom = 1 - margin;
+    const usable = bottom - top;
     for (let i = 1; i < heads; i++) {
-      const y = margin + (usable * i) / heads;
+      const y = top + (usable * i) / heads;
       const line = document.createElementNS(SVG_NS, 'line');
       line.setAttribute('x1', 0);
       line.setAttribute('y1', y);
       line.setAttribute('x2', 1);
       line.setAttribute('y2', y);
       line.setAttribute('stroke', 'red');
-      line.setAttribute('stroke-width', STROKE_THIN);
-      line.setAttribute('stroke-dasharray', '0.015 0.01');
-      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke-width', 1.5);
+      line.setAttribute('stroke-dasharray', '6 4');
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
       line.setAttribute('pointer-events', 'none');
       gridGroup.appendChild(line);
     }
-
-    // Голова (верхняя секция)
-    drawHead(margin, usable / heads);
   }
 
-  function drawHead(top, sectionH) {
-    const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('pointer-events', 'none');
-    g.setAttribute('fill', 'none');
-    g.setAttribute('stroke-linecap', 'round');
-    g.setAttribute('stroke-linejoin', 'round');
+  // ========== Голова ==========
+  function redrawHead() {
+    while (headGroup.firstChild) headGroup.removeChild(headGroup.firstChild);
+    if (!viewport.clientWidth) return;
 
-    const H = sectionH;
+    const heads = parseInt(headsRange.value, 10);
+    const margin = parseFloat(marginRange.value) / 100;
+
+    const top = margin;
+    const bottom = 1 - margin;
+    const sH = (bottom - top) / heads; // высота секции
+    const sTop = top;                  // верх первой секции
+
+    // Опорные Y внутри секции (доли 0..1 от её высоты)
+    const y1  = sTop + sH * (1 / 5);   // вершина черепа
+    const y3  = sTop + sH * (3 / 5);   // низ черепа
+    const y4  = sTop + sH * (4 / 5);   // базовая линия подбородка
+
     const cx = 0.5;
 
-    const yTop5 = top + (1 / 5) * H;
-    const yBot5 = top + (3 / 5) * H;
+    // Эллипс черепа
+    const ry = (y3 - y1) / 2;
+    const cy = (y1 + y3) / 2;
+    let rx = ry;
+    let ryy = ry;
+    rx *= parseFloat(skullW.value) / 100;
+    ryy *= parseFloat(skullH.value) / 100;
 
-    const cy = (yTop5 + yBot5) / 2;
-    const ryBase = (yBot5 - yTop5) / 2;
-    const ry = ryBase * (parseFloat(skullH.value) / 100);
-    const rx = ryBase * (parseFloat(skullW.value) / 100);
-
-    // Череп
     const skull = document.createElementNS(SVG_NS, 'ellipse');
     skull.setAttribute('cx', cx);
     skull.setAttribute('cy', cy);
     skull.setAttribute('rx', rx);
-    skull.setAttribute('ry', ry);
+    skull.setAttribute('ry', ryy);
     skull.setAttribute('fill', 'none');
-    skull.setAttribute('stroke', '#00c0ff');
-    skull.setAttribute('stroke-width', STROKE_MAIN);
-    g.appendChild(skull);
-
-    // Крепление челюсти (clamp в нижнюю точку эллипса)
-    let attachPct = parseFloat(jawAttach.value) / 100;
-    let yAttach = top + attachPct * H;
-    const yMaxForEllipse = cy + ry * 0.98;
-    if (yAttach > yMaxForEllipse) yAttach = yMaxForEllipse;
-
-    const dxAttach = ellipseXAtY(cx, cy, rx, ry, yAttach);
-    const leftAttach  = { x: cx - dxAttach, y: yAttach };
-    const rightAttach = { x: cx + dxAttach, y: yAttach };
+    skull.setAttribute('stroke', 'black');
+    skull.setAttribute('stroke-width', 2);
+    skull.setAttribute('vector-effect', 'non-scaling-stroke');
+    skull.setAttribute('pointer-events', 'none');
+    headGroup.appendChild(skull);
 
     // Подбородок
-    const chinPct = parseFloat(chinH.value) / 100;
-    const yChin = top + chinPct * H;
-    const chinHalfW = rx * (parseFloat(chinW.value) / 100);
-    const chinL = { x: cx - chinHalfW, y: yChin };
-    const chinR = { x: cx + chinHalfW, y: yChin };
+    const chinWFactor = parseFloat(chinW.value) / 100;
+    const chinHalf = rx * chinWFactor;
+    const chinY = sTop + (y4 - sTop) * (parseFloat(chinH.value) / 100);
 
-    const chin = document.createElementNS(SVG_NS, 'line');
-    chin.setAttribute('x1', chinL.x);
-    chin.setAttribute('y1', chinL.y);
-    chin.setAttribute('x2', chinR.x);
-    chin.setAttribute('y2', chinR.y);
-    chin.setAttribute('stroke', '#00ff88');
-    chin.setAttribute('stroke-width', STROKE_MAIN);
-    chin.setAttribute('fill', 'none');
-    g.appendChild(chin);
+    const chinLine = document.createElementNS(SVG_NS, 'line');
+    chinLine.setAttribute('x1', cx - chinHalf);
+    chinLine.setAttribute('y1', chinY);
+    chinLine.setAttribute('x2', cx + chinHalf);
+    chinLine.setAttribute('y2', chinY);
+    chinLine.setAttribute('stroke', 'black');
+    chinLine.setAttribute('stroke-width', 2);
+    chinLine.setAttribute('vector-effect', 'non-scaling-stroke');
+    chinLine.setAttribute('pointer-events', 'none');
+    headGroup.appendChild(chinLine);
 
-    // Челюсть
-    const round = parseFloat(jawRound.value) / 100;
-    const jawHalfW = rx * (parseFloat(jawW.value) / 100);
-    const jawL = { x: cx - jawHalfW, y: yChin };
-    const jawR = { x: cx + jawHalfW, y: yChin };
+    // Точки крепления челюсти на черепе
+    // Базовая высота — 3.5/5 секции. slider 60..120% => смещение базовой высоты.
+    const attachFactor = parseFloat(jawAttach.value) / 100;
+    const baseFrac = 3.5 / 5; // 0.7
+    const frac = baseFrac * attachFactor;
+    const yAttach = sTop + sH * frac;
 
-    function jawPath(start, end) {
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2;
-      const ctrlX = midX + (cx - midX) * round * 0.8;
-      const ctrlY = midY;
-      return `M ${start.x} ${start.y} Q ${ctrlX} ${ctrlY} ${end.x} ${end.y}`;
+    // x на эллипсе при y = yAttach
+    const dyAttach = yAttach - cy;
+    let attachHalfW = rx;
+    if (Math.abs(dyAttach) < ryy) {
+      attachHalfW = rx * Math.sqrt(1 - (dyAttach * dyAttach) / (ryy * ryy));
     }
 
-    const jawPathL = document.createElementNS(SVG_NS, 'path');
-    jawPathL.setAttribute('d', jawPath(leftAttach, jawL));
-    jawPathL.setAttribute('stroke', '#00c0ff');
-    jawPathL.setAttribute('stroke-width', STROKE_MAIN);
-    jawPathL.setAttribute('fill', 'none');
-    g.appendChild(jawPathL);
+    // Ширина челюсти в нижней точке — относительно подбородка
+    const jawWFactor = parseFloat(jawW.value) / 100;
+    // Сходим челюсть к подбородку: берём минимум между attachHalfW и chinHalf,
+    // и умножаем на jawWFactor; ограничим сверху chinHalf.
+    const bottomHalf = Math.max(0, Math.min(attachHalfW, chinHalf) * jawWFactor);
 
-    const jawPathR = document.createElementNS(SVG_NS, 'path');
-    jawPathR.setAttribute('d', jawPath(rightAttach, jawR));
-    jawPathR.setAttribute('stroke', '#00c0ff');
-    jawPathR.setAttribute('stroke-width', STROKE_MAIN);
-    jawPathR.setAttribute('fill', 'none');
-    g.appendChild(jawPathR);
+    // Скругление — радиус в единицах viewBox, пропорционален длине челюсти
+    const sideLen = Math.hypot(attachHalfW - bottomHalf, yAttach - chinY);
+    const roundFactor = parseFloat(jawRound.value) / 100;
+    const r = Math.min(sideLen / 2, sideLen * roundFactor);
 
-    // Вспомогательные метки уровней
-    [1/5, 3/5, 3.5/5, 4/5].forEach((frac) => {
-      const y = top + frac * H;
-      const mk = document.createElementNS(SVG_NS, 'line');
-      mk.setAttribute('x1', 0);
-      mk.setAttribute('y1', y);
-      mk.setAttribute('x2', 1);
-      mk.setAttribute('y2', y);
-      mk.setAttribute('stroke', 'rgba(0,192,255,0.35)');
-      mk.setAttribute('stroke-width', STROKE_AUX);
-      mk.setAttribute('stroke-dasharray', '0.008 0.008');
-      mk.setAttribute('fill', 'none');
-      g.appendChild(mk);
+    // Левая и правая линии челюсти
+    const leftJaw = jawPath(cx - attachHalfW, yAttach, cx - bottomHalf, chinY, r, -1);
+    const rightJaw = jawPath(cx + bottomHalf, chinY, cx + attachHalfW, yAttach, r, +1);
+
+    [leftJaw, rightJaw].forEach((d) => {
+      const p = document.createElementNS(SVG_NS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', 'black');
+      p.setAttribute('stroke-width', 2);
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('pointer-events', 'none');
+      headGroup.appendChild(p);
     });
+  }
 
-    gridGroup.appendChild(g);
+  // Путь челюсти со скруглением в верхней точке (на черепе).
+  // (x1,y1) — крепление на черепе; (x2,y2) — точка у подбородка.
+  function jawPath(x1, y1, x2, y2, r, side) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    if (r <= 0.0001) {
+      return `M ${x1} ${y1} L ${x2} ${y2}`;
+    }
+    const ux = dx / len;
+    const uy = dy / len;
+    // Начало скругления — сдвигаемся вдоль линии от угла на r
+    const sx = x1 + ux * r;
+    const sy = y1 + uy * r;
+    // Квадратичная кривая: угол в качестве контрольной точки
+    return `M ${x1} ${y1} Q ${x1} ${y1} ${sx} ${sy} L ${x2} ${y2}`;
   }
 
   // ========== Подложка ==========
@@ -468,8 +473,13 @@
     overlayLayer.style.opacity = o;
     if (!state.imageDataUrl) {
       overlayLayer.style.transform = '';
+      overlayLayer.style.left = '';
+      overlayLayer.style.top = '';
+      overlayLayer.style.width = '';
+      overlayLayer.style.height = '';
       return;
     }
+    const vw = viewport.clientWidth;
     const vh = viewport.clientHeight;
     const r = state.imageNaturalRatio;
     const h = vh * s;
@@ -515,26 +525,25 @@
   marginRange.addEventListener('input', () => {
     marginVal.textContent = marginRange.value;
     redrawGrid();
+    redrawHead();
   });
   headsRange.addEventListener('input', () => {
     headsVal.textContent = headsRange.value;
     redrawGrid();
+    redrawHead();
   });
   brushSize.addEventListener('input', () => {
     brushVal.textContent = brushSize.value;
   });
 
-  const headControls = [
-    [skullW, skullWVal], [skullH, skullHVal],
-    [chinW, chinWVal], [chinH, chinHVal],
-    [jawAttach, jawAttachVal], [jawW, jawWVal], [jawRound, jawRoundVal],
-  ];
-  headControls.forEach(([input, out]) => {
-    input.addEventListener('input', () => {
-      out.textContent = input.value;
-      redrawGrid();
-    });
-  });
+  // Ползунки головы
+  skullW.addEventListener('input', () => { skullWVal.textContent = skullW.value; redrawHead(); });
+  skullH.addEventListener('input', () => { skullHVal.textContent = skullH.value; redrawHead(); });
+  chinW.addEventListener('input',  () => { chinWVal.textContent  = chinW.value;  redrawHead(); });
+  chinH.addEventListener('input',  () => { chinHVal.textContent  = chinH.value;  redrawHead(); });
+  jawAttach.addEventListener('input', () => { jawAttachVal.textContent = jawAttach.value; redrawHead(); });
+  jawW.addEventListener('input',    () => { jawWVal.textContent    = jawW.value;    redrawHead(); });
+  jawRound.addEventListener('input',() => { jawRoundVal.textContent= jawRound.value; redrawHead(); });
 
   // ========== Undo / Clear ==========
   undoBtn.addEventListener('click', () => {
@@ -557,7 +566,6 @@
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     svg.setAttribute('width', w);
     svg.setAttribute('height', h);
-    svg.setAttribute('fill', 'none');
 
     // Фон
     const bg = document.createElementNS(SVG_NS, 'rect');
@@ -589,23 +597,19 @@
       svg.appendChild(img);
     }
 
-    // Слой рисунка (толщина в пикселях экрана — переводим в 4096-масштаб)
+    // Слой рисования (без головы и сетки — только пользовательские пути)
     const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('fill', 'none');
-    const vw = viewport.clientWidth || 800;
     const paths = drawGroup.querySelectorAll('path');
     paths.forEach((p) => {
       const clone = p.cloneNode(true);
       clone.setAttribute('transform', `scale(${w})`);
-      const sw = parseFloat(p.getAttribute('stroke-width') || '2');
-      // sw был в пикселях экрана при scale=1; на 4096 холсте это sw * (w/vw)
-      const realPx = sw * (w / vw);
+      const sw = parseFloat(p.getAttribute('stroke-width') || '0.001');
+      const realPx = sw * w;
       clone.removeAttribute('vector-effect');
       clone.setAttribute('stroke-width', realPx);
       g.appendChild(clone);
     });
     svg.appendChild(g);
-
     return { svg, w, h };
   }
 
@@ -680,5 +684,6 @@
   resizeViewport();
   applyOverlayStyles();
   redrawGrid();
+  redrawHead();
   applyTransform();
 })();
