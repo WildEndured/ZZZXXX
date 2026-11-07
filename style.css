@@ -1,210 +1,215 @@
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #1a1a1a;
-  color: #eee;
-  touch-action: none;
-  overscroll-behavior: none;
-}
-
-#app {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-}
-
-/* ========== Рабочая область ========== */
-#workspace {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #2a2a2a;
-  position: relative;
-}
-
-#viewport {
-  position: relative;
-  overflow: hidden;
-  touch-action: none;
-  background: #000;
-}
-
-#zoomContainer {
-  position: absolute;
-  inset: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-}
-
-#bgLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: #ffffff;
-  pointer-events: none;
-}
-
-#overlayLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  opacity: 1;
-  display: block;
-}
-
-#drawLayer {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  width: 100%;
-  height: 100%;
-  background: transparent !important;
-  touch-action: none;
-  pointer-events: auto;
-  overflow: visible;
-}
-
-/* ========== Панель ========== */
-#panel {
-  width: 300px;
-  background: #1e1e1e;
-  border-left: 1px solid #333;
-  padding: 16px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-#panel h1 {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #fff;
-}
-
-#panel section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-  background: #262626;
-  border-radius: 8px;
-}
-
-#panel section.row {
-  flex-direction: row;
-  gap: 8px;
-}
-
-#panel label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #bbb;
-}
-
-#panel input[type="range"] {
-  width: 100%;
-  accent-color: #4a9eff;
-}
-
-#panel input[type="color"] {
-  width: 100%;
-  height: 32px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  cursor: pointer;
-}
-
-#panel input[type="file"] {
-  font-size: 11px;
-  color: #ccc;
-}
-
-#panel button {
-  flex: 1;
-  padding: 8px 10px;
-  border: none;
-  border-radius: 6px;
-  background: #4a9eff;
-  color: #fff;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 0.15s;
-  touch-action: manipulation;
-}
-
-#panel button:hover {
-  background: #3a8ee0;
-}
-
-#panel button:active {
-  background: #2a7ed0;
-}
-
-#headSection {
-  border-top: 1px solid #3a3a3a;
-  margin-top: 4px;
-  padding-top: 12px;
-}
-
-/* ========== Мобильная версия ========== */
-@media (max-width: 768px) {
-  #app {
-    flex-direction: column;
-  }
-
-  #workspace {
-    flex: 0 0 auto;
-    height: 55vh;
-  }
-
-  #panel {
+    height: 100%;
     width: 100%;
-    height: 45vh;
-    border-left: none;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #1a1a1a;
+    color: #eee;
+    touch-action: none;
+    overscroll-behavior: none;
+}
+
+.app {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    flex-direction: column-reverse;
+}
+
+/* Рабочая область */
+.workspace {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+}
+
+.viewport {
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    background: #000;
+}
+
+.zoom-container {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+    touch-action: none;
+}
+
+.layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.layer-bg {
+    z-index: 1;
+}
+
+.layer-underlay {
+    z-index: 2;
+    pointer-events: none;
+    object-fit: contain;
+    object-position: center;
+    opacity: 1;
+    display: block;
+}
+
+.layer-draw {
+    z-index: 3;
+    background: transparent;
+    touch-action: none;
+}
+
+/* Панель управления */
+.sidebar {
+    background: #1e1e1e;
     border-top: 1px solid #333;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    height: 45vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+    touch-action: pan-y;
+}
+
+.panel {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.panel h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #fff;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+}
+
+.field label {
+    color: #bbb;
+    font-size: 12px;
+}
+
+.field input[type="color"] {
+    width: 100%;
+    height: 36px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: #2a2a2a;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.field input[type="range"] {
+    width: 100%;
+    height: 28px;
+    cursor: pointer;
+    accent-color: #4a9eff;
+}
+
+.field input[type="file"] {
+    font-size: 12px;
+    color: #bbb;
+}
+
+.field input[type="file"]::file-selector-button {
+    background: #333;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-right: 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.actions {
+    display: flex;
     gap: 8px;
-    padding: 8px;
-  }
+}
 
-  #panel h1 {
-    display: none;
-  }
+.actions button {
+    flex: 1;
+    padding: 10px 12px;
+    background: #333;
+    color: #eee;
+    border: 1px solid #444;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    touch-action: manipulation;
+}
 
-  #panel section {
-    flex: 1 1 calc(50% - 8px);
-    min-width: 140px;
-    padding: 8px;
-    gap: 6px;
-  }
+.actions button:hover {
+    background: #3d3d3d;
+}
 
-  #panel section.row {
-    flex: 1 1 calc(50% - 8px);
-  }
+.actions button:active {
+    background: #4a4a4a;
+}
 
-  #panel label {
-    font-size: 11px;
-  }
+.actions button.danger {
+    border-color: #6b2b2b;
+    color: #ff8a8a;
+}
+
+.actions button.danger:hover {
+    background: #4a2020;
+}
+
+/* Десктоп */
+@media (min-width: 768px) {
+    .app {
+        flex-direction: row;
+    }
+
+    .workspace {
+        order: 2;
+    }
+
+    .sidebar {
+        order: 1;
+        height: 100vh;
+        height: 100dvh;
+        width: 280px;
+        flex-shrink: 0;
+        border-top: none;
+        border-right: 1px solid #333;
+        overflow-y: auto;
+    }
+
+    .panel {
+        padding: 16px;
+    }
+
+    .panel h1 {
+        font-size: 18px;
+    }
 }
