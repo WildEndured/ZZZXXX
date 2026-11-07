@@ -1,252 +1,166 @@
-/* Базовые настройки и сброс */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
+/* Базовый сброс */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1e1e1e;
+  color: #e0e0e0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
 }
 
-body {
-    background-color: #1e1e1e;
-    color: #eee;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    height: 100vh;
-    overflow: hidden; /* Блокируем скролл страницы на десктопе */
-}
-
-/* Контейнер приложения */
-.app-container {
-    display: flex;
-    height: 100vh;
-    padding: 16px;
-    gap: 16px;
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
 }
 
 /* Панель управления */
-.control-panel {
-    width: 320px;
-    background-color: #2a2a2a;
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 92vh;
-    overflow-y: auto;
-    flex-shrink: 0;
+.panel {
+  width: 260px;
+  flex-shrink: 0;
+  background: #252525;
+  padding: 12px;
+  overflow-y: auto;
+  border-right: 1px solid #333;
 }
 
-/* Стилизация скроллбара */
-.control-panel::-webkit-scrollbar {
-    width: 6px;
-}
-.control-panel::-webkit-scrollbar-track {
-    background: #1e1e1e;
-}
-.control-panel::-webkit-scrollbar-thumb {
-    background: #4a90d9;
-    border-radius: 3px;
+.panel h2 {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  margin: 8px 0;
 }
 
-/* Аккордеоны */
-.accordion {
-    background-color: #333;
-    border-radius: 6px;
-    overflow: hidden;
+.panel hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 12px 0;
 }
 
-.accordion-header {
+.group {
+  margin-bottom: 12px;
+}
+
+.group label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #bbb;
+}
+
+.group input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+}
+
+.group input[type="color"] {
+  width: 100%;
+  height: 32px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.btn-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-row button { flex: 1; }
+
+button {
+  background: #3a3a3a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 6px;
+  width: 100%;
+  transition: background 0.15s;
+  touch-action: manipulation;
+}
+
+button:hover { background: #474747; }
+button:active { background: #2c2c2c; }
+button.active { background: #4a7dff; border-color: #4a7dff; color: #fff; }
+
+/* Сцена (область просмотра) */
+.stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #111;
+  touch-action: none; /* отдаём все жесты приложению */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Контейнер зума: строго квадратный, трансформируется */
+.zoom-container {
+  position: relative;
+  /* JS выставит размер и transform */
+  will-change: transform;
+  transform-origin: 0 0;
+}
+
+/* Слой фона (div) */
+.layer-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #ffffff;
+}
+
+/* Слой подложки (img) */
+.layer-img {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  object-fit: contain;
+  opacity: 1;
+  display: none; /* показываем при загрузке */
+  width: 100%;
+  height: 100%;
+}
+
+/* Слой рисования (SVG) */
+.layer-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  touch-action: none;
+  overflow: visible;
+}
+
+/* Пути в SVG */
+.layer-svg path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Адаптив: на мобильных панель сверху/скрыта */
+@media (max-width: 720px) {
+  .app { flex-direction: column; }
+  .panel {
     width: 100%;
-    background: none;
-    border: none;
-    color: #eee;
-    padding: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    text-align: left;
-}
-
-.accordion-header:hover {
-    background-color: #3a3a3a;
-}
-
-.accordion-header .icon {
-    font-size: 10px;
-    transition: transform 0.2s;
-}
-
-.accordion-content {
-    padding: 0 12px 12px 12px;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* Элементы управления */
-.control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.control-group label {
-    font-size: 12px;
-    color: #ccc;
-}
-
-.control-group input[type="range"] {
-    width: 100%;
-    accent-color: #4a90d9;
-    height: 20px;
-}
-
-.control-group input[type="color"] {
-    width: 100%;
-    height: 32px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    padding: 0;
-}
-
-.checkbox-group label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.checkbox-group input[type="checkbox"] {
-    accent-color: #4a90d9;
-    width: 16px;
-    height: 16px;
-}
-
-/* Кнопки */
-.btn {
-    background-color: #4a90d9;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    width: 100%;
-}
-
-.btn:hover {
-    background-color: #3a7bc8;
-}
-
-.btn-danger {
-    background-color: #d94a4a;
-}
-
-.btn-danger:hover {
-    background-color: #c83a3a;
-}
-
-.button-group {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.button-group.vertical {
-    flex-direction: column;
-}
-
-/* Контейнер холста */
-.canvas-container {
-    flex-grow: 1;
-    position: relative;
-    background-color: #111;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    aspect-ratio: 1 / 1; /* Строго квадратный на десктопе */
-    max-height: 92vh;
-    max-width: 92vh;
-    margin: auto;
-}
-
-/* Обертка для зума */
-.zoom-wrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    transform-origin: 0 0;
-    will-change: transform;
-}
-
-/* Слои */
-.layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.background-layer {
-    z-index: 1;
-    background-color: #ffffff;
-}
-
-.overlay-layer {
-    z-index: 2;
-    pointer-events: none;
-    object-fit: contain; /* Вписываем по высоте сохраняя пропорции */
-    object-position: center;
-}
-
-.drawing-layer {
-    z-index: 3;
-    touch-action: none; /* Отключаем стандартные жесты браузера */
-    background: transparent;
-}
-
-/* Стили для линий рисования (применяются через атрибуты SVG) */
-
-/* Мобильная адаптация */
-@media (max-width: 900px) {
-    body {
-        overflow: auto; /* Разрешаем скролл страницы */
-        height: auto;
-        min-height: 100vh;
-    }
-
-    .app-container {
-        flex-direction: column;
-        height: auto;
-        padding: 8px;
-        gap: 8px;
-    }
-
-    .canvas-container {
-        order: 1;
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1 / 1;
-        max-height: none;
-        max-width: none;
-        flex-grow: 0;
-    }
-
-    .control-panel {
-        order: 2;
-        width: 100%;
-        max-height: none;
-        overflow-y: visible;
-    }
+    height: 45vh;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+  .stage { height: 55vh; }
 }
