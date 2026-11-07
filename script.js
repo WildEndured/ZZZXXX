@@ -260,10 +260,17 @@
     // Вершина круга совпадает с верхом грудной клетки
     const shoulderCy = chestY0 + shoulderRadius;
     
-    // Крепление вплотную к бокам грудной клетки СНАРУЖИ (как таз крепится снизу)
-    // Внутренний край круга касается chestRx
-    const shoulderLeftCx = cx - chestRx - shoulderRadius;
-    const shoulderRightCx = cx + chestRx + shoulderRadius;
+    // Вычисляем реальную ширину грудной клетки на высоте центра плеча
+    // t - параметр от 0 до 1 по высоте грудной клетки
+    const t = (shoulderCy - chestY0) / chestHeightPx;
+    
+    // Ширина кривой Безье на данном этапе t
+    // Это аппроксимация с учетом контрольных точек
+    const curveWidth = cpTopX + (chestRx - cpTopX) * Math.sin(t * Math.PI / 2) * (1 - t) + chestRx * t;
+    
+    // Крепление вплотную к бокам грудной клетки СНАРУЖИ
+    const shoulderLeftCx = cx - curveWidth - shoulderRadius;
+    const shoulderRightCx = cx + curveWidth + shoulderRadius;
 
     const shoulderLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     shoulderLeft.setAttribute('cx', String(shoulderLeftCx));
