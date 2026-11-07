@@ -53,11 +53,11 @@
     gridPad: 0.05,
     heads: 4,
     head: {
-      width: 0.60,
-      height: 0.60,
+      width: 0.65,
+      height: 0.65,
       offset: 0.00,
-      chinY: 0.80,
-      chinWidth: 0.15
+      chinY: 0.85,
+      chinWidth: 0.01
     },
     brush: { color: '#000000', width: 3 },
     paths: []
