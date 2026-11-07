@@ -20,6 +20,19 @@
   const gridPadVal = document.getElementById('gridPadVal');
   const heads = document.getElementById('heads');
   const headsVal = document.getElementById('headsVal');
+
+  // Новые ползунки головы
+  const headWidth = document.getElementById('headWidth');
+  const headWidthVal = document.getElementById('headWidthVal');
+  const headHeight = document.getElementById('headHeight');
+  const headHeightVal = document.getElementById('headHeightVal');
+  const headOffset = document.getElementById('headOffset');
+  const headOffsetVal = document.getElementById('headOffsetVal');
+  const chinY = document.getElementById('chinY');
+  const chinYVal = document.getElementById('chinYVal');
+  const chinWidth = document.getElementById('chinWidth');
+  const chinWidthVal = document.getElementById('chinWidthVal');
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -40,6 +53,14 @@
     underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
     gridPad: 0.05,
     heads: 4,
+    // Параметры головы (в долях высоты секции, кроме chinWidth — в долях ширины холста)
+    head: {
+      width: 0.60,     // диаметр по X (от высоты секции)
+      height: 0.60,    // диаметр по Y (от высоты секции) — при равенстве width это круг
+      offset: 0.00,    // смещение центра вниз от верхней линии зоны, в долях высоты секции
+      chinY: 0.80,     // позиция подбородка от верхней линии зоны, в долях высоты секции
+      chinWidth: 0.50  // длина линии подбородка, в долях ширины холста
+    },
     brush: { color: '#000000', width: 3 },
     paths: []
   };
@@ -137,21 +158,41 @@
       gridGroup.appendChild(line);
     }
 
-    // Круг: диаметр = 3/5 высоты секции, касается верхней линии секции
+    // ===== Голова (эллипс) =====
     const sectionH = span / n;
-    const r = (3 / 10) * sectionH;      // половина от 3/5
-    const cx = 0.5;
-    const cy = y0 + r;                  // верхняя точка круга = y0
 
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', String(cx));
-    circle.setAttribute('cy', String(cy));
-    circle.setAttribute('r', String(r));
-    circle.setAttribute('fill', 'none');
-    circle.setAttribute('stroke', '#ff0000');
-    circle.setAttribute('stroke-width', '1');
-    circle.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(circle);
+    // Центр эллипса: по X = 0.5, по Y = y0 + height/2 + offset
+    const headH = state.head.height * sectionH;
+    const headW = state.head.width * sectionH;
+    const rx = headW / 2;
+    const ry = headH / 2;
+    const cx = 0.5;
+    const cy = y0 + state.head.offset * sectionH + ry;
+
+    // Эллипс через <ellipse> (при width==height визуально круг)
+    const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+    ellipse.setAttribute('cx', String(cx));
+    ellipse.setAttribute('cy', String(cy));
+    ellipse.setAttribute('rx', String(rx));
+    ellipse.setAttribute('ry', String(ry));
+    ellipse.setAttribute('fill', 'none');
+    ellipse.setAttribute('stroke', '#ff0000');
+    ellipse.setAttribute('stroke-width', '1');
+    ellipse.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(ellipse);
+
+    // ===== Подбородок =====
+    const chinYPos = y0 + state.head.chinY * sectionH;
+    const chinHalfW = state.head.chinWidth / 2;
+    const chinLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    chinLine.setAttribute('x1', String(0.5 - chinHalfW));
+    chinLine.setAttribute('x2', String(0.5 + chinHalfW));
+    chinLine.setAttribute('y1', String(chinYPos));
+    chinLine.setAttribute('y2', String(chinYPos));
+    chinLine.setAttribute('stroke', '#ff0000');
+    chinLine.setAttribute('stroke-width', '1');
+    chinLine.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(chinLine);
   }
 
   // ===== Подложка =====
@@ -263,12 +304,7 @@
     const worldX = local.x / state.scale;
     const worldY = local.y / state.scale;
 
-    gestureStart = {
-      dist,
-      scale: state.scale,
-      worldX,
-      worldY
-    };
+    gestureStart = { dist, scale: state.scale, worldX, worldY };
   }
 
   function updateGesture() {
@@ -453,6 +489,37 @@
   heads.addEventListener('input', () => {
     state.heads = parseInt(heads.value, 10);
     headsVal.textContent = String(state.heads);
+    renderGrid();
+  });
+
+  // ===== Ползунки головы =====
+  headWidth.addEventListener('input', () => {
+    state.head.width = parseInt(headWidth.value, 10) / 100;
+    headWidthVal.textContent = headWidth.value + '%';
+    renderGrid();
+  });
+
+  headHeight.addEventListener('input', () => {
+    state.head.height = parseInt(headHeight.value, 10) / 100;
+    headHeightVal.textContent = headHeight.value + '%';
+    renderGrid();
+  });
+
+  headOffset.addEventListener('input', () => {
+    state.head.offset = parseInt(headOffset.value, 10) / 100;
+    headOffsetVal.textContent = headOffset.value + '%';
+    renderGrid();
+  });
+
+  chinY.addEventListener('input', () => {
+    state.head.chinY = parseInt(chinY.value, 10) / 100;
+    chinYVal.textContent = chinY.value + '%';
+    renderGrid();
+  });
+
+  chinWidth.addEventListener('input', () => {
+    state.head.chinWidth = parseInt(chinWidth.value, 10) / 100;
+    chinWidthVal.textContent = chinWidth.value + '%';
     renderGrid();
   });
 
