@@ -21,7 +21,6 @@
   const heads = document.getElementById('heads');
   const headsVal = document.getElementById('headsVal');
 
-  // Ползунки головы
   const headWidth = document.getElementById('headWidth');
   const headWidthVal = document.getElementById('headWidthVal');
   const headHeight = document.getElementById('headHeight');
@@ -58,7 +57,7 @@
       height: 0.60,
       offset: 0.00,
       chinY: 0.80,
-      chinWidth: 0.30
+      chinWidth: 0.15
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -126,7 +125,6 @@
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
     const pad = state.gridPad;
 
-    // Красная рамка зоны
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', '0');
     rect.setAttribute('y', String(pad));
@@ -138,7 +136,6 @@
     rect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(rect);
 
-    // Горизонтальные пунктирные линии
     const n = state.heads;
     const y0 = pad;
     const y1 = 1 - pad;
