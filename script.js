@@ -156,6 +156,7 @@
     const y0 = pad;
     const y1 = 1 - pad;
     const span = y1 - y0;
+    
     for (let i = 1; i < n; i++) {
       const y = y0 + span * (i / n);
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -170,7 +171,7 @@
       gridGroup.appendChild(line);
     }
 
-    // ===== Голова (эллипс) =====
+    // ===== Голова (эллипс в первой секции) =====
     const sectionH = span / n;
 
     const headH = state.head.height * sectionH;
@@ -191,6 +192,34 @@
     ellipse.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(ellipse);
 
+    // ===== Яйцевидный эллипс (во второй секции) =====
+    // Секция 2: от y0 + sectionH до y0 + 2*sectionH
+    const eggY0 = y0 + sectionH;
+    const eggCy = eggY0 + sectionH * 0.5; // Центр второй секции
+    const eggRy = (sectionH * 0.8) / 2;   // Высота (80% от секции)
+    const eggRx = (headW * 0.9) / 2;      // Ширина (90% от ширины головы)
+
+    // Для яйцевидной формы используем path с кривыми Безье.
+    // Верх сужен (контрольные точки ближе к центру), низ расширен.
+    const topY = eggCy - eggRy;
+    const bottomY = eggCy + eggRy;
+
+    const eggPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    // M (top) -> C (right side) -> C (bottom) -> C (left side) -> C (top)
+    const d = `
+      M ${cx} ${topY}
+      C ${cx + eggRx * 0.4} ${topY + eggRy * 0.1}, ${cx + eggRx} ${eggCy}, ${cx + eggRx * 0.7} ${eggCy + eggRy * 0.6}
+      C ${cx + eggRx * 0.3} ${bottomY}, ${cx - eggRx * 0.3} ${bottomY}, ${cx - eggRx * 0.7} ${eggCy + eggRy * 0.6}
+      C ${cx - eggRx} ${eggCy}, ${cx - eggRx * 0.4} ${topY + eggRy * 0.1}, ${cx} ${topY}
+      Z
+    `;
+    eggPath.setAttribute('d', d.trim());
+    eggPath.setAttribute('fill', 'none');
+    eggPath.setAttribute('stroke', '#ff0000');
+    eggPath.setAttribute('stroke-width', '1');
+    eggPath.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(eggPath);
+
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
     const chinHalfW = state.head.chinWidth / 2;
@@ -205,7 +234,6 @@
     gridGroup.appendChild(chinLine);
 
     // ===== Челюсть =====
-    // 1. Точки крепления на эллипсе
     const attachDy = (state.jaw.attachY - 0.5) * headH;
     const ratioSq = 1 - Math.pow(attachDy / ry, 2);
     const attachX = rx * Math.sqrt(Math.max(0, ratioSq));
@@ -213,11 +241,9 @@
     const attachLeft = { x: cx - attachX, y: cy + attachDy };
     const attachRight = { x: cx + attachX, y: cy + attachDy };
 
-    // 2. Точки на подбородке
     const bottomLeft = { x: 0.5 - chinHalfW, y: chinYPos };
     const bottomRight = { x: 0.5 + chinHalfW, y: chinYPos };
 
-    // 3. Расчет промежуточных точек (излом)
     const distToChin = chinYPos - attachLeft.y; 
     const verticalDrop = distToChin * state.jaw.height;
     const angleShift = state.jaw.angle * headW;
@@ -231,24 +257,16 @@
       y: attachRight.y + verticalDrop 
     };
 
-    // 4. Отрисовка с учетом скругления
     let pathData = '';
-    const roundFactor = state.jaw.round; // 0 = прямые линии, 1 = максимальное скругление
+    const roundFactor = state.jaw.round;
 
     if (roundFactor > 0.01) {
-      // Для плавного скругления используем кубическую кривую (C).
-      // Точка излома (mid) служит ориентиром, но линии не проходят через неё.
-      // Контрольные точки (cp) вытягивают дугу, создавая естественный изгиб.
-      
-      // Контрольная точка 1: смещение вниз от крепления
       const cp1Left = { x: attachLeft.x, y: attachLeft.y + verticalDrop * 0.6 };
       const cp1Right = { x: attachRight.x, y: attachRight.y + verticalDrop * 0.6 };
       
-      // Контрольная точка 2: смещение в сторону от подбородка
       const cp2Left = { x: bottomLeft.x + angleShift * 0.5, y: bottomLeft.y - verticalDrop * 0.4 };
       const cp2Right = { x: bottomRight.x - angleShift * 0.5, y: bottomRight.y - verticalDrop * 0.4 };
 
-      // Смешиваем координаты с учетом roundFactor
       const c1L = {
         x: attachLeft.x + (cp1Left.x - attachLeft.x) * roundFactor,
         y: attachLeft.y + (cp1Left.y - attachLeft.y) * roundFactor
@@ -274,7 +292,6 @@
         C ${c1R.x} ${c1R.y}, ${c2R.x} ${c2R.y}, ${bottomRight.x} ${bottomRight.y}
       `;
     } else {
-      // Обычные прямые линии (угол)
       pathData = `
         M ${attachLeft.x} ${attachLeft.y}
         L ${midLeft.x} ${midLeft.y}
