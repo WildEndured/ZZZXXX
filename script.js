@@ -254,12 +254,31 @@
     gridGroup.appendChild(chestPath);
 
     // ===== Плечи (круги) =====
+    // Диаметр плеча = 1/3 от высоты грудной клетки
     const shoulderRadius = (chestHeightPx / 3) / 2;
+    
+    // Вершина круга совпадает с верхом грудной клетки
     const shoulderCy = chestY0 + shoulderRadius;
     
-    // Прямая привязка: внутренний край круга касается максимальной ширины клетки (chestRx)
-    const shoulderLeftCx = cx - chestRx - shoulderRadius;
-    const shoulderRightCx = cx + chestRx + shoulderRadius;
+    // Вычисляем реальную ширину грудной клетки на высоте центра плеча (t от 0 до 1)
+    const t = (shoulderCy - chestY0) / chestHeightPx;
+    
+    // Интерполяция ширины кубической кривой Безье для верхней половины
+    // Кривая: от (0, cpTopX) через (0.3, chestRx) к (0.6, chestRx)
+    let curveWidth;
+    if (t <= 0.6) {
+      // Кубическая интерполяция Безье: B(t) = (1-t)^3 * P0 + 3(1-t)^2 * t * P1 + 3(1-t) * t^2 * P2 + t^3 * P3
+      // Для упрощения используем аппроксимацию через квадратичную функцию
+      const tNorm = t / 0.6; // нормализуем t до диапазона 0..1 на этом участке
+      curveWidth = cpTopX + (chestRx - cpTopX) * Math.sin(tNorm * Math.PI / 2);
+    } else {
+      curveWidth = chestRx;
+    }
+    
+    // Крепление вплотную к бокам грудной клетки СНАРУЖИ
+    // Внутренний край круга касается кривой ширины
+    const shoulderLeftCx = cx - curveWidth - shoulderRadius;
+    const shoulderRightCx = cx + curveWidth + shoulderRadius;
 
     const shoulderLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     shoulderLeft.setAttribute('cx', String(shoulderLeftCx));
