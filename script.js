@@ -101,13 +101,14 @@
     const n = parseInt(heads.value, 10);
     const topY = pad;
     const botY = 1 - pad;
+    const zoneH = botY - topY;
     
     if (pad > 0) {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', '0');
       rect.setAttribute('y', topY);
       rect.setAttribute('width', '1');
-      rect.setAttribute('height', botY - topY);
+      rect.setAttribute('height', zoneH);
       rect.setAttribute('fill', 'none');
       rect.setAttribute('stroke', 'red');
       rect.setAttribute('stroke-width', '1');
@@ -115,7 +116,7 @@
       guideGroup.appendChild(rect);
     }
     
-    const zoneH = botY - topY;
+    // Линии количества голов (делят зону на N равных частей)
     for (let i = 1; i < n; i++) {
       const y = topY + zoneH * (i / n);
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -129,6 +130,25 @@
       line.setAttribute('vector-effect', 'non-scaling-stroke');
       guideGroup.appendChild(line);
     }
+
+    // === Разделение на 5 частей и круг для головы ===
+    const step = zoneH / 5;
+    
+    // Круг: вершина на 1/5, низ на 3/5
+    // Высота = 2/5 (диаметр), значит радиус = 1/5 от высоты зоны
+    const radius = step;
+    const cx = 0.5; // Центр по горизонтали
+    const cy = topY + step * 2; // Центр на уровне 2/5
+    
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', radius);
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', 'blue'); // Синий круг
+    circle.setAttribute('stroke-width', '1');
+    circle.setAttribute('vector-effect', 'non-scaling-stroke');
+    guideGroup.appendChild(circle);
   }
   
   // ==== Подложка ====
