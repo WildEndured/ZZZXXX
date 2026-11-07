@@ -253,6 +253,36 @@
     chestPath.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(chestPath);
 
+    // ===== Плечи (круги слева и справа от грудной клетки) =====
+    // Диаметр плеча = 1/3 от высоты грудной клетки
+    const shoulderRadius = (chestHeightPx / 3) / 2;
+    // Центр плеча по Y = 1/3 высоты грудной клетки от ее верха
+    const shoulderCy = chestY0 + (chestHeightPx / 3);
+    
+    // Крепление к грудной клетке по X (к ее максимальной ширине)
+    const shoulderLeftCx = cx - chestRx - shoulderRadius;
+    const shoulderRightCx = cx + chestRx + shoulderRadius;
+
+    const shoulderLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    shoulderLeft.setAttribute('cx', String(shoulderLeftCx));
+    shoulderLeft.setAttribute('cy', String(shoulderCy));
+    shoulderLeft.setAttribute('r', String(shoulderRadius));
+    shoulderLeft.setAttribute('fill', 'none');
+    shoulderLeft.setAttribute('stroke', '#ff0000');
+    shoulderLeft.setAttribute('stroke-width', '1');
+    shoulderLeft.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(shoulderLeft);
+
+    const shoulderRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    shoulderRight.setAttribute('cx', String(shoulderRightCx));
+    shoulderRight.setAttribute('cy', String(shoulderCy));
+    shoulderRight.setAttribute('r', String(shoulderRadius));
+    shoulderRight.setAttribute('fill', 'none');
+    shoulderRight.setAttribute('stroke', '#ff0000');
+    shoulderRight.setAttribute('stroke-width', '1');
+    shoulderRight.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(shoulderRight);
+
     // ===== Таз =====
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
