@@ -2,7 +2,7 @@
     'use strict';
 
     // ============================================================
-    // 1. ИНИЦИАЛИЗАЦИЯ И ПОЛУЧЕНИЕ DOM-ЭЛЕМЕНТОВ
+    // 1. ИНИЦИАЛИЗАЦИЯ И DOM
     // ============================================================
     const zoomContainer = document.getElementById('zoomContainer');
     const bgLayer = document.getElementById('bgLayer');
@@ -11,7 +11,6 @@
     const drawGroup = document.getElementById('drawGroup');
     const gridGroup = document.getElementById('gridGroup');
 
-    // Элементы управления
     const brushSizeInput = document.getElementById('brushSize');
     const undoBtn = document.getElementById('undoBtn');
     const clearBtn = document.getElementById('clearBtn');
@@ -26,36 +25,29 @@
     const downloadPngBtn = document.getElementById('downloadPngBtn');
 
     // ============================================================
-    // 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+    // 2. СОСТОЯНИЕ
     // ============================================================
     const state = {
-        // Зум и панорамирование
         scale: 1,
         translateX: 0,
         translateY: 0,
         minScale: 1,
         maxScale: 20,
 
-        // Рисование
         isDrawing: false,
         currentPath: null,
         currentPoints: [],
         brushSize: 0.005,
         isEraser: false,
 
-        // Подложка
-        bgImageData: null, // base64
-        bgScale: 1, // 100% = вписана по высоте
-        bgOpacity: 0.5,
-
-        // Фон
+        bgImageData: null,
+        bgScale: 1, // 1 = 100%
+        bgOpacity: 1,
         bgColor: '#ffffff',
 
-        // Сетка
-        marginTop: 5, // проценты
+        marginTop: 5,
         headsCount: 4,
 
-        // Для мультитача
         pointers: new Map(),
         isPinching: false,
         pinchStartDist: 0,
@@ -63,12 +55,10 @@
         pinchStartCenter: { x: 0, y: 0 },
         pinchStartTranslate: { x: 0, y: 0 },
 
-        // Для панорамирования
         isPanning: false,
         panStart: { x: 0, y: 0 },
         panStartTranslate: { x: 0, y: 0 },
 
-        // Для рисования
         drawPointerId: null
     };
 
@@ -76,255 +66,44 @@
     // 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
     // ============================================================
 
-    // Получение координат в системе viewBox (0..1) из clientX/clientY
     function getSvgCoords(clientX, clientY) {
         const rect = drawSvg.getBoundingClientRect();
-        // Пересчет: (clientX - rect.left) / rect.width
         return {
             x: (clientX - rect.left) / rect.width,
             y: (clientY - rect.top) / rect.height
         };
     }
 
-    // Применение трансформации к контейнеру
     function applyTransform() {
-        const transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`;
-        zoomContainer.style.transform = transform;
-        // Обновляем transform-origin для правильного зума
-        zoomContainer.style.transformOrigin = '0 0';
+        zoomContainer.style.transform = `translate(${state.translateX}px, ${state.translateY}px) scale(${state.scale})`;
     }
 
-    // Ограничение панорамирования (clamp)
     function clampPan() {
-        const containerRect = zoomContainer.parentElement.getBoundingClientRect();
-        const containerW = containerRect.width;
-        const containerH = containerRect.height;
-
-        // Размер контейнера зума (квадрат) в пикселях
-        // zoomContainer имеет width/height 100% от родителя, но мы центрируем квадрат
-        // Фактически, zoomContainer - это flex-элемент, который занимает всю площадь
-        // Но внутри него квадрат? Нет, у нас весь контейнер - это квадрат? 
-        // По условию: рабочая область строго квадратная (1:1). 
-        // Значит, zoomContainer должен быть квадратным. 
-        // Но у нас он flex: 1 и занимает все пространство. 
-        // Нужно сделать так, чтобы внутри zoomContainer был квадрат.
-        // Однако, в текущей разметке zoomContainer - это и есть рабочая область.
-        // Чтобы соблюсти квадратность, сделаем так: zoomContainer имеет размеры 
-        // min(ширина, высота) родителя. Но родитель - это flex-контейнер.
-        // Проще: сделаем zoomContainer квадратным через CSS aspect-ratio.
-        // Но в задании сказано: "Рабочая область строго квадратная (1:1)."
-        // и "Внутри контейнера зума должны быть строго 3 слоя".
-        // Значит, zoomContainer - это квадрат. 
-        // В текущей разметке zoomContainer - это flex-элемент, который растягивается.
-        // Нужно изменить CSS, чтобы он был квадратным.
-        // Сделаем это через JS: установим размеры квадрата.
-        // Но лучше через CSS: 
-        // .zoom-container { aspect-ratio: 1 / 1; max-width: 100%; max-height: 100%; }
-        // Но тогда он не будет растягиваться на весь экран.
-        // В задании не сказано, что он должен занимать весь экран.
-        // Сказано: "Рабочая область строго квадратная (1:1)."
-        // и "Внутри контейнера зума должны быть строго 3 слоя".
-        // Значит, контейнер зума - это квадрат.
-        // Переделаем CSS: zoomContainer будет квадратным, центрированным в родителе.
-        // Но у нас родитель - body (flex column). 
-        // Нужно обернуть zoomContainer в другой контейнер, который центрирует квадрат.
-        // Или сделать zoomContainer с aspect-ratio: 1/1 и margin: auto.
-        // Но тогда он не будет занимать все доступное пространство.
-        // В задании: "Рабочая область строго квадратная (1:1)."
-        // и "Внутри контейнера зума должны быть строго 3 слоя".
-        // Значит, контейнер зума - это квадрат.
-        // Я сделаю так: zoomContainer будет квадратным, размер = min(ширина, высота) родителя.
-        // Для этого в CSS добавим:
-        // .zoom-container { position: relative; width: min(100%, 100vh); height: min(100%, 100vh); ... }
-        // Но это не совсем то.
-        // Лучше: сделать родительский контейнер flex, центрирующий квадрат.
-        // Но у нас body - flex column. 
-        // Добавим обертку .canvas-wrapper с flex: 1, display: flex, justify-content: center, align-items: center.
-        // И внутри нее zoomContainer с aspect-ratio: 1/1, max-width: 100%, max-height: 100%.
-        // Но в задании сказано: "Внутри контейнера зума должны быть строго 3 слоя".
-        // Значит, zoomContainer - это квадрат.
-        // Я изменю разметку: добавлю .canvas-wrapper.
-        // Но в задании дан готовый HTML? Нет, я пишу сам.
-        // Значит, я могу сделать правильно.
-        // Переделаю HTML: 
-        // <div class="canvas-wrapper"><div class="zoom-container" id="zoomContainer">...</div></div>
-        // И CSS: .canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        // .zoom-container { position: relative; width: min(100%, 100vh); height: min(100%, 100vh); ... }
-        // Но 100vh не учитывает панель управления. Лучше через JS.
-        // В JS: при ресайзе устанавливаем размер квадрата.
-        // Но проще: .zoom-container { aspect-ratio: 1/1; max-width: 100%; max-height: 100%; }
-        // и родитель .canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        // Тогда zoomContainer будет квадратным и центрированным.
-        // Но в задании сказано: "Рабочая область строго квадратная (1:1)."
-        // и "Внутри контейнера зума должны быть строго 3 слоя".
-        // Значит, контейнер зума - это квадрат.
-        // Я сделаю так.
-        // Но в текущем HTML у меня нет обертки. Добавлю.
-        // Так как я уже написал HTML, придется его изменить.
-        // Сделаю это в финальном варианте.
-
-        // Пока что для clamp будем использовать размеры zoomContainer.
-        // Но нужно знать его реальные размеры.
-        const rect = zoomContainer.getBoundingClientRect();
-        const w = rect.width;
-        const h = rect.height;
-
-        // При scale = 1 и translate = 0, контейнер занимает всю площадь.
-        // При увеличении scale, контейнер увеличивается.
-        // Нужно ограничить translate так, чтобы контейнер не выходил за пределы родителя.
-        // Родитель - это .canvas-wrapper (или body).
-        // Но проще: ограничить так, чтобы левый верхний угол не был > 0 и правый нижний не был < ширины родителя.
-        // Однако, при scale < 1 (не бывает, минимум 1) контейнер меньше родителя.
-        // При scale = 1, контейнер = родитель. translate должен быть 0.
-        // При scale > 1, контейнер больше родителя. translate должен быть в пределах:
-        // translateX <= 0 и translateX >= parentW - w * scale
-        // translateY <= 0 и translateY >= parentH - h * scale
-        // Но у нас родитель - это .canvas-wrapper, который центрирует квадрат.
-        // Размер родителя может быть больше квадрата.
-        // Тогда при scale = 1 квадрат центрирован, и translate должен быть 0.
-        // Но если родитель больше, то квадрат не занимает всю площадь.
-        // В задании: "Нельзя увести холст за края контейнера (жесткий clamp по X и Y)."
-        // Контейнер - это zoomContainer? Или родитель?
-        // "Рабочая область строго квадратная (1:1)."
-        // "Внутри контейнера зума должны быть строго 3 слоя"
-        // Значит, контейнер зума - это квадрат. 
-        // И clamp должен быть относительно этого квадрата.
-        // То есть, нельзя увести холст за края контейнера зума.
-        // Но если контейнер зума - это квадрат, и мы его масштабируем, то он выходит за свои же края?
-        // Нет, контейнер зума - это внешний контейнер, внутри которого 3 слоя.
-        // Мы трансформируем контейнер зума? Или слои внутри?
-        // В задании: "Внутри контейнера зума должны быть строго 3 слоя через position: absolute"
-        // "Зум и панорамирование: Использовать только PointerEvent"
-        // "Ограничение зума: минимум 100% (scale = 1). Нельзя увести холст за края контейнера (жесткий clamp по X и Y)."
-        // Значит, мы трансформируем контейнер зума (или его содержимое), и clamp относительно родителя контейнера зума.
-        // Но если контейнер зума - это квадрат, и мы его трансформируем, то он может выйти за пределы родителя.
-        // Родитель - это .canvas-wrapper. 
-        // Тогда clamp: 
-        // translateX <= 0 (левый край не правее левого края родителя)
-        // translateX >= parentW - w * scale (правый край не левее правого края родителя)
-        // Аналогично для Y.
-        // Но если w * scale < parentW, то translateX должен быть (parentW - w * scale) / 2 для центрирования?
-        // В задании: "Нельзя увести холст за края контейнера". 
-        // Если холст меньше контейнера, то его нельзя увести за края - он должен быть внутри.
-        // Но при scale = 1, холст = квадрат, который центрирован в родителе.
-        // Если родитель больше, то холст меньше родителя, и его нельзя увести за края - он должен быть внутри.
-        // Значит, translateX должен быть в пределах [0, parentW - w]? 
-        // Но тогда при scale = 1 и w = parentW (если родитель квадратный), translateX = 0.
-        // Если родитель больше, то w < parentW, и translateX может быть от 0 до parentW - w.
-        // Но в задании: "Рабочая область строго квадратная (1:1)."
-        // и "Внутри контейнера зума должны быть строго 3 слоя"
-        // Значит, контейнер зума - это квадрат. 
-        // И родитель, вероятно, тоже квадратный? Нет, родитель - это .canvas-wrapper, который может быть любым.
-        // Но чтобы не усложнять, сделаем родителя тоже квадратным? 
-        // Нет, лучше сделать так: zoomContainer имеет размер квадрата, и мы трансформируем его.
-        // Clamp относительно родителя .canvas-wrapper.
-        // Но если родитель не квадратный, то квадрат будет центрирован.
-        // При scale = 1, квадрат центрирован, translate = 0.
-        // При scale > 1, квадрат увеличивается, и мы можем его двигать.
-        // Clamp: 
-        // minX = Math.min(0, parentW - w * scale)
-        // maxX = Math.max(0, parentW - w * scale)
-        // Но если w * scale < parentW, то minX = 0, maxX = parentW - w * scale.
-        // Тогда translateX должен быть в [0, parentW - w * scale].
-        // Но при scale = 1 и w = parentW, minX = maxX = 0.
-        // При scale = 1 и w < parentW, minX = 0, maxX = parentW - w.
-        // Но квадрат центрирован, значит translateX = (parentW - w) / 2.
-        // Это не 0. 
-        // Значит, нужно учитывать центрирование.
-        // Проще: сделать родителя квадратным, чтобы w = parentW при scale = 1.
-        // Тогда clamp: 
-        // translateX <= 0
-        // translateX >= parentW - w * scale
-        // Аналогично Y.
-        // При scale = 1, translateX = 0.
-        // При scale > 1, translateX может быть от parentW - w * scale до 0.
-        // Это стандартный clamp.
-        // Поэтому сделаем .canvas-wrapper квадратным? 
-        // Нет, .canvas-wrapper может быть любым, но zoomContainer должен быть квадратным и занимать всю площадь .canvas-wrapper.
-        // Тогда .canvas-wrapper должен быть квадратным.
-        // Сделаем .canvas-wrapper с aspect-ratio: 1/1, и он будет центрирован в body.
-        // Но body - flex column. 
-        // Добавим .canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        // И внутри .canvas-wrapper будет .zoom-container с aspect-ratio: 1/1, max-width: 100%, max-height: 100%.
-        // Тогда .zoom-container будет квадратным и занимать максимально возможную площадь, сохраняя квадрат.
-        // Но тогда .canvas-wrapper не квадратный, а .zoom-container квадратный.
-        // Clamp относительно .canvas-wrapper? 
-        // Нет, clamp относительно .canvas-wrapper, но .zoom-container центрирован.
-        // При scale = 1, .zoom-container занимает w x w, где w = min(canvasWrapperW, canvasWrapperH).
-        // Если canvasWrapperW > canvasWrapperH, то w = canvasWrapperH, и .zoom-container центрирован по горизонтали.
-        // Тогда translateX = (canvasWrapperW - w) / 2.
-        // Но в задании: "Нельзя увести холст за края контейнера". 
-        // Контейнер - это .canvas-wrapper? Или .zoom-container?
-        // "Внутри контейнера зума должны быть строго 3 слоя"
-        // Значит, контейнер зума - это .zoom-container.
-        // "Нельзя увести холст за края контейнера" - значит, за края .zoom-container?
-        // Но .zoom-container - это и есть холст. 
-        // Тогда clamp относительно .zoom-container? 
-        // Это бессмысленно, так как мы трансформируем .zoom-container.
-        // Вероятно, имеется в виду, что нельзя увести холст за края родительского контейнера (body или .canvas-wrapper).
-        // Но чтобы не усложнять, сделаем так: 
-        // .zoom-container имеет размер квадрата, и мы трансформируем его.
-        // Clamp относительно .canvas-wrapper.
-        // Но чтобы clamp был простым, сделаем .canvas-wrapper квадратным.
-        // Тогда .zoom-container = .canvas-wrapper по размеру.
-        // И clamp: translateX <= 0, translateX >= parentW - w * scale.
-        // При scale = 1, translateX = 0.
-        // Это просто.
-        // Поэтому в CSS сделаем .canvas-wrapper квадратным.
-        // Но body - flex column, и .canvas-wrapper должен занимать оставшееся пространство.
-        // Сделаем .canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        // И внутри .zoom-container { width: min(100%, 100vh); height: min(100%, 100vh); ... }
-        // Но 100vh не учитывает панель. Лучше через JS.
-        // Или: .canvas-wrapper { flex: 1; display: grid; place-items: center; overflow: hidden; }
-        // .zoom-container { width: min(100%, 100vh); height: min(100%, 100vh); ... }
-        // Но 100vh - это высота окна, а .canvas-wrapper меньше.
-        // Используем aspect-ratio: 1/1 и max-width: 100%, max-height: 100%.
-        // Тогда .zoom-container будет квадратным и вписанным в .canvas-wrapper.
-        // Но .canvas-wrapper не квадратный.
-        // При scale = 1, .zoom-container центрирован.
-        // Clamp относительно .canvas-wrapper:
-        // translateX <= (canvasWrapperW - w) / 2
-        // translateX >= (canvasWrapperW - w) / 2 - (w * scale - w) = (canvasWrapperW - w) / 2 + w - w * scale
-        // Это сложно.
-        // Проще: сделать .canvas-wrapper квадратным через JS.
-        // При ресайзе устанавливаем размер .canvas-wrapper = min(доступная ширина, доступная высота).
-        // Тогда .zoom-container = 100% от .canvas-wrapper.
-        // И clamp простой.
-        // Я сделаю это в JS.
-        // Пока что для clamp используем размеры .canvas-wrapper.
-
-        // Временно: используем размеры zoomContainer.parentElement
-        const parentRect = zoomContainer.parentElement.getBoundingClientRect();
-        const parentW = parentRect.width;
-        const parentH = parentRect.height;
-
-        // Размер zoomContainer (квадрат) в пикселях при scale = 1
+        const wrapper = zoomContainer.parentElement;
+        const parentRect = wrapper.getBoundingClientRect();
+        
+        // Базовый размер контейнера (до масштабирования)
         const baseW = zoomContainer.offsetWidth;
         const baseH = zoomContainer.offsetHeight;
+        if (!baseW || !baseH) return;
 
-        if (baseW === 0 || baseH === 0) return;
-
-        // Текущий размер после масштабирования
         const scaledW = baseW * state.scale;
         const scaledH = baseH * state.scale;
 
-        // Вычисляем допустимые границы translate
-        // Левый край не должен быть правее левого края родителя
-        // Правый край не должен быть левее правого края родителя
         let minX, maxX, minY, maxY;
 
-        if (scaledW <= parentW) {
-            // Если холст меньше родителя, центрируем
-            minX = maxX = (parentW - scaledW) / 2;
+        // Если холст меньше обертки — центрируем
+        if (scaledW <= parentRect.width) {
+            minX = maxX = (parentRect.width - scaledW) / 2;
         } else {
-            minX = parentW - scaledW;
+            minX = parentRect.width - scaledW;
             maxX = 0;
         }
 
-        if (scaledH <= parentH) {
-            minY = maxY = (parentH - scaledH) / 2;
+        if (scaledH <= parentRect.height) {
+            minY = maxY = (parentRect.height - scaledH) / 2;
         } else {
-            minY = parentH - scaledH;
+            minY = parentRect.height - scaledH;
             maxY = 0;
         }
 
@@ -332,7 +111,6 @@
         state.translateY = Math.max(minY, Math.min(maxY, state.translateY));
     }
 
-    // Обновление трансформации с clamp
     function updateTransform() {
         clampPan();
         applyTransform();
@@ -342,29 +120,20 @@
     // 4. ЗУМ И ПАНОРАМИРОВАНИЕ
     // ============================================================
 
-    // Обработчик колесика мыши для зума (ПК)
     zoomContainer.addEventListener('wheel', (e) => {
         e.preventDefault();
         const delta = -e.deltaY;
         const zoomFactor = 1.1;
-        let newScale = state.scale;
-        if (delta > 0) {
-            newScale *= zoomFactor;
-        } else {
-            newScale /= zoomFactor;
-        }
+        let newScale = state.scale * (delta > 0 ? zoomFactor : 1 / zoomFactor);
         newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-        // Зум относительно курсора
         const rect = zoomContainer.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        // Координаты в системе контейнера до зума
         const containerX = (mouseX - state.translateX) / state.scale;
         const containerY = (mouseY - state.translateY) / state.scale;
 
-        // Новый translate
         state.translateX = mouseX - containerX * newScale;
         state.translateY = mouseY - containerY * newScale;
         state.scale = newScale;
@@ -372,24 +141,17 @@
         updateTransform();
     }, { passive: false });
 
-    // Pointer events для тача и мыши
     zoomContainer.addEventListener('pointerdown', (e) => {
-        // Сохраняем указатель
         state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        // Если это второй палец и мы рисуем - отменяем рисование
         if (state.pointers.size === 2 && state.isDrawing) {
             cancelDrawing();
         }
 
-        // Если два пальца - начинаем пинч
         if (state.pointers.size === 2) {
             e.preventDefault();
             state.isPinching = true;
             state.isDrawing = false;
-            if (state.currentPath) {
-                cancelDrawing();
-            }
             const pts = Array.from(state.pointers.values());
             state.pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
             state.pinchStartScale = state.scale;
@@ -401,8 +163,8 @@
             return;
         }
 
-        // Если один палец и это средняя кнопка мыши или Shift+ЛКМ - панорамирование
         if (state.pointers.size === 1) {
+            // Панорамирование: средняя кнопка или Shift+ЛКМ
             if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
                 e.preventDefault();
                 state.isPanning = true;
@@ -410,8 +172,7 @@
                 state.panStartTranslate = { x: state.translateX, y: state.translateY };
                 return;
             }
-
-            // Иначе - рисование (только ЛКМ или касание)
+            // Рисование
             if (e.button === 0 || e.pointerType === 'touch') {
                 e.preventDefault();
                 startDrawing(e);
@@ -421,11 +182,8 @@
 
     zoomContainer.addEventListener('pointermove', (e) => {
         if (!state.pointers.has(e.pointerId)) return;
-
-        // Обновляем позицию указателя
         state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-        // Пинч
         if (state.isPinching && state.pointers.size === 2) {
             e.preventDefault();
             const pts = Array.from(state.pointers.values());
@@ -438,11 +196,9 @@
             let newScale = state.pinchStartScale * (dist / state.pinchStartDist);
             newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-            // Зум относительно центра
             const rect = zoomContainer.getBoundingClientRect();
             const centerX = center.x - rect.left;
             const centerY = center.y - rect.top;
-
             const startCenterX = state.pinchStartCenter.x - rect.left;
             const startCenterY = state.pinchStartCenter.y - rect.top;
 
@@ -457,7 +213,6 @@
             return;
         }
 
-        // Панорамирование
         if (state.isPanning) {
             e.preventDefault();
             const dx = e.clientX - state.panStart.x;
@@ -468,46 +223,27 @@
             return;
         }
 
-        // Рисование
         if (state.isDrawing && e.pointerId === state.drawPointerId) {
             e.preventDefault();
             continueDrawing(e);
         }
     });
 
-    zoomContainer.addEventListener('pointerup', (e) => {
+    const onPointerEnd = (e) => {
         state.pointers.delete(e.pointerId);
-
-        if (state.isPinching && state.pointers.size < 2) {
-            state.isPinching = false;
-        }
-
-        if (state.isPanning) {
-            state.isPanning = false;
-        }
-
-        if (state.isDrawing && e.pointerId === state.drawPointerId) {
-            endDrawing();
-        }
-
-        // Если указателей не осталось, сбрасываем флаги
+        if (state.isPinching && state.pointers.size < 2) state.isPinching = false;
+        if (state.isPanning) state.isPanning = false;
+        if (state.isDrawing && e.pointerId === state.drawPointerId) endDrawing();
         if (state.pointers.size === 0) {
             state.isPinching = false;
             state.isPanning = false;
         }
-    });
+    };
 
+    zoomContainer.addEventListener('pointerup', onPointerEnd);
     zoomContainer.addEventListener('pointercancel', (e) => {
-        state.pointers.delete(e.pointerId);
-        if (state.isDrawing && e.pointerId === state.drawPointerId) {
-            cancelDrawing();
-        }
-        if (state.pointers.size < 2) {
-            state.isPinching = false;
-        }
-        if (state.isPanning) {
-            state.isPanning = false;
-        }
+        if (state.isDrawing && e.pointerId === state.drawPointerId) cancelDrawing();
+        onPointerEnd(e);
     });
 
     // ============================================================
@@ -523,7 +259,6 @@
         const coords = getSvgCoords(e.clientX, e.clientY);
         state.currentPoints.push(coords);
 
-        // Создаем новый path
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('stroke', state.isEraser ? state.bgColor : '#000000');
         path.setAttribute('stroke-width', state.brushSize);
@@ -532,10 +267,230 @@
         path.setAttribute('stroke-linejoin', 'round');
         drawGroup.appendChild(path);
         state.currentPath = path;
-
-        // Начальная точка
         updatePath();
     }
 
     function continueDrawing(e) {
-        if (!state.isDrawing
+        if (!state.isDrawing || !state.currentPath) return;
+        state.currentPoints.push(getSvgCoords(e.clientX, e.clientY));
+        updatePath();
+    }
+
+    function updatePath() {
+        if (!state.currentPath || state.currentPoints.length < 2) return;
+        const pts = state.currentPoints;
+        let d = `M ${pts[0].x} ${pts[0].y}`;
+        for (let i = 1; i < pts.length; i++) {
+            const xc = (pts[i - 1].x + pts[i].x) / 2;
+            const yc = (pts[i - 1].y + pts[i].y) / 2;
+            d += ` Q ${pts[i - 1].x} ${pts[i - 1].y} ${xc} ${yc}`;
+        }
+        if (pts.length > 1) d += ` L ${pts[pts.length - 1].x} ${pts[pts.length - 1].y}`;
+        state.currentPath.setAttribute('d', d);
+    }
+
+    function endDrawing() {
+        state.isDrawing = false;
+        state.drawPointerId = null;
+        state.currentPath = null;
+        state.currentPoints = [];
+    }
+
+    function cancelDrawing() {
+        if (state.currentPath) state.currentPath.remove();
+        state.isDrawing = false;
+        state.drawPointerId = null;
+        state.currentPath = null;
+        state.currentPoints = [];
+    }
+
+    // ============================================================
+    // 6. ИНТЕРФЕЙС
+    // ============================================================
+
+    undoBtn.addEventListener('click', () => {
+        const paths = drawGroup.querySelectorAll('path');
+        if (paths.length > 0) paths[paths.length - 1].remove();
+    });
+
+    clearBtn.addEventListener('click', () => drawGroup.innerHTML = '');
+
+    brushSizeInput.addEventListener('input', (e) => {
+        state.brushSize = parseFloat(e.target.value);
+    });
+
+    // ============================================================
+    // 7. ПОДЛОЖКА И ФОН
+    // ============================================================
+
+    loadImgBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            state.bgImageData = ev.target.result;
+            bgImage.src = state.bgImageData;
+            bgImage.style.display = 'block';
+            updateBgImage();
+        };
+        reader.readAsDataURL(file);
+        fileInput.value = '';
+    });
+
+    function updateBgImage() {
+        if (!state.bgImageData) return;
+        // 100% = высота картинки равна высоте холста
+        bgImage.style.height = `${state.bgScale * 100}%`;
+        bgImage.style.opacity = state.bgOpacity;
+    }
+
+    bgScaleInput.addEventListener('input', (e) => {
+        state.bgScale = parseFloat(e.target.value) / 100;
+        updateBgImage();
+    });
+
+    bgOpacityInput.addEventListener('input', (e) => {
+        state.bgOpacity = parseFloat(e.target.value) / 100;
+        updateBgImage();
+    });
+
+    bgColorInput.addEventListener('input', (e) => {
+        state.bgColor = e.target.value;
+        bgLayer.style.backgroundColor = state.bgColor;
+    });
+
+    // ============================================================
+    // 8. СЕТКА
+    // ============================================================
+
+    function updateGrid() {
+        gridGroup.innerHTML = '';
+        const margin = state.marginTop / 100;
+        const heads = state.headsCount;
+        const zoneTop = margin;
+        const zoneHeight = 1 - margin * 2;
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '0');
+        rect.setAttribute('y', zoneTop);
+        rect.setAttribute('width', '1');
+        rect.setAttribute('height', zoneHeight);
+        rect.classList.add('grid-border');
+        gridGroup.appendChild(rect);
+
+        for (let i = 1; i < heads; i++) {
+            const y = zoneTop + (zoneHeight * i) / heads;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', '0');
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', '1');
+            line.setAttribute('y2', y);
+            line.classList.add('grid-line');
+            gridGroup.appendChild(line);
+        }
+    }
+
+    marginTopInput.addEventListener('input', (e) => {
+        state.marginTop = parseFloat(e.target.value);
+        updateGrid();
+    });
+
+    headsCountInput.addEventListener('input', (e) => {
+        state.headsCount = parseInt(e.target.value);
+        updateGrid();
+    });
+
+    // ============================================================
+    // 9. ЭКСПОРТ
+    // ============================================================
+
+    function buildExportSVG() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svg.setAttribute('viewBox', '0 0 1 1');
+        svg.setAttribute('width', '4096');
+        svg.setAttribute('height', '4096');
+
+        // Фон
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.setAttribute('width', '1');
+        bgRect.setAttribute('height', '1');
+        bgRect.setAttribute('fill', state.bgColor);
+        svg.appendChild(bgRect);
+
+        // Подложка
+        if (state.bgImageData && bgImage.naturalWidth) {
+            const aspect = bgImage.naturalWidth / bgImage.naturalHeight;
+            const imgHeight = state.bgScale;
+            const imgWidth = imgHeight * aspect;
+            const x = (1 - imgWidth) / 2;
+            
+            const imageEl = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            imageEl.setAttribute('x', x);
+            imageEl.setAttribute('y', '0');
+            imageEl.setAttribute('width', imgWidth);
+            imageEl.setAttribute('height', imgHeight);
+            imageEl.setAttribute('opacity', state.bgOpacity);
+            imageEl.setAttribute('preserveAspectRatio', 'none');
+            imageEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', state.bgImageData);
+            svg.appendChild(imageEl);
+        }
+
+        // Пути
+        drawGroup.querySelectorAll('path').forEach(p => {
+            svg.appendChild(p.cloneNode(true));
+        });
+
+        return svg;
+    }
+
+    downloadSvgBtn.addEventListener('click', () => {
+        const svgString = new XMLSerializer().serializeToString(buildExportSVG());
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'drawing.svg';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    downloadPngBtn.addEventListener('click', () => {
+        const svgString = new XMLSerializer().serializeToString(buildExportSVG());
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 4096;
+            canvas.height = 4096;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 4096, 4096);
+
+            canvas.toBlob((pngBlob) => {
+                const pngUrl = URL.createObjectURL(pngBlob);
+                const a = document.createElement('a');
+                a.href = pngUrl;
+                a.download = 'drawing.png';
+                a.click();
+                URL.revokeObjectURL(pngUrl);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        };
+        img.src = url;
+    });
+
+    // ============================================================
+    // 10. СТАРТ
+    // ============================================================
+    bgLayer.style.backgroundColor = state.bgColor;
+    updateGrid();
+    
+    // Первичный расчет трансформации после полной загрузки DOM
+    setTimeout(updateTransform, 50);
+    window.addEventListener('resize', updateTransform);
+
+})();
