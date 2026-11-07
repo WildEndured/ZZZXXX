@@ -256,8 +256,10 @@
     // ===== Плечи (круги слева и справа от грудной клетки) =====
     // Диаметр плеча = 1/3 от высоты грудной клетки
     const shoulderRadius = (chestHeightPx / 3) / 2;
-    // Центр плеча по Y = 1/3 высоты грудной клетки от ее верха
-    const shoulderCy = chestY0 + (chestHeightPx / 3);
+    
+    // Вершина круга совпадает с верхом грудной клетки
+    // cy - radius = chestY0  =>  cy = chestY0 + radius
+    const shoulderCy = chestY0 + shoulderRadius;
     
     // Крепление к грудной клетке по X (к ее максимальной ширине)
     const shoulderLeftCx = cx - chestRx - shoulderRadius;
