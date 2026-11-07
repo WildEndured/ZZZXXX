@@ -8,7 +8,6 @@
 </head>
 <body>
 <div id="app">
-  <!-- Рабочая область (viewport) -->
   <div id="viewport">
     <div id="zoomContainer">
       <div id="bgLayer"></div>
@@ -20,7 +19,6 @@
     </div>
   </div>
 
-  <!-- Боковая панель управления -->
   <aside id="panel">
     <div class="panel-inner">
       <section class="block">
@@ -48,6 +46,25 @@
         </label>
         <label>Голов (2–8): <span id="headsVal">4</span>
           <input type="range" id="heads" min="2" max="8" value="4">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Голова</h3>
+        <label>Ширина: <span id="headWidthVal">60%</span>
+          <input type="range" id="headWidth" min="10" max="100" value="60">
+        </label>
+        <label>Высота: <span id="headHeightVal">60%</span>
+          <input type="range" id="headHeight" min="10" max="100" value="60">
+        </label>
+        <label>Смещение от верха: <span id="headOffsetVal">0%</span>
+          <input type="range" id="headOffset" min="-50" max="100" value="0">
+        </label>
+        <label>Подбородок (Y): <span id="chinYVal">80%</span>
+          <input type="range" id="chinY" min="0" max="100" value="80">
+        </label>
+        <label>Ширина подбородка: <span id="chinWidthVal">50%</span>
+          <input type="range" id="chinWidth" min="0" max="100" value="50">
         </label>
       </section>
 
