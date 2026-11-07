@@ -443,14 +443,16 @@
 
     // ===== Ноги (Колени и Лодыжки) =====
     
-    // Отступ в одну голову от таза
+    // Колени: 1 голова вниз от таза
     const kneeOffsetY = headH;
-    const ankleOffsetY = headH;
+    
+    // Лодыжки: на нижней границе рабочей зоны (y1)
+    const ankleBaseY = y1;
 
     // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
     const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
-    const kneeLeftCx_base = wristLeftCx;
+    const kneeLeftCx_base = wristLeftCx; // Выравниваем по X запястья
     
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
@@ -466,7 +468,7 @@
     gridGroup.appendChild(kneeLeft);
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
-    const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
+    const ankleLeftCy_base = ankleBaseY - ankleLeftRadiusPx; // Касается низа
     const ankleLeftCx_base = kneeLeftCx_base;
 
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
@@ -501,7 +503,7 @@
     gridGroup.appendChild(kneeRight);
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
-    const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
+    const ankleRightCy_base = ankleBaseY - ankleRightRadiusPx;
     const ankleRightCx_base = kneeRightCx_base;
 
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
