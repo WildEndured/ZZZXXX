@@ -2,14 +2,15 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>SVG Редактор 4096x4096</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; background: #222; color: #eee; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; background: #1a1a1a; color: #eee; }
   
-  #app { display: flex; width: 100%; height: 100%; }
+  #app { display: flex; width: 100%; height: 100%; flex-direction: row; }
   
+  /* Панель управления */
   #sidebar {
     width: 280px;
     background: #2a2a2a;
@@ -17,40 +18,57 @@
     overflow-y: auto;
     border-right: 1px solid #444;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+    transition: transform 0.3s ease;
   }
   
-  #sidebar h3 { font-size: 13px; margin: 12px 0 6px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+  #sidebar h3 { font-size: 12px; margin-top: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
   #sidebar h3:first-child { margin-top: 0; }
   
-  .control { margin-bottom: 10px; }
-  .control label { display: block; font-size: 12px; margin-bottom: 4px; color: #ccc; }
-  .control input[type="range"] { width: 100%; }
-  .control input[type="color"] { width: 100%; height: 32px; border: none; background: none; cursor: pointer; }
+  .control { display: flex; flex-direction: column; gap: 4px; }
+  .control label { font-size: 12px; color: #ccc; display: flex; justify-content: space-between; }
+  .control input[type="range"] { width: 100%; height: 24px; }
+  .control input[type="color"] { width: 100%; height: 36px; border: none; border-radius: 4px; background: none; cursor: pointer; padding: 0; }
   
   button {
     width: 100%;
-    padding: 8px 12px;
-    margin-bottom: 6px;
+    padding: 10px;
     background: #4a7cf7;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 500;
+    touch-action: manipulation;
   }
-  button:hover { background: #3a6ce7; }
+  button:active { opacity: 0.8; }
   button.secondary { background: #444; }
-  button.secondary:hover { background: #555; }
   button.danger { background: #d9534f; }
-  button.danger:hover { background: #c9433f; }
   
-  #viewport {
+  /* Контейнер для холста */
+  #viewportWrapper {
     flex: 1;
-    position: relative;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #111;
+    overflow: hidden;
+    position: relative;
+    padding: 10px;
+  }
+
+  /* Жесткий квадратный холст 1:1 */
+  #viewport {
+    position: relative;
+    background: #000;
+    overflow: hidden;
     touch-action: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    /* Размер задается через JS для идеального квадрата */
   }
   
   #stage {
@@ -76,6 +94,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
+    overflow: hidden;
   }
   
   #layerUnderlay img {
@@ -83,6 +102,7 @@
     max-height: none;
     user-select: none;
     -webkit-user-drag: none;
+    object-fit: contain;
   }
   
   #layerDraw {
@@ -91,7 +111,6 @@
     z-index: 3;
     width: 100%;
     height: 100%;
-    touch-action: none;
   }
   
   #layerDraw svg {
@@ -113,10 +132,43 @@
     z-index: 10;
     pointer-events: none;
   }
+
+  /* Мобильная адаптация: панель выезжает снизу */
+  @media (max-width: 768px) {
+    #app { flex-direction: column; }
+    #viewportWrapper { padding: 5px; }
+    #sidebar {
+      width: 100%;
+      height: 45vh; /* Занимает 45% экрана снизу */
+      border-right: none;
+      border-top: 1px solid #444;
+      order: 2; /* Панель внизу */
+      overflow-y: auto;
+    }
+    #viewportWrapper { order: 1; }
+  }
 </style>
 </head>
 <body>
 <div id="app">
+  <div id="viewportWrapper">
+    <div id="viewport">
+      <div id="stage">
+        <div id="layerBg"></div>
+        <div id="layerUnderlay">
+          <img id="underlayImg" alt="" style="display:none">
+        </div>
+        <div id="layerDraw">
+          <svg id="drawSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+            <g id="guideGroup" pointer-events="none"></g>
+            <g id="drawGroup"></g>
+          </svg>
+        </div>
+      </div>
+      <div id="zoomInfo">100%</div>
+    </div>
+  </div>
+  
   <div id="sidebar">
     <h3>Подложка</h3>
     <button id="btnLoadImage" class="secondary">Загрузить картинку</button>
@@ -162,28 +214,13 @@
     <button id="btnExportSVG">Скачать SVG</button>
     <button id="btnExportPNG">Скачать PNG (4096x4096)</button>
   </div>
-  
-  <div id="viewport">
-    <div id="stage">
-      <div id="layerBg"></div>
-      <div id="layerUnderlay">
-        <img id="underlayImg" alt="" style="display:none">
-      </div>
-      <div id="layerDraw">
-        <svg id="drawSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-          <g id="guideGroup" pointer-events="none"></g>
-          <g id="drawGroup"></g>
-        </svg>
-      </div>
-    </div>
-    <div id="zoomInfo">100%</div>
-  </div>
 </div>
 
 <script>
 (() => {
   'use strict';
   
+  const viewportWrapper = document.getElementById('viewportWrapper');
   const viewport = document.getElementById('viewport');
   const stage = document.getElementById('stage');
   const layerBg = document.getElementById('layerBg');
@@ -222,8 +259,21 @@
     underlayBase64: null,
     underlayNaturalW: 0,
     underlayNaturalH: 0,
-    drawPaths: [] // {d, color, width}
+    drawPaths: []
   };
+
+  // ==== Подгонка квадратного холста ====
+  function resizeCanvas() {
+    const rect = viewportWrapper.getBoundingClientRect();
+    // Находим минимальную сторону, чтобы вписать квадрат
+    const size = Math.min(rect.width, rect.height) - (window.innerWidth <= 768 ? 10 : 20);
+    viewport.style.width = size + 'px';
+    viewport.style.height = size + 'px';
+    
+    applyTransform();
+    updateUnderlay();
+    renderGuides();
+  }
   
   // ==== Клампинг зума/панорамирования ====
   function clamp() {
@@ -255,7 +305,6 @@
     const rect = viewport.getBoundingClientRect();
     const px = clientX - rect.left;
     const py = clientY - rect.top;
-    // точка под курсором в координатах stage до зума
     const sx = (px - state.tx) / state.scale;
     const sy = (py - state.ty) / state.scale;
     state.scale = newScale;
@@ -264,18 +313,15 @@
     applyTransform();
   }
   
-  // ==== Руководство (red frame + dashed lines) ====
+  // ==== Руководство ====
   function renderGuides() {
     guideGroup.innerHTML = '';
     const pad = parseFloat(padding.value) / 100;
     const n = parseInt(heads.value, 10);
-    
-    // Верхняя и нижняя границы зоны
     const topY = pad;
     const botY = 1 - pad;
     
     if (pad > 0) {
-      // Красная рамка зоны
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', '0');
       rect.setAttribute('y', topY);
@@ -288,7 +334,6 @@
       guideGroup.appendChild(rect);
     }
     
-    // Пунктирные линии — разделение на n голов
     const zoneH = botY - topY;
     for (let i = 1; i < n; i++) {
       const y = topY + zoneH * (i / n);
@@ -311,7 +356,6 @@
     const vw = viewport.clientWidth;
     const vh = viewport.clientHeight;
     const scalePct = parseFloat(underlayScale.value) / 100;
-    // 100% = вписана по высоте холста
     const baseH = vh;
     const baseW = baseH * (state.underlayNaturalW / state.underlayNaturalH);
     const w = baseW * scalePct;
@@ -350,12 +394,10 @@
     updateUnderlay();
   });
   
-  // ==== Фон ====
   bgColor.addEventListener('input', () => {
     layerBg.style.background = bgColor.value;
   });
   
-  // ==== Руководство ====
   padding.addEventListener('input', () => {
     paddingVal.textContent = padding.value;
     renderGuides();
@@ -365,24 +407,21 @@
     renderGuides();
   });
   
-  // ==== Кисть ====
   brushSize.addEventListener('input', () => {
     brushSizeVal.textContent = brushSize.value;
   });
   
-  // ==== Рисование (Pointer Events) ====
+  // ==== Рисование ====
   let isDrawing = false;
   let currentPath = null;
   let currentPoints = [];
   let activePointerId = null;
   
-  // Для pinch/pan
   const pointers = new Map();
-  let gestureMode = null; // null | 'pan' | 'pinch'
+  let gestureMode = null;
   let gestureStart = null;
   
   function screenToSvg(clientX, clientY) {
-    // Координаты в viewBox 0..1
     const rect = drawSvg.getBoundingClientRect();
     const x = (clientX - rect.left) / rect.width;
     const y = (clientY - rect.top) / rect.height;
@@ -392,9 +431,6 @@
   function startPath(clientX, clientY) {
     const { x, y } = screenToSvg(clientX, clientY);
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Штрих с vector-effect — не масштабируется
-    const widthSvg = (parseFloat(brushSize.value) / viewport.clientWidth) * state.scale;
-    // Проще: указать толщину в пикселях stage-координат и vector-effect: non-scaling-stroke
     path.setAttribute('stroke', brushColor.value);
     path.setAttribute('stroke-width', brushSize.value);
     path.setAttribute('stroke-linecap', 'round');
@@ -453,22 +489,13 @@
   }
   
   drawSvg.addEventListener('pointerdown', (e) => {
-    // Игнор для второго пальца — переключение в режим жеста
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     
     if (pointers.size === 1) {
-      // Первый палец — старт рисования (или ЛКМ)
       if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
-      // Средняя кнопка или shift — панорамирование
       if (e.pointerType === 'mouse' && (e.button === 1 || (e.button === 0 && e.shiftKey))) {
         gestureMode = 'pan';
-        gestureStart = {
-          pointerId: e.pointerId,
-          startX: e.clientX,
-          startY: e.clientY,
-          startTx: state.tx,
-          startTy: state.ty
-        };
+        gestureStart = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, startTx: state.tx, startTy: state.ty };
         drawSvg.setPointerCapture(e.pointerId);
         e.preventDefault();
         return;
@@ -480,7 +507,6 @@
       startPath(e.clientX, e.clientY);
       e.preventDefault();
     } else if (pointers.size === 2) {
-      // Второй палец — отменяем рисование, включаем pinch
       if (isDrawing) {
         cancelPath();
         isDrawing = false;
@@ -488,14 +514,7 @@
       }
       gestureMode = 'pinch';
       const info = getPinchInfo();
-      gestureStart = {
-        dist: info.dist,
-        midX: info.midX,
-        midY: info.midY,
-        startScale: state.scale,
-        startTx: state.tx,
-        startTy: state.ty
-      };
+      gestureStart = { dist: info.dist, midX: info.midX, midY: info.midY, startScale: state.scale, startTx: state.tx, startTy: state.ty };
       e.preventDefault();
     }
   });
@@ -510,7 +529,6 @@
       const ratio = info.dist / gestureStart.dist;
       const newScale = Math.min(state.maxScale, Math.max(state.minScale, gestureStart.startScale * ratio));
       
-      // Позиционируем относительно середины пальцев
       const rect = viewport.getBoundingClientRect();
       const px = info.midX - rect.left;
       const py = info.midY - rect.top;
@@ -541,17 +559,13 @@
   
   function handlePointerEnd(e) {
     pointers.delete(e.pointerId);
-    
-    if (gestureMode === 'pinch') {
-      if (pointers.size < 2) {
-        gestureMode = null;
-        gestureStart = null;
-      }
+    if (gestureMode === 'pinch' && pointers.size < 2) {
+      gestureMode = null;
+      gestureStart = null;
     } else if (gestureMode === 'pan') {
       gestureMode = null;
       gestureStart = null;
     }
-    
     if (isDrawing && e.pointerId === activePointerId) {
       finishPath();
       isDrawing = false;
@@ -565,7 +579,6 @@
     handlePointerEnd(e);
   });
   
-  // Колесо мыши — зум
   viewport.addEventListener('wheel', (e) => {
     e.preventDefault();
     const factor = Math.exp(-e.deltaY * 0.0015);
@@ -612,7 +625,6 @@
     svg.setAttribute('viewBox', '0 0 1 1');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     
-    // Фон
     const bg = document.createElementNS(ns, 'rect');
     bg.setAttribute('x', '0');
     bg.setAttribute('y', '0');
@@ -621,12 +633,9 @@
     bg.setAttribute('fill', bgColor.value);
     svg.appendChild(bg);
     
-    // Подложка
     if (state.underlayBase64 && state.underlayNaturalW && state.underlayNaturalH) {
-      // 100% = вписан по высоте холста
-      const heightFrac = 1; // от высоты
       const scalePct = parseFloat(underlayScale.value) / 100;
-      const h = heightFrac * scalePct;
+      const h = 1 * scalePct;
       const w = h * (state.underlayNaturalW / state.underlayNaturalH);
       const x = (1 - w) / 2;
       const y = (1 - h) / 2;
@@ -642,7 +651,6 @@
       svg.appendChild(img);
     }
     
-    // Пути
     const g = document.createElementNS(ns, 'g');
     g.setAttribute('fill', 'none');
     for (const p of state.drawPaths) {
@@ -657,9 +665,6 @@
       g.appendChild(path);
     }
     svg.appendChild(g);
-    
-    // Руководство? При экспорте НЕ нужно (это UI-подсказка)
-    // Но если вы хотите — раскомментируйте.
     
     return new XMLSerializer().serializeToString(svg);
   }
@@ -706,31 +711,18 @@
         setTimeout(() => URL.revokeObjectURL(u), 1000);
       }, 'image/png');
     };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      alert('Ошибка рендеринга SVG в PNG');
-    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert('Ошибка рендеринга SVG в PNG'); };
     img.src = url;
   });
   
   // ==== Инициализация ====
-  function resize() {
-    applyTransform();
-    updateUnderlay();
-    renderGuides();
-  }
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
   
-  // Стартовые значения
   layerBg.style.background = bgColor.value;
-  applyTransform();
-  renderGuides();
   
-  // Ресайз подложки при изменении viewport
-  const ro = new ResizeObserver(() => {
-    updateUnderlay();
-  });
-  ro.observe(viewport);
+  const ro = new ResizeObserver(resizeCanvas);
+  ro.observe(viewportWrapper);
   
 })();
 </script>
