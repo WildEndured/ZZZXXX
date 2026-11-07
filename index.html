@@ -10,7 +10,7 @@
     <!-- Панель управления -->
     <div class="controls">
         <div class="control-group">
-            <label>Кисть: <input type="range" id="brushSize" min="0.00025" max="0.025" step="0.00025" value="0.005"></label>
+            <label>Кисть <input type="range" id="brushSize" min="0.00025" max="0.025" step="0.00025" value="0.005"></label>
         </div>
         <div class="control-group">
             <button id="undoBtn">Отменить</button>
@@ -21,33 +21,36 @@
             <input type="file" id="fileInput" accept="image/*" style="display: none;">
         </div>
         <div class="control-group">
-            <label>Масштаб подложки: <input type="range" id="bgScale" min="10" max="300" value="100"></label>
-            <label>Прозрачность: <input type="range" id="bgOpacity" min="0" max="100" value="50"></label>
+            <label>Масштаб <input type="range" id="bgScale" min="10" max="300" value="100"></label>
+            <label>Прозрачность <input type="range" id="bgOpacity" min="0" max="100" value="100"></label>
         </div>
         <div class="control-group">
-            <label>Цвет фона: <input type="color" id="bgColor" value="#ffffff"></label>
+            <label>Фон <input type="color" id="bgColor" value="#ffffff"></label>
         </div>
         <div class="control-group">
-            <label>Отступ: <input type="range" id="marginTop" min="0" max="10" value="5"></label>
-            <label>Голов: <input type="range" id="headsCount" min="2" max="8" value="4"></label>
+            <label>Отступ <input type="range" id="marginTop" min="0" max="10" value="5"></label>
+            <label>Голов <input type="range" id="headsCount" min="2" max="8" value="4"></label>
         </div>
         <div class="control-group">
             <button id="downloadSvgBtn">Скачать SVG</button>
-            <button id="downloadPngBtn">Скачать PNG (4096x4096)</button>
+            <button id="downloadPngBtn">Скачать PNG</button>
         </div>
     </div>
 
-    <!-- Контейнер зума -->
-    <div class="zoom-container" id="zoomContainer">
-        <!-- Слой фона -->
-        <div class="bg-layer" id="bgLayer"></div>
-        <!-- Слой подложки -->
-        <img class="bg-image" id="bgImage" src="" alt="" style="display: none;">
-        <!-- Слой рисования -->
-        <svg id="drawSvg" class="draw-layer" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-            <g id="drawGroup"></g>
-            <g id="gridGroup"></g>
-        </svg>
+    <!-- Обертка для центрирования квадратного холста -->
+    <div class="canvas-wrapper">
+        <!-- Контейнер зума (строго квадратный) -->
+        <div class="zoom-container" id="zoomContainer">
+            <!-- Слой фона (z-index: 1) -->
+            <div class="bg-layer" id="bgLayer"></div>
+            <!-- Слой подложки (z-index: 2) -->
+            <img class="bg-image" id="bgImage" src="" alt="">
+            <!-- Слой рисования (z-index: 3) -->
+            <svg id="drawSvg" class="draw-layer" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+                <g id="drawGroup"></g>
+                <g id="gridGroup"></g>
+            </svg>
+        </div>
     </div>
 
     <script src="script.js"></script>
