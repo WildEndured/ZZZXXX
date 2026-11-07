@@ -122,8 +122,8 @@
       offset: 0.00,
       round: 0.20
     },
-    wristLeft: { x: 0, y: 0, r: 0.15 },
-    wristRight: { x: 0, y: 0, r: 0.15 },
+    wristLeft: { x: -0.20, y: 0, r: 0.10 },
+    wristRight: { x: 0.20, y: 0, r: 0.10 },
     brush: { color: '#000000', width: 3 },
     paths: []
   };
