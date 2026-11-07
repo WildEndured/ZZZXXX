@@ -1,101 +1,40 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>SVG Векторный Редактор</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Canvas 4096x4096</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
-    <!-- Панель управления -->
-    <aside class="panel">
-      <h2>Инструменты</h2>
+    <div class="app">
+        <header class="toolbar">
+            <button id="btnClear" class="btn" title="Очистить">🗑</button>
+            <button id="btnSave" class="btn" title="Сохранить">💾</button>
+            <button id="btnEraser" class="btn" title="Ластик">⌫</button>
+            <div class="colors" id="colors">
+                <button class="color active" data-color="#000000" style="background:#000000"></button>
+                <button class="color" data-color="#ff0000" style="background:#ff0000"></button>
+                <button class="color" data-color="#00ff00" style="background:#00ff00"></button>
+                <button class="color" data-color="#0000ff" style="background:#0000ff"></button>
+                <button class="color" data-color="#ffff00" style="background:#ffff00"></button>
+                <button class="color" data-color="#ff00ff" style="background:#ff00ff"></button>
+                <button class="color" data-color="#00ffff" style="background:#00ffff"></button>
+            </div>
+            <input type="range" id="brushSize" min="1" max="100" value="10">
+            <span id="sizeLabel">10</span>
+        </header>
 
-      <div class="group">
-        <label>Кисть / Ластик</label>
-        <div class="btn-row">
-          <button id="toolBrush" class="active">Кисть</button>
-          <button id="toolEraser">Ластик</button>
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="canvas" width="4096" height="4096"></canvas>
         </div>
-      </div>
 
-      <div class="group">
-        <label>Толщина: <span id="sizeVal">0.00500</span></label>
-        <input type="range" id="sizeRange" min="0.00025" max="0.025" step="0.00025" value="0.005">
-      </div>
-
-      <div class="group">
-        <label>Цвет кисти</label>
-        <input type="color" id="brushColor" value="#000000">
-      </div>
-
-      <div class="group">
-        <button id="undoBtn">Отменить</button>
-        <button id="clearBtn">Очистить</button>
-      </div>
-
-      <hr>
-
-      <h2>Фон и подложка</h2>
-      <div class="group">
-        <label>Цвет фона</label>
-        <input type="color" id="bgColor" value="#ffffff">
-      </div>
-
-      <div class="group">
-        <button id="uploadBtn">Загрузить картинку</button>
-        <input type="file" id="fileInput" accept="image/*" hidden>
-      </div>
-
-      <div class="group">
-        <label>Масштаб подложки: <span id="imgScaleVal">100</span>%</label>
-        <input type="range" id="imgScale" min="10" max="300" value="100">
-      </div>
-
-      <div class="group">
-        <label>Прозрачность: <span id="imgOpacityVal">100</span>%</label>
-        <input type="range" id="imgOpacity" min="0" max="100" value="100">
-      </div>
-
-      <hr>
-
-      <h2>Разметка</h2>
-      <div class="group">
-        <label>Отступ: <span id="marginVal">5</span>%</label>
-        <input type="range" id="marginRange" min="0" max="10" value="5">
-      </div>
-
-      <div class="group">
-        <label>Голов: <span id="headsVal">4</span></label>
-        <input type="range" id="headsRange" min="2" max="8" value="4">
-      </div>
-
-      <hr>
-
-      <h2>Экспорт</h2>
-      <div class="group">
-        <button id="exportSvg">Скачать SVG</button>
-        <button id="exportPng">Скачать PNG (4096)</button>
-      </div>
-    </aside>
-
-    <!-- Контейнер зума -->
-    <main class="stage" id="stage">
-      <div class="zoom-container" id="zoomContainer">
-        <!-- Слой 1: фон -->
-        <div class="layer-bg" id="bgLayer"></div>
-        <!-- Слой 2: подложка -->
-        <img class="layer-img" id="imgLayer" alt="" draggable="false">
-        <!-- Слой 3: рисование -->
-        <svg class="layer-svg" id="svg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
-          <g id="gridGroup"></g>
-          <g id="drawGroup"></g>
-        </svg>
-      </div>
-    </main>
-  </div>
-
-  <script src="script.js"></script>
+        <footer class="statusbar">
+            <span id="status">4096 × 4096 · 300 DPI · 1:1</span>
+        </footer>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
