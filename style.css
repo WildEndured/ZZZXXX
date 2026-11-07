@@ -13,7 +13,6 @@ html, body {
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: #1a1a1a;
-    touch-action: none;
     overscroll-behavior: none;
 }
 
@@ -25,7 +24,6 @@ html, body {
     height: 100dvh;
 }
 
-/* Панель инструментов */
 .toolbar {
     display: flex;
     align-items: center;
@@ -33,19 +31,17 @@ html, body {
     padding: 8px;
     background: #2a2a2a;
     border-bottom: 1px solid #3a3a3a;
-    flex-wrap: nowrap;
     overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
     flex-shrink: 0;
+    scrollbar-width: none;
 }
 
 .toolbar::-webkit-scrollbar {
     display: none;
 }
 
-.btn {
-    flex: 0 0 auto;
+.tool-btn {
+    flex-shrink: 0;
     width: 40px;
     height: 40px;
     border: none;
@@ -54,132 +50,85 @@ html, body {
     color: #fff;
     font-size: 18px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
+    touch-action: manipulation;
 }
 
-.btn:active {
+.tool-btn:active {
     background: #4a4a4a;
     transform: scale(0.95);
 }
 
-.btn.active {
-    background: #007aff;
+.tool-btn.active {
+    background: #0a84ff;
 }
 
-.colors {
-    display: flex;
-    gap: 4px;
-    flex: 0 0 auto;
-}
-
-.color {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    flex: 0 0 auto;
-    transition: transform 0.15s;
-}
-
-.color.active {
-    border-color: #fff;
-    transform: scale(1.15);
-}
-
-#brushSize {
-    flex: 1 1 80px;
-    min-width: 60px;
-    max-width: 140px;
-    height: 6px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: #4a4a4a;
-    border-radius: 3px;
-    outline: none;
-}
-
-#brushSize::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #007aff;
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-#brushSize::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #007aff;
-    border-radius: 50%;
-    cursor: pointer;
+.color-input {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
     border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
 }
 
-#sizeLabel {
-    color: #fff;
+.color-input::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.color-input::-webkit-color-swatch {
+    border: 2px solid #3a3a3a;
+    border-radius: 6px;
+}
+
+.size-slider {
+    flex-shrink: 0;
+    width: 100px;
+    height: 40px;
+    accent-color: #0a84ff;
+}
+
+#size-label {
+    flex-shrink: 0;
+    color: #aaa;
     font-size: 12px;
-    min-width: 22px;
+    min-width: 24px;
     text-align: center;
-    flex: 0 0 auto;
 }
 
-/* Обёртка холста */
-.canvas-wrapper {
-    flex: 1 1 auto;
-    position: relative;
+.canvas-container {
+    flex: 1;
     overflow: hidden;
-    background: #111;
+    background: #0f0f0f;
+    position: relative;
+    touch-action: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 0;
 }
 
 #canvas {
     display: block;
-    background: #ffffff;
+    background: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     touch-action: none;
-    /* Ключевое: сохраняем соотношение 1:1 и вписываем в контейнер */
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
     cursor: crosshair;
-    box-shadow: 0 0 0 1px #3a3a3a;
+    image-rendering: auto;
 }
 
-/* Статус-бар */
-.statusbar {
-    padding: 6px 10px;
+.info {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 12px;
     background: #2a2a2a;
-    border-top: 1px solid #3a3a3a;
     color: #888;
     font-size: 11px;
-    text-align: center;
+    font-family: monospace;
     flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
-}
-
-/* Ориентация */
-@media (orientation: landscape) {
-    .toolbar {
-        padding: 6px;
-    }
-    .btn {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-    .color {
-        width: 28px;
-        height: 28px;
-    }
+    border-top: 1px solid #3a3a3a;
 }
