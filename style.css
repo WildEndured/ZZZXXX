@@ -20,7 +20,6 @@ html, body {
   flex-direction: column;
 }
 
-/* Mobile first: viewport сверху, панель снизу */
 #viewport {
   flex: 1 1 auto;
   position: relative;
@@ -149,7 +148,6 @@ button {
 button:hover { background: #383838; }
 button:active { background: #444; }
 
-/* ПК: панель слева */
 @media (min-width: 769px) {
   #app { flex-direction: row; }
 
