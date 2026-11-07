@@ -168,10 +168,10 @@
     elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 },
     wristRight: { x: 0.20, y: 0, r: 0.10 },
-    kneeLeft: { x: 0, y: 0, r: 0.08 },
-    kneeRight: { x: 0, y: 0, r: 0.08 },
-    ankleLeft: { x: 0, y: 0, r: 0.06 },
-    ankleRight: { x: 0, y: 0, r: 0.06 },
+    kneeLeft: { x: 0.50, y: 0.25, r: 0.15 },
+    kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
+    ankleLeft: { x: 0.50, y: 0.50, r: 0.10 },
+    ankleRight: { x: -0.50, y: 0.50, r: 0.10 },
     brush: { color: '#000000', width: 3 },
     paths: []
   };
@@ -450,7 +450,7 @@
     // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
     const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
-    const kneeLeftCx_base = wristLeftCx; // Выравниваем по X запястья (или центра ноги)
+    const kneeLeftCx_base = wristLeftCx;
     
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
