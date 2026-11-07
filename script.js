@@ -332,8 +332,9 @@
     const pelvisBottomY = pelvisY0 + pelvisH;
 
     // Левое запястье
+    // Низ круга совпадает с низом таза => cy = pelvisBottomY - radius
+    const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = cx - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
-    const wristLeftCy = pelvisBottomY + (state.wristLeft.y * sectionH);
 
     const wristLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     wristLeft.setAttribute('cx', String(wristLeftCx));
@@ -346,8 +347,8 @@
     gridGroup.appendChild(wristLeft);
 
     // Правое запястье
+    const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = cx + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
-    const wristRightCy = pelvisBottomY + (state.wristRight.y * sectionH);
 
     const wristRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     wristRight.setAttribute('cx', String(wristRightCx));
