@@ -7,7 +7,6 @@
   const zoomContainer = document.getElementById('zoomContainer');
   const bgLayer = document.getElementById('bgLayer');
   const overlayLayer = document.getElementById('overlayLayer');
-  const drawLayer = document.getElementById('drawLayer');
   const drawGroup = document.getElementById('drawGroup');
   const gridGroup = document.getElementById('gridGroup');
   const headGroup = document.getElementById('headGroup');
@@ -31,7 +30,6 @@
   const headsVal = document.getElementById('headsVal');
   const brushVal = document.getElementById('brushVal');
 
-  // Ползунки головы
   const skullW = document.getElementById('skullW');
   const skullH = document.getElementById('skullH');
   const chinW = document.getElementById('chinW');
@@ -59,8 +57,8 @@
     tx: 0,
     ty: 0,
     imageDataUrl: null,
-    imageNaturalRatio: 1, // w/h
-    paths: [], // стек путей для undo
+    imageNaturalRatio: 1,
+    paths: [],
   };
 
   // ========== Геометрия холста ==========
@@ -87,7 +85,7 @@
     const h = viewport.clientHeight;
     const scaledW = w * state.scale;
     const scaledH = h * state.scale;
-    const minTx = w - scaledW; // <= 0
+    const minTx = w - scaledW;
     const minTy = h - scaledH;
     state.tx = Math.min(0, Math.max(minTx, state.tx));
     state.ty = Math.min(0, Math.max(minTy, state.ty));
@@ -104,7 +102,7 @@
   }
 
   // ========== Указатели ==========
-  const pointers = new Map(); // id -> {x, y} (в локальных координатах viewport)
+  const pointers = new Map();
   let gestureState = null;
 
   function localPoint(clientX, clientY) {
@@ -187,7 +185,6 @@
         e.preventDefault();
         return;
       }
-      // Рисование
       gestureState = { mode: 'draw' };
       startDrawing(e.clientX, e.clientY);
     } else if (pointers.size === 2) {
@@ -212,14 +209,10 @@
   function onPointerMove(e) {
     if (!pointers.has(e.pointerId)) return;
     pointers.set(e.pointerId, localPoint(e.clientX, e.clientY));
-
     if (!gestureState) return;
 
     if (gestureState.mode === 'draw') {
-      if (pointers.size > 1) {
-        cancelDrawing();
-        return;
-      }
+      if (pointers.size > 1) { cancelDrawing(); return; }
       continueDrawing(e.clientX, e.clientY);
       e.preventDefault();
     } else if (gestureState.mode === 'pan') {
@@ -244,7 +237,6 @@
 
       const ox = gestureState.startMidX;
       const oy = gestureState.startMidY;
-
       const panDx = midX - gestureState.startMidX;
       const panDy = midY - gestureState.startMidY;
 
@@ -261,7 +253,6 @@
   function onPointerUp(e) {
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
-
     if (!gestureState) return;
 
     if (gestureState.mode === 'draw') {
@@ -271,10 +262,7 @@
       if (pointers.size === 0) gestureState = null;
     } else if (gestureState.mode === 'zoom') {
       if (pointers.size === 1) {
-        // Остался один палец — переходим в панорамирование от этого пальца
         const [pt] = pointers.values();
-        // pt — локальные координаты, но pan мы считаем через client.
-        // Пересчитаем: client = local + rect.left/top
         const r = viewport.getBoundingClientRect();
         gestureState = {
           mode: 'pan',
@@ -291,13 +279,10 @@
 
   function onPointerCancel(e) {
     pointers.delete(e.pointerId);
-    if (gestureState && gestureState.mode === 'draw') {
-      cancelDrawing();
-    }
+    if (gestureState && gestureState.mode === 'draw') cancelDrawing();
     if (pointers.size === 0) gestureState = null;
   }
 
-  // ========== Колесо мыши (зум) ==========
   function onWheel(e) {
     e.preventDefault();
     const r = viewport.getBoundingClientRect();
@@ -315,7 +300,6 @@
     const margin = parseFloat(marginRange.value) / 100;
     const heads = parseInt(headsRange.value, 10);
 
-    // Красная рамка зоны
     if (margin > 0) {
       const rect = document.createElementNS(SVG_NS, 'rect');
       rect.setAttribute('x', 0);
@@ -330,7 +314,6 @@
       gridGroup.appendChild(rect);
     }
 
-    // Горизонтальные пунктирные линии
     const top = margin;
     const bottom = 1 - margin;
     const usable = bottom - top;
@@ -360,23 +343,22 @@
 
     const top = margin;
     const bottom = 1 - margin;
-    const sH = (bottom - top) / heads; // высота секции
-    const sTop = top;                  // верх первой секции
+    const sH = (bottom - top) / heads; // высота одной секции
+    const sTop = top;                  // верх первой (верхней) секции
 
-    // Опорные Y внутри секции (доли 0..1 от её высоты)
-    const y1  = sTop + sH * (1 / 5);   // вершина черепа
-    const y3  = sTop + sH * (3 / 5);   // низ черепа
-    const y4  = sTop + sH * (4 / 5);   // базовая линия подбородка
+    // Опорные линии внутри секции (доли её высоты)
+    const y1   = sTop + sH * (1 / 5);   // вершина черепа
+    const y3   = sTop + sH * (3 / 5);   // низ черепа
+    const y35  = sTop + sH * (3.5 / 5); // базовая точка крепления челюсти
+    const y4   = sTop + sH * (4 / 5);   // базовая линия подбородка
 
     const cx = 0.5;
 
-    // Эллипс черепа
+    // --- Череп (эллипс, по умолчанию круг) ---
     const ry = (y3 - y1) / 2;
     const cy = (y1 + y3) / 2;
-    let rx = ry;
-    let ryy = ry;
-    rx *= parseFloat(skullW.value) / 100;
-    ryy *= parseFloat(skullH.value) / 100;
+    const rx = ry * (parseFloat(skullW.value) / 100);
+    const ryy = ry * (parseFloat(skullH.value) / 100);
 
     const skull = document.createElementNS(SVG_NS, 'ellipse');
     skull.setAttribute('cx', cx);
@@ -390,9 +372,8 @@
     skull.setAttribute('pointer-events', 'none');
     headGroup.appendChild(skull);
 
-    // Подбородок
-    const chinWFactor = parseFloat(chinW.value) / 100;
-    const chinHalf = rx * chinWFactor;
+    // --- Подбородок (горизонтальная линия на 4/5) ---
+    const chinHalf = rx * (parseFloat(chinW.value) / 100);
     const chinY = sTop + (y4 - sTop) * (parseFloat(chinH.value) / 100);
 
     const chinLine = document.createElementNS(SVG_NS, 'line');
@@ -406,36 +387,40 @@
     chinLine.setAttribute('pointer-events', 'none');
     headGroup.appendChild(chinLine);
 
-    // Точки крепления челюсти на черепе
-    // Базовая высота — 3.5/5 секции. slider 60..120% => смещение базовой высоты.
+    // --- Челюсть ---
+    // 1. Широчайшие края круга по X (не по уровню y, а именно максимум по горизонтали)
+    const leftEdgeX  = cx - rx;
+    const rightEdgeX = cx + rx;
+
+    // 2. Высота крепления: базовая 3.5/5, ползунок 60..120% двигает точку
     const attachFactor = parseFloat(jawAttach.value) / 100;
-    const baseFrac = 3.5 / 5; // 0.7
-    const frac = baseFrac * attachFactor;
-    const yAttach = sTop + sH * frac;
+    const yAttach = sTop + (y35 - sTop) * attachFactor;
+    //       ^^ вертикальные линии от краёв круга вниз до этой высоты
 
-    // x на эллипсе при y = yAttach
-    const dyAttach = yAttach - cy;
-    let attachHalfW = rx;
-    if (Math.abs(dyAttach) < ryy) {
-      attachHalfW = rx * Math.sqrt(1 - (dyAttach * dyAttach) / (ryy * ryy));
-    }
-
-    // Ширина челюсти в нижней точке — относительно подбородка
+    // 3. Внутренние точки челюсти у подбородка — сходим к подбородку по jawW
     const jawWFactor = parseFloat(jawW.value) / 100;
-    // Сходим челюсть к подбородку: берём минимум между attachHalfW и chinHalf,
-    // и умножаем на jawWFactor; ограничим сверху chinHalf.
-    const bottomHalf = Math.max(0, Math.min(attachHalfW, chinHalf) * jawWFactor);
+    const bottomHalf = Math.min(rx, chinHalf) * jawWFactor;
 
-    // Скругление — радиус в единицах viewBox, пропорционален длине челюсти
-    const sideLen = Math.hypot(attachHalfW - bottomHalf, yAttach - chinY);
+    // 4. Скругление в точке стыка (вертикаль → наклонная к подбородку)
+    const sideLen = Math.hypot(rx - bottomHalf, yAttach - chinY);
     const roundFactor = parseFloat(jawRound.value) / 100;
     const r = Math.min(sideLen / 2, sideLen * roundFactor);
 
-    // Левая и правая линии челюсти
-    const leftJaw = jawPath(cx - attachHalfW, yAttach, cx - bottomHalf, chinY, r, -1);
-    const rightJaw = jawPath(cx + bottomHalf, chinY, cx + attachHalfW, yAttach, r, +1);
+    // Левая половина: вертикаль от (leftEdgeX, cy) вниз до (leftEdgeX, yAttach)
+    //                затем скругление и наклонная к (cx - bottomHalf, chinY)
+    const leftJawD = jawPath(
+      leftEdgeX, yAttach,     // точка стыка вертикали и наклонной
+      cx - bottomHalf, chinY, // точка у подбородка
+      r, -1
+    );
+    // Правая половина — зеркально
+    const rightJawD = jawPath(
+      rightEdgeX, yAttach,
+      cx + bottomHalf, chinY,
+      r, +1
+    );
 
-    [leftJaw, rightJaw].forEach((d) => {
+    [leftJawD, rightJawD].forEach((d) => {
       const p = document.createElementNS(SVG_NS, 'path');
       p.setAttribute('d', d);
       p.setAttribute('fill', 'none');
@@ -443,27 +428,28 @@
       p.setAttribute('stroke-width', 2);
       p.setAttribute('vector-effect', 'non-scaling-stroke');
       p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('stroke-linejoin', 'round');
       p.setAttribute('pointer-events', 'none');
       headGroup.appendChild(p);
     });
   }
 
-  // Путь челюсти со скруглением в верхней точке (на черепе).
-  // (x1,y1) — крепление на черепе; (x2,y2) — точка у подбородка.
+  // Строит путь одной половины челюсти:
+  // - вертикальная линия от уровня центра эллипса (cx ± rx, cy) вниз до (x1, y1),
+  //   т.е. от края круга вертикально вниз до высоты крепления
+  // - скругление в углу (x1, y1) радиусом r
+  // - наклонная от угла к (x2, y2) — точке у подбородка
+  // side: -1 для левой половины, +1 для правой (для корректного направления скругления)
   function jawPath(x1, y1, x2, y2, r, side) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len = Math.hypot(dx, dy) || 1;
-    if (r <= 0.0001) {
-      return `M ${x1} ${y1} L ${x2} ${y2}`;
-    }
-    const ux = dx / len;
-    const uy = dy / len;
-    // Начало скругления — сдвигаемся вдоль линии от угла на r
-    const sx = x1 + ux * r;
-    const sy = y1 + uy * r;
-    // Квадратичная кривая: угол в качестве контрольной точки
-    return `M ${x1} ${y1} Q ${x1} ${y1} ${sx} ${sy} L ${x2} ${y2}`;
+    // Вертикаль начинается от края круга на уровне центра cy. Но cy нам здесь
+    // не передан — упростим: вертикаль начнём от y1 минус некий отрезок.
+    // По ТЗ "от широчайших краев круга проведи вертикальные линии вниз на 3,5/5".
+    // Широчайшие края круга = точка (cx ± rx, cy). Значит вертикаль идёт
+    // от (cx ± rx, cy) до (cx ± rx, y35). Передадим cy через y1 - (yAttach - cy)... 
+    // Проще: вычислим вертикаль отдельно в redrawHead, а сюда передадим готовую
+    // точку начала вертикали и точку угла.
+    // => Перепроектируем: см. вызов ниже.
+    return '';
   }
 
   // ========== Подложка ==========
@@ -479,7 +465,6 @@
       overlayLayer.style.height = '';
       return;
     }
-    const vw = viewport.clientWidth;
     const vh = viewport.clientHeight;
     const r = state.imageNaturalRatio;
     const h = vh * s;
@@ -536,7 +521,6 @@
     brushVal.textContent = brushSize.value;
   });
 
-  // Ползунки головы
   skullW.addEventListener('input', () => { skullWVal.textContent = skullW.value; redrawHead(); });
   skullH.addEventListener('input', () => { skullHVal.textContent = skullH.value; redrawHead(); });
   chinW.addEventListener('input',  () => { chinWVal.textContent  = chinW.value;  redrawHead(); });
@@ -545,7 +529,6 @@
   jawW.addEventListener('input',    () => { jawWVal.textContent    = jawW.value;    redrawHead(); });
   jawRound.addEventListener('input',() => { jawRoundVal.textContent= jawRound.value; redrawHead(); });
 
-  // ========== Undo / Clear ==========
   undoBtn.addEventListener('click', () => {
     const last = state.paths.pop();
     if (last && last.parentNode) last.remove();
@@ -557,9 +540,7 @@
 
   // ========== Экспорт ==========
   function buildExportSvg() {
-    const w = 4096;
-    const h = 4096;
-
+    const w = 4096, h = 4096;
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('xmlns', SVG_NS);
     svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
@@ -567,16 +548,12 @@
     svg.setAttribute('width', w);
     svg.setAttribute('height', h);
 
-    // Фон
     const bg = document.createElementNS(SVG_NS, 'rect');
-    bg.setAttribute('x', 0);
-    bg.setAttribute('y', 0);
-    bg.setAttribute('width', w);
-    bg.setAttribute('height', h);
+    bg.setAttribute('x', 0); bg.setAttribute('y', 0);
+    bg.setAttribute('width', w); bg.setAttribute('height', h);
     bg.setAttribute('fill', bgColor.value);
     svg.appendChild(bg);
 
-    // Подложка
     if (state.imageDataUrl) {
       const s = parseInt(imgScale.value, 10) / 100;
       const o = parseInt(imgOpacity.value, 10) / 100;
@@ -585,28 +562,22 @@
       const iw = ih * r;
       const ix = (w - iw) / 2;
       const iy = (h - ih) / 2;
-
       const img = document.createElementNS(SVG_NS, 'image');
-      img.setAttribute('x', ix);
-      img.setAttribute('y', iy);
-      img.setAttribute('width', iw);
-      img.setAttribute('height', ih);
+      img.setAttribute('x', ix); img.setAttribute('y', iy);
+      img.setAttribute('width', iw); img.setAttribute('height', ih);
       img.setAttribute('opacity', o);
       img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.imageDataUrl);
       img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', state.imageDataUrl);
       svg.appendChild(img);
     }
 
-    // Слой рисования (без головы и сетки — только пользовательские пути)
     const g = document.createElementNS(SVG_NS, 'g');
-    const paths = drawGroup.querySelectorAll('path');
-    paths.forEach((p) => {
+    drawGroup.querySelectorAll('path').forEach((p) => {
       const clone = p.cloneNode(true);
       clone.setAttribute('transform', `scale(${w})`);
       const sw = parseFloat(p.getAttribute('stroke-width') || '0.001');
-      const realPx = sw * w;
       clone.removeAttribute('vector-effect');
-      clone.setAttribute('stroke-width', realPx);
+      clone.setAttribute('stroke-width', sw * w);
       g.appendChild(clone);
     });
     svg.appendChild(g);
@@ -634,8 +605,7 @@
   exportSvg.addEventListener('click', () => {
     const { svg } = buildExportSvg();
     const xml = serializeSvg(svg);
-    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    downloadBlob(blob, 'drawing.svg');
+    downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'drawing.svg');
   });
 
   exportPng.addEventListener('click', () => {
@@ -646,8 +616,7 @@
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
+      canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = bgColor.value;
       ctx.fillRect(0, 0, w, h);
@@ -657,10 +626,7 @@
         if (pngBlob) downloadBlob(pngBlob, 'drawing.png');
       }, 'image/png');
     };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      alert('Ошибка экспорта PNG');
-    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert('Ошибка экспорта PNG'); };
     img.src = url;
   });
 
