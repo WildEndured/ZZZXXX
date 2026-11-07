@@ -62,6 +62,20 @@
   const pelvisRound = document.getElementById('pelvisRound');
   const pelvisRoundVal = document.getElementById('pelvisRoundVal');
 
+  const wristLeftX = document.getElementById('wristLeftX');
+  const wristLeftXVal = document.getElementById('wristLeftXVal');
+  const wristLeftY = document.getElementById('wristLeftY');
+  const wristLeftYVal = document.getElementById('wristLeftYVal');
+  const wristLeftR = document.getElementById('wristLeftR');
+  const wristLeftRVal = document.getElementById('wristLeftRVal');
+
+  const wristRightX = document.getElementById('wristRightX');
+  const wristRightXVal = document.getElementById('wristRightXVal');
+  const wristRightY = document.getElementById('wristRightY');
+  const wristRightYVal = document.getElementById('wristRightYVal');
+  const wristRightR = document.getElementById('wristRightR');
+  const wristRightRVal = document.getElementById('wristRightRVal');
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -108,6 +122,8 @@
       offset: 0.00,
       round: 0.20
     },
+    wristLeft: { x: 0, y: 0, r: 0.15 },
+    wristRight: { x: 0, y: 0, r: 0.15 },
     brush: { color: '#000000', width: 3 },
     paths: []
   };
@@ -254,29 +270,18 @@
     gridGroup.appendChild(chestPath);
 
     // ===== Плечи (круги) =====
-    // Диаметр плеча = 1/3 от высоты грудной клетки
     const shoulderRadius = (chestHeightPx / 3) / 2;
-    
-    // Вершина круга совпадает с верхом грудной клетки
     const shoulderCy = chestY0 + shoulderRadius;
     
-    // Вычисляем реальную ширину грудной клетки на высоте центра плеча (t от 0 до 1)
     const t = (shoulderCy - chestY0) / chestHeightPx;
-    
-    // Интерполяция ширины кубической кривой Безье для верхней половины
-    // Кривая: от (0, cpTopX) через (0.3, chestRx) к (0.6, chestRx)
     let curveWidth;
     if (t <= 0.6) {
-      // Кубическая интерполяция Безье: B(t) = (1-t)^3 * P0 + 3(1-t)^2 * t * P1 + 3(1-t) * t^2 * P2 + t^3 * P3
-      // Для упрощения используем аппроксимацию через квадратичную функцию
-      const tNorm = t / 0.6; // нормализуем t до диапазона 0..1 на этом участке
+      const tNorm = t / 0.6;
       curveWidth = cpTopX + (chestRx - cpTopX) * Math.sin(tNorm * Math.PI / 2);
     } else {
       curveWidth = chestRx;
     }
     
-    // Крепление вплотную к бокам грудной клетки СНАРУЖИ
-    // Внутренний край круга касается кривой ширины
     const shoulderLeftCx = cx - curveWidth - shoulderRadius;
     const shoulderRightCx = cx + curveWidth + shoulderRadius;
 
@@ -320,6 +325,39 @@
     pelvisRect.setAttribute('stroke-width', '1');
     pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(pelvisRect);
+
+    // ===== Запястья =====
+    const wristLeftRadiusPx = state.wristLeft.r * sectionH;
+    const wristRightRadiusPx = state.wristRight.r * sectionH;
+    const pelvisBottomY = pelvisY0 + pelvisH;
+
+    // Левое запястье
+    const wristLeftCx = cx - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
+    const wristLeftCy = pelvisBottomY + (state.wristLeft.y * sectionH);
+
+    const wristLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    wristLeft.setAttribute('cx', String(wristLeftCx));
+    wristLeft.setAttribute('cy', String(wristLeftCy));
+    wristLeft.setAttribute('r', String(wristLeftRadiusPx));
+    wristLeft.setAttribute('fill', 'none');
+    wristLeft.setAttribute('stroke', '#ff0000');
+    wristLeft.setAttribute('stroke-width', '1');
+    wristLeft.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(wristLeft);
+
+    // Правое запястье
+    const wristRightCx = cx + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
+    const wristRightCy = pelvisBottomY + (state.wristRight.y * sectionH);
+
+    const wristRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    wristRight.setAttribute('cx', String(wristRightCx));
+    wristRight.setAttribute('cy', String(wristRightCy));
+    wristRight.setAttribute('r', String(wristRightRadiusPx));
+    wristRight.setAttribute('fill', 'none');
+    wristRight.setAttribute('stroke', '#ff0000');
+    wristRight.setAttribute('stroke-width', '1');
+    wristRight.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(wristRight);
 
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
@@ -814,6 +852,42 @@
   pelvisRound.addEventListener('input', () => {
     state.pelvis.round = parseInt(pelvisRound.value, 10) / 100;
     pelvisRoundVal.textContent = pelvisRound.value + '%';
+    renderGrid();
+  });
+
+  wristLeftX.addEventListener('input', () => {
+    state.wristLeft.x = parseInt(wristLeftX.value, 10) / 100;
+    wristLeftXVal.textContent = wristLeftX.value + '%';
+    renderGrid();
+  });
+
+  wristLeftY.addEventListener('input', () => {
+    state.wristLeft.y = parseInt(wristLeftY.value, 10) / 100;
+    wristLeftYVal.textContent = wristLeftY.value + '%';
+    renderGrid();
+  });
+
+  wristLeftR.addEventListener('input', () => {
+    state.wristLeft.r = parseInt(wristLeftR.value, 10) / 100;
+    wristLeftRVal.textContent = wristLeftR.value + '%';
+    renderGrid();
+  });
+
+  wristRightX.addEventListener('input', () => {
+    state.wristRight.x = parseInt(wristRightX.value, 10) / 100;
+    wristRightXVal.textContent = wristRightX.value + '%';
+    renderGrid();
+  });
+
+  wristRightY.addEventListener('input', () => {
+    state.wristRight.y = parseInt(wristRightY.value, 10) / 100;
+    wristRightYVal.textContent = wristRightY.value + '%';
+    renderGrid();
+  });
+
+  wristRightR.addEventListener('input', () => {
+    state.wristRight.r = parseInt(wristRightR.value, 10) / 100;
+    wristRightRVal.textContent = wristRightR.value + '%';
     renderGrid();
   });
 
