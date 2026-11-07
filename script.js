@@ -260,10 +260,10 @@
     // Вершина круга совпадает с верхом грудной клетки
     const shoulderCy = chestY0 + shoulderRadius;
     
-    // Крепление вплотную к бокам грудной клетки (как таз крепится снизу)
-    // Центр смещается наружу на радиус
-    const shoulderLeftCx = cx - chestRx + shoulderRadius;
-    const shoulderRightCx = cx + chestRx - shoulderRadius;
+    // Крепление вплотную к бокам грудной клетки СНАРУЖИ (как таз крепится снизу)
+    // Внутренний край круга касается chestRx
+    const shoulderLeftCx = cx - chestRx - shoulderRadius;
+    const shoulderRightCx = cx + chestRx + shoulderRadius;
 
     const shoulderLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     shoulderLeft.setAttribute('cx', String(shoulderLeftCx));
