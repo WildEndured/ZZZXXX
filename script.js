@@ -45,7 +45,6 @@
   };
 
   // ===== Вспомогательные =====
-  // Базовое смещение контейнера (при scale=1, tx=ty=0), чтобы он был по центру viewport
   function getBaseOffset() {
     const vp = viewport.getBoundingClientRect();
     const size = state.canvasSize;
@@ -62,7 +61,6 @@
     state.canvasSize = size;
     zoomContainer.style.width = size + 'px';
     zoomContainer.style.height = size + 'px';
-    // Сбрасываем трансформ к исходному (центр, scale=1)
     state.scale = 1;
     state.tx = 0;
     state.ty = 0;
@@ -74,27 +72,15 @@
     const size = state.canvasSize;
     const s = state.scale;
     const base = getBaseOffset();
-
-    // Итоговое смещение левого верхнего угла контейнера относительно viewport:
-    // base + tx
-    // При scale=1, tx=0: контейнер по центру (base).
-    // При zoom: масштабируем от левого верхнего угла, но хотим чтобы точка (base + tx)
-    // оставалась "привязкой". transform-origin: 0 0 => масштаб от левого верхнего угла
-    // без учёта base, поэтому добавляем base к translate.
-    const finalLeft = base.x + state.tx;
-    const finalTop = base.y + state.ty;
-
-    // clamp: контейнер не должен выходить за viewport, если scaled >= размер viewport
-    // Левая граница: finalLeft <= 0 (если scaled >= vp.width), иначе центрируем
     const vp = viewport.getBoundingClientRect();
     const scaled = size * s;
+
     let minTx, maxTx, minTy, maxTy;
+
     if (scaled >= vp.width) {
-      // контейнер больше viewport: не выходим за края
-      minTx = 0 - base.x;               // левый край = 0
-      maxTx = vp.width - scaled - base.x; // правый край = vp.width
+      minTx = 0 - base.x;
+      maxTx = vp.width - scaled - base.x;
     } else {
-      // контейнер меньше viewport: центрируем (только одна позиция)
       minTx = (vp.width - scaled) / 2 - base.x;
       maxTx = minTx;
     }
@@ -120,6 +106,7 @@
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
     const pad = state.gridPad;
 
+    // Красная рамка зоны
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     rect.setAttribute('x', '0');
     rect.setAttribute('y', String(pad));
@@ -131,6 +118,7 @@
     rect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(rect);
 
+    // Горизонтальные пунктирные линии
     const n = state.heads;
     const y0 = pad;
     const y1 = 1 - pad;
@@ -148,6 +136,22 @@
       line.setAttribute('vector-effect', 'non-scaling-stroke');
       gridGroup.appendChild(line);
     }
+
+    // Круг радиусом в высоту верхней секции, по центру по X
+    const sectionH = span / n;
+    const cx = 0.5;
+    const cy = y0 + sectionH / 2;
+    const r = sectionH / 2;
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', String(cx));
+    circle.setAttribute('cy', String(cy));
+    circle.setAttribute('r', String(r));
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', '#ff0000');
+    circle.setAttribute('stroke-width', '1');
+    circle.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(circle);
   }
 
   // ===== Подложка =====
@@ -162,8 +166,8 @@
 
     const mul = state.underlay.scale;
     const ratio = state.underlay.imgW / state.underlay.imgH;
-    const dispH = mul * 100;      // % от высоты контейнера
-    const dispW = ratio * dispH;  // % от высоты
+    const dispH = mul * 100;
+    const dispW = ratio * dispH;
     underlayLayer.style.width = dispW + '%';
     underlayLayer.style.height = dispH + '%';
     underlayLayer.style.left = ((100 - dispW) / 2) + '%';
@@ -175,7 +179,6 @@
   }
 
   // ===== Координаты =====
-  // Возвращает точку в локальных координатах контейнера в px (0..size)
   function clientToLocal(clientX, clientY) {
     const rect = zoomContainer.getBoundingClientRect();
     return {
@@ -184,7 +187,6 @@
     };
   }
 
-  // В координаты viewBox 0..1
   function clientToCanvas(clientX, clientY) {
     const p = clientToLocal(clientX, clientY);
     return {
@@ -257,20 +259,15 @@
     const midX = (a.x + b.x) / 2;
     const midY = (a.y + b.y) / 2;
 
-    // Точка в локальных координатах контейнера (до scale), под серединой
     const local = clientToLocal(midX, midY);
-    // Переводим в "мировые" координаты контейнера (0..size без scale)
-    const worldX = (local.x) / state.scale;
-    const worldY = (local.y) / state.scale;
+    const worldX = local.x / state.scale;
+    const worldY = local.y / state.scale;
 
     gestureStart = {
       dist,
       scale: state.scale,
-      // запоминаем положение "мира" под серединой
       worldX,
-      worldY,
-      midX,
-      midY
+      worldY
     };
   }
 
@@ -285,13 +282,7 @@
     let newScale = gestureStart.scale * (dist / gestureStart.dist);
     newScale = Math.max(state.minScale, Math.min(state.maxScale, newScale));
 
-    // Хотим, чтобы точка worldX*newScale оказалась под midX (в client coords).
-    // Ранее: midX = rect.left + worldX*scale  =>  rect.left = midX - worldX*scale
-    // Теперь rect.left_new = midX - worldX*newScale
-    // rect.left = base.x + tx  =>  tx = rect.left - base.x
-    // Аналогично top.
     const base = getBaseOffset();
-    // rect.left при новом масштабе:
     const newLeft = midX - gestureStart.worldX * newScale;
     const newTop = midY - gestureStart.worldY * newScale;
 
@@ -609,7 +600,6 @@
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
     renderGrid();
-    // Дать браузеру пересчитать layout
     requestAnimationFrame(() => {
       updateCanvasSize();
     });
