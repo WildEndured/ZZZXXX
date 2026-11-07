@@ -49,7 +49,7 @@ const state = {
   bgColor: '#ffffff',
   strokeWidth: 0.005,
   imgData: null,
-  imgNatural: null,   // {w, h} натуральные размеры картинки
+  imgNatural: null,
   imgScale: 1,
   imgOpacity: 1,
   margin: 0.05,
@@ -63,7 +63,6 @@ const MIN_SCALE = 1;
 function stageSize() {
   const r = stage.getBoundingClientRect();
   if (r.width > 0 && r.height > 0) return { w: r.width, h: r.height };
-  // fallback, если layout ещё не посчитан
   const isMobile = window.innerWidth <= 720;
   const panelW = isMobile ? 0 : 260;
   const panelH = isMobile ? window.innerHeight * 0.45 : 0;
@@ -148,7 +147,6 @@ function onPointerDown(e) {
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   try { stage.setPointerCapture(e.pointerId); } catch (_) {}
 
-  // Второй палец — отменяем рисование
   if (pointers.size >= 2 && isDrawing) {
     cancelDrawing();
   }
@@ -157,10 +155,7 @@ function onPointerDown(e) {
     const isMiddle = e.button === 1;
     const isShiftLeft = e.button === 0 && e.shiftKey;
 
-    if (isMiddle || isShiftLeft) {
-      // панорамирование — обрабатывается в move
-      return;
-    }
+    if (isMiddle || isShiftLeft) return;
 
     if (e.button === 0 || e.pointerType === 'touch') {
       startDrawing(e);
@@ -174,7 +169,6 @@ function onPointerMove(e) {
 
   const curr = { x: e.clientX, y: e.clientY };
 
-  // --- Два пальца: зум + панорамирование ---
   if (pointers.size === 2) {
     if (isDrawing) cancelDrawing();
 
@@ -210,7 +204,6 @@ function onPointerMove(e) {
     return;
   }
 
-  // --- Панорамирование одним указателем (средняя / Shift+ЛКМ) ---
   if ((e.buttons & 4) || (e.buttons & 1 && e.shiftKey)) {
     pointers.set(e.pointerId, curr);
     state.tx += curr.x - prev.x;
@@ -219,7 +212,6 @@ function onPointerMove(e) {
     return;
   }
 
-  // --- Рисование ---
   if (isDrawing && pointers.size === 1) {
     pointers.set(e.pointerId, curr);
     continueDrawing(e);
@@ -366,25 +358,27 @@ function updateImageTransform() {
   imgLayer.style.transformOrigin = 'center center';
 }
 
-// ---------- Разметка ----------
+// ---------- Разметка (Сетка) ----------
 function drawGrid() {
   gridGroup.innerHTML = '';
   const m = state.margin;
   const heads = state.heads;
 
+  // Красная рамка зоны (отступ сверху и снизу)
   const frame = document.createElementNS(SVG_NS, 'rect');
   frame.setAttribute('x', 0);
   frame.setAttribute('y', m);
   frame.setAttribute('width', 1);
-  frame.setAttribute('height', 1 - 2 * m);
+  frame.setAttribute('height', Math.max(0.0001, 1 - 2 * m));
   frame.setAttribute('fill', 'none');
   frame.setAttribute('stroke', '#ff2d2d');
-  frame.setAttribute('stroke-width', 0.002);
-  frame.setAttribute('vector-effect', 'non-scaling-stroke');
+  frame.setAttribute('stroke-width', 0.003);
+  frame.setAttribute('pointer-events', 'none');
   gridGroup.appendChild(frame);
 
+  // Горизонтальные пунктирные линии — делят зону на heads частей
   const innerHeight = 1 - 2 * m;
-  if (heads > 1) {
+  if (heads > 1 && innerHeight > 0) {
     for (let i = 1; i < heads; i++) {
       const y = m + (innerHeight * i) / heads;
       const line = document.createElementNS(SVG_NS, 'line');
@@ -393,9 +387,9 @@ function drawGrid() {
       line.setAttribute('x2', 1);
       line.setAttribute('y2', y);
       line.setAttribute('stroke', '#ff2d2d');
-      line.setAttribute('stroke-width', 0.0015);
-      line.setAttribute('stroke-dasharray', '0.01 0.01');
-      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      line.setAttribute('stroke-width', 0.0025);
+      line.setAttribute('stroke-dasharray', '0.02 0.015');
+      line.setAttribute('pointer-events', 'none');
       gridGroup.appendChild(line);
     }
   }
@@ -422,7 +416,6 @@ function buildExportSvg() {
   out.setAttribute('width', '1024');
   out.setAttribute('height', '1024');
 
-  // 1. Фон
   const bg = document.createElementNS(SVG_NS, 'rect');
   bg.setAttribute('x', 0);
   bg.setAttribute('y', 0);
@@ -431,13 +424,10 @@ function buildExportSvg() {
   bg.setAttribute('fill', state.bgColor);
   out.appendChild(bg);
 
-  // 2. Подложка (100% = вписана по высоте, пропорции сохранены)
   if (state.imgData && state.imgNatural) {
     const aspect = state.imgNatural.w / state.imgNatural.h;
-    // Вписываем по высоте: высота = 1, ширина = aspect
     let baseW = aspect;
     let baseH = 1;
-    // Если ширина больше 1 — вписываем по ширине (contain)
     if (baseW > 1) {
       baseW = 1;
       baseH = 1 / aspect;
@@ -457,7 +447,6 @@ function buildExportSvg() {
     out.appendChild(img);
   }
 
-  // 3. Все пути из drawGroup
   const paths = drawGroup.querySelectorAll('path');
   paths.forEach(p => out.appendChild(p.cloneNode(true)));
 
@@ -527,11 +516,9 @@ function init() {
   bgLayer.style.background = state.bgColor;
   drawGrid();
 
-  // Ждём layout, затем считаем размеры
   requestAnimationFrame(() => {
     computeBaseSize();
     applyTransform();
-    // Второй кадр на случай позднейших изменений (шрифты, скроллбар)
     requestAnimationFrame(() => {
       computeBaseSize();
       applyTransform();
@@ -539,5 +526,4 @@ function init() {
   });
 }
 
-// Запуск после загрузки DOM (скрипт в конце body — можно сразу)
 init();
