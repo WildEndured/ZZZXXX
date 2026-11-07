@@ -1,147 +1,142 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; background: #1a1a1a; color: #eee; }
 
-body {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh; /* Для мобильных браузеров */
-    overflow: hidden;
-    font-family: sans-serif;
-    background: #222;
-}
+#app { display: flex; width: 100%; height: 100%; flex-direction: row; }
 
 /* Панель управления */
-.controls {
-    padding: 10px;
-    background: #fff;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    z-index: 10;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    max-height: 40vh;
-    overflow-y: auto;
+#sidebar {
+  width: 280px;
+  background: #2a2a2a;
+  padding: 12px;
+  overflow-y: auto;
+  border-right: 1px solid #444;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+  transition: transform 0.3s ease;
 }
 
-.control-group {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-}
+#sidebar h3 { font-size: 12px; margin-top: 8px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+#sidebar h3:first-child { margin-top: 0; }
 
-.control-group label {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
+.control { display: flex; flex-direction: column; gap: 4px; }
+.control label { font-size: 12px; color: #ccc; display: flex; justify-content: space-between; }
+.control input[type="range"] { width: 100%; height: 24px; }
+.control input[type="color"] { width: 100%; height: 36px; border: none; border-radius: 4px; background: none; cursor: pointer; padding: 0; }
 
 button {
-    padding: 6px 10px;
-    cursor: pointer;
-    border: 1px solid #999;
-    border-radius: 4px;
-    background: #f0f0f0;
-    font-size: 12px;
+  width: 100%;
+  padding: 10px;
+  background: #4a7cf7;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  touch-action: manipulation;
+}
+button:active { opacity: 0.8; }
+button.secondary { background: #444; }
+button.danger { background: #d9534f; }
+
+/* Контейнер для холста */
+#viewportWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  overflow: hidden;
+  position: relative;
+  padding: 10px;
 }
 
-button:hover {
-    background: #e0e0e0;
+/* Жесткий квадратный холст 1:1 */
+#viewport {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  touch-action: none;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  /* Размер задается через JS для идеального квадрата */
 }
 
-input[type="range"] {
-    width: 80px;
+#stage {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
-input[type="color"] {
-    width: 24px;
-    height: 24px;
-    border: none;
-    padding: 0;
-    cursor: pointer;
+#layerBg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #ffffff;
 }
 
-/* Обертка для холста */
-.canvas-wrapper {
-    flex: 1;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    background: #333;
-    touch-action: none; /* Отключаем стандартные жесты */
+#layerUnderlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
 }
 
-/* Контейнер зума (строго квадратный) */
-.zoom-container {
-    position: relative;
-    /* Квадратность гарантируется CSS: */
-    width: min(100%, 100dvh); 
-    height: min(100%, 100dvh);
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 1 / 1;
-    transform-origin: 0 0;
-    overflow: hidden;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+#layerUnderlay img {
+  max-width: none;
+  max-height: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  object-fit: contain;
 }
 
-/* Слой фона */
-.bg-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
+#layerDraw {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+}
+
+#layerDraw svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  background: transparent;
+}
+
+#zoomInfo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.6);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Мобильная адаптация: панель выезжает снизу */
+@media (max-width: 768px) {
+  #app { flex-direction: column; }
+  #viewportWrapper { padding: 5px; }
+  #sidebar {
     width: 100%;
-    height: 100%;
-    z-index: 1;
-    background-color: #ffffff;
-}
-
-/* Слой подложки */
-.bg-image {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    height: 100%;
-    width: auto;
-    z-index: 2;
-    pointer-events: none;
-    display: none; /* Скрыт, пока нет картинки */
-    transform-origin: top center;
-}
-
-/* Слой рисования */
-.draw-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
-    overflow: visible;
-}
-
-/* Стили для линий сетки */
-.grid-line {
-    stroke: #ff0000;
-    stroke-width: 1px;
-    stroke-dasharray: 5 5;
-    vector-effect: non-scaling-stroke;
-}
-
-.grid-border {
-    stroke: #ff0000;
-    stroke-width: 2px;
-    fill: none;
-    vector-effect: non-scaling-stroke;
+    height: 45vh; /* Занимает 45% экрана снизу */
+    border-right: none;
+    border-top: 1px solid #444;
+    order: 2; /* Панель внизу */
+    overflow-y: auto;
+  }
+  #viewportWrapper { order: 1; }
 }
