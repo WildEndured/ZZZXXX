@@ -53,6 +53,15 @@
   const chestBottomWide = document.getElementById('chestBottomWide');
   const chestBottomWideVal = document.getElementById('chestBottomWideVal');
 
+  const pelvisWidthMod = document.getElementById('pelvisWidthMod');
+  const pelvisWidthModVal = document.getElementById('pelvisWidthModVal');
+  const pelvisHeightMod = document.getElementById('pelvisHeightMod');
+  const pelvisHeightModVal = document.getElementById('pelvisHeightModVal');
+  const pelvisOffset = document.getElementById('pelvisOffset');
+  const pelvisOffsetVal = document.getElementById('pelvisOffsetVal');
+  const pelvisRound = document.getElementById('pelvisRound');
+  const pelvisRoundVal = document.getElementById('pelvisRoundVal');
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -92,6 +101,12 @@
       offset: 0.00,
       topNarrow: 0.70,
       bottomWide: 1.00
+    },
+    pelvis: {
+      widthMod: 1.00,
+      heightMod: 1.00,
+      offset: 0.00,
+      round: 0.20
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -215,16 +230,14 @@
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (headW * state.chest.width) / 2;
     
-    // Контрольные точки для ширины
-    const narrowFactor = state.chest.topNarrow; // 0..1
-    const wideFactor = state.chest.bottomWide;  // 0..1.5
+    const narrowFactor = state.chest.topNarrow;
+    const wideFactor = state.chest.bottomWide;
 
     const cpTopX = chestRx * narrowFactor;
     const cpBottomX = chestRx * wideFactor;
 
     const chestPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     
-    // Строим path
     const d = `
       M ${cx} ${chestY0}
       C ${cx + cpTopX} ${chestY0}, ${cx + chestRx} ${chestY0 + chestHeightPx * 0.3}, ${cx + chestRx} ${chestY0 + chestHeightPx * 0.6}
@@ -239,6 +252,32 @@
     chestPath.setAttribute('stroke-width', '1');
     chestPath.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(chestPath);
+
+    // ===== Таз =====
+    // Ширина таза = высота грудной клетки * модификатор
+    const pelvisW = chestHeightPx * state.pelvis.widthMod;
+    // Высота таза = ширина грудной клетки * модификатор
+    const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
+    
+    // Таз крепится к грудной клетке (координата Y — это низ грудной клетки + смещение)
+    const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
+    const pelvisX0 = cx - pelvisW / 2;
+
+    // Радиус скругления
+    const rxRadius = Math.min(pelvisW * state.pelvis.round, pelvisH / 2);
+
+    const pelvisRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    pelvisRect.setAttribute('x', String(pelvisX0));
+    pelvisRect.setAttribute('y', String(pelvisY0));
+    pelvisRect.setAttribute('width', String(pelvisW));
+    pelvisRect.setAttribute('height', String(pelvisH));
+    pelvisRect.setAttribute('rx', String(rxRadius));
+    pelvisRect.setAttribute('ry', String(rxRadius));
+    pelvisRect.setAttribute('fill', 'none');
+    pelvisRect.setAttribute('stroke', '#ff0000');
+    pelvisRect.setAttribute('stroke-width', '1');
+    pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(pelvisRect);
 
     // ===== Подбородок =====
     const chinYPos = y0 + state.head.chinY * sectionH;
@@ -709,6 +748,30 @@
   chestBottomWide.addEventListener('input', () => {
     state.chest.bottomWide = parseInt(chestBottomWide.value, 10) / 100;
     chestBottomWideVal.textContent = chestBottomWide.value + '%';
+    renderGrid();
+  });
+
+  pelvisWidthMod.addEventListener('input', () => {
+    state.pelvis.widthMod = parseInt(pelvisWidthMod.value, 10) / 100;
+    pelvisWidthModVal.textContent = pelvisWidthMod.value + '%';
+    renderGrid();
+  });
+
+  pelvisHeightMod.addEventListener('input', () => {
+    state.pelvis.heightMod = parseInt(pelvisHeightMod.value, 10) / 100;
+    pelvisHeightModVal.textContent = pelvisHeightMod.value + '%';
+    renderGrid();
+  });
+
+  pelvisOffset.addEventListener('input', () => {
+    state.pelvis.offset = parseInt(pelvisOffset.value, 10) / 100;
+    pelvisOffsetVal.textContent = pelvisOffset.value + '%';
+    renderGrid();
+  });
+
+  pelvisRound.addEventListener('input', () => {
+    state.pelvis.round = parseInt(pelvisRound.value, 10) / 100;
+    pelvisRoundVal.textContent = pelvisRound.value + '%';
     renderGrid();
   });
 
