@@ -1,85 +1,75 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SVG Редактор 4096x4096</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Canvas Painter</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="app">
-  <div id="viewportWrapper">
-    <div id="viewport">
-      <div id="stage">
-        <div id="layerBg"></div>
-        <div id="layerUnderlay">
-          <img id="underlayImg" alt="" style="display:none">
-        </div>
-        <div id="layerDraw">
-          <svg id="drawSvg" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-            <g id="guideGroup" pointer-events="none"></g>
+  <div id="app">
+    <!-- Рабочая область -->
+    <main id="workspace">
+      <div id="viewport">
+        <div id="zoomContainer">
+          <div id="bgLayer"></div>
+          <img id="overlayLayer" alt="">
+          <svg id="drawLayer" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
             <g id="drawGroup"></g>
+            <g id="gridGroup"></g>
           </svg>
         </div>
       </div>
-      <div id="zoomInfo">100%</div>
-    </div>
+    </main>
+
+    <!-- Боковая панель -->
+    <aside id="panel">
+      <h1>Painter</h1>
+
+      <section>
+        <label>Подложка
+          <input type="file" id="fileInput" accept="image/*">
+        </label>
+        <label>Масштаб подложки: <span id="scaleVal">100</span>%
+          <input type="range" id="imgScale" min="10" max="300" value="100">
+        </label>
+        <label>Прозрачность подложки: <span id="opacityVal">100</span>%
+          <input type="range" id="imgOpacity" min="0" max="100" value="100">
+        </label>
+        <label>Цвет фона
+          <input type="color" id="bgColor" value="#ffffff">
+        </label>
+      </section>
+
+      <section>
+        <label>Отступ сетки: <span id="marginVal">0</span>%
+          <input type="range" id="marginRange" min="0" max="10" value="0" step="0.5">
+        </label>
+        <label>Количество голов: <span id="headsVal">2</span>
+          <input type="range" id="headsRange" min="2" max="8" value="2">
+        </label>
+      </section>
+
+      <section>
+        <label>Толщина кисти: <span id="brushVal">2</span>
+          <input type="range" id="brushSize" min="1" max="20" value="2">
+        </label>
+        <label>Цвет кисти
+          <input type="color" id="brushColor" value="#000000">
+        </label>
+      </section>
+
+      <section class="row">
+        <button id="undoBtn">Undo</button>
+        <button id="clearBtn">Очистить</button>
+      </section>
+
+      <section class="row">
+        <button id="exportSvg">Скачать SVG</button>
+        <button id="exportPng">Скачать PNG</button>
+      </section>
+    </aside>
   </div>
-  
-  <div id="sidebar">
-    <h3>Подложка</h3>
-    <button id="btnLoadImage" class="secondary">Загрузить картинку</button>
-    <input type="file" id="fileInput" accept="image/*" style="display:none">
-    <div class="control">
-      <label>Масштаб: <span id="underlayScaleVal">100</span>%</label>
-      <input type="range" id="underlayScale" min="10" max="300" value="100">
-    </div>
-    <div class="control">
-      <label>Прозрачность: <span id="underlayOpacityVal">100</span>%</label>
-      <input type="range" id="underlayOpacity" min="0" max="100" value="100">
-    </div>
-    
-    <h3>Фон</h3>
-    <div class="control">
-      <label>Цвет фона</label>
-      <input type="color" id="bgColor" value="#ffffff">
-    </div>
-    
-    <h3>Сетка "голов"</h3>
-    <div class="control">
-      <label>Отступ: <span id="paddingVal">0</span>%</label>
-      <input type="range" id="padding" min="0" max="10" value="0" step="0.5">
-    </div>
-    <div class="control">
-      <label>Количество голов: <span id="headsVal">3</span></label>
-      <input type="range" id="heads" min="2" max="8" value="3" step="1">
-    </div>
-    
-    <!-- НОВЫЙ БЛОК -->
-    <h3>Построение головы</h3>
-    <div class="control" style="flex-direction: row; align-items: center; gap: 8px; margin-bottom: 12px;">
-      <input type="checkbox" id="chkShowCircle" style="width: 20px; height: 20px; cursor: pointer;">
-      <label for="chkShowCircle" style="cursor: pointer; user-select: none;">Показать круг головы (верхняя секция)</label>
-    </div>
-    <!-- /НОВЫЙ БЛОК -->
-    
-    <h3>Инструменты</h3>
-    <div class="control">
-      <label>Толщина: <span id="brushSizeVal">4</span></label>
-      <input type="range" id="brushSize" min="1" max="40" value="4">
-    </div>
-    <div class="control">
-      <label>Цвет кисти</label>
-      <input type="color" id="brushColor" value="#ff0000">
-    </div>
-    <button id="btnUndo" class="secondary">Отменить (Undo)</button>
-    <button id="btnClear" class="danger">Очистить всё</button>
-    
-    <h3>Экспорт</h3>
-    <button id="btnExportSVG">Скачать SVG</button>
-    <button id="btnExportPNG">Скачать PNG (4096x4096)</button>
-  </div>
-</div>
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
