@@ -30,7 +30,6 @@
   const headsVal = document.getElementById('headsVal');
   const brushVal = document.getElementById('brushVal');
 
-  // Параметры головы
   const skullW = document.getElementById('skullW');
   const skullH = document.getElementById('skullH');
   const chinW = document.getElementById('chinW');
@@ -353,6 +352,7 @@
       line.setAttribute('stroke', 'red');
       line.setAttribute('stroke-width', 1.5);
       line.setAttribute('stroke-dasharray', '6 4');
+      line.setAttribute('fill', 'none');
       line.setAttribute('vector-effect', 'non-scaling-stroke');
       line.setAttribute('pointer-events', 'none');
       gridGroup.appendChild(line);
@@ -389,6 +389,7 @@
     skull.setAttribute('cy', cy);
     skull.setAttribute('rx', rx);
     skull.setAttribute('ry', ry);
+    skull.setAttribute('fill', 'none');
     g.appendChild(skull);
 
     // Крепление челюсти
@@ -412,6 +413,7 @@
     chin.setAttribute('y2', chinR.y);
     chin.setAttribute('stroke', '#00ff88');
     chin.setAttribute('stroke-width', 2);
+    chin.setAttribute('fill', 'none');
     g.appendChild(chin);
 
     // Челюсть
@@ -430,10 +432,12 @@
 
     const jawPathL = document.createElementNS(SVG_NS, 'path');
     jawPathL.setAttribute('d', jawPath(leftAttach, jawL));
+    jawPathL.setAttribute('fill', 'none');
     g.appendChild(jawPathL);
 
     const jawPathR = document.createElementNS(SVG_NS, 'path');
     jawPathR.setAttribute('d', jawPath(rightAttach, jawR));
+    jawPathR.setAttribute('fill', 'none');
     g.appendChild(jawPathR);
 
     // Вспомогательные метки уровней
@@ -447,6 +451,7 @@
       mk.setAttribute('stroke', 'rgba(0,192,255,0.25)');
       mk.setAttribute('stroke-width', 1);
       mk.setAttribute('stroke-dasharray', '2 4');
+      mk.setAttribute('fill', 'none');
       mk.setAttribute('vector-effect', 'non-scaling-stroke');
       g.appendChild(mk);
     });
@@ -517,7 +522,6 @@
     brushVal.textContent = brushSize.value;
   });
 
-  // Ползунки головы
   const headControls = [
     [skullW, skullWVal], [skullH, skullHVal],
     [chinW, chinWVal], [chinH, chinHVal],
@@ -551,6 +555,7 @@
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     svg.setAttribute('width', w);
     svg.setAttribute('height', h);
+    svg.setAttribute('fill', 'none');
 
     // Фон
     const bg = document.createElementNS(SVG_NS, 'rect');
@@ -584,6 +589,7 @@
 
     // Слой рисунка
     const g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('fill', 'none');
     const paths = drawGroup.querySelectorAll('path');
     paths.forEach((p) => {
       const clone = p.cloneNode(true);
