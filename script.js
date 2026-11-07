@@ -94,7 +94,7 @@
     applyTransform();
   }
   
-  // ==== Руководство ====
+  // ==== Руководство (Сетка и Круг) ====
   function renderGuides() {
     guideGroup.innerHTML = '';
     const pad = parseFloat(padding.value) / 100;
@@ -131,21 +131,49 @@
       guideGroup.appendChild(line);
     }
 
-    // === Разделение на 5 частей и круг для головы ===
+    // === РАЗДЕЛЕНИЕ НА 5 ЧАСТЕЙ И КРУГ ===
+    
+    // Делим всю высоту рабочей зоны на 5 частей
     const step = zoneH / 5;
     
+    // Рисуем вспомогательные линии для 1/5, 2/5, 3/5, 4/5 (только для наглядности)
+    for (let i = 1; i <= 4; i++) {
+        const y = topY + step * i;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', '0');
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', '1');
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', 'blue');
+        line.setAttribute('stroke-width', '0.5');
+        line.setAttribute('stroke-dasharray', '2 4');
+        line.setAttribute('vector-effect', 'non-scaling-stroke');
+        line.setAttribute('opacity', '0.5');
+        guideGroup.appendChild(line);
+        
+        // Текст для наглядности
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', '0.02');
+        text.setAttribute('y', y - 0.005);
+        text.setAttribute('fill', 'blue');
+        text.setAttribute('font-size', '0.02');
+        text.setAttribute('font-family', 'sans-serif');
+        text.setAttribute('vector-effect', 'non-scaling-stroke');
+        text.textContent = `${i}/5`;
+        guideGroup.appendChild(text);
+    }
+
     // Круг: вершина на 1/5, низ на 3/5
-    // Высота = 2/5 (диаметр), значит радиус = 1/5 от высоты зоны
-    const radius = step;
-    const cx = 0.5; // Центр по горизонтали
-    const cy = topY + step * 2; // Центр на уровне 2/5
+    const radius = step; // Радиус = 1/5
+    const cx = 0.5; // По центру
+    const cy = topY + step * 2; // Центр на 2/5 (ровно между 1/5 и 3/5)
     
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', cx);
     circle.setAttribute('cy', cy);
     circle.setAttribute('r', radius);
     circle.setAttribute('fill', 'none');
-    circle.setAttribute('stroke', 'blue'); // Синий круг
+    circle.setAttribute('stroke', 'blue');
     circle.setAttribute('stroke-width', '1');
     circle.setAttribute('vector-effect', 'non-scaling-stroke');
     guideGroup.appendChild(circle);
