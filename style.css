@@ -157,6 +157,12 @@ html, body {
   background: #2a7ed0;
 }
 
+#headSection {
+  border-top: 1px solid #3a3a3a;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
 /* ========== Мобильная версия ========== */
 @media (max-width: 768px) {
   #app {
