@@ -46,7 +46,6 @@
   // ==== Подгонка квадратного холста ====
   function resizeCanvas() {
     const rect = viewportWrapper.getBoundingClientRect();
-    // Находим минимальную сторону, чтобы вписать квадрат
     const size = Math.min(rect.width, rect.height) - (window.innerWidth <= 768 ? 10 : 20);
     viewport.style.width = size + 'px';
     viewport.style.height = size + 'px';
@@ -94,21 +93,20 @@
     applyTransform();
   }
   
-  // ==== Руководство (Сетка и Круг) ====
+  // ==== Руководство (Сетка + Круг + 5 частей) ====
   function renderGuides() {
     guideGroup.innerHTML = '';
     const pad = parseFloat(padding.value) / 100;
     const n = parseInt(heads.value, 10);
     const topY = pad;
     const botY = 1 - pad;
-    const zoneH = botY - topY;
     
     if (pad > 0) {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', '0');
       rect.setAttribute('y', topY);
       rect.setAttribute('width', '1');
-      rect.setAttribute('height', zoneH);
+      rect.setAttribute('height', botY - topY);
       rect.setAttribute('fill', 'none');
       rect.setAttribute('stroke', 'red');
       rect.setAttribute('stroke-width', '1');
@@ -116,9 +114,12 @@
       guideGroup.appendChild(rect);
     }
     
-    // Линии количества голов (делят зону на N равных частей)
+    const zoneH = botY - topY;
+    const headH = zoneH / n; 
+    
+    // 1. Пунктирные линии между головами
     for (let i = 1; i < n; i++) {
-      const y = topY + zoneH * (i / n);
+      const y = topY + headH * i;
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', '0');
       line.setAttribute('y1', y);
@@ -131,50 +132,59 @@
       guideGroup.appendChild(line);
     }
 
-    // === РАЗДЕЛЕНИЕ НА 5 ЧАСТЕЙ И КРУГ ===
-    
-    // Делим всю высоту рабочей зоны на 5 частей
-    const step = zoneH / 5;
-    
-    // Рисуем вспомогательные линии для 1/5, 2/5, 3/5, 4/5 (только для наглядности)
-    for (let i = 1; i <= 4; i++) {
-        const y = topY + step * i;
+    // 2. Разметка первой головы на 5 частей и круг
+    const topZoneStart = topY;
+    const fifthH = headH / 5;
+    const cx = 0.5; // Центр по горизонтали
+
+    for (let i = 1; i <= 5; i++) {
+      const y = topZoneStart + fifthH * i;
+      
+      // Тонкие линии для 1/5, 2/5, 3/5, 4/5
+      if (i < 5) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', '0');
         line.setAttribute('y1', y);
         line.setAttribute('x2', '1');
         line.setAttribute('y2', y);
-        line.setAttribute('stroke', 'blue');
-        line.setAttribute('stroke-width', '0.5');
+        line.setAttribute('stroke', '#00aaff');
+        line.setAttribute('stroke-width', '1');
         line.setAttribute('stroke-dasharray', '2 4');
         line.setAttribute('vector-effect', 'non-scaling-stroke');
-        line.setAttribute('opacity', '0.5');
         guideGroup.appendChild(line);
-        
-        // Текст для наглядности
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', '0.02');
-        text.setAttribute('y', y - 0.005);
-        text.setAttribute('fill', 'blue');
-        text.setAttribute('font-size', '0.02');
-        text.setAttribute('font-family', 'sans-serif');
-        text.setAttribute('vector-effect', 'non-scaling-stroke');
-        text.textContent = `${i}/5`;
-        guideGroup.appendChild(text);
+      }
+
+      // Текстовые подписи (1/5, 2/5 и т.д.)
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', cx);
+      text.setAttribute('y', y); 
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('alignment-baseline', 'middle'); // Центрируем текст по линии
+      text.setAttribute('class', 'guide-text');
+      // В SVG с viewBox 0 0 1 1 стандартные размеры шрифта работают странно, 
+      // поэтому используем font-size, который будет корректно отображаться
+      text.setAttribute('font-size', '0.015');
+      text.setAttribute('font-family', 'system-ui, sans-serif');
+      text.setAttribute('fill', '#00aaff');
+      text.setAttribute('font-weight', 'bold');
+      text.textContent = `${i}/5`;
+      guideGroup.appendChild(text);
     }
 
-    // Круг: вершина на 1/5, низ на 3/5
-    const radius = step; // Радиус = 1/5
-    const cx = 0.5; // По центру
-    const cy = topY + step * 2; // Центр на 2/5 (ровно между 1/5 и 3/5)
+    // 3. Идеальный круг (Вершина 1/5, низ 3/5)
+    const y1_5 = topZoneStart + fifthH * 1;
+    const y3_5 = topZoneStart + fifthH * 3;
+    
+    const circleRadius = (y3_5 - y1_5) / 2;
+    const circleCy = (y1_5 + y3_5) / 2;
     
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', cx);
-    circle.setAttribute('cy', cy);
-    circle.setAttribute('r', radius);
-    circle.setAttribute('fill', 'none');
-    circle.setAttribute('stroke', 'blue');
-    circle.setAttribute('stroke-width', '1');
+    circle.setAttribute('cy', circleCy);
+    circle.setAttribute('r', circleRadius);
+    circle.setAttribute('fill', 'rgba(0, 170, 255, 0.1)');
+    circle.setAttribute('stroke', '#00aaff');
+    circle.setAttribute('stroke-width', '2');
     circle.setAttribute('vector-effect', 'non-scaling-stroke');
     guideGroup.appendChild(circle);
   }
@@ -479,6 +489,18 @@
       img.setAttribute('href', state.underlayBase64);
       svg.appendChild(img);
     }
+
+    // === ВСТАВКА РАЗМЕТКИ (Сетка, 5 частей, Круг) В ЭКСПОРТ ===
+    const guideExport = document.createElementNS(ns, 'g');
+    guideExport.setAttribute('id', 'export-guides');
+    // Клонируем все элементы из визуальной группы guideGroup
+    const guideNodes = guideGroup.cloneNode(true);
+    // Переносим детей
+    while (guideNodes.firstChild) {
+      guideExport.appendChild(guideNodes.firstChild);
+    }
+    svg.appendChild(guideExport);
+    // ======================================================
     
     const g = document.createElementNS(ns, 'g');
     g.setAttribute('fill', 'none');
