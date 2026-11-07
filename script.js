@@ -193,24 +193,26 @@
     gridGroup.appendChild(ellipse);
 
     // ===== Яйцевидный эллипс (во второй секции) =====
-    // Секция 2: от y0 + sectionH до y0 + 2*sectionH
-    const eggY0 = y0 + sectionH;
-    const eggCy = eggY0 + sectionH * 0.5; // Центр второй секции
-    const eggRy = (sectionH * 0.8) / 2;   // Высота (80% от секции)
-    const eggRx = (headW * 0.9) / 2;      // Ширина (90% от ширины головы)
+    // Привязываем верх и низ яйца строго к границам секции
+    const eggTopY = y0 + sectionH;
+    const eggBottomY = y0 + 2 * sectionH;
+    
+    // Высота яйца равна высоте секции
+    const eggHeight = sectionH;
+    // Ширина (чуть уже головы, чтобы смотрелось естественно, например 90% от ширины головы)
+    const eggRx = (headW * 0.9) / 2; 
 
-    // Для яйцевидной формы используем path с кривыми Безье.
-    // Верх сужен (контрольные точки ближе к центру), низ расширен.
-    const topY = eggCy - eggRy;
-    const bottomY = eggCy + eggRy;
-
+    // Форма яйца: верх уже, низ шире.
+    // Используем кубические кривые (C).
     const eggPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // M (top) -> C (right side) -> C (bottom) -> C (left side) -> C (top)
+    
+    // d: start at top center -> curve right -> curve bottom -> curve left -> back to top
     const d = `
-      M ${cx} ${topY}
-      C ${cx + eggRx * 0.4} ${topY + eggRy * 0.1}, ${cx + eggRx} ${eggCy}, ${cx + eggRx * 0.7} ${eggCy + eggRy * 0.6}
-      C ${cx + eggRx * 0.3} ${bottomY}, ${cx - eggRx * 0.3} ${bottomY}, ${cx - eggRx * 0.7} ${eggCy + eggRy * 0.6}
-      C ${cx - eggRx} ${eggCy}, ${cx - eggRx * 0.4} ${topY + eggRy * 0.1}, ${cx} ${topY}
+      M ${cx} ${eggTopY}
+      C ${cx + eggRx * 0.5} ${eggTopY}, ${cx + eggRx} ${eggTopY + eggHeight * 0.3}, ${cx + eggRx} ${eggTopY + eggHeight * 0.6}
+      C ${cx + eggRx} ${eggTopY + eggHeight * 0.9}, ${cx + eggRx * 0.4} ${eggBottomY}, ${cx} ${eggBottomY}
+      C ${cx - eggRx * 0.4} ${eggBottomY}, ${cx - eggRx} ${eggTopY + eggHeight * 0.9}, ${cx - eggRx} ${eggTopY + eggHeight * 0.6}
+      C ${cx - eggRx} ${eggTopY + eggHeight * 0.3}, ${cx - eggRx * 0.5} ${eggTopY}, ${cx} ${eggTopY}
       Z
     `;
     eggPath.setAttribute('d', d.trim());
