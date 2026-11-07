@@ -21,7 +21,7 @@
   const heads = document.getElementById('heads');
   const headsVal = document.getElementById('headsVal');
 
-  // Новые ползунки головы
+  // Ползунки головы
   const headWidth = document.getElementById('headWidth');
   const headWidthVal = document.getElementById('headWidthVal');
   const headHeight = document.getElementById('headHeight');
@@ -53,13 +53,12 @@
     underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
     gridPad: 0.05,
     heads: 4,
-    // Параметры головы (в долях высоты секции, кроме chinWidth — в долях ширины холста)
     head: {
-      width: 0.60,     // диаметр по X (от высоты секции)
-      height: 0.60,    // диаметр по Y (от высоты секции) — при равенстве width это круг
-      offset: 0.00,    // смещение центра вниз от верхней линии зоны, в долях высоты секции
-      chinY: 0.80,     // позиция подбородка от верхней линии зоны, в долях высоты секции
-      chinWidth: 0.50  // длина линии подбородка, в долях ширины холста
+      width: 0.60,
+      height: 0.60,
+      offset: 0.00,
+      chinY: 0.80,
+      chinWidth: 0.30
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -161,7 +160,6 @@
     // ===== Голова (эллипс) =====
     const sectionH = span / n;
 
-    // Центр эллипса: по X = 0.5, по Y = y0 + height/2 + offset
     const headH = state.head.height * sectionH;
     const headW = state.head.width * sectionH;
     const rx = headW / 2;
@@ -169,7 +167,6 @@
     const cx = 0.5;
     const cy = y0 + state.head.offset * sectionH + ry;
 
-    // Эллипс через <ellipse> (при width==height визуально круг)
     const ellipse = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
     ellipse.setAttribute('cx', String(cx));
     ellipse.setAttribute('cy', String(cy));
@@ -492,7 +489,6 @@
     renderGrid();
   });
 
-  // ===== Ползунки головы =====
   headWidth.addEventListener('input', () => {
     state.head.width = parseInt(headWidth.value, 10) / 100;
     headWidthVal.textContent = headWidth.value + '%';
