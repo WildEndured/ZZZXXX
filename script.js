@@ -126,7 +126,7 @@
   const exportSvgBtn = document.getElementById('exportSvgBtn');
   const exportPngBtn = document.getElementById('exportPngBtn');
 
-  // ===== Состояние =====
+  // ===== Состояние (Настроено под 5 голов) =====
   const state = {
     canvasSize: 800,
     scale: 1,
@@ -137,7 +137,7 @@
     bgColor: '#ffffff',
     underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
     gridPad: 0.05,
-    heads: 4,
+    heads: 5, // По умолчанию 5 голов
     head: {
       width: 0.65,
       height: 0.65,
@@ -443,16 +443,18 @@
 
     // ===== Ноги (Колени и Лодыжки) =====
     
-    // Базовое Y для коленей: низ таза + высота головы
-    const kneeBaseY = pelvisBottomY + headH;
-    // Базовое Y для лодыжек: базовое Y коленей + высота головы
-    const ankleBaseY = kneeBaseY + headH;
+    // Базовые координаты для ног (в долях высоты головы)
+    // Колени: на 0.25 головы ниже таза
+    const kneeBaseY = pelvisBottomY + (0.25 * sectionH);
+    // Лодыжки: на 1.0 голову ниже базовой точки коленей
+    const ankleBaseY = kneeBaseY + (1.0 * sectionH);
+    // Центр ноги по X: выравниваем по запястью
+    const legLeftCx_base = wristLeftCx;
+    const legRightCx_base = wristRightCx;
 
     // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
-    const kneeLeftCx_base = wristLeftCx; 
-    
-    const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
+    const kneeLeftCx = legLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeBaseY + (state.kneeLeft.y * sectionH);
 
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -466,9 +468,7 @@
     gridGroup.appendChild(kneeLeft);
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
-    const ankleLeftCx_base = kneeLeftCx_base;
-
-    const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
+    const ankleLeftCx = legLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleBaseY + (state.ankleLeft.y * sectionH);
 
     const ankleLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -483,9 +483,7 @@
 
     // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
-    const kneeRightCx_base = wristRightCx;
-
-    const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
+    const kneeRightCx = legRightCx_base + (state.kneeRight.x * sectionH);
     const kneeRightCy = kneeBaseY + (state.kneeRight.y * sectionH);
 
     const kneeRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -499,9 +497,7 @@
     gridGroup.appendChild(kneeRight);
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
-    const ankleRightCx_base = kneeRightCx_base;
-
-    const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
+    const ankleRightCx = legRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleBaseY + (state.ankleRight.y * sectionH);
 
     const ankleRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
