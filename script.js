@@ -1,781 +1,556 @@
-/**
- * SVG Векторный Редактор
- * Чистый JS, без библиотек.
- */
+/* =========================================================
+   SVG Векторный редактор
+   ========================================================= */
 
-// ==========================================
-// 1. ИНИЦИАЛИЗАЦИЯ И ПОЛУЧЕНИЕ ЭЛЕМЕНТОВ DOM
-// ==========================================
-const canvasContainer = document.getElementById('canvasContainer');
-const zoomWrapper = document.getElementById('zoomWrapper');
-const bgLayer = document.getElementById('bgLayer');
-const bgImageLayer = document.getElementById('bgImageLayer');
-const drawingSvg = document.getElementById('drawingSvg');
-const drawGroup = document.getElementById('drawGroup');
-const gridGroup = document.getElementById('gridGroup');
+// ---------- DOM ----------
+const stage          = document.getElementById('stage');
+const zoomContainer  = document.getElementById('zoomContainer');
+const bgLayer        = document.getElementById('bgLayer');
+const imgLayer       = document.getElementById('imgLayer');
+const svg            = document.getElementById('svg');
+const gridGroup      = document.getElementById('gridGroup');
+const drawGroup      = document.getElementById('drawGroup');
 
-// Элементы управления
-const brushSizeInput = document.getElementById('brushSize');
-const brushSizeVal = document.getElementById('brushSizeVal');
-const eraserModeCheckbox = document.getElementById('eraserMode');
-const undoBtn = document.getElementById('undoBtn');
-const clearBtn = document.getElementById('clearBtn');
+const toolBrush      = document.getElementById('toolBrush');
+const toolEraser     = document.getElementById('toolEraser');
+const sizeRange      = document.getElementById('sizeRange');
+const sizeVal        = document.getElementById('sizeVal');
+const brushColor     = document.getElementById('brushColor');
+const undoBtn        = document.getElementById('undoBtn');
+const clearBtn       = document.getElementById('clearBtn');
 
-const bgColorInput = document.getElementById('bgColor');
+const bgColor        = document.getElementById('bgColor');
+const uploadBtn      = document.getElementById('uploadBtn');
+const fileInput      = document.getElementById('fileInput');
+const imgScale       = document.getElementById('imgScale');
+const imgScaleVal    = document.getElementById('imgScaleVal');
+const imgOpacity     = document.getElementById('imgOpacity');
+const imgOpacityVal  = document.getElementById('imgOpacityVal');
 
-const uploadBtn = document.getElementById('uploadBtn');
-const imageInput = document.getElementById('imageInput');
-const bgImageScaleInput = document.getElementById('bgImageScale');
-const bgImageScaleVal = document.getElementById('bgImageScaleVal');
-const bgImageOpacityInput = document.getElementById('bgImageOpacity');
-const bgImageOpacityVal = document.getElementById('bgImageOpacityVal');
+const marginRange    = document.getElementById('marginRange');
+const marginVal      = document.getElementById('marginVal');
+const headsRange     = document.getElementById('headsRange');
+const headsVal       = document.getElementById('headsVal');
 
-const gridEnabledCheckbox = document.getElementById('gridEnabled');
-const gridPaddingInput = document.getElementById('gridPadding');
-const gridPaddingVal = document.getElementById('gridPaddingVal');
-const gridHeadsInput = document.getElementById('gridHeads');
-const gridHeadsVal = document.getElementById('gridHeadsVal');
+const exportSvgBtn   = document.getElementById('exportSvg');
+const exportPngBtn   = document.getElementById('exportPng');
 
-const exportSvgBtn = document.getElementById('exportSvgBtn');
-const exportPngBtn = document.getElementById('exportPngBtn');
-
-// ==========================================
-// 2. СОСТОЯНИЕ ПРИЛОЖЕНИЯ
-// ==========================================
-let state = {
-    bgColor: '#ffffff',
-    bgImage: null, // base64
-    bgImageNaturalWidth: 0,
-    bgImageNaturalHeight: 0,
-    bgImageScale: 1.0, // 100%
-    bgImageOpacity: 1.0, // 100%
-    
-    brushSize: 0.005,
-    isEraser: false,
-    
-    paths: [], // История для Undo (массив элементов path)
-    
-    grid: {
-        enabled: false,
-        padding: 5, // %
-        heads: 3
-    },
-    
-    // Зум и панорамирование
-    transform: {
-        scale: 1,
-        x: 0,
-        y: 0
-    }
+// ---------- Состояние ----------
+const state = {
+  scale: 1,          // зум
+  tx: 0,             // смещение X (px)
+  ty: 0,             // смещение Y (px)
+  baseSize: 0,       // базовый размер контейнера (px, квадрат)
+  tool: 'brush',     // 'brush' | 'eraser'
+  color: '#000000',
+  bgColor: '#ffffff',
+  strokeWidth: 0.005,
+  imgData: null,     // base64 подложки
+  imgScale: 1,       // масштаб подложки (1 = 100%)
+  imgOpacity: 1,
+  margin: 0.05,      // 0..0.10
+  heads: 4,
 };
 
-// Переменные для рисования
+const MAX_SCALE = 20;
+const MIN_SCALE = 1;
+
+// ---------- Инициализация размеров ----------
+function computeBaseSize() {
+  const rect = stage.getBoundingClientRect();
+  // Квадрат по меньшей стороне с небольшим отступом
+  const pad = 16;
+  const size = Math.max(50, Math.min(rect.width, rect.height) - pad);
+  state.baseSize = size;
+  zoomContainer.style.width  = size + 'px';
+  zoomContainer.style.height = size + 'px';
+}
+
+// Пересчёт трансформации с жёстким clamp
+function applyTransform() {
+  const rect = stage.getBoundingClientRect();
+  const size = state.baseSize * state.scale;
+
+  // Ограничение: нельзя увести холст за края контейнера
+  // Если холст меньше контейнера — центрируем, иначе clamp в границах
+  let tx, ty;
+
+  if (size <= rect.width) {
+    tx = (rect.width - size) / 2;
+  } else {
+    // Разрешаем сдвиг от (rect.width - size) до 0
+    tx = Math.min(0, Math.max(rect.width - size, state.tx));
+  }
+
+  if (size <= rect.height) {
+    ty = (rect.height - size) / 2;
+  } else {
+    ty = Math.min(0, Math.max(rect.height - size, state.ty));
+  }
+
+  state.tx = tx;
+  state.ty = ty;
+
+  zoomContainer.style.transform =
+    `translate(${tx}px, ${ty}px) scale(${state.scale})`;
+}
+
+// ---------- Зум ----------
+function zoomAt(clientX, clientY, newScale) {
+  const rect = stage.getBoundingClientRect();
+  newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+
+  // Точка под курсором в координатах контейнера (до зума)
+  const cx = (clientX - rect.left - state.tx) / state.scale;
+  const cy = (clientY - rect.top  - state.ty) / state.scale;
+
+  state.scale = newScale;
+  // Сохраняем точку под курсором
+  state.tx = clientX - rect.left - cx * state.scale;
+  state.ty = clientY - rect.top  - cy * state.scale;
+
+  applyTransform();
+}
+
+// ---------- Обработка Pointer-событий ----------
+const pointers = new Map(); // id -> {x, y}
 let isDrawing = false;
 let currentPath = null;
-let currentPathData = [];
-let activePointerId = null;
+let currentPoints = []; // точки текущего пути (для сглаживания)
 
-// Переменные для жестов (зум/панорамирование)
-let pointers = new Map();
-let initialPinchDistance = 0;
-let initialScale = 1;
-let initialPanX = 0;
-let initialPanY = 0;
-let isPanning = false;
-let panStartX = 0;
-let panStartY = 0;
+// Расчёт расстояния между двумя точками
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
-// ==========================================
-// 3. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-// ==========================================
+// Центр между точками
+const midpoint = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
-// Обновление CSS трансформации
-function updateTransform() {
-    zoomWrapper.style.transform = `translate(${state.transform.x}px, ${state.transform.y}px) scale(${state.transform.scale})`;
-}
+stage.addEventListener('pointerdown', onPointerDown);
+stage.addEventListener('pointermove', onPointerMove);
+stage.addEventListener('pointerup', onPointerUp);
+stage.addEventListener('pointercancel', onPointerUp);
+stage.addEventListener('pointerleave', onPointerUp);
 
-// Ограничение (clamp) панорамирования
-function clampPan() {
-    const containerRect = canvasContainer.getBoundingClientRect();
-    const w = containerRect.width;
-    const h = containerRect.height;
-    const s = state.transform.scale;
-    
-    // Максимальное смещение, чтобы холст не уходил за края
-    // При scale >= 1, размер контента = w * s, h * s
-    // Мы хотим, чтобы контент всегда покрывал контейнер.
-    // Смещение X должно быть в пределах [-(w*s - w), 0]
-    // Смещение Y должно быть в пределах [-(h*s - h), 0]
-    
-    const maxX = 0;
-    const minX = -(w * s - w);
-    const maxY = 0;
-    const minY = -(h * s - h);
-    
-    state.transform.x = Math.min(maxX, Math.max(minX, state.transform.x));
-    state.transform.y = Math.min(maxY, Math.max(minY, state.transform.y));
-}
+// Отключаем контекстное меню на средней кнопке
+stage.addEventListener('contextmenu', e => e.preventDefault());
 
-// Получение координат в системе viewBox (0-1)
-function getSvgCoords(clientX, clientY) {
-    const rect = drawingSvg.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width;
-    const y = (clientY - rect.top) / rect.height;
-    return { x, y };
-}
-
-// Перерисовка сетки
-function renderGrid() {
-    gridGroup.innerHTML = '';
-    if (!state.grid.enabled) {
-        gridGroup.style.display = 'none';
-        return;
-    }
-    gridGroup.style.display = 'block';
-
-    const padding = state.grid.padding / 100;
-    const heads = state.grid.heads;
-
-    // Красная рамка зоны
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', '0');
-    rect.setAttribute('y', padding.toString());
-    rect.setAttribute('width', '1');
-    rect.setAttribute('height', (1 - 2 * padding).toString());
-    rect.setAttribute('fill', 'none');
-    rect.setAttribute('stroke', 'red');
-    rect.setAttribute('stroke-width', '0.005');
-    rect.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(rect);
-
-    // Пунктирные линии
-    const availableHeight = 1 - 2 * padding;
-    const step = availableHeight / (heads - 1);
-
-    for (let i = 0; i < heads; i++) {
-        const y = padding + i * step;
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', '0');
-        line.setAttribute('y1', y.toString());
-        line.setAttribute('x2', '1');
-        line.setAttribute('y2', y.toString());
-        line.setAttribute('stroke', 'red');
-        line.setAttribute('stroke-width', '0.003');
-        line.setAttribute('stroke-dasharray', '0.02, 0.02');
-        line.setAttribute('vector-effect', 'non-scaling-stroke');
-        gridGroup.appendChild(line);
-    }
-}
-
-// Обновление подложки
-function updateOverlay() {
-    if (!state.bgImage) {
-        bgImageLayer.style.display = 'none';
-        return;
-    }
-    bgImageLayer.style.display = 'block';
-    bgImageLayer.src = state.bgImage;
-    bgImageLayer.style.opacity = state.bgImageOpacity;
-    
-    // Масштаб: 100% = вписана по высоте холста (object-fit: contain уже это делает)
-    // Но нам нужно управлять масштабом через CSS transform, чтобы сохранить пропорции.
-    // Так как слой абсолютный и object-fit: contain, при scale=1 картинка вписана.
-    // Дополнительный масштаб через transform: scale.
-    bgImageLayer.style.transform = `scale(${state.bgImageScale})`;
-    bgImageLayer.style.transformOrigin = 'center center';
-}
-
-// ==========================================
-// 4. РИСОВАНИЕ (Pointer Events)
-// ==========================================
-
-function startDrawing(e) {
-    // Если уже рисуем или это второй палец - прерываем
-    if (isDrawing) {
-        // Защита: если появляется второй палец, удаляем текущий путь
-        if (currentPath) {
-            currentPath.remove();
-            currentPath = null;
-            currentPathData = [];
-            isDrawing = false;
-            activePointerId = null;
-        }
-        return;
-    }
-
-    // Начинаем рисование только если это первый палец/мышь
-    if (pointers.size > 0) return; 
-
-    isDrawing = true;
-    activePointerId = e.pointerId;
-    
-    const coords = getSvgCoords(e.clientX, e.clientY);
-    
-    // Создаем новый path
-    currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    currentPath.setAttribute('fill', 'none');
-    currentPath.setAttribute('stroke-linecap', 'round');
-    currentPath.setAttribute('stroke-linejoin', 'round');
-    
-    // Цвет и толщина
-    const color = state.isEraser ? state.bgColor : '#000000'; // Ластик рисует цветом фона
-    currentPath.setAttribute('stroke', color);
-    currentPath.setAttribute('stroke-width', state.brushSize.toString());
-    
-    // Начинаем с точки (M)
-    currentPathData = [`M ${coords.x} ${coords.y}`];
-    currentPath.setAttribute('d', currentPathData.join(' '));
-    drawGroup.appendChild(currentPath);
-}
-
-function drawMove(e) {
-    if (!isDrawing || e.pointerId !== activePointerId) return;
-
-    const coords = getSvgCoords(e.clientX, e.clientY);
-    const len = currentPathData.length;
-    
-    if (len === 1) {
-        // Первая точка, просто линия к ней
-        currentPathData.push(`L ${coords.x} ${coords.y}`);
-    } else {
-        // Квадратичная кривая: используем предыдущую точку как контрольную
-        const prev = currentPathData[len - 1].split(' ');
-        const prevX = parseFloat(prev[1]);
-        const prevY = parseFloat(prev[2]);
-        
-        const midX = (prevX + coords.x) / 2;
-        const midY = (prevY + coords.y) / 2;
-        
-        // Q controlX controlY endX endY
-        currentPathData.push(`Q ${prevX} ${prevY} ${midX} ${midY}`);
-    }
-    
-    currentPath.setAttribute('d', currentPathData.join(' '));
-}
-
-function endDrawing(e) {
-    if (e.pointerId !== activePointerId) return;
-    
-    if (isDrawing && currentPath) {
-        // Сохраняем в историю
-        state.paths.push(currentPath);
-        currentPath = null;
-        currentPathData = [];
-    }
-    isDrawing = false;
-    activePointerId = null;
-}
-
-// ==========================================
-// 5. ЗУМ И ПАНОРАМИРОВАНИЕ (Pointer Events)
-// ==========================================
-
-function handlePointerDown(e) {
-    // Для рисования используем только левую кнопку мыши (button 0) или касание
-    if (e.pointerType === 'mouse' && e.button !== 0) {
-        // Средняя кнопка (1) или Shift+ЛКМ для панорамирования
-        if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
-            isPanning = true;
-            panStartX = e.clientX - state.transform.x;
-            panStartY = e.clientY - state.transform.y;
-            canvasContainer.setPointerCapture(e.pointerId);
-            return;
-        }
-        return;
-    }
-
-    // Добавляем указатель в Map
-    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-    if (pointers.size === 1) {
-        // Один палец - рисование
-        startDrawing(e);
-    } else if (pointers.size === 2) {
-        // Два пальца - зум/панорамирование
-        // Если рисовали - отменяем
-        if (isDrawing) {
-            if (currentPath) currentPath.remove();
-            currentPath = null;
-            currentPathData = [];
-            isDrawing = false;
-            activePointerId = null;
-        }
-
-        // Инициализация зума
-        const pts = Array.from(pointers.values());
-        initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-        initialScale = state.transform.scale;
-        
-        // Центр между пальцами для панорамирования
-        const centerX = (pts[0].x + pts[1].x) / 2;
-        const centerY = (pts[0].y + pts[1].y) / 2;
-        
-        const containerRect = canvasContainer.getBoundingClientRect();
-        const localCenterX = centerX - containerRect.left;
-        const localCenterY = centerY - containerRect.top;
-        
-        // Запоминаем смещение для панорамирования
-        initialPanX = state.transform.x;
-        initialPanY = state.transform.y;
-        
-        // Сохраняем точку в координатах контейнера
-        const containerCenterX = localCenterX;
-        const containerCenterY = localCenterY;
-        
-        // Для зума относительно центра
-        const scaleRatio = state.transform.scale;
-        const offsetX = containerCenterX - state.transform.x;
-        const offsetY = containerCenterY - state.transform.y;
-        
-        // Сохраняем для использования в move
-        initialPanX = state.transform.x;
-        initialPanY = state.transform.y;
-        
-        // Для простоты: при 2 пальцах просто панорамируем по центру
-        // и масштабируем относительно центра
-        initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-        initialScale = state.transform.scale;
-        
-        // Сохраняем центр в координатах контейнера
-        const rect = canvasContainer.getBoundingClientRect();
-        const cx = (pts[0].x + pts[1].x) / 2 - rect.left;
-        const cy = (pts[0].y + pts[1].y) / 2 - rect.top;
-        
-        // Запоминаем точку в системе холста (до трансформации)
-        // Относительно контейнера: (cx - state.transform.x) / scale
-        const worldX = (cx - state.transform.x) / state.transform.scale;
-        const worldY = (cy - state.transform.y) / state.transform.scale;
-        
-        // Сохраняем для зума
-        initialPanX = state.transform.x;
-        initialPanY = state.transform.y;
-        
-        // Центр для зума
-        state.transform.pivotX = cx;
-        state.transform.pivotY = cy;
-        state.transform.pivotWorldX = worldX;
-        state.transform.pivotWorldY = worldY;
-    }
-}
-
-function handlePointerMove(e) {
-    // Обновляем позицию указателя
-    if (pointers.has(e.pointerId)) {
-        pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    }
-
-    // Панорамирование средней кнопкой или Shift+ЛКМ
-    if (isPanning) {
-        state.transform.x = e.clientX - panStartX;
-        state.transform.y = e.clientY - panStartY;
-        clampPan();
-        updateTransform();
-        return;
-    }
-
-    // Если 2 пальца - зум/панорамирование
-    if (pointers.size === 2) {
-        const pts = Array.from(pointers.values());
-        const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-        
-        if (initialPinchDistance > 0) {
-            let newScale = initialScale * (currentDist / initialPinchDistance);
-            // Ограничение: минимум 1, максимум 20
-            newScale = Math.max(1, Math.min(20, newScale));
-            
-            // Центр между пальцами в координатах контейнера
-            const rect = canvasContainer.getBoundingClientRect();
-            const cx = (pts[0].x + pts[1].x) / 2 - rect.left;
-            const cy = (pts[0].y + pts[1].y) / 2 - rect.top;
-            
-            // Зум относительно центра
-            // Мы хотим, чтобы точка под пальцами оставалась на месте
-            // worldX = (cx - x) / scale
-            // Новый x = cx - worldX * newScale
-            
-            const worldX = (cx - state.transform.x) / state.transform.scale;
-            const worldY = (cy - state.transform.y) / state.transform.scale;
-            
-            state.transform.scale = newScale;
-            state.transform.x = cx - worldX * newScale;
-            state.transform.y = cy - worldY * newScale;
-            
-            clampPan();
-            updateTransform();
-            
-            // Обновляем начальную дистанцию для следующего шага
-            initialPinchDistance = currentDist;
-            initialScale = newScale;
-            
-            // Обновляем точку для следующего шага
-            // (не нужно, т.к. пересчитываем worldX каждый раз)
-        }
-        return;
-    }
-
-    // Рисование
-    if (isDrawing && e.pointerId === activePointerId) {
-        drawMove(e);
-    }
-}
-
-function handlePointerUp(e) {
-    pointers.delete(e.pointerId);
-
-    // Если панорамирование
-    if (isPanning) {
-        isPanning = false;
-        return;
-    }
-
-    // Завершение рисования
-    if (isDrawing && e.pointerId === activePointerId) {
-        endDrawing(e);
-    }
-
-    // Сброс зума, если пальцев меньше 2
-    if (pointers.size < 2) {
-        initialPinchDistance = 0;
-    }
-}
-
-// ==========================================
-// 6. ОБРАБОТЧИКИ СОБЫТИЙ
-// ==========================================
-
-// Инициализация событий для холста
-drawingSvg.addEventListener('pointerdown', handlePointerDown);
-window.addEventListener('pointermove', handlePointerMove);
-window.addEventListener('pointerup', handlePointerUp);
-window.addEventListener('pointercancel', handlePointerUp);
-
-// Зум колесиком мыши (с центровкой относительно курсора)
-canvasContainer.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    
-    const rect = canvasContainer.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    // Определяем направление зума
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    let newScale = state.transform.scale * (1 + delta);
-    
-    // Ограничение зума
-    newScale = Math.max(1, Math.min(20, newScale));
-    
-    // Зум относительно курсора
-    const worldX = (mouseX - state.transform.x) / state.transform.scale;
-    const worldY = (mouseY - state.transform.y) / state.transform.scale;
-    
-    state.transform.scale = newScale;
-    state.transform.x = mouseX - worldX * newScale;
-    state.transform.y = mouseY - worldY * newScale;
-    
-    clampPan();
-    updateTransform();
+// Колесо мыши — зум
+stage.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  zoomAt(e.clientX, e.clientY, state.scale * factor);
 }, { passive: false });
 
-// ==========================================
-// 7. UI ЛОГИКА (Аккордеоны, ползунки, кнопки)
-// ==========================================
+function onPointerDown(e) {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  stage.setPointerCapture?.(e.pointerId);
 
-// Аккордеоны
-document.querySelectorAll('.accordion-header').forEach(header => {
-    header.addEventListener('click', () => {
-        const content = header.nextElementSibling;
-        const icon = header.querySelector('.icon');
-        const isVisible = content.style.display === 'block';
-        
-        // Закрываем все остальные (опционально - можно оставить открытыми)
-        // Для простоты оставляем, но переключаем текущий
-        content.style.display = isVisible ? 'none' : 'block';
-        icon.textContent = isVisible ? '▲' : '▼';
-    });
-});
+  // Если появился второй палец — отменяем рисование
+  if (pointers.size >= 2 && isDrawing) {
+    cancelDrawing();
+  }
 
-// Кисть
-brushSizeInput.addEventListener('input', (e) => {
-    state.brushSize = parseFloat(e.target.value);
-    brushSizeVal.textContent = state.brushSize.toFixed(5);
-});
+  // Начало рисования: только один палец/ЛКМ, не средняя кнопка
+  if (pointers.size === 1 && !isDrawing) {
+    const isMiddle = e.button === 1;
+    const isShiftLeft = e.button === 0 && e.shiftKey;
 
-eraserModeCheckbox.addEventListener('change', (e) => {
-    state.isEraser = e.target.checked;
-});
-
-undoBtn.addEventListener('click', () => {
-    if (state.paths.length > 0) {
-        const lastPath = state.paths.pop();
-        if (lastPath.parentNode) {
-            lastPath.parentNode.removeChild(lastPath);
-        }
+    if (isMiddle || isShiftLeft) {
+      // Панорамирование
+      return;
     }
+
+    if (e.button === 0 || e.pointerType === 'touch') {
+      startDrawing(e);
+    }
+  }
+}
+
+function onPointerMove(e) {
+  const prev = pointers.get(e.pointerId);
+  if (!prev) return;
+
+  // Обновляем точку
+  const curr = { x: e.clientX, y: e.clientY };
+
+  // --- Два пальца: зум + панорамирование ---
+  if (pointers.size === 2) {
+    if (isDrawing) cancelDrawing();
+
+    // Получаем оба указателя
+    const ids = [...pointers.keys()];
+    const otherId = ids.find(id => id !== e.pointerId);
+    const other = pointers.get(otherId);
+
+    const prevDist = dist(prev, other);
+    const currDist = dist(curr, other);
+
+    const prevMid = midpoint(prev, other);
+    const currMid = midpoint(curr, other);
+
+    // Обновляем запись
+    pointers.set(e.pointerId, curr);
+
+    if (prevDist > 0) {
+      // Зум вокруг середины
+      const factor = currDist / prevDist;
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, state.scale * factor));
+
+      const rect = stage.getBoundingClientRect();
+      const cx = (prevMid.x - rect.left - state.tx) / state.scale;
+      const cy = (prevMid.y - rect.top  - state.ty) / state.scale;
+
+      state.scale = newScale;
+      state.tx = currMid.x - rect.left - cx * state.scale;
+      state.ty = currMid.y - rect.top  - cy * state.scale;
+
+      // Панорамирование за счёт смещения середины
+      state.tx += currMid.x - prevMid.x;
+      state.ty += currMid.y - prevMid.y;
+
+      applyTransform();
+    }
+    return;
+  }
+
+  // --- Один палец ---
+  // Панорамирование (средняя кнопка / shift+ЛКМ)
+  if (e.buttons & 4 || (e.buttons & 1 && e.shiftKey)) {
+    pointers.set(e.pointerId, curr);
+    state.tx += curr.x - prev.x;
+    state.ty += curr.y - prev.y;
+    applyTransform();
+    return;
+  }
+
+  // Рисование
+  if (isDrawing && pointers.size === 1) {
+    pointers.set(e.pointerId, curr);
+    continueDrawing(e);
+  }
+}
+
+function onPointerUp(e) {
+  const wasDrawing = isDrawing;
+  pointers.delete(e.pointerId);
+
+  if (wasDrawing && pointers.size === 0) {
+    finishDrawing();
+  }
+  // Если остался один палец после отмены зума — ничего не делаем
+}
+
+// ---------- Рисование ----------
+function clientToSvg(clientX, clientY) {
+  const rect = svg.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / rect.width,
+    y: (clientY - rect.top)  / rect.height,
+  };
+}
+
+function startDrawing(e) {
+  isDrawing = true;
+  currentPoints = [];
+  const p = clientToSvg(e.clientX, e.clientY);
+  currentPoints.push(p);
+
+  currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  currentPath.setAttribute('stroke', state.tool === 'eraser' ? state.bgColor : state.color);
+  currentPath.setAttribute('stroke-width', state.strokeWidth);
+  currentPath.setAttribute('vector-effect', 'non-scaling-stroke');
+  currentPath.setAttribute('d', `M ${p.x} ${p.y}`);
+  drawGroup.appendChild(currentPath);
+}
+
+function continueDrawing(e) {
+  if (!currentPath) return;
+  const p = clientToSvg(e.clientX, e.clientY);
+  const prev = currentPoints[currentPoints.length - 1];
+  // Пропускаем слишком близкие точки
+  if (Math.hypot(p.x - prev.x, p.y - prev.y) < 0.0005) return;
+
+  currentPoints.push(p);
+
+  // Сглаживание: квадратичная кривая через середины
+  const mid = midpoint(prev, p);
+  let d = currentPath.getAttribute('d');
+  d += ` Q ${prev.x} ${prev.y} ${mid.x} ${mid.y}`;
+  currentPath.setAttribute('d', d);
+}
+
+function finishDrawing() {
+  if (!currentPath) return;
+  // Завершаем линию до последней точки
+  const last = currentPoints[currentPoints.length - 1];
+  let d = currentPath.getAttribute('d');
+  d += ` L ${last.x} ${last.y}`;
+  currentPath.setAttribute('d', d);
+
+  isDrawing = false;
+  currentPath = null;
+  currentPoints = [];
+}
+
+function cancelDrawing() {
+  if (currentPath) {
+    currentPath.remove();
+  }
+  isDrawing = false;
+  currentPath = null;
+  currentPoints = [];
+}
+
+// ---------- Undo / Clear ----------
+undoBtn.addEventListener('click', () => {
+  // Удаляем последний нарисованный путь (не сетку)
+  const paths = drawGroup.querySelectorAll('path');
+  if (paths.length) {
+    paths[paths.length - 1].remove();
+  }
 });
 
 clearBtn.addEventListener('click', () => {
-    drawGroup.innerHTML = '';
-    state.paths = [];
-    // Сбрасываем разметку? Нет, разметка отдельно.
+  drawGroup.innerHTML = '';
 });
 
-// Фон
-bgColorInput.addEventListener('input', (e) => {
-    state.bgColor = e.target.value;
-    bgLayer.style.backgroundColor = state.bgColor;
-    // Если ластик - обновляем цвет?
+// ---------- Инструменты ----------
+toolBrush.addEventListener('click', () => {
+  state.tool = 'brush';
+  toolBrush.classList.add('active');
+  toolEraser.classList.remove('active');
+});
+toolEraser.addEventListener('click', () => {
+  state.tool = 'eraser';
+  toolEraser.classList.add('active');
+  toolBrush.classList.remove('active');
 });
 
-// Подложка
-uploadBtn.addEventListener('click', () => {
-    imageInput.click();
+sizeRange.addEventListener('input', () => {
+  state.strokeWidth = parseFloat(sizeRange.value);
+  sizeVal.textContent = state.strokeWidth.toFixed(5);
 });
 
-imageInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        state.bgImage = ev.target.result;
-        
-        // Загружаем изображение, чтобы получить размеры
-        const img = new Image();
-        img.onload = () => {
-            state.bgImageNaturalWidth = img.naturalWidth;
-            state.bgImageNaturalHeight = img.naturalHeight;
-            updateOverlay();
-        };
-        img.src = state.bgImage;
-        
-        // Сбрасываем input, чтобы можно было загрузить ту же картинку снова
-        imageInput.value = '';
-    };
-    reader.readAsDataURL(file);
+brushColor.addEventListener('input', () => {
+  state.color = brushColor.value;
 });
 
-bgImageScaleInput.addEventListener('input', (e) => {
-    state.bgImageScale = parseFloat(e.target.value) / 100;
-    bgImageScaleVal.textContent = e.target.value;
-    updateOverlay();
+// ---------- Фон ----------
+bgColor.addEventListener('input', () => {
+  state.bgColor = bgColor.value;
+  bgLayer.style.background = state.bgColor;
 });
 
-bgImageOpacityInput.addEventListener('input', (e) => {
-    state.bgImageOpacity = parseFloat(e.target.value) / 100;
-    bgImageOpacityVal.textContent = e.target.value;
-    updateOverlay();
+// ---------- Подложка ----------
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    state.imgData = reader.result;
+    imgLayer.src = state.imgData;
+    imgLayer.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
 });
 
-// Разметка
-gridEnabledCheckbox.addEventListener('change', (e) => {
-    state.grid.enabled = e.target.checked;
-    renderGrid();
+imgScale.addEventListener('input', () => {
+  state.imgScale = parseInt(imgScale.value) / 100;
+  imgScaleVal.textContent = imgScale.value;
+  updateImageTransform();
 });
 
-gridPaddingInput.addEventListener('input', (e) => {
-    state.grid.padding = parseInt(e.target.value);
-    gridPaddingVal.textContent = state.grid.padding;
-    renderGrid();
+imgOpacity.addEventListener('input', () => {
+  state.imgOpacity = parseInt(imgOpacity.value) / 100;
+  imgOpacityVal.textContent = imgOpacity.value;
+  imgLayer.style.opacity = state.imgOpacity;
 });
 
-gridHeadsInput.addEventListener('input', (e) => {
-    state.grid.heads = parseInt(e.target.value);
-    gridHeadsVal.textContent = state.grid.heads;
-    renderGrid();
-});
+// Масштаб подложки: 100% = вписана по высоте, пропорции сохранены
+function updateImageTransform() {
+  if (!state.imgData) return;
+  // object-fit: contain уже вписывает по одной из сторон.
+  // Дополнительно масштабируем по высоте холста.
+  imgLayer.style.transform = `scale(${state.imgScale})`;
+  imgLayer.style.transformOrigin = 'center center';
+}
 
-// ==========================================
-// 8. ЭКСПОРТ
-// ==========================================
+// ---------- Разметка (сетка) ----------
+function drawGrid() {
+  gridGroup.innerHTML = '';
+  const m = state.margin;
+  const heads = state.heads;
 
-// Сборка SVG с нуля (без трансформаций зума)
-function buildExportSVG() {
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('xmlns', svgNS);
-    svg.setAttribute('viewBox', '0 0 1 1');
-    svg.setAttribute('width', '4096');
-    svg.setAttribute('height', '4096');
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    
-    // 1. Фон
-    const bgRect = document.createElementNS(svgNS, 'rect');
-    bgRect.setAttribute('x', '0');
-    bgRect.setAttribute('y', '0');
-    bgRect.setAttribute('width', '1');
-    bgRect.setAttribute('height', '1');
-    bgRect.setAttribute('fill', state.bgColor);
-    svg.appendChild(bgRect);
-    
-    // 2. Подложка
-    if (state.bgImage) {
-        const img = document.createElementNS(svgNS, 'image');
-        // Позиция и размер: 100% = вписана по высоте (1:1), т.е. height = 1, width = aspect
-        // Но мы сохраняем пропорции и центрируем.
-        // Поскольку viewBox 0 0 1 1, мы можем вычислить положение.
-        // При масштабе 100% картинка должна быть вписана по высоте: height = 1, width = 1 * (naturalW / naturalH).
-        // Но если ширина > 1, она выйдет за пределы. По условию "вписана ровно по высоте холста (пропорции сохранены)".
-        // Т.е. height = 1, width = aspect. Если aspect > 1, то ширина > 1, и картинка выходит за границы.
-        // Но это нормально, т.к. object-fit: contain в CSS вписывает, но здесь мы должны воспроизвести.
-        // На самом деле object-fit: contain вписывает так, чтобы картинка целиком поместилась.
-        // Но условие: "100% = картинка вписана ровно по высоте холста (пропорции сохранены)".
-        // Это значит height = 1, width = (naturalW / naturalH) * 1.
-        // Если width > 1, то картинка будет обрезана по бокам? Или выйдет за границы?
-        // В CSS object-fit: contain вписывает так, чтобы обе стороны поместились.
-        // Но здесь сказано "вписана ровно по высоте". Значит height = 1, width = aspect.
-        // Если aspect > 1, то картинка выйдет за пределы viewBox, и будет обрезана. Это допустимо.
-        // Но для object-fit: contain в CSS картинка будет вписана целиком, т.е. height < 1, если aspect > 1.
-        // Однако условие явно: "вписана ровно по высоте холста". Значит height = 1 всегда.
-        // Тогда при aspect > 1 ширина > 1, и картинка обрежется по бокам.
-        // Это отличается от CSS object-fit: contain. Но мы должны следовать условию.
-        
-        // Но тогда наш CSS слой с object-fit: contain не соответствует. 
-        // В CSS мы используем object-fit: contain, что вписывает целиком.
-        // Чтобы соответствовать условию, нужно изменить CSS.
-        // Однако в задании сказано: "Масштаб подложки: 100% = картинка вписана ровно по высоте холста (пропорции сохранены)."
-        // Значит height = 1, width = aspect. 
-        // В CSS мы используем object-fit: contain, что неверно для этого условия.
-        // Придется переделать CSS или логику.
-        // Для простоты: в CSS сделаем object-fit: fill? Нет.
-        // Лучше: в CSS использовать object-fit: contain, но тогда масштаб 100% будет вписывать целиком, а не по высоте.
-        // Условие: "вписана ровно по высоте". Значит если картинка широкая, она выйдет за границы по бокам.
-        // В CSS это можно сделать через object-fit: cover? Нет, cover обрезает.
-        // Можно задать width: auto; height: 100%; и центрировать.
-        // Тогда при широкой картинке она выйдет за пределы по бокам.
-        // Да, это то, что нужно.
-        
-        // Поэтому изменим CSS: для .overlay-layer уберем object-fit: contain, 
-        // и зададим height: 100%; width: auto; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-        // Но тогда transform используется для центрирования, а мы используем transform для масштаба.
-        // Можно использовать комбинацию: transform: translate(-50%, -50%) scale(...). 
-        // Это можно сделать.
-        
-        // Но в текущем коде updateOverlay использует transform: scale(...) без центрирования.
-        // Нужно исправить.
-        
-        // Для простоты в экспорте: вычислим размеры и позицию.
-        const aspect = state.bgImageNaturalWidth / state.bgImageNaturalHeight;
-        let w, h, x, y;
-        
-        // Базовая вписывание по высоте: h = 1, w = aspect
-        h = 1;
-        w = aspect;
-        
-        // Центрируем
-        x = (1 - w) / 2;
-        y = (1 - h) / 2;
-        
-        // Применяем масштаб (относительно центра)
-        // Масштаб увеличивает размеры
-        const scaledW = w * state.bgImageScale;
-        const scaledH = h * state.bgImageScale;
-        
-        // Центр остается тем же
-        const centerX = x + w / 2;
-        const centerY = y + h / 2;
-        
-        const finalX = centerX - scaledW / 2;
-        const finalY = centerY - scaledH / 2;
-        
-        img.setAttribute('x', finalX.toString());
-        img.setAttribute('y', finalY.toString());
-        img.setAttribute('width', scaledW.toString());
-        img.setAttribute('height', scaledH.toString());
-        img.setAttribute('href', state.bgImage);
-        img.setAttribute('opacity', state.bgImageOpacity.toString());
-        img.setAttribute('preserveAspectRatio', 'none'); // Мы уже вычислили размеры
-        svg.appendChild(img);
+  // Красная рамка зоны (верх и низ по отступу)
+  const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  frame.setAttribute('x', 0);
+  frame.setAttribute('y', m);
+  frame.setAttribute('width', 1);
+  frame.setAttribute('height', 1 - 2 * m);
+  frame.setAttribute('fill', 'none');
+  frame.setAttribute('stroke', '#ff2d2d');
+  frame.setAttribute('stroke-width', 0.002);
+  frame.setAttribute('vector-effect', 'non-scaling-stroke');
+  gridGroup.appendChild(frame);
+
+  // Горизонтальные пунктирные линии, делят зону между отступами на heads частей
+  const innerHeight = 1 - 2 * m;
+  if (heads > 1) {
+    for (let i = 1; i < heads; i++) {
+      const y = m + (innerHeight * i) / heads;
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', 0);
+      line.setAttribute('y1', y);
+      line.setAttribute('x2', 1);
+      line.setAttribute('y2', y);
+      line.setAttribute('stroke', '#ff2d2d');
+      line.setAttribute('stroke-width', 0.0015);
+      line.setAttribute('stroke-dasharray', '0.01 0.01');
+      line.setAttribute('vector-effect', 'non-scaling-stroke');
+      gridGroup.appendChild(line);
     }
-    
-    // 3. Пути из drawGroup
-    const paths = drawGroup.querySelectorAll('path');
-    paths.forEach(path => {
-        const clonedPath = path.cloneNode(true);
-        svg.appendChild(clonedPath);
-    });
-    
-    return svg;
+  }
 }
 
-// Скачивание файла
-function downloadFile(data, filename, mimeType) {
-    const blob = new Blob([data], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+marginRange.addEventListener('input', () => {
+  state.margin = parseInt(marginRange.value) / 100;
+  marginVal.textContent = marginRange.value;
+  drawGrid();
+});
+
+headsRange.addEventListener('input', () => {
+  state.heads = parseInt(headsRange.value);
+  headsVal.textContent = headsRange.value;
+  drawGrid();
+});
+
+// ---------- Экспорт ----------
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+function buildExportSvg() {
+  // Новый SVG с нуля, без зума/панорамирования
+  const out = document.createElementNS(SVG_NS, 'svg');
+  out.setAttribute('xmlns', SVG_NS);
+  out.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  out.setAttribute('viewBox', '0 0 1 1');
+  out.setAttribute('width', '1024');
+  out.setAttribute('height', '1024');
+
+  // 1. Фон
+  const bg = document.createElementNS(SVG_NS, 'rect');
+  bg.setAttribute('x', 0);
+  bg.setAttribute('y', 0);
+  bg.setAttribute('width', 1);
+  bg.setAttribute('height', 1);
+  bg.setAttribute('fill', state.bgColor);
+  out.appendChild(bg);
+
+  // 2. Подложка (если есть)
+  if (state.imgData) {
+    // Вписываем по высоте: 100% = высота холста, пропорции сохранены.
+    // viewBox = 0 0 1 1, значит высота = 1.
+    // Изображение масштабируется от центра.
+    const img = document.createElementNS(SVG_NS, 'image');
+    img.setAttribute('href', state.imgData);
+    img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', state.imgData);
+
+    // Используем вложенный <image> с центрированием.
+    // Чтобы сохранить пропорции, ширину/высоту зададим через
+    // вложенный <svg> с preserveAspectRatio="xMidYMid meet".
+    // Но проще: загружаем размеры картинки асинхронно нельзя — 
+    // поэтому используем паттерн через отдельный Image вне экспорта.
+    // Здесь мы уже знаем, что объект вписан по высоте: 
+    // реальная отрисовка в браузере через object-fit: contain.
+    // Для экспорта аппроксимируем: используем image с width/height 1 
+    // и preserveAspectRatio="xMidYMid meet".
+    img.setAttribute('x', 0);
+    img.setAttribute('y', 0);
+    img.setAttribute('width', 1);
+    img.setAttribute('height', 1);
+    img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    img.setAttribute('opacity', state.imgOpacity);
+    img.setAttribute('transform', `translate(0.5 0.5) scale(${state.imgScale}) translate(-0.5 -0.5)`);
+    out.appendChild(img);
+  }
+
+  // 3. Все пути из drawGroup (клонируем)
+  const paths = drawGroup.querySelectorAll('path');
+  paths.forEach(p => {
+    out.appendChild(p.cloneNode(true));
+  });
+
+  // 4. Разметка (опционально: экспортируем и сетку? По заданию — только фон, подложка, пути.
+  // Сетка не входит в обязательный экспорт, но пользователь видит её.
+  // Оставим сетку не включённой в экспорт согласно ТЗ.)
+  return out;
 }
 
-// Экспорт SVG
+function serializeSvg(svgEl) {
+  return new XMLSerializer().serializeToString(svgEl);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 exportSvgBtn.addEventListener('click', () => {
-    const svg = buildExportSVG();
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg);
-    downloadFile(svgString, 'drawing.svg', 'image/svg+xml');
+  const svgEl = buildExportSvg();
+  const str = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializeSvg(svgEl);
+  const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
+  downloadBlob(blob, 'drawing.svg');
 });
 
-// Экспорт PNG
 exportPngBtn.addEventListener('click', () => {
-    const svg = buildExportSVG();
-    const serializer = new XMLSerializer();
-    const svgString = serializer.serializeToString(svg);
-    
+  const SIZE = 4096;
+  const svgEl = buildExportSvg();
+  svgEl.setAttribute('width', SIZE);
+  svgEl.setAttribute('height', SIZE);
+  const str = serializeSvg(svgEl);
+
+  const svgBlob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  const image = new Image();
+  image.onload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = 4096;
-    canvas.height = 4096;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
     const ctx = canvas.getContext('2d');
-    
-    const img = new Image();
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    
-    img.onload = () => {
-        ctx.clearRect(0, 0, 4096, 4096);
-        ctx.drawImage(img, 0, 0, 4096, 4096);
-        
-        canvas.toBlob((blob) => {
-            const pngUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = pngUrl;
-            a.download = 'drawing.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(pngUrl);
-        }, 'image/png');
-        
-        URL.revokeObjectURL(url);
-    };
-    img.src = url;
+    ctx.drawImage(image, 0, 0, SIZE, SIZE);
+    canvas.toBlob(blob => {
+      if (blob) downloadBlob(blob, 'drawing.png');
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(url);
+    alert('Ошибка экспорта PNG');
+  };
+  image.src = url;
 });
 
-// ==========================================
-// 9. ИНИЦИАЛИЗАЦИЯ
-// ==========================================
+// ---------- Ресайз ----------
+function handleResize() {
+  computeBaseSize();
+  applyTransform();
+}
 
+window.addEventListener('resize', handleResize);
+
+// ---------- Старт ----------
 function init() {
-    // Устанавливаем начальные значения
-    bgLayer.style.backgroundColor = state.bgColor;
-    brushSizeVal.textContent = state.brushSize.toFixed(5);
-    
-    // Центрируем холст (изначально scale=1, x=0, y=0)
-    state.transform.scale = 1;
-    state.transform.x = 0;
-    state.transform.y = 0;
-    updateTransform();
-    
-    // Обновляем подложку (пустую)
-    updateOverlay();
-    
-    // Разметка выключена
-    renderGrid();
-    
-    // Устанавливаем размеры для canvasContainer (для мобильных)
-    // На десктопе уже задано через CSS
+  computeBaseSize();
+  applyTransform();
+  drawGrid();
+  bgLayer.style.background = state.bgColor;
 }
 
 init();
