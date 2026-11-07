@@ -236,16 +236,42 @@
     const roundFactor = state.jaw.round; // 0 = прямые линии, 1 = максимальное скругление
 
     if (roundFactor > 0.01) {
-      // Используем квадратичные кривые (Q) для скругления излома
-      // Контрольная точка - это наш прямой излом (midLeft/midRight)
-      const cpLeft = midLeft;
-      const cpRight = midRight;
+      // Для плавного скругления используем кубическую кривую (C).
+      // Точка излома (mid) служит ориентиром, но линии не проходят через неё.
+      // Контрольные точки (cp) вытягивают дугу, создавая естественный изгиб.
       
+      // Контрольная точка 1: смещение вниз от крепления
+      const cp1Left = { x: attachLeft.x, y: attachLeft.y + verticalDrop * 0.6 };
+      const cp1Right = { x: attachRight.x, y: attachRight.y + verticalDrop * 0.6 };
+      
+      // Контрольная точка 2: смещение в сторону от подбородка
+      const cp2Left = { x: bottomLeft.x + angleShift * 0.5, y: bottomLeft.y - verticalDrop * 0.4 };
+      const cp2Right = { x: bottomRight.x - angleShift * 0.5, y: bottomRight.y - verticalDrop * 0.4 };
+
+      // Смешиваем координаты с учетом roundFactor
+      const c1L = {
+        x: attachLeft.x + (cp1Left.x - attachLeft.x) * roundFactor,
+        y: attachLeft.y + (cp1Left.y - attachLeft.y) * roundFactor
+      };
+      const c2L = {
+        x: midLeft.x + (cp2Left.x - midLeft.x) * roundFactor,
+        y: midLeft.y + (cp2Left.y - midLeft.y) * roundFactor
+      };
+      
+      const c1R = {
+        x: attachRight.x + (cp1Right.x - attachRight.x) * roundFactor,
+        y: attachRight.y + (cp1Right.y - attachRight.y) * roundFactor
+      };
+      const c2R = {
+        x: midRight.x + (cp2Right.x - midRight.x) * roundFactor,
+        y: midRight.y + (cp2Right.y - midRight.y) * roundFactor
+      };
+
       pathData = `
         M ${attachLeft.x} ${attachLeft.y}
-        Q ${cpLeft.x} ${cpLeft.y} ${bottomLeft.x} ${bottomLeft.y}
+        C ${c1L.x} ${c1L.y}, ${c2L.x} ${c2L.y}, ${bottomLeft.x} ${bottomLeft.y}
         M ${attachRight.x} ${attachRight.y}
-        Q ${cpRight.x} ${cpRight.y} ${bottomRight.x} ${bottomRight.y}
+        C ${c1R.x} ${c1R.y}, ${c2R.x} ${c2R.y}, ${bottomRight.x} ${bottomRight.y}
       `;
     } else {
       // Обычные прямые линии (угол)
