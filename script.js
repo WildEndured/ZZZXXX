@@ -27,10 +27,20 @@
   const headHeightVal = document.getElementById('headHeightVal');
   const headOffset = document.getElementById('headOffset');
   const headOffsetVal = document.getElementById('headOffsetVal');
+  
   const chinY = document.getElementById('chinY');
   const chinYVal = document.getElementById('chinYVal');
   const chinWidth = document.getElementById('chinWidth');
   const chinWidthVal = document.getElementById('chinWidthVal');
+
+  const jawAttachY = document.getElementById('jawAttachY');
+  const jawAttachYVal = document.getElementById('jawAttachYVal');
+  const jawHeight = document.getElementById('jawHeight');
+  const jawHeightVal = document.getElementById('jawHeightVal');
+  const jawWidth = document.getElementById('jawWidth');
+  const jawWidthVal = document.getElementById('jawWidthVal');
+  const jawAngle = document.getElementById('jawAngle');
+  const jawAngleVal = document.getElementById('jawAngleVal');
 
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
@@ -58,6 +68,12 @@
       offset: 0.00,
       chinY: 0.85,
       chinWidth: 0.01
+    },
+    jaw: {
+      attachY: 0.50,
+      height: 0.50,
+      width: 0.30,
+      angle: 0.00
     },
     brush: { color: '#000000', width: 3 },
     paths: []
@@ -187,6 +203,64 @@
     chinLine.setAttribute('stroke-width', '1');
     chinLine.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(chinLine);
+
+    // ===== Челюсть =====
+    // 1. Точки крепления на эллипсе (слева и справа)
+    // Определяем вертикальное смещение внутри эллипса. 
+    // attachY: 0 - верх, 100 - низ. 50 - центр.
+    const attachDy = (state.jaw.attachY - 0.5) * headH;
+    // Вычисляем X на эллипсе по формуле: x = rx * sqrt(1 - (y/ry)^2)
+    const ratioSq = 1 - Math.pow(attachDy / ry, 2);
+    const attachX = rx * Math.sqrt(Math.max(0, ratioSq));
+    
+    const attachLeft = { x: cx - attachX, y: cy + attachDy };
+    const attachRight = { x: cx + attachX, y: cy + attachDy };
+
+    // 2. Точки на подбородке
+    const chinLeft = { x: 0.5 - chinHalfW, y: chinYPos };
+    const chinRight = { x: 0.5 + chinHalfW, y: chinYPos };
+
+    // 3. Расчет длины спуска
+    // Расстояние по вертикали от крепления до подбородка
+    const distToChin = chinYPos - attachLeft.y; 
+    // Высота вертикальной линии (по умолчанию 50% от дистанции)
+    const verticalDrop = distToChin * state.jaw.height;
+    
+    // Промежуточные точки (излом челюсти)
+    // Применяем угол: смещаем точки по X
+    const angleShift = state.jaw.angle * headW;
+    
+    const midLeft = { 
+      x: attachLeft.x + angleShift, 
+      y: attachLeft.y + verticalDrop 
+    };
+    const midRight = { 
+      x: attachRight.x - angleShift, 
+      y: attachRight.y + verticalDrop 
+    };
+
+    // Ширина челюсти внизу (около подбородка). Если 0 - сходится в точку подбородка.
+    const jawHalfW = state.jaw.width / 2;
+    const bottomLeft = { x: 0.5 - jawHalfW, y: chinYPos };
+    const bottomRight = { x: 0.5 + jawHalfW, y: chinYPos };
+
+    // Отрисовка линий челюсти
+    const pathData = `
+      M ${attachLeft.x} ${attachLeft.y}
+      L ${midLeft.x} ${midLeft.y}
+      L ${bottomLeft.x} ${bottomLeft.y}
+      M ${attachRight.x} ${attachRight.y}
+      L ${midRight.x} ${midRight.y}
+      L ${bottomRight.x} ${bottomRight.y}
+    `;
+
+    const jawPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    jawPath.setAttribute('d', pathData.trim());
+    jawPath.setAttribute('fill', 'none');
+    jawPath.setAttribute('stroke', '#ff0000');
+    jawPath.setAttribute('stroke-width', '1');
+    jawPath.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(jawPath);
   }
 
   // ===== Подложка =====
@@ -513,6 +587,30 @@
   chinWidth.addEventListener('input', () => {
     state.head.chinWidth = parseInt(chinWidth.value, 10) / 100;
     chinWidthVal.textContent = chinWidth.value + '%';
+    renderGrid();
+  });
+
+  jawAttachY.addEventListener('input', () => {
+    state.jaw.attachY = parseInt(jawAttachY.value, 10) / 100;
+    jawAttachYVal.textContent = jawAttachY.value + '%';
+    renderGrid();
+  });
+
+  jawHeight.addEventListener('input', () => {
+    state.jaw.height = parseInt(jawHeight.value, 10) / 100;
+    jawHeightVal.textContent = jawHeight.value + '%';
+    renderGrid();
+  });
+
+  jawWidth.addEventListener('input', () => {
+    state.jaw.width = parseInt(jawWidth.value, 10) / 100;
+    jawWidthVal.textContent = jawWidth.value + '%';
+    renderGrid();
+  });
+
+  jawAngle.addEventListener('input', () => {
+    state.jaw.angle = parseInt(jawAngle.value, 10) / 100;
+    jawAngleVal.textContent = jawAngle.value + '%';
     renderGrid();
   });
 
