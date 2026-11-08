@@ -145,7 +145,8 @@ window.App = (function () {
     pelvis: { widthMod: 1.00, heightMod: 1.00, offset: 0.00, round: 0.20 },
     elbowLeft: { x: 0, y: 0, r: 0.08 }, elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 }, wristRight: { x: 0.20, y: 0, r: 0.10 },
-    forearmOuter: { bulge: 0.15, attach: -1.15 }, forearmInner: { bulge: 0.30, attach: -0.10 },
+    forearmOuter: { bulge: 0.25, attach: -0.90 }, 
+    forearmInner: { bulge: 0.20, attach: -0.75 },
     kneeLeft: { x: 0.50, y: 0.25, r: 0.15 }, kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
     ankleLeft: { x: 0.50, y: 0.50, r: 0.10 }, ankleRight: { x: -0.50, y: 0.50, r: 0.10 },
     brush: { color: '#000000', width: 3 }, paths: []
