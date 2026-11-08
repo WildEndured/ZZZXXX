@@ -28,6 +28,114 @@ window.App = (function () {
   const exportSvgBtn = document.getElementById('exportSvgBtn');
   const exportPngBtn = document.getElementById('exportPngBtn');
 
+  // === НОВЫЕ DOM ЭЛЕМЕНТЫ (добавлены) ===
+  const headWidth = document.getElementById('headWidth');
+  const headWidthVal = document.getElementById('headWidthVal');
+  const headHeight = document.getElementById('headHeight');
+  const headHeightVal = document.getElementById('headHeightVal');
+  const headOffset = document.getElementById('headOffset');
+  const headOffsetVal = document.getElementById('headOffsetVal');
+  
+  const chinY = document.getElementById('chinY');
+  const chinYVal = document.getElementById('chinYVal');
+  const chinWidth = document.getElementById('chinWidth');
+  const chinWidthVal = document.getElementById('chinWidthVal');
+
+  const jawAttachY = document.getElementById('jawAttachY');
+  const jawAttachYVal = document.getElementById('jawAttachYVal');
+  const jawHeight = document.getElementById('jawHeight');
+  const jawHeightVal = document.getElementById('jawHeightVal');
+  const jawAngle = document.getElementById('jawAngle');
+  const jawAngleVal = document.getElementById('jawAngleVal');
+  const jawRound = document.getElementById('jawRound');
+  const jawRoundVal = document.getElementById('jawRoundVal');
+
+  const chestHeight = document.getElementById('chestHeight');
+  const chestHeightVal = document.getElementById('chestHeightVal');
+  const chestWidth = document.getElementById('chestWidth');
+  const chestWidthVal = document.getElementById('chestWidthVal');
+  const chestOffset = document.getElementById('chestOffset');
+  const chestOffsetVal = document.getElementById('chestOffsetVal');
+  const chestTopNarrow = document.getElementById('chestTopNarrow');
+  const chestTopNarrowVal = document.getElementById('chestTopNarrowVal');
+  const chestBottomWide = document.getElementById('chestBottomWide');
+  const chestBottomWideVal = document.getElementById('chestBottomWideVal');
+
+  const pelvisWidthMod = document.getElementById('pelvisWidthMod');
+  const pelvisWidthModVal = document.getElementById('pelvisWidthModVal');
+  const pelvisHeightMod = document.getElementById('pelvisHeightMod');
+  const pelvisHeightModVal = document.getElementById('pelvisHeightModVal');
+  const pelvisOffset = document.getElementById('pelvisOffset');
+  const pelvisOffsetVal = document.getElementById('pelvisOffsetVal');
+  const pelvisRound = document.getElementById('pelvisRound');
+  const pelvisRoundVal = document.getElementById('pelvisRoundVal');
+
+  const elbowLeftX = document.getElementById('elbowLeftX');
+  const elbowLeftXVal = document.getElementById('elbowLeftXVal');
+  const elbowLeftY = document.getElementById('elbowLeftY');
+  const elbowLeftYVal = document.getElementById('elbowLeftYVal');
+  const elbowLeftR = document.getElementById('elbowLeftR');
+  const elbowLeftRVal = document.getElementById('elbowLeftRVal');
+
+  const elbowRightX = document.getElementById('elbowRightX');
+  const elbowRightXVal = document.getElementById('elbowRightXVal');
+  const elbowRightY = document.getElementById('elbowRightY');
+  const elbowRightYVal = document.getElementById('elbowRightYVal');
+  const elbowRightR = document.getElementById('elbowRightR');
+  const elbowRightRVal = document.getElementById('elbowRightRVal');
+
+  const wristLeftX = document.getElementById('wristLeftX');
+  const wristLeftXVal = document.getElementById('wristLeftXVal');
+  const wristLeftY = document.getElementById('wristLeftY');
+  const wristLeftYVal = document.getElementById('wristLeftYVal');
+  const wristLeftR = document.getElementById('wristLeftR');
+  const wristLeftRVal = document.getElementById('wristLeftRVal');
+
+  const wristRightX = document.getElementById('wristRightX');
+  const wristRightXVal = document.getElementById('wristRightXVal');
+  const wristRightY = document.getElementById('wristRightY');
+  const wristRightYVal = document.getElementById('wristRightYVal');
+  const wristRightR = document.getElementById('wristRightR');
+  const wristRightRVal = document.getElementById('wristRightRVal');
+
+  const forearmOuterBulge = document.getElementById('forearmOuterBulge');
+  const forearmOuterBulgeVal = document.getElementById('forearmOuterBulgeVal');
+  const forearmOuterAttach = document.getElementById('forearmOuterAttach');
+  const forearmOuterAttachVal = document.getElementById('forearmOuterAttachVal');
+  const forearmInnerBulge = document.getElementById('forearmInnerBulge');
+  const forearmInnerBulgeVal = document.getElementById('forearmInnerBulgeVal');
+  const forearmInnerAttach = document.getElementById('forearmInnerAttach');
+  const forearmInnerAttachVal = document.getElementById('forearmInnerAttachVal');
+
+  const kneeLeftX = document.getElementById('kneeLeftX');
+  const kneeLeftXVal = document.getElementById('kneeLeftXVal');
+  const kneeLeftY = document.getElementById('kneeLeftY');
+  const kneeLeftYVal = document.getElementById('kneeLeftYVal');
+  const kneeLeftR = document.getElementById('kneeLeftR');
+  const kneeLeftRVal = document.getElementById('kneeLeftRVal');
+
+  const kneeRightX = document.getElementById('kneeRightX');
+  const kneeRightXVal = document.getElementById('kneeRightXVal');
+  const kneeRightY = document.getElementById('kneeRightY');
+  const kneeRightYVal = document.getElementById('kneeRightYVal');
+  const kneeRightR = document.getElementById('kneeRightR');
+  const kneeRightRVal = document.getElementById('kneeRightRVal');
+
+  const ankleLeftX = document.getElementById('ankleLeftX');
+  const ankleLeftXVal = document.getElementById('ankleLeftXVal');
+  const ankleLeftY = document.getElementById('ankleLeftY');
+  const ankleLeftYVal = document.getElementById('ankleLeftYVal');
+  const ankleLeftR = document.getElementById('ankleLeftR');
+  const ankleLeftRVal = document.getElementById('ankleLeftRVal');
+
+  const ankleRightX = document.getElementById('ankleRightX');
+  const ankleRightXVal = document.getElementById('ankleRightXVal');
+  const ankleRightY = document.getElementById('ankleRightY');
+  const ankleRightYVal = document.getElementById('ankleRightYVal');
+  const ankleRightR = document.getElementById('ankleRightR');
+  const ankleRightRVal = document.getElementById('ankleRightRVal');
+  // === КОНЕЦ НОВЫХ ЭЛЕМЕНТОВ ===
+
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
     bgColor: '#ffffff', underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
@@ -89,7 +197,6 @@ window.App = (function () {
 
   function renderAll() {
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
-    // Безопасный вызов, проверяем, что модули загрузились
     if (window.App) {
       if (App.Head && App.Head.render) App.Head.render(gridGroup, state);
       if (App.Torso && App.Torso.render) App.Torso.render(gridGroup, state);
@@ -268,7 +375,7 @@ window.App = (function () {
     applyTransform();
   }, { passive: false });
 
-  // UI listeners
+  // ===== Обработчики UI =====
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -327,6 +434,62 @@ window.App = (function () {
   });
 
   clearBtn.addEventListener('click', () => { state.paths = []; redrawAllPaths(); });
+
+  // === НОВЫЕ ОБРАБОТЧИКИ (добавлены) ===
+  headWidth.addEventListener('input', () => { state.head.width = parseInt(headWidth.value, 10) / 100; headWidthVal.textContent = headWidth.value + '%'; renderAll(); });
+  headHeight.addEventListener('input', () => { state.head.height = parseInt(headHeight.value, 10) / 100; headHeightVal.textContent = headHeight.value + '%'; renderAll(); });
+  headOffset.addEventListener('input', () => { state.head.offset = parseInt(headOffset.value, 10) / 100; headOffsetVal.textContent = headOffset.value + '%'; renderAll(); });
+  chinY.addEventListener('input', () => { state.head.chinY = parseInt(chinY.value, 10) / 100; chinYVal.textContent = chinY.value + '%'; renderAll(); });
+  chinWidth.addEventListener('input', () => { state.head.chinWidth = parseInt(chinWidth.value, 10) / 100; chinWidthVal.textContent = chinWidth.value + '%'; renderAll(); });
+  jawAttachY.addEventListener('input', () => { state.jaw.attachY = parseInt(jawAttachY.value, 10) / 100; jawAttachYVal.textContent = jawAttachY.value + '%'; renderAll(); });
+  jawHeight.addEventListener('input', () => { state.jaw.height = parseInt(jawHeight.value, 10) / 100; jawHeightVal.textContent = jawHeight.value + '%'; renderAll(); });
+  jawAngle.addEventListener('input', () => { state.jaw.angle = parseInt(jawAngle.value, 10) / 100; jawAngleVal.textContent = jawAngle.value + '%'; renderAll(); });
+  jawRound.addEventListener('input', () => { state.jaw.round = parseInt(jawRound.value, 10) / 100; jawRoundVal.textContent = jawRound.value + '%'; renderAll(); });
+
+  chestHeight.addEventListener('input', () => { state.chest.height = parseInt(chestHeight.value, 10) / 100; chestHeightVal.textContent = chestHeight.value + '%'; renderAll(); });
+  chestWidth.addEventListener('input', () => { state.chest.width = parseInt(chestWidth.value, 10) / 100; chestWidthVal.textContent = chestWidth.value + '%'; renderAll(); });
+  chestOffset.addEventListener('input', () => { state.chest.offset = parseInt(chestOffset.value, 10) / 100; chestOffsetVal.textContent = chestOffset.value + '%'; renderAll(); });
+  chestTopNarrow.addEventListener('input', () => { state.chest.topNarrow = parseInt(chestTopNarrow.value, 10) / 100; chestTopNarrowVal.textContent = chestTopNarrow.value + '%'; renderAll(); });
+  chestBottomWide.addEventListener('input', () => { state.chest.bottomWide = parseInt(chestBottomWide.value, 10) / 100; chestBottomWideVal.textContent = chestBottomWide.value + '%'; renderAll(); });
+
+  pelvisWidthMod.addEventListener('input', () => { state.pelvis.widthMod = parseInt(pelvisWidthMod.value, 10) / 100; pelvisWidthModVal.textContent = pelvisWidthMod.value + '%'; renderAll(); });
+  pelvisHeightMod.addEventListener('input', () => { state.pelvis.heightMod = parseInt(pelvisHeightMod.value, 10) / 100; pelvisHeightModVal.textContent = pelvisHeightMod.value + '%'; renderAll(); });
+  pelvisOffset.addEventListener('input', () => { state.pelvis.offset = parseInt(pelvisOffset.value, 10) / 100; pelvisOffsetVal.textContent = pelvisOffset.value + '%'; renderAll(); });
+  pelvisRound.addEventListener('input', () => { state.pelvis.round = parseInt(pelvisRound.value, 10) / 100; pelvisRoundVal.textContent = pelvisRound.value + '%'; renderAll(); });
+
+  elbowLeftX.addEventListener('input', () => { state.elbowLeft.x = parseInt(elbowLeftX.value, 10) / 100; elbowLeftXVal.textContent = elbowLeftX.value + '%'; renderAll(); });
+  elbowLeftY.addEventListener('input', () => { state.elbowLeft.y = parseInt(elbowLeftY.value, 10) / 100; elbowLeftYVal.textContent = elbowLeftY.value + '%'; renderAll(); });
+  elbowLeftR.addEventListener('input', () => { state.elbowLeft.r = parseInt(elbowLeftR.value, 10) / 100; elbowLeftRVal.textContent = elbowLeftR.value + '%'; renderAll(); });
+  elbowRightX.addEventListener('input', () => { state.elbowRight.x = parseInt(elbowRightX.value, 10) / 100; elbowRightXVal.textContent = elbowRightX.value + '%'; renderAll(); });
+  elbowRightY.addEventListener('input', () => { state.elbowRight.y = parseInt(elbowRightY.value, 10) / 100; elbowRightYVal.textContent = elbowRightY.value + '%'; renderAll(); });
+  elbowRightR.addEventListener('input', () => { state.elbowRight.r = parseInt(elbowRightR.value, 10) / 100; elbowRightRVal.textContent = elbowRightR.value + '%'; renderAll(); });
+
+  wristLeftX.addEventListener('input', () => { state.wristLeft.x = parseInt(wristLeftX.value, 10) / 100; wristLeftXVal.textContent = wristLeftX.value + '%'; renderAll(); });
+  wristLeftY.addEventListener('input', () => { state.wristLeft.y = parseInt(wristLeftY.value, 10) / 100; wristLeftYVal.textContent = wristLeftY.value + '%'; renderAll(); });
+  wristLeftR.addEventListener('input', () => { state.wristLeft.r = parseInt(wristLeftR.value, 10) / 100; wristLeftRVal.textContent = wristLeftR.value + '%'; renderAll(); });
+  wristRightX.addEventListener('input', () => { state.wristRight.x = parseInt(wristRightX.value, 10) / 100; wristRightXVal.textContent = wristRightX.value + '%'; renderAll(); });
+  wristRightY.addEventListener('input', () => { state.wristRight.y = parseInt(wristRightY.value, 10) / 100; wristRightYVal.textContent = wristRightY.value + '%'; renderAll(); });
+  wristRightR.addEventListener('input', () => { state.wristRight.r = parseInt(wristRightR.value, 10) / 100; wristRightRVal.textContent = wristRightR.value + '%'; renderAll(); });
+
+  forearmOuterBulge.addEventListener('input', () => { state.forearmOuter.bulge = parseInt(forearmOuterBulge.value, 10) / 100; forearmOuterBulgeVal.textContent = forearmOuterBulge.value + '%'; renderAll(); });
+  forearmOuterAttach.addEventListener('input', () => { state.forearmOuter.attach = parseInt(forearmOuterAttach.value, 10) / 100; forearmOuterAttachVal.textContent = forearmOuterAttach.value + '%'; renderAll(); });
+  forearmInnerBulge.addEventListener('input', () => { state.forearmInner.bulge = parseInt(forearmInnerBulge.value, 10) / 100; forearmInnerBulgeVal.textContent = forearmInnerBulge.value + '%'; renderAll(); });
+  forearmInnerAttach.addEventListener('input', () => { state.forearmInner.attach = parseInt(forearmInnerAttach.value, 10) / 100; forearmInnerAttachVal.textContent = forearmInnerAttach.value + '%'; renderAll(); });
+
+  kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
+  kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
+  kneeLeftR.addEventListener('input', () => { state.kneeLeft.r = parseInt(kneeLeftR.value, 10) / 100; kneeLeftRVal.textContent = kneeLeftR.value + '%'; renderAll(); });
+  kneeRightX.addEventListener('input', () => { state.kneeRight.x = parseInt(kneeRightX.value, 10) / 100; kneeRightXVal.textContent = kneeRightX.value + '%'; renderAll(); });
+  kneeRightY.addEventListener('input', () => { state.kneeRight.y = parseInt(kneeRightY.value, 10) / 100; kneeRightYVal.textContent = kneeRightY.value + '%'; renderAll(); });
+  kneeRightR.addEventListener('input', () => { state.kneeRight.r = parseInt(kneeRightR.value, 10) / 100; kneeRightRVal.textContent = kneeRightR.value + '%'; renderAll(); });
+
+  ankleLeftX.addEventListener('input', () => { state.ankleLeft.x = parseInt(ankleLeftX.value, 10) / 100; ankleLeftXVal.textContent = ankleLeftX.value + '%'; renderAll(); });
+  ankleLeftY.addEventListener('input', () => { state.ankleLeft.y = parseInt(ankleLeftY.value, 10) / 100; ankleLeftYVal.textContent = ankleLeftY.value + '%'; renderAll(); });
+  ankleLeftR.addEventListener('input', () => { state.ankleLeft.r = parseInt(ankleLeftR.value, 10) / 100; ankleLeftRVal.textContent = ankleLeftR.value + '%'; renderAll(); });
+  ankleRightX.addEventListener('input', () => { state.ankleRight.x = parseInt(ankleRightX.value, 10) / 100; ankleRightXVal.textContent = ankleRightX.value + '%'; renderAll(); });
+  ankleRightY.addEventListener('input', () => { state.ankleRight.y = parseInt(ankleRightY.value, 10) / 100; ankleRightYVal.textContent = ankleRightY.value + '%'; renderAll(); });
+  ankleRightR.addEventListener('input', () => { state.ankleRight.r = parseInt(ankleRightR.value, 10) / 100; ankleRightRVal.textContent = ankleRightR.value + '%'; renderAll(); });
+  // === КОНЕЦ НОВЫХ ОБРАБОТЧИКОВ ===
 
   function redrawAllPaths() {
     while (drawGroup.firstChild) drawGroup.removeChild(drawGroup.firstChild);
@@ -427,23 +590,16 @@ window.App = (function () {
     img.src = url;
   });
 
-  // Экспортируем функцию инициализации и объект состояния наружу
   function init() {
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
-    
-    // Рисуем каркас сразу после загрузки
     renderAll();
-    
     requestAnimationFrame(() => updateCanvasSize());
-    
     window.addEventListener('resize', () => requestAnimationFrame(updateCanvasSize));
-    
     document.addEventListener('touchmove', (e) => {
       if (e.target.closest('#panel')) return;
       e.preventDefault();
     }, { passive: false });
-    
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('gesturechange', (e) => e.preventDefault());
     document.addEventListener('gestureend', (e) => e.preventDefault());
