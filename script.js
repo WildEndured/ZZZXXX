@@ -409,8 +409,7 @@
     elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowLeft);
 
-    // Контур левой руки (Жесткие точки)
-    // Левая рука: внешняя сторона - это левая (X меньше), внутренняя - правая (X больше)
+    // Контур левой руки (с новым изгибом предплечья)
     const shLeftOuter = { x: shoulderLeftCx - shoulderRadius, y: shoulderLeftCy };
     const shLeftInner = { x: shoulderLeftCx + shoulderRadius, y: shoulderLeftCy };
     const elLeftOuter = { x: elbowLeftCx - elbowLeftRadiusPx, y: elbowLeftCy };
@@ -421,7 +420,11 @@
     const wrLeftOuter = { x: wristLeftCx - wristLeftRadiusPx, y: wristLeftCy };
     const wrLeftInner = { x: wristLeftCx + wristLeftRadiusPx, y: wristLeftCy };
 
-    // Внешняя линия (изогнутая)
+    // Точки для изгиба предплечья левой руки (1/3 от локтя)
+    const foreLeftOuterMid = { x: elLeftOuterW.x - shoulderRadius * 0.2, y: elLeftOuterW.y + (wrLeftOuter.y - elLeftOuterW.y) * 0.33 };
+    const foreLeftInnerMid = { x: elLeftInnerW.x + shoulderRadius * 0.2, y: elLeftInnerW.y + (wrLeftInner.y - elLeftInnerW.y) * 0.33 };
+
+    // Внешняя линия левой руки (Плечо -> Локоть -> Запястье)
     const midTopL = { 
       x: (shLeftOuter.x + elLeftOuter.x) / 2 - shoulderRadius * 0.4, 
       y: (shLeftOuter.y + elLeftOuter.y) / 2 
@@ -431,8 +434,7 @@
     const dOuterL = `
       M ${shLeftOuter.x} ${shLeftOuter.y}
       Q ${midTopL.x} ${midTopL.y} ${elLeftOuter.x} ${elLeftOuter.y}
-      L ${elLeftOuterW.x} ${elLeftOuterW.y}
-      L ${wrLeftOuter.x} ${wrLeftOuter.y}
+      C ${foreLeftOuterMid.x} ${foreLeftOuterMid.y}, ${foreLeftOuterMid.x} ${foreLeftOuterMid.y}, ${wrLeftOuter.x} ${wrLeftOuter.y}
     `;
     armLeftPathOuter.setAttribute('d', dOuterL.trim());
     armLeftPathOuter.setAttribute('fill', 'none');
@@ -441,13 +443,12 @@
     armLeftPathOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftPathOuter);
 
-    // Внутренняя линия (прямая)
+    // Внутренняя линия левой руки (вогнутая для предплечья)
     const armLeftPathInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dInnerL = `
       M ${shLeftInner.x} ${shLeftInner.y}
       L ${elLeftInner.x} ${elLeftInner.y}
-      L ${elLeftInnerW.x} ${elLeftInnerW.y}
-      L ${wrLeftInner.x} ${wrLeftInner.y}
+      C ${foreLeftInnerMid.x + shoulderRadius * 0.3} ${foreLeftInnerMid.y}, ${foreLeftInnerMid.x + shoulderRadius * 0.3} ${foreLeftInnerMid.y}, ${wrLeftInner.x} ${wrLeftInner.y}
     `;
     armLeftPathInner.setAttribute('d', dInnerL.trim());
     armLeftPathInner.setAttribute('fill', 'none');
@@ -489,8 +490,7 @@
     elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowRight);
 
-    // Контур правой руки (Жесткие точки)
-    // Правая рука: внешняя сторона - это правая (X больше), внутренняя - левая (X меньше)
+    // Контур правой руки
     const shRightOuter = { x: shoulderRightCx + shoulderRadius, y: shoulderRightCy };
     const shRightInner = { x: shoulderRightCx - shoulderRadius, y: shoulderRightCy };
     const elRightOuter = { x: elbowRightCx + elbowRightRadiusPx, y: elbowRightCy };
@@ -501,7 +501,11 @@
     const wrRightOuter = { x: wristRightCx + wristRightRadiusPx, y: wristRightCy };
     const wrRightInner = { x: wristRightCx - wristRightRadiusPx, y: wristRightCy };
 
-    // Внешняя линия (изогнутая)
+    // Точки для изгиба предплечья правой руки
+    const foreRightOuterMid = { x: elRightOuterW.x + shoulderRadius * 0.2, y: elRightOuterW.y + (wrRightOuter.y - elRightOuterW.y) * 0.33 };
+    const foreRightInnerMid = { x: elRightInnerW.x - shoulderRadius * 0.2, y: elRightInnerW.y + (wrRightInner.y - elRightInnerW.y) * 0.33 };
+
+    // Внешняя линия правой руки (выпуклая)
     const midTopR = { 
       x: (shRightOuter.x + elRightOuter.x) / 2 + shoulderRadius * 0.4, 
       y: (shRightOuter.y + elRightOuter.y) / 2 
@@ -511,8 +515,7 @@
     const dOuterR = `
       M ${shRightOuter.x} ${shRightOuter.y}
       Q ${midTopR.x} ${midTopR.y} ${elRightOuter.x} ${elRightOuter.y}
-      L ${elRightOuterW.x} ${elRightOuterW.y}
-      L ${wrRightOuter.x} ${wrRightOuter.y}
+      C ${foreRightOuterMid.x} ${foreRightOuterMid.y}, ${foreRightOuterMid.x} ${foreRightOuterMid.y}, ${wrRightOuter.x} ${wrRightOuter.y}
     `;
     armRightPathOuter.setAttribute('d', dOuterR.trim());
     armRightPathOuter.setAttribute('fill', 'none');
@@ -521,13 +524,12 @@
     armRightPathOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightPathOuter);
 
-    // Внутренняя линия (прямая)
+    // Внутренняя линия правой руки (вогнутая)
     const armRightPathInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dInnerR = `
       M ${shRightInner.x} ${shRightInner.y}
       L ${elRightInner.x} ${elRightInner.y}
-      L ${elRightInnerW.x} ${elRightInnerW.y}
-      L ${wrRightInner.x} ${wrRightInner.y}
+      C ${foreRightInnerMid.x - shoulderRadius * 0.3} ${foreRightInnerMid.y}, ${foreRightInnerMid.x - shoulderRadius * 0.3} ${foreRightInnerMid.y}, ${wrRightInner.x} ${wrRightInner.y}
     `;
     armRightPathInner.setAttribute('d', dInnerR.trim());
     armRightPathInner.setAttribute('fill', 'none');
