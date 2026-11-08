@@ -90,15 +90,15 @@
   const wristRightR = document.getElementById('wristRightR');
   const wristRightRVal = document.getElementById('wristRightRVal');
 
-  const forearmLeftBulge = document.getElementById('forearmLeftBulge');
-  const forearmLeftBulgeVal = document.getElementById('forearmLeftBulgeVal');
-  const forearmLeftAttach = document.getElementById('forearmLeftAttach');
-  const forearmLeftAttachVal = document.getElementById('forearmLeftAttachVal');
+  const foreLeftAttach = document.getElementById('foreLeftAttach');
+  const foreLeftAttachVal = document.getElementById('foreLeftAttachVal');
+  const foreLeftBulge = document.getElementById('foreLeftBulge');
+  const foreLeftBulgeVal = document.getElementById('foreLeftBulgeVal');
 
-  const forearmRightBulge = document.getElementById('forearmRightBulge');
-  const forearmRightBulgeVal = document.getElementById('forearmRightBulgeVal');
-  const forearmRightAttach = document.getElementById('forearmRightAttach');
-  const forearmRightAttachVal = document.getElementById('forearmRightAttachVal');
+  const foreRightAttach = document.getElementById('foreRightAttach');
+  const foreRightAttachVal = document.getElementById('foreRightAttachVal');
+  const foreRightBulge = document.getElementById('foreRightBulge');
+  const foreRightBulgeVal = document.getElementById('foreRightBulgeVal');
 
   const kneeLeftX = document.getElementById('kneeLeftX');
   const kneeLeftXVal = document.getElementById('kneeLeftXVal');
@@ -178,8 +178,8 @@
     elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 },
     wristRight: { x: 0.20, y: 0, r: 0.10 },
-    forearmLeft: { bulge: 0.40, attach: 0.50 },
-    forearmRight: { bulge: 0.40, attach: 0.50 },
+    foreLeft: { attach: 0.20, bulge: 0.30 },
+    foreRight: { attach: 0.20, bulge: 0.30 },
     kneeLeft: { x: 0.50, y: 0.25, r: 0.15 },
     kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
     ankleLeft: { x: 0.50, y: 0.50, r: 0.10 },
@@ -421,63 +421,60 @@
     elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowLeft);
 
-    // Каркас левой руки (Локоть -> Запястье) - базовые линии
-    const dxL = wristLeftCx - elbowLeftCx;
-    const dyL = wristLeftCy - elbowLeftCy;
-    const distL = Math.hypot(dxL, dyL);
-    const nxL = -dyL / distL;
-    const nyL = dxL / distL;
-
-    const elLeftTopW = { x: elbowLeftCx + nxL * elbowLeftRadiusPx, y: elbowLeftCy + nyL * elbowLeftRadiusPx };
-    const elLeftBotW = { x: elbowLeftCx - nxL * elbowLeftRadiusPx, y: elbowLeftCy - nyL * elbowLeftRadiusPx };
-    const wrLeftTop = { x: wristLeftCx + nxL * wristLeftRadiusPx, y: wristLeftCy + nyL * wristLeftRadiusPx };
-    const wrLeftBot = { x: wristLeftCx - nxL * wristLeftRadiusPx, y: wristLeftCy - nyL * wristLeftRadiusPx };
-
-    const armLeftLineTop = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineTop.setAttribute('x1', String(elLeftTopW.x));
-    armLeftLineTop.setAttribute('y1', String(elLeftTopW.y));
-    armLeftLineTop.setAttribute('x2', String(wrLeftTop.x));
-    armLeftLineTop.setAttribute('y2', String(wrLeftTop.y));
-    armLeftLineTop.setAttribute('stroke', '#ff0000');
-    armLeftLineTop.setAttribute('stroke-width', '1');
-    armLeftLineTop.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLineTop);
-
-    const armLeftLineBot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineBot.setAttribute('x1', String(elLeftBotW.x));
-    armLeftLineBot.setAttribute('y1', String(elLeftBotW.y));
-    armLeftLineBot.setAttribute('x2', String(wrLeftBot.x));
-    armLeftLineBot.setAttribute('y2', String(wrLeftBot.y));
-    armLeftLineBot.setAttribute('stroke', '#ff0000');
-    armLeftLineBot.setAttribute('stroke-width', '1');
-    armLeftLineBot.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLineBot);
-
-    // Масса левого предплечья (снаружи)
-    // Берем внешние точки (TopW, Top) и добавляем выпуклость
-    const foreLeftBulge = state.forearmLeft.bulge * elbowLeftRadiusPx;
-    const foreLeftAttach = state.forearmLeft.attach;
+    // Контур левой руки
+    const shLeftOuter = { x: shoulderLeftCx - shoulderRadius, y: shoulderLeftCy };
+    const shLeftInner = { x: shoulderLeftCx + shoulderRadius, y: shoulderLeftCy };
+    const elLeftOuter = { x: elbowLeftCx - elbowLeftRadiusPx, y: elbowLeftCy };
+    const elLeftInner = { x: elbowLeftCx + elbowLeftRadiusPx, y: elbowLeftCy };
     
-    // Точка крепления на запястье (смещение вверх по линии)
-    const attachPointL = {
-      x: elLeftTopW.x + (wrLeftTop.x - elLeftTopW.x) * foreLeftAttach,
-      y: elLeftTopW.y + (wrLeftTop.y - elLeftTopW.y) * foreLeftAttach
-    };
+    const elLeftOuterW = { x: elbowLeftCx - elbowLeftRadiusPx, y: elbowLeftCy };
+    const elLeftInnerW = { x: elbowLeftCx + elbowLeftRadiusPx, y: elbowLeftCy };
+    const wrLeftOuter = { x: wristLeftCx - wristLeftRadiusPx, y: wristLeftCy };
+    const wrLeftInner = { x: wristLeftCx + wristLeftRadiusPx, y: wristLeftCy };
 
-    const massLeftPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Кривая от локтя (верхний край) до точки крепления
-    // Контрольная точка выносится наружу (влево для левой руки)
-    const dMassL = `
-      M ${elLeftTopW.x} ${elLeftTopW.y}
-      Q ${elLeftTopW.x - foreLeftBulge} ${(elLeftTopW.y + attachPointL.y) / 2} ${attachPointL.x} ${attachPointL.y}
-      L ${wrLeftTop.x} ${wrLeftTop.y}
+    // Точки для зеленой массы предплечья (Левая)
+    const foreLeftAttachRatio = state.foreLeft.attach;
+    const foreLeftBulgeRatio = state.foreLeft.bulge;
+    
+    const foreLeftAttachY = elLeftOuterW.y + (wrLeftOuter.y - elLeftOuterW.y) * foreLeftAttachRatio;
+    const foreLeftBaseX = elLeftOuterW.x + (wrLeftOuter.x - elLeftOuterW.x) * foreLeftAttachRatio;
+    
+    const foreLeftBulgeX = foreLeftBaseX - (shoulderRadius * 2 * foreLeftBulgeRatio);
+    const ctrlLeftOuter = { x: foreLeftBulgeX, y: foreLeftAttachY };
+
+    // Внешняя линия левой руки
+    const midTopL = { 
+      x: (shLeftOuter.x + elLeftOuter.x) / 2 - shoulderRadius * 0.4, 
+      y: (shLeftOuter.y + elLeftOuter.y) / 2 
+    };
+    
+    const armLeftPathOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dOuterL = `
+      M ${shLeftOuter.x} ${shLeftOuter.y}
+      Q ${midTopL.x} ${midTopL.y} ${elLeftOuter.x} ${elLeftOuter.y}
+      Q ${ctrlLeftOuter.x} ${ctrlLeftOuter.y} ${wrLeftOuter.x} ${wrLeftOuter.y}
     `;
-    massLeftPath.setAttribute('d', dMassL.trim());
-    massLeftPath.setAttribute('fill', 'none');
-    massLeftPath.setAttribute('stroke', '#00ff00'); // Зеленый цвет для массы
-    massLeftPath.setAttribute('stroke-width', '1');
-    massLeftPath.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(massLeftPath);
+    armLeftPathOuter.setAttribute('d', dOuterL.trim());
+    armLeftPathOuter.setAttribute('fill', 'none');
+    armLeftPathOuter.setAttribute('stroke', '#ff0000');
+    armLeftPathOuter.setAttribute('stroke-width', '1');
+    armLeftPathOuter.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armLeftPathOuter);
+
+    // Внутренняя линия левой руки (прямая)
+    const armLeftPathInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dInnerL = `
+      M ${shLeftInner.x} ${shLeftInner.y}
+      L ${elLeftInner.x} ${elLeftInner.y}
+      L ${elLeftInnerW.x} ${elLeftInnerW.y}
+      L ${wrLeftInner.x} ${wrLeftInner.y}
+    `;
+    armLeftPathInner.setAttribute('d', dInnerL.trim());
+    armLeftPathInner.setAttribute('fill', 'none');
+    armLeftPathInner.setAttribute('stroke', '#ff0000');
+    armLeftPathInner.setAttribute('stroke-width', '1');
+    armLeftPathInner.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armLeftPathInner);
 
 
     // --- Правая рука ---
@@ -512,59 +509,60 @@
     elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowRight);
 
-    // Каркас правой руки
-    const dxR = wristRightCx - elbowRightCx;
-    const dyR = wristRightCy - elbowRightCy;
-    const distR = Math.hypot(dxR, dyR);
-    const nxR = -dyR / distR;
-    const nyR = dxR / distR;
-
-    const elRightTopW = { x: elbowRightCx + nxR * elbowRightRadiusPx, y: elbowRightCy + nyR * elbowRightRadiusPx };
-    const elRightBotW = { x: elbowRightCx - nxR * elbowRightRadiusPx, y: elbowRightCy - nyR * elbowRightRadiusPx };
-    const wrRightTop = { x: wristRightCx + nxR * wristRightRadiusPx, y: wristRightCy + nyR * wristRightRadiusPx };
-    const wrRightBot = { x: wristRightCx - nxR * wristRightRadiusPx, y: wristRightCy - nyR * wristRightRadiusPx };
-
-    const armRightLineTop = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineTop.setAttribute('x1', String(elRightTopW.x));
-    armRightLineTop.setAttribute('y1', String(elRightTopW.y));
-    armRightLineTop.setAttribute('x2', String(wrRightTop.x));
-    armRightLineTop.setAttribute('y2', String(wrRightTop.y));
-    armRightLineTop.setAttribute('stroke', '#ff0000');
-    armRightLineTop.setAttribute('stroke-width', '1');
-    armRightLineTop.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLineTop);
-
-    const armRightLineBot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineBot.setAttribute('x1', String(elRightBotW.x));
-    armRightLineBot.setAttribute('y1', String(elRightBotW.y));
-    armRightLineBot.setAttribute('x2', String(wrRightBot.x));
-    armRightLineBot.setAttribute('y2', String(wrRightBot.y));
-    armRightLineBot.setAttribute('stroke', '#ff0000');
-    armRightLineBot.setAttribute('stroke-width', '1');
-    armRightLineBot.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLineBot);
-
-    // Масса правого предплечья
-    const foreRightBulge = state.forearmRight.bulge * elbowRightRadiusPx;
-    const foreRightAttach = state.forearmRight.attach;
+    // Контур правой руки
+    const shRightOuter = { x: shoulderRightCx + shoulderRadius, y: shoulderRightCy };
+    const shRightInner = { x: shoulderRightCx - shoulderRadius, y: shoulderRightCy };
+    const elRightOuter = { x: elbowRightCx + elbowRightRadiusPx, y: elbowRightCy };
+    const elRightInner = { x: elbowRightCx - elbowRightRadiusPx, y: elbowRightCy };
     
-    const attachPointR = {
-      x: elRightTopW.x + (wrRightTop.x - elRightTopW.x) * foreRightAttach,
-      y: elRightTopW.y + (wrRightTop.y - elRightTopW.y) * foreRightAttach
+    const elRightOuterW = { x: elbowRightCx + elbowRightRadiusPx, y: elbowRightCy };
+    const elRightInnerW = { x: elbowRightCx - elbowRightRadiusPx, y: elbowRightCy };
+    const wrRightOuter = { x: wristRightCx + wristRightRadiusPx, y: wristRightCy };
+    const wrRightInner = { x: wristRightCx - wristRightRadiusPx, y: wristRightCy };
+
+    // Точки для зеленой массы предплечья (Правая)
+    const foreRightAttachRatio = state.foreRight.attach;
+    const foreRightBulgeRatio = state.foreRight.bulge;
+    
+    const foreRightAttachY = elRightOuterW.y + (wrRightOuter.y - elRightOuterW.y) * foreRightAttachRatio;
+    const foreRightBaseX = elRightOuterW.x + (wrRightOuter.x - elRightOuterW.x) * foreRightAttachRatio;
+    
+    const foreRightBulgeX = foreRightBaseX + (shoulderRadius * 2 * foreRightBulgeRatio);
+    const ctrlRightOuter = { x: foreRightBulgeX, y: foreRightAttachY };
+
+    // Внешняя линия правой руки
+    const midTopR = { 
+      x: (shRightOuter.x + elRightOuter.x) / 2 + shoulderRadius * 0.4, 
+      y: (shRightOuter.y + elRightOuter.y) / 2 
     };
 
-    const massRightPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const dMassR = `
-      M ${elRightTopW.x} ${elRightTopW.y}
-      Q ${elRightTopW.x + foreRightBulge} ${(elRightTopW.y + attachPointR.y) / 2} ${attachPointR.x} ${attachPointR.y}
-      L ${wrRightTop.x} ${wrRightTop.y}
+    const armRightPathOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dOuterR = `
+      M ${shRightOuter.x} ${shRightOuter.y}
+      Q ${midTopR.x} ${midTopR.y} ${elRightOuter.x} ${elRightOuter.y}
+      Q ${ctrlRightOuter.x} ${ctrlRightOuter.y} ${wrRightOuter.x} ${wrRightOuter.y}
     `;
-    massRightPath.setAttribute('d', dMassR.trim());
-    massRightPath.setAttribute('fill', 'none');
-    massRightPath.setAttribute('stroke', '#00ff00'); // Зеленый цвет
-    massRightPath.setAttribute('stroke-width', '1');
-    massRightPath.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(massRightPath);
+    armRightPathOuter.setAttribute('d', dOuterR.trim());
+    armRightPathOuter.setAttribute('fill', 'none');
+    armRightPathOuter.setAttribute('stroke', '#ff0000');
+    armRightPathOuter.setAttribute('stroke-width', '1');
+    armRightPathOuter.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armRightPathOuter);
+
+    // Внутренняя линия правой руки (прямая)
+    const armRightPathInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dInnerR = `
+      M ${shRightInner.x} ${shRightInner.y}
+      L ${elRightInner.x} ${elRightInner.y}
+      L ${elRightInnerW.x} ${elRightInnerW.y}
+      L ${wrRightInner.x} ${wrRightInner.y}
+    `;
+    armRightPathInner.setAttribute('d', dInnerR.trim());
+    armRightPathInner.setAttribute('fill', 'none');
+    armRightPathInner.setAttribute('stroke', '#ff0000');
+    armRightPathInner.setAttribute('stroke-width', '1');
+    armRightPathInner.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armRightPathInner);
 
     // ===== Ноги (Колени и Лодыжки) =====
     
@@ -1210,27 +1208,27 @@
     renderGrid();
   });
 
-  forearmLeftBulge.addEventListener('input', () => {
-    state.forearmLeft.bulge = parseInt(forearmLeftBulge.value, 10) / 100;
-    forearmLeftBulgeVal.textContent = forearmLeftBulge.value + '%';
+  foreLeftAttach.addEventListener('input', () => {
+    state.foreLeft.attach = parseInt(foreLeftAttach.value, 10) / 100;
+    foreLeftAttachVal.textContent = foreLeftAttach.value + '%';
     renderGrid();
   });
 
-  forearmLeftAttach.addEventListener('input', () => {
-    state.forearmLeft.attach = parseInt(forearmLeftAttach.value, 10) / 100;
-    forearmLeftAttachVal.textContent = forearmLeftAttach.value + '%';
+  foreLeftBulge.addEventListener('input', () => {
+    state.foreLeft.bulge = parseInt(foreLeftBulge.value, 10) / 100;
+    foreLeftBulgeVal.textContent = foreLeftBulge.value + '%';
     renderGrid();
   });
 
-  forearmRightBulge.addEventListener('input', () => {
-    state.forearmRight.bulge = parseInt(forearmRightBulge.value, 10) / 100;
-    forearmRightBulgeVal.textContent = forearmRightBulge.value + '%';
+  foreRightAttach.addEventListener('input', () => {
+    state.foreRight.attach = parseInt(foreRightAttach.value, 10) / 100;
+    foreRightAttachVal.textContent = foreRightAttach.value + '%';
     renderGrid();
   });
 
-  forearmRightAttach.addEventListener('input', () => {
-    state.forearmRight.attach = parseInt(forearmRightAttach.value, 10) / 100;
-    forearmRightAttachVal.textContent = forearmRightAttach.value + '%';
+  foreRightBulge.addEventListener('input', () => {
+    state.foreRight.bulge = parseInt(foreRightBulge.value, 10) / 100;
+    foreRightBulgeVal.textContent = foreRightBulge.value + '%';
     renderGrid();
   });
 
