@@ -97,20 +97,6 @@ window.App = (function () {
   const wristRightR = document.getElementById('wristRightR');
   const wristRightRVal = document.getElementById('wristRightRVal');
 
-  const forearmOuterBulge = document.getElementById('forearmOuterBulge');
-  const forearmOuterBulgeVal = document.getElementById('forearmOuterBulgeVal');
-  const forearmOuterAttach = document.getElementById('forearmOuterAttach');
-  const forearmOuterAttachVal = document.getElementById('forearmOuterAttachVal');
-  const forearmInnerBulge = document.getElementById('forearmInnerBulge');
-  const forearmInnerBulgeVal = document.getElementById('forearmInnerBulgeVal');
-  const forearmInnerAttach = document.getElementById('forearmInnerAttach');
-  const forearmInnerAttachVal = document.getElementById('forearmInnerAttachVal');
-  
-  const forearmInner2Bulge = document.getElementById('forearmInner2Bulge');
-  const forearmInner2BulgeVal = document.getElementById('forearmInner2BulgeVal');
-  const forearmInner2Attach = document.getElementById('forearmInner2Attach');
-  const forearmInner2AttachVal = document.getElementById('forearmInner2AttachVal');
-
   const kneeLeftX = document.getElementById('kneeLeftX');
   const kneeLeftXVal = document.getElementById('kneeLeftXVal');
   const kneeLeftY = document.getElementById('kneeLeftY');
@@ -150,9 +136,6 @@ window.App = (function () {
     pelvis: { widthMod: 1.00, heightMod: 1.00, offset: 0.00, round: 0.20 },
     elbowLeft: { x: 0, y: 0, r: 0.08 }, elbowRight: { x: 0, y: 0, r: 0.08 },
     wristLeft: { x: -0.20, y: 0, r: 0.10 }, wristRight: { x: 0.20, y: 0, r: 0.10 },
-    forearmOuter: { bulge: 0.25, attach: -0.90 }, 
-    forearmInner: { bulge: 0.20, attach: -0.75 },
-    forearmInner2: { bulge: 0.20, attach: -0.20 },
     kneeLeft: { x: 0.50, y: 0.25, r: 0.15 }, kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
     ankleLeft: { x: 0.50, y: 0.50, r: 0.10 }, ankleRight: { x: -0.50, y: 0.50, r: 0.10 },
     brush: { color: '#000000', width: 3 }, paths: []
@@ -460,14 +443,6 @@ window.App = (function () {
   wristRightX.addEventListener('input', () => { state.wristRight.x = parseInt(wristRightX.value, 10) / 100; wristRightXVal.textContent = wristRightX.value + '%'; renderAll(); });
   wristRightY.addEventListener('input', () => { state.wristRight.y = parseInt(wristRightY.value, 10) / 100; wristRightYVal.textContent = wristRightY.value + '%'; renderAll(); });
   wristRightR.addEventListener('input', () => { state.wristRight.r = parseInt(wristRightR.value, 10) / 100; wristRightRVal.textContent = wristRightR.value + '%'; renderAll(); });
-
-  forearmOuterBulge.addEventListener('input', () => { state.forearmOuter.bulge = parseInt(forearmOuterBulge.value, 10) / 100; forearmOuterBulgeVal.textContent = forearmOuterBulge.value + '%'; renderAll(); });
-  forearmOuterAttach.addEventListener('input', () => { state.forearmOuter.attach = parseInt(forearmOuterAttach.value, 10) / 100; forearmOuterAttachVal.textContent = forearmOuterAttach.value + '%'; renderAll(); });
-  forearmInnerBulge.addEventListener('input', () => { state.forearmInner.bulge = parseInt(forearmInnerBulge.value, 10) / 100; forearmInnerBulgeVal.textContent = forearmInnerBulge.value + '%'; renderAll(); });
-  forearmInnerAttach.addEventListener('input', () => { state.forearmInner.attach = parseInt(forearmInnerAttach.value, 10) / 100; forearmInnerAttachVal.textContent = forearmInnerAttach.value + '%'; renderAll(); });
-  
-  forearmInner2Bulge.addEventListener('input', () => { state.forearmInner2.bulge = parseInt(forearmInner2Bulge.value, 10) / 100; forearmInner2BulgeVal.textContent = forearmInner2Bulge.value + '%'; renderAll(); });
-  forearmInner2Attach.addEventListener('input', () => { state.forearmInner2.attach = parseInt(forearmInner2Attach.value, 10) / 100; forearmInner2AttachVal.textContent = forearmInner2Attach.value + '%'; renderAll(); });
 
   kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
   kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
