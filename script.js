@@ -1450,4 +1450,55 @@
     svgEl.setAttribute('height', String(SIZE));
     const finalSvg = new XMLSerializer().serializeToString(svgEl);
 
-    const svgBlob = new Blob([finalSvg], { type: 'image/svg
+    const svgBlob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, SIZE, SIZE);
+      ctx.drawImage(img, 0, 0, SIZE, SIZE);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, 'drawing.png');
+      }, 'image/png');
+    };
+    img.onerror = (err) => {
+      console.error('PNG export error', err);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  // ===== Инициализация =====
+  function init() {
+    bgLayer.style.background = state.bgColor;
+    underlayLayer.style.display = 'none';
+    renderGrid();
+    requestAnimationFrame(() => {
+      updateCanvasSize();
+    });
+  }
+
+  let resizeRAF = null;
+  window.addEventListener('resize', () => {
+    if (resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(updateCanvasSize);
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (e.target.closest('#panel')) return;
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('gesturechange', (e) => e.preventDefault());
+  document.addEventListener('gestureend', (e) => e.preventDefault());
+
+  init();
+})();
