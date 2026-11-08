@@ -382,7 +382,7 @@
     pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(pelvisRect);
 
-    // ===== Руки (Локти, Запястья, Рельеф) =====
+    // ===== Руки =====
     const pelvisBottomY = pelvisY0 + pelvisH;
 
     // --- Левая рука ---
@@ -441,13 +441,13 @@
       y: wristLeftCy - nyL * wristLeftRadiusPx + (2 * wristLeftRadiusPx * attachInnerT) 
     };
 
-    // Базовые прямые линии (синие)
+    // Базовые прямые линии (красные)
     const armLeftLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     armLeftLineOuter.setAttribute('x1', String(elLeftOuter.x));
     armLeftLineOuter.setAttribute('y1', String(elLeftOuter.y));
     armLeftLineOuter.setAttribute('x2', String(wrLeftOuter.x));
     armLeftLineOuter.setAttribute('y2', String(wrLeftOuter.y));
-    armLeftLineOuter.setAttribute('stroke', '#0000ff');
+    armLeftLineOuter.setAttribute('stroke', '#ff0000');
     armLeftLineOuter.setAttribute('stroke-width', '1');
     armLeftLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftLineOuter);
@@ -457,12 +457,12 @@
     armLeftLineInner.setAttribute('y1', String(elLeftInner.y));
     armLeftLineInner.setAttribute('x2', String(wrLeftInner.x));
     armLeftLineInner.setAttribute('y2', String(wrLeftInner.y));
-    armLeftLineInner.setAttribute('stroke', '#0000ff');
+    armLeftLineInner.setAttribute('stroke', '#ff0000');
     armLeftLineInner.setAttribute('stroke-width', '1');
     armLeftLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftLineInner);
 
-    // Кривые рельефа (зеленые)
+    // Кривые рельефа (красные)
     const bulgeOuterL = state.forearmOuter.bulge * shoulderRadius * 2;
     const bulgeInnerL = state.forearmInner.bulge * shoulderRadius * 2;
 
@@ -478,7 +478,7 @@
     `;
     armLeftCurveOuter.setAttribute('d', dCurveOuterL.trim());
     armLeftCurveOuter.setAttribute('fill', 'none');
-    armLeftCurveOuter.setAttribute('stroke', '#00ff00');
+    armLeftCurveOuter.setAttribute('stroke', '#ff0000');
     armLeftCurveOuter.setAttribute('stroke-width', '1');
     armLeftCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftCurveOuter);
@@ -495,7 +495,7 @@
     `;
     armLeftCurveInner.setAttribute('d', dCurveInnerL.trim());
     armLeftCurveInner.setAttribute('fill', 'none');
-    armLeftCurveInner.setAttribute('stroke', '#00ff00');
+    armLeftCurveInner.setAttribute('stroke', '#ff0000');
     armLeftCurveInner.setAttribute('stroke-width', '1');
     armLeftCurveInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftCurveInner);
@@ -552,13 +552,13 @@
       y: wristRightCy - nyR * wristRightRadiusPx + (2 * wristRightRadiusPx * attachInnerT) 
     };
 
-    // Базовые прямые линии (синие)
+    // Базовые прямые линии (красные)
     const armRightLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     armRightLineOuter.setAttribute('x1', String(elRightOuter.x));
     armRightLineOuter.setAttribute('y1', String(elRightOuter.y));
     armRightLineOuter.setAttribute('x2', String(wrRightOuter.x));
     armRightLineOuter.setAttribute('y2', String(wrRightOuter.y));
-    armRightLineOuter.setAttribute('stroke', '#0000ff');
+    armRightLineOuter.setAttribute('stroke', '#ff0000');
     armRightLineOuter.setAttribute('stroke-width', '1');
     armRightLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightLineOuter);
@@ -568,12 +568,12 @@
     armRightLineInner.setAttribute('y1', String(elRightInner.y));
     armRightLineInner.setAttribute('x2', String(wrRightInner.x));
     armRightLineInner.setAttribute('y2', String(wrRightInner.y));
-    armRightLineInner.setAttribute('stroke', '#0000ff');
+    armRightLineInner.setAttribute('stroke', '#ff0000');
     armRightLineInner.setAttribute('stroke-width', '1');
     armRightLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightLineInner);
 
-    // Кривые рельефа (зеленые)
+    // Кривые рельефа (красные)
     const bulgeOuterR = state.forearmOuter.bulge * shoulderRadius * 2;
     const bulgeInnerR = state.forearmInner.bulge * shoulderRadius * 2;
 
@@ -589,7 +589,7 @@
     `;
     armRightCurveOuter.setAttribute('d', dCurveOuterR.trim());
     armRightCurveOuter.setAttribute('fill', 'none');
-    armRightCurveOuter.setAttribute('stroke', '#00ff00');
+    armRightCurveOuter.setAttribute('stroke', '#ff0000');
     armRightCurveOuter.setAttribute('stroke-width', '1');
     armRightCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightCurveOuter);
@@ -606,12 +606,12 @@
     `;
     armRightCurveInner.setAttribute('d', dCurveInnerR.trim());
     armRightCurveInner.setAttribute('fill', 'none');
-    armRightCurveInner.setAttribute('stroke', '#00ff00');
+    armRightCurveInner.setAttribute('stroke', '#ff0000');
     armRightCurveInner.setAttribute('stroke-width', '1');
     armRightCurveInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightCurveInner);
 
-    // ===== Ноги (Колени и Лодыжки) =====
+    // ===== Ноги =====
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
