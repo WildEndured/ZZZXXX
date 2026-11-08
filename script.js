@@ -385,11 +385,8 @@
     // ===== Руки =====
     const pelvisBottomY = pelvisY0 + pelvisH;
 
-    // Вспомогательная функция для правильного расчета нормали (снаружи руки)
+    // Функция для получения нормали (направленной СНАРУЖИ руки)
     function getNormal(dx, dy, dist, isLeft) {
-      // В SVG ось Y направлена вниз. 
-      // Для левой руки внешняя сторона — это левее (меньше X), поэтому берем (dy, -dx)
-      // Для правой руки внешняя сторона — это правее (больше X), поэтому берем (-dy, dx)
       const nx = isLeft ? (dy / dist) : (-dy / dist);
       const ny = isLeft ? (-dx / dist) : (dx / dist);
       return { nx, ny };
@@ -427,28 +424,26 @@
     elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowLeft);
 
-    // Вектор от локтя к запястью
     const dxL = wristLeftCx - elbowLeftCx;
     const dyL = wristLeftCy - elbowLeftCy;
     const distL = Math.hypot(dxL, dyL) || 1;
     const { nx: nxL, ny: nyL } = getNormal(dxL, dyL, distL, true);
 
-    // Точки касания на локте
     const elLeftOuter = { x: elbowLeftCx + nxL * elbowLeftRadiusPx, y: elbowLeftCy + nyL * elbowLeftRadiusPx };
     const elLeftInner = { x: elbowLeftCx - nxL * elbowLeftRadiusPx, y: elbowLeftCy - nyL * elbowLeftRadiusPx };
 
-    // Точки касания на запястье (базовые)
     const wrLeftOuter = { x: wristLeftCx + nxL * wristLeftRadiusPx, y: wristLeftCy + nyL * wristLeftRadiusPx };
     const wrLeftInner = { x: wristLeftCx - nxL * wristLeftRadiusPx, y: wristLeftCy - nyL * wristLeftRadiusPx };
 
-    // Прямые линии (красные)
+    // Базовые линии (для отображения)
     const armLeftLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     armLeftLineOuter.setAttribute('x1', String(elLeftOuter.x));
     armLeftLineOuter.setAttribute('y1', String(elLeftOuter.y));
     armLeftLineOuter.setAttribute('x2', String(wrLeftOuter.x));
     armLeftLineOuter.setAttribute('y2', String(wrLeftOuter.y));
     armLeftLineOuter.setAttribute('stroke', '#ff0000');
-    armLeftLineOuter.setAttribute('stroke-width', '1');
+    armLeftLineOuter.setAttribute('stroke-width', '0.5');
+    armLeftLineOuter.setAttribute('stroke-dasharray', '2 2');
     armLeftLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftLineOuter);
 
@@ -458,15 +453,15 @@
     armLeftLineInner.setAttribute('x2', String(wrLeftInner.x));
     armLeftLineInner.setAttribute('y2', String(wrLeftInner.y));
     armLeftLineInner.setAttribute('stroke', '#ff0000');
-    armLeftLineInner.setAttribute('stroke-width', '1');
+    armLeftLineInner.setAttribute('stroke-width', '0.5');
+    armLeftLineInner.setAttribute('stroke-dasharray', '2 2');
     armLeftLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftLineInner);
 
-    // Кривые рельефа (Левая)
-    const bulgeOuterL = state.forearmOuter.bulge * shoulderRadius * 2;
-    const bulgeInnerL = state.forearmInner.bulge * shoulderRadius * 2;
+    // Параметры выпуклости (теперь они смещают контрольные точки ВДОЛЬ нормалей)
+    const bulgeOuterL = state.forearmOuter.bulge * shoulderRadius * 3;
+    const bulgeInnerL = state.forearmInner.bulge * shoulderRadius * 3;
 
-    // Сдвигаем точки крепления вдоль вектора руки (а не просто по Y)
     const attachOuterShiftL = (state.forearmOuter.attach - 0.5) * 2 * wristLeftRadiusPx;
     const attachInnerShiftL = (state.forearmInner.attach - 0.5) * 2 * wristLeftRadiusPx;
 
@@ -479,10 +474,11 @@
       y: wrLeftInner.y + (dyL / distL) * attachInnerShiftL 
     };
 
-    // Внешняя кривая (выгиб влево)
+    // Внешняя кривая левой руки (выгиб НАРУЖУ)
+    const midOuterL = { x: (elLeftOuter.x + wrLeftOuterCurve.x) / 2, y: (elLeftOuter.y + wrLeftOuterCurve.y) / 2 };
     const ctrlOuterL = {
-      x: (elLeftOuter.x + wrLeftOuterCurve.x) / 2 - bulgeOuterL,
-      y: (elLeftOuter.y + wrLeftOuterCurve.y) / 2
+      x: midOuterL.x + nxL * bulgeOuterL,
+      y: midOuterL.y + nyL * bulgeOuterL
     };
     const armLeftCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     armLeftCurveOuter.setAttribute('d', `M ${elLeftOuter.x} ${elLeftOuter.y} Q ${ctrlOuterL.x} ${ctrlOuterL.y} ${wrLeftOuterCurve.x} ${wrLeftOuterCurve.y}`);
@@ -492,10 +488,11 @@
     armLeftCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftCurveOuter);
 
-    // Внутренняя кривая (выгиб вправо)
+    // Внутренняя кривая левой руки (выгиб ВНУТРЬ)
+    const midInnerL = { x: (elLeftInner.x + wrLeftInnerCurve.x) / 2, y: (elLeftInner.y + wrLeftInnerCurve.y) / 2 };
     const ctrlInnerL = {
-      x: (elLeftInner.x + wrLeftInnerCurve.x) / 2 + bulgeInnerL,
-      y: (elLeftInner.y + wrLeftInnerCurve.y) / 2
+      x: midInnerL.x - nxL * bulgeInnerL,
+      y: midInnerL.y - nyL * bulgeInnerL
     };
     const armLeftCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     armLeftCurveInner.setAttribute('d', `M ${elLeftInner.x} ${elLeftInner.y} Q ${ctrlInnerL.x} ${ctrlInnerL.y} ${wrLeftInnerCurve.x} ${wrLeftInnerCurve.y}`);
@@ -538,28 +535,25 @@
     elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowRight);
 
-    // Вектор от локтя к запястью
     const dxR = wristRightCx - elbowRightCx;
     const dyR = wristRightCy - elbowRightCy;
     const distR = Math.hypot(dxR, dyR) || 1;
     const { nx: nxR, ny: nyR } = getNormal(dxR, dyR, distR, false);
 
-    // Точки касания на локте
     const elRightOuter = { x: elbowRightCx + nxR * elbowRightRadiusPx, y: elbowRightCy + nyR * elbowRightRadiusPx };
     const elRightInner = { x: elbowRightCx - nxR * elbowRightRadiusPx, y: elbowRightCy - nyR * elbowRightRadiusPx };
 
-    // Точки касания на запястье (базовые)
     const wrRightOuter = { x: wristRightCx + nxR * wristRightRadiusPx, y: wristRightCy + nyR * wristRightRadiusPx };
     const wrRightInner = { x: wristRightCx - nxR * wristRightRadiusPx, y: wristRightCy - nyR * wristRightRadiusPx };
 
-    // Прямые линии (красные)
     const armRightLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     armRightLineOuter.setAttribute('x1', String(elRightOuter.x));
     armRightLineOuter.setAttribute('y1', String(elRightOuter.y));
     armRightLineOuter.setAttribute('x2', String(wrRightOuter.x));
     armRightLineOuter.setAttribute('y2', String(wrRightOuter.y));
     armRightLineOuter.setAttribute('stroke', '#ff0000');
-    armRightLineOuter.setAttribute('stroke-width', '1');
+    armRightLineOuter.setAttribute('stroke-width', '0.5');
+    armRightLineOuter.setAttribute('stroke-dasharray', '2 2');
     armRightLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightLineOuter);
 
@@ -569,13 +563,13 @@
     armRightLineInner.setAttribute('x2', String(wrRightInner.x));
     armRightLineInner.setAttribute('y2', String(wrRightInner.y));
     armRightLineInner.setAttribute('stroke', '#ff0000');
-    armRightLineInner.setAttribute('stroke-width', '1');
+    armRightLineInner.setAttribute('stroke-width', '0.5');
+    armRightLineInner.setAttribute('stroke-dasharray', '2 2');
     armRightLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightLineInner);
 
-    // Кривые рельефа (Правая)
-    const bulgeOuterR = state.forearmOuter.bulge * shoulderRadius * 2;
-    const bulgeInnerR = state.forearmInner.bulge * shoulderRadius * 2;
+    const bulgeOuterR = state.forearmOuter.bulge * shoulderRadius * 3;
+    const bulgeInnerR = state.forearmInner.bulge * shoulderRadius * 3;
 
     const attachOuterShiftR = (state.forearmOuter.attach - 0.5) * 2 * wristRightRadiusPx;
     const attachInnerShiftR = (state.forearmInner.attach - 0.5) * 2 * wristRightRadiusPx;
@@ -589,10 +583,11 @@
       y: wrRightInner.y + (dyR / distR) * attachInnerShiftR 
     };
 
-    // Внешняя кривая (выгиб вправо)
+    // Внешняя кривая правой руки (выгиб НАРУЖУ)
+    const midOuterR = { x: (elRightOuter.x + wrRightOuterCurve.x) / 2, y: (elRightOuter.y + wrRightOuterCurve.y) / 2 };
     const ctrlOuterR = {
-      x: (elRightOuter.x + wrRightOuterCurve.x) / 2 + bulgeOuterR,
-      y: (elRightOuter.y + wrRightOuterCurve.y) / 2
+      x: midOuterR.x + nxR * bulgeOuterR,
+      y: midOuterR.y + nyR * bulgeOuterR
     };
     const armRightCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     armRightCurveOuter.setAttribute('d', `M ${elRightOuter.x} ${elRightOuter.y} Q ${ctrlOuterR.x} ${ctrlOuterR.y} ${wrRightOuterCurve.x} ${wrRightOuterCurve.y}`);
@@ -602,10 +597,11 @@
     armRightCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armRightCurveOuter);
 
-    // Внутренняя кривая (выгиб влево)
+    // Внутренняя кривая правой руки (выгиб ВНУТРЬ)
+    const midInnerR = { x: (elRightInner.x + wrRightInnerCurve.x) / 2, y: (elRightInner.y + wrRightInnerCurve.y) / 2 };
     const ctrlInnerR = {
-      x: (elRightInner.x + wrRightInnerCurve.x) / 2 - bulgeInnerR,
-      y: (elRightInner.y + wrRightInnerCurve.y) / 2
+      x: midInnerR.x - nxR * bulgeInnerR,
+      y: midInnerR.y - nyR * bulgeInnerR
     };
     const armRightCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     armRightCurveInner.setAttribute('d', `M ${elRightInner.x} ${elRightInner.y} Q ${ctrlInnerR.x} ${ctrlInnerR.y} ${wrRightInnerCurve.x} ${wrRightInnerCurve.y}`);
