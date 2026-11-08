@@ -90,7 +90,7 @@
   const wristRightR = document.getElementById('wristRightR');
   const wristRightRVal = document.getElementById('wristRightRVal');
 
-  // Новые ползунки для рельефа
+  // Ползунки для рельефа
   const forearmOuterBulge = document.getElementById('forearmOuterBulge');
   const forearmOuterBulgeVal = document.getElementById('forearmOuterBulgeVal');
   const forearmOuterAttach = document.getElementById('forearmOuterAttach');
@@ -424,57 +424,60 @@
     const nxL = -dyL / distL;
     const nyL = dxL / distL;
 
-    // Точки крепления к локтю (внешняя и внутренняя)
-    const elLeftOuter = { x: elbowLeftCx + nxL * elbowLeftRadiusPx, y: elbowLeftCy + nyL * elbowLeftRadiusPx };
-    const elLeftInner = { x: elbowLeftCx - nxL * elbowLeftRadiusPx, y: elbowLeftCy - nyL * elbowLeftRadiusPx };
-
-    // Точки крепления к запястью (внешняя и внутренняя) с учетом высоты
-    const attachOuterT = state.forearmOuter.attach;
-    const attachInnerT = state.forearmInner.attach;
-
-    const wrLeftOuter = { 
-      x: wristLeftCx + nxL * wristLeftRadiusPx, 
-      y: wristLeftCy + nyL * wristLeftRadiusPx - (2 * wristLeftRadiusPx * attachOuterT) 
-    };
-    const wrLeftInner = { 
-      x: wristLeftCx - nxL * wristLeftRadiusPx, 
-      y: wristLeftCy - nyL * wristLeftRadiusPx + (2 * wristLeftRadiusPx * attachInnerT) 
-    };
+    // Базовые точки (идеальные касательные)
+    const elLeftTopW = { x: elbowLeftCx + nxL * elbowLeftRadiusPx, y: elbowLeftCy + nyL * elbowLeftRadiusPx };
+    const elLeftBotW = { x: elbowLeftCx - nxL * elbowLeftRadiusPx, y: elbowLeftCy - nyL * elbowLeftRadiusPx };
+    
+    const wrLeftTop = { x: wristLeftCx + nxL * wristLeftRadiusPx, y: wristLeftCy + nyL * wristLeftRadiusPx };
+    const wrLeftBot = { x: wristLeftCx - nxL * wristLeftRadiusPx, y: wristLeftCy - nyL * wristLeftRadiusPx };
 
     // Базовые прямые линии (красные)
-    const armLeftLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineOuter.setAttribute('x1', String(elLeftOuter.x));
-    armLeftLineOuter.setAttribute('y1', String(elLeftOuter.y));
-    armLeftLineOuter.setAttribute('x2', String(wrLeftOuter.x));
-    armLeftLineOuter.setAttribute('y2', String(wrLeftOuter.y));
-    armLeftLineOuter.setAttribute('stroke', '#ff0000');
-    armLeftLineOuter.setAttribute('stroke-width', '1');
-    armLeftLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLineOuter);
+    const armLeftLineTop = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    armLeftLineTop.setAttribute('x1', String(elLeftTopW.x));
+    armLeftLineTop.setAttribute('y1', String(elLeftTopW.y));
+    armLeftLineTop.setAttribute('x2', String(wrLeftTop.x));
+    armLeftLineTop.setAttribute('y2', String(wrLeftTop.y));
+    armLeftLineTop.setAttribute('stroke', '#ff0000');
+    armLeftLineTop.setAttribute('stroke-width', '1');
+    armLeftLineTop.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armLeftLineTop);
 
-    const armLeftLineInner = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineInner.setAttribute('x1', String(elLeftInner.x));
-    armLeftLineInner.setAttribute('y1', String(elLeftInner.y));
-    armLeftLineInner.setAttribute('x2', String(wrLeftInner.x));
-    armLeftLineInner.setAttribute('y2', String(wrLeftInner.y));
-    armLeftLineInner.setAttribute('stroke', '#ff0000');
-    armLeftLineInner.setAttribute('stroke-width', '1');
-    armLeftLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLineInner);
+    const armLeftLineBot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    armLeftLineBot.setAttribute('x1', String(elLeftBotW.x));
+    armLeftLineBot.setAttribute('y1', String(elLeftBotW.y));
+    armLeftLineBot.setAttribute('x2', String(wrLeftBot.x));
+    armLeftLineBot.setAttribute('y2', String(wrLeftBot.y));
+    armLeftLineBot.setAttribute('stroke', '#ff0000');
+    armLeftLineBot.setAttribute('stroke-width', '1');
+    armLeftLineBot.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armLeftLineBot);
 
-    // Кривые рельефа (красные)
+    // Кривые рельефа (зеленые)
     const bulgeOuterL = state.forearmOuter.bulge * shoulderRadius * 2;
     const bulgeInnerL = state.forearmInner.bulge * shoulderRadius * 2;
 
+    // Вычисляем сдвиг точки крепления по дуге окружности запястья
+    const attachAngleOuterL = (state.forearmOuter.attach - 0.5) * Math.PI; // от -90 до +90 градусов
+    const attachAngleInnerL = (state.forearmInner.attach - 0.5) * Math.PI;
+
+    const wrLeftTopCurve = {
+      x: wristLeftCx + Math.cos(Math.atan2(nyL, nxL) + attachAngleOuterL) * wristLeftRadiusPx,
+      y: wristLeftCy + Math.sin(Math.atan2(nyL, nxL) + attachAngleOuterL) * wristLeftRadiusPx
+    };
+    const wrLeftBotCurve = {
+      x: wristLeftCx + Math.cos(Math.atan2(-nyL, -nxL) + attachAngleInnerL) * wristLeftRadiusPx,
+      y: wristLeftCy + Math.sin(Math.atan2(-nyL, -nxL) + attachAngleInnerL) * wristLeftRadiusPx
+    };
+
     // Внешняя кривая
     const ctrlOuterL = {
-      x: (elLeftOuter.x + wrLeftOuter.x) / 2 - bulgeOuterL,
-      y: (elLeftOuter.y + wrLeftOuter.y) / 2
+      x: (elLeftTopW.x + wrLeftTopCurve.x) / 2 - bulgeOuterL,
+      y: (elLeftTopW.y + wrLeftTopCurve.y) / 2
     };
     const armLeftCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dCurveOuterL = `
-      M ${elLeftOuter.x} ${elLeftOuter.y}
-      Q ${ctrlOuterL.x} ${ctrlOuterL.y} ${wrLeftOuter.x} ${wrLeftOuter.y}
+      M ${elLeftTopW.x} ${elLeftTopW.y}
+      Q ${ctrlOuterL.x} ${ctrlOuterL.y} ${wrLeftTopCurve.x} ${wrLeftTopCurve.y}
     `;
     armLeftCurveOuter.setAttribute('d', dCurveOuterL.trim());
     armLeftCurveOuter.setAttribute('fill', 'none');
@@ -485,13 +488,13 @@
 
     // Внутренняя кривая
     const ctrlInnerL = {
-      x: (elLeftInner.x + wrLeftInner.x) / 2 + bulgeInnerL,
-      y: (elLeftInner.y + wrLeftInner.y) / 2
+      x: (elLeftBotW.x + wrLeftBotCurve.x) / 2 + bulgeInnerL,
+      y: (elLeftBotW.y + wrLeftBotCurve.y) / 2
     };
     const armLeftCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dCurveInnerL = `
-      M ${elLeftInner.x} ${elLeftInner.y}
-      Q ${ctrlInnerL.x} ${ctrlInnerL.y} ${wrLeftInner.x} ${wrLeftInner.y}
+      M ${elLeftBotW.x} ${elLeftBotW.y}
+      Q ${ctrlInnerL.x} ${ctrlInnerL.y} ${wrLeftBotCurve.x} ${wrLeftBotCurve.y}
     `;
     armLeftCurveInner.setAttribute('d', dCurveInnerL.trim());
     armLeftCurveInner.setAttribute('fill', 'none');
@@ -540,52 +543,59 @@
     const nxR = -dyR / distR;
     const nyR = dxR / distR;
 
-    const elRightOuter = { x: elbowRightCx + nxR * elbowRightRadiusPx, y: elbowRightCy + nyR * elbowRightRadiusPx };
-    const elRightInner = { x: elbowRightCx - nxR * elbowRightRadiusPx, y: elbowRightCy - nyR * elbowRightRadiusPx };
-
-    const wrRightOuter = { 
-      x: wristRightCx + nxR * wristRightRadiusPx, 
-      y: wristRightCy + nyR * wristRightRadiusPx - (2 * wristRightRadiusPx * attachOuterT) 
-    };
-    const wrRightInner = { 
-      x: wristRightCx - nxR * wristRightRadiusPx, 
-      y: wristRightCy - nyR * wristRightRadiusPx + (2 * wristRightRadiusPx * attachInnerT) 
-    };
+    // Базовые точки (идеальные касательные)
+    const elRightTopW = { x: elbowRightCx + nxR * elbowRightRadiusPx, y: elbowRightCy + nyR * elbowRightRadiusPx };
+    const elRightBotW = { x: elbowRightCx - nxR * elbowRightRadiusPx, y: elbowRightCy - nyR * elbowRightRadiusPx };
+    
+    const wrRightTop = { x: wristRightCx + nxR * wristRightRadiusPx, y: wristRightCy + nyR * wristRightRadiusPx };
+    const wrRightBot = { x: wristRightCx - nxR * wristRightRadiusPx, y: wristRightCy - nyR * wristRightRadiusPx };
 
     // Базовые прямые линии (красные)
-    const armRightLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineOuter.setAttribute('x1', String(elRightOuter.x));
-    armRightLineOuter.setAttribute('y1', String(elRightOuter.y));
-    armRightLineOuter.setAttribute('x2', String(wrRightOuter.x));
-    armRightLineOuter.setAttribute('y2', String(wrRightOuter.y));
-    armRightLineOuter.setAttribute('stroke', '#ff0000');
-    armRightLineOuter.setAttribute('stroke-width', '1');
-    armRightLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLineOuter);
+    const armRightLineTop = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    armRightLineTop.setAttribute('x1', String(elRightTopW.x));
+    armRightLineTop.setAttribute('y1', String(elRightTopW.y));
+    armRightLineTop.setAttribute('x2', String(wrRightTop.x));
+    armRightLineTop.setAttribute('y2', String(wrRightTop.y));
+    armRightLineTop.setAttribute('stroke', '#ff0000');
+    armRightLineTop.setAttribute('stroke-width', '1');
+    armRightLineTop.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armRightLineTop);
 
-    const armRightLineInner = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineInner.setAttribute('x1', String(elRightInner.x));
-    armRightLineInner.setAttribute('y1', String(elRightInner.y));
-    armRightLineInner.setAttribute('x2', String(wrRightInner.x));
-    armRightLineInner.setAttribute('y2', String(wrRightInner.y));
-    armRightLineInner.setAttribute('stroke', '#ff0000');
-    armRightLineInner.setAttribute('stroke-width', '1');
-    armRightLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLineInner);
+    const armRightLineBot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    armRightLineBot.setAttribute('x1', String(elRightBotW.x));
+    armRightLineBot.setAttribute('y1', String(elRightBotW.y));
+    armRightLineBot.setAttribute('x2', String(wrRightBot.x));
+    armRightLineBot.setAttribute('y2', String(wrRightBot.y));
+    armRightLineBot.setAttribute('stroke', '#ff0000');
+    armRightLineBot.setAttribute('stroke-width', '1');
+    armRightLineBot.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(armRightLineBot);
 
-    // Кривые рельефа (красные)
+    // Кривые рельефа (зеленые)
     const bulgeOuterR = state.forearmOuter.bulge * shoulderRadius * 2;
     const bulgeInnerR = state.forearmInner.bulge * shoulderRadius * 2;
 
+    const attachAngleOuterR = (state.forearmOuter.attach - 0.5) * Math.PI;
+    const attachAngleInnerR = (state.forearmInner.attach - 0.5) * Math.PI;
+
+    const wrRightTopCurve = {
+      x: wristRightCx + Math.cos(Math.atan2(nyR, nxR) + attachAngleOuterR) * wristRightRadiusPx,
+      y: wristRightCy + Math.sin(Math.atan2(nyR, nxR) + attachAngleOuterR) * wristRightRadiusPx
+    };
+    const wrRightBotCurve = {
+      x: wristRightCx + Math.cos(Math.atan2(-nyR, -nxR) + attachAngleInnerR) * wristRightRadiusPx,
+      y: wristRightCy + Math.sin(Math.atan2(-nyR, -nxR) + attachAngleInnerR) * wristRightRadiusPx
+    };
+
     // Внешняя кривая
     const ctrlOuterR = {
-      x: (elRightOuter.x + wrRightOuter.x) / 2 + bulgeOuterR,
-      y: (elRightOuter.y + wrRightOuter.y) / 2
+      x: (elRightTopW.x + wrRightTopCurve.x) / 2 + bulgeOuterR,
+      y: (elRightTopW.y + wrRightTopCurve.y) / 2
     };
     const armRightCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dCurveOuterR = `
-      M ${elRightOuter.x} ${elRightOuter.y}
-      Q ${ctrlOuterR.x} ${ctrlOuterR.y} ${wrRightOuter.x} ${wrRightOuter.y}
+      M ${elRightTopW.x} ${elRightTopW.y}
+      Q ${ctrlOuterR.x} ${ctrlOuterR.y} ${wrRightTopCurve.x} ${wrRightTopCurve.y}
     `;
     armRightCurveOuter.setAttribute('d', dCurveOuterR.trim());
     armRightCurveOuter.setAttribute('fill', 'none');
@@ -596,13 +606,13 @@
 
     // Внутренняя кривая
     const ctrlInnerR = {
-      x: (elRightInner.x + wrRightInner.x) / 2 - bulgeInnerR,
-      y: (elRightInner.y + wrRightInner.y) / 2
+      x: (elRightBotW.x + wrRightBotCurve.x) / 2 - bulgeInnerR,
+      y: (elRightBotW.y + wrRightBotCurve.y) / 2
     };
     const armRightCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     const dCurveInnerR = `
-      M ${elRightInner.x} ${elRightInner.y}
-      Q ${ctrlInnerR.x} ${ctrlInnerR.y} ${wrRightInner.x} ${wrRightInner.y}
+      M ${elRightBotW.x} ${elRightBotW.y}
+      Q ${ctrlInnerR.x} ${ctrlInnerR.y} ${wrRightBotCurve.x} ${wrRightBotCurve.y}
     `;
     armRightCurveInner.setAttribute('d', dCurveInnerR.trim());
     armRightCurveInner.setAttribute('fill', 'none');
@@ -1440,55 +1450,4 @@
     svgEl.setAttribute('height', String(SIZE));
     const finalSvg = new XMLSerializer().serializeToString(svgEl);
 
-    const svgBlob = new Blob([finalSvg], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = SIZE;
-      canvas.height = SIZE;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = state.bgColor;
-      ctx.fillRect(0, 0, SIZE, SIZE);
-      ctx.drawImage(img, 0, 0, SIZE, SIZE);
-      URL.revokeObjectURL(url);
-
-      canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, 'drawing.png');
-      }, 'image/png');
-    };
-    img.onerror = (err) => {
-      console.error('PNG export error', err);
-      URL.revokeObjectURL(url);
-    };
-    img.src = url;
-  });
-
-  // ===== Инициализация =====
-  function init() {
-    bgLayer.style.background = state.bgColor;
-    underlayLayer.style.display = 'none';
-    renderGrid();
-    requestAnimationFrame(() => {
-      updateCanvasSize();
-    });
-  }
-
-  let resizeRAF = null;
-  window.addEventListener('resize', () => {
-    if (resizeRAF) cancelAnimationFrame(resizeRAF);
-    resizeRAF = requestAnimationFrame(updateCanvasSize);
-  });
-
-  document.addEventListener('touchmove', (e) => {
-    if (e.target.closest('#panel')) return;
-    e.preventDefault();
-  }, { passive: false });
-
-  document.addEventListener('gesturestart', (e) => e.preventDefault());
-  document.addEventListener('gesturechange', (e) => e.preventDefault());
-  document.addEventListener('gestureend', (e) => e.preventDefault());
-
-  init();
-})();
+    const svgBlob = new Blob([finalSvg], { type: 'image/svg
