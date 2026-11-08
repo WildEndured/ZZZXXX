@@ -1,7 +1,6 @@
 window.App = (function () {
   'use strict';
 
-  // ===== DOM =====
   const viewport = document.getElementById('viewport');
   const zoomContainer = document.getElementById('zoomContainer');
   const bgLayer = document.getElementById('bgLayer');
@@ -29,7 +28,6 @@ window.App = (function () {
   const exportSvgBtn = document.getElementById('exportSvgBtn');
   const exportPngBtn = document.getElementById('exportPngBtn');
 
-  // Голова
   const headWidth = document.getElementById('headWidth');
   const headWidthVal = document.getElementById('headWidthVal');
   const headHeight = document.getElementById('headHeight');
@@ -51,7 +49,6 @@ window.App = (function () {
   const jawRound = document.getElementById('jawRound');
   const jawRoundVal = document.getElementById('jawRoundVal');
 
-  // Торс
   const chestHeight = document.getElementById('chestHeight');
   const chestHeightVal = document.getElementById('chestHeightVal');
   const chestWidth = document.getElementById('chestWidth');
@@ -72,7 +69,6 @@ window.App = (function () {
   const pelvisRound = document.getElementById('pelvisRound');
   const pelvisRoundVal = document.getElementById('pelvisRoundVal');
 
-  // Руки
   const elbowLeftX = document.getElementById('elbowLeftX');
   const elbowLeftXVal = document.getElementById('elbowLeftXVal');
   const elbowLeftY = document.getElementById('elbowLeftY');
@@ -110,7 +106,6 @@ window.App = (function () {
   const forearmInnerAttach = document.getElementById('forearmInnerAttach');
   const forearmInnerAttachVal = document.getElementById('forearmInnerAttachVal');
 
-  // Ноги
   const kneeLeftX = document.getElementById('kneeLeftX');
   const kneeLeftXVal = document.getElementById('kneeLeftXVal');
   const kneeLeftY = document.getElementById('kneeLeftY');
@@ -139,11 +134,11 @@ window.App = (function () {
   const ankleRightR = document.getElementById('ankleRightR');
   const ankleRightRVal = document.getElementById('ankleRightRVal');
 
-  // ===== Состояние =====
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
     bgColor: '#ffffff', underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
     gridPad: 0.00, heads: 5,
+    baseHeadWidth: 0.65,
     head: { width: 0.65, height: 0.65, offset: 0.00, chinY: 0.85, chinWidth: 0.01 },
     jaw: { attachY: 0.55, height: 0.80, angle: 0.20, round: 0.00 },
     chest: { height: 0.85, width: 1.00, offset: 0.00, topNarrow: 0.70, bottomWide: 1.00 },
@@ -156,7 +151,6 @@ window.App = (function () {
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
-  // ===== Вспомогательные функции =====
   function getBaseOffset() {
     const vp = viewport.getBoundingClientRect();
     const size = state.canvasSize;
@@ -240,7 +234,6 @@ window.App = (function () {
     return { x: p.x / state.canvasSize, y: p.y / state.canvasSize };
   }
 
-  // ===== Рисование (Кисть) =====
   const pointers = new Map();
   let drawing = false, currentPath = null, currentPathEl = null, activePointerId = null;
   let gestureActive = false, gestureStart = null, panning = false, panStart = null;
@@ -276,7 +269,6 @@ window.App = (function () {
     currentPath = null; currentPathEl = null; drawing = false; activePointerId = null;
   }
 
-  // ===== Жесты =====
   function startGesture() {
     const pts = Array.from(pointers.values());
     if (pts.length < 2) return;
@@ -382,7 +374,6 @@ window.App = (function () {
     applyTransform();
   }, { passive: false });
 
-  // ===== Обработчики ползунков =====
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -428,7 +419,6 @@ window.App = (function () {
     renderAll();
   });
 
-  // Голова
   headWidth.addEventListener('input', () => { state.head.width = parseInt(headWidth.value, 10) / 100; headWidthVal.textContent = headWidth.value + '%'; renderAll(); });
   headHeight.addEventListener('input', () => { state.head.height = parseInt(headHeight.value, 10) / 100; headHeightVal.textContent = headHeight.value + '%'; renderAll(); });
   headOffset.addEventListener('input', () => { state.head.offset = parseInt(headOffset.value, 10) / 100; headOffsetVal.textContent = headOffset.value + '%'; renderAll(); });
@@ -439,7 +429,6 @@ window.App = (function () {
   jawAngle.addEventListener('input', () => { state.jaw.angle = parseInt(jawAngle.value, 10) / 100; jawAngleVal.textContent = jawAngle.value + '%'; renderAll(); });
   jawRound.addEventListener('input', () => { state.jaw.round = parseInt(jawRound.value, 10) / 100; jawRoundVal.textContent = jawRound.value + '%'; renderAll(); });
 
-  // Торс
   chestHeight.addEventListener('input', () => { state.chest.height = parseInt(chestHeight.value, 10) / 100; chestHeightVal.textContent = chestHeight.value + '%'; renderAll(); });
   chestWidth.addEventListener('input', () => { state.chest.width = parseInt(chestWidth.value, 10) / 100; chestWidthVal.textContent = chestWidth.value + '%'; renderAll(); });
   chestOffset.addEventListener('input', () => { state.chest.offset = parseInt(chestOffset.value, 10) / 100; chestOffsetVal.textContent = chestOffset.value + '%'; renderAll(); });
@@ -451,7 +440,6 @@ window.App = (function () {
   pelvisOffset.addEventListener('input', () => { state.pelvis.offset = parseInt(pelvisOffset.value, 10) / 100; pelvisOffsetVal.textContent = pelvisOffset.value + '%'; renderAll(); });
   pelvisRound.addEventListener('input', () => { state.pelvis.round = parseInt(pelvisRound.value, 10) / 100; pelvisRoundVal.textContent = pelvisRound.value + '%'; renderAll(); });
 
-  // Руки
   elbowLeftX.addEventListener('input', () => { state.elbowLeft.x = parseInt(elbowLeftX.value, 10) / 100; elbowLeftXVal.textContent = elbowLeftX.value + '%'; renderAll(); });
   elbowLeftY.addEventListener('input', () => { state.elbowLeft.y = parseInt(elbowLeftY.value, 10) / 100; elbowLeftYVal.textContent = elbowLeftY.value + '%'; renderAll(); });
   elbowLeftR.addEventListener('input', () => { state.elbowLeft.r = parseInt(elbowLeftR.value, 10) / 100; elbowLeftRVal.textContent = elbowLeftR.value + '%'; renderAll(); });
@@ -471,7 +459,6 @@ window.App = (function () {
   forearmInnerBulge.addEventListener('input', () => { state.forearmInner.bulge = parseInt(forearmInnerBulge.value, 10) / 100; forearmInnerBulgeVal.textContent = forearmInnerBulge.value + '%'; renderAll(); });
   forearmInnerAttach.addEventListener('input', () => { state.forearmInner.attach = parseInt(forearmInnerAttach.value, 10) / 100; forearmInnerAttachVal.textContent = forearmInnerAttach.value + '%'; renderAll(); });
 
-  // Ноги
   kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
   kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
   kneeLeftR.addEventListener('input', () => { state.kneeLeft.r = parseInt(kneeLeftR.value, 10) / 100; kneeLeftRVal.textContent = kneeLeftR.value + '%'; renderAll(); });
@@ -486,7 +473,6 @@ window.App = (function () {
   ankleRightY.addEventListener('input', () => { state.ankleRight.y = parseInt(ankleRightY.value, 10) / 100; ankleRightYVal.textContent = ankleRightY.value + '%'; renderAll(); });
   ankleRightR.addEventListener('input', () => { state.ankleRight.r = parseInt(ankleRightR.value, 10) / 100; ankleRightRVal.textContent = ankleRightR.value + '%'; renderAll(); });
 
-  // Кисть и действия
   brushColor.addEventListener('input', () => { state.brush.color = brushColor.value; });
   brushWidth.addEventListener('input', () => { state.brush.width = parseInt(brushWidth.value, 10); brushWidthVal.textContent = String(state.brush.width); });
 
@@ -513,7 +499,6 @@ window.App = (function () {
     });
   }
 
-  // ===== Экспорт =====
   function buildExportSVG() {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
@@ -598,34 +583,20 @@ window.App = (function () {
     img.src = url;
   });
 
-  // ===== Инициализация =====
   function init() {
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
-    
-    // Синхронизируем UI с состоянием (чтобы визуально ползунки стояли правильно)
-    headWidth.value = state.head.width * 100; headWidthVal.textContent = (state.head.width * 100) + '%';
-    headHeight.value = state.head.height * 100; headHeightVal.textContent = (state.head.height * 100) + '%';
-    // ... (остальные можно не синхронизировать, так как в HTML уже стоят верные значения по умолчанию)
-
     renderAll();
-    
     requestAnimationFrame(() => updateCanvasSize());
     window.addEventListener('resize', () => requestAnimationFrame(updateCanvasSize));
-    
     document.addEventListener('touchmove', (e) => {
       if (e.target.closest('#panel')) return;
       e.preventDefault();
     }, { passive: false });
-    
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('gesturechange', (e) => e.preventDefault());
     document.addEventListener('gestureend', (e) => e.preventDefault());
   }
 
-  return {
-    state: state,
-    renderAll: renderAll,
-    init: init
-  };
+  return { state: state, renderAll: renderAll, init: init };
 })();
