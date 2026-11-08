@@ -10,13 +10,12 @@ App.Torso = (function () {
     const y1 = 1 - pad;
     const span = y1 - y0;
     const sectionH = span / n;
-
-    const headW = state.head.width * sectionH;
     
-    // Грудная клетка
+    const baseHeadW = state.baseHeadWidth * sectionH;
+    
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
-    const chestRx = (headW * state.chest.width) / 2;
+    const chestRx = (baseHeadW * state.chest.width) / 2;
     const narrowFactor = state.chest.topNarrow;
     const wideFactor = state.chest.bottomWide;
     const cpTopX = chestRx * narrowFactor;
@@ -38,14 +37,13 @@ App.Torso = (function () {
     chestPath.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(chestPath);
 
-    // Плечи
     const shoulderRadius = (chestHeightPx / 3) / 2;
     const shoulderCy = chestY0 + shoulderRadius;
     const t = (shoulderCy - chestY0) / chestHeightPx;
     let curveWidth;
     if (t <= 0.6) {
       const tNorm = t / 0.6;
-      curveWidth = cpTopX + (chestRx - cpTopX) * Math.sin(tNorm * Math.PI / 2);
+      curveWidth = (chestRx * state.chest.topNarrow) + (chestRx - (chestRx * state.chest.topNarrow)) * Math.sin(tNorm * Math.PI / 2);
     } else {
       curveWidth = chestRx;
     }
@@ -73,7 +71,6 @@ App.Torso = (function () {
     shoulderRight.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(shoulderRight);
 
-    // Таз
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
