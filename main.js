@@ -89,10 +89,13 @@ window.App = (function () {
 
   function renderAll() {
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
-    if (App.Head) App.Head.render(gridGroup, state);
-    if (App.Torso) App.Torso.render(gridGroup, state);
-    if (App.Arm) App.Arm.render(gridGroup, state);
-    if (App.Leg) App.Leg.render(gridGroup, state);
+    // Безопасный вызов, проверяем, что модули загрузились
+    if (window.App) {
+      if (App.Head && App.Head.render) App.Head.render(gridGroup, state);
+      if (App.Torso && App.Torso.render) App.Torso.render(gridGroup, state);
+      if (App.Arm && App.Arm.render) App.Arm.render(gridGroup, state);
+      if (App.Leg && App.Leg.render) App.Leg.render(gridGroup, state);
+    }
   }
 
   function applyUnderlay() {
@@ -265,7 +268,7 @@ window.App = (function () {
     applyTransform();
   }, { passive: false });
 
-  // Обработчики UI (подложка, фон, сетка, кисть, экспорт)
+  // UI listeners
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
@@ -340,7 +343,6 @@ window.App = (function () {
     });
   }
 
-  // Экспорт (SVG и PNG)
   function buildExportSVG() {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(NS, 'svg');
@@ -425,26 +427,31 @@ window.App = (function () {
     img.src = url;
   });
 
+  // Экспортируем функцию инициализации и объект состояния наружу
   function init() {
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
+    
+    // Рисуем каркас сразу после загрузки
     renderAll();
+    
     requestAnimationFrame(() => updateCanvasSize());
+    
     window.addEventListener('resize', () => requestAnimationFrame(updateCanvasSize));
+    
     document.addEventListener('touchmove', (e) => {
       if (e.target.closest('#panel')) return;
       e.preventDefault();
     }, { passive: false });
+    
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('gesturechange', (e) => e.preventDefault());
     document.addEventListener('gestureend', (e) => e.preventDefault());
   }
 
-  init();
-
   return {
     state: state,
     renderAll: renderAll,
-    updateCanvasSize: updateCanvasSize
+    init: init
   };
 })();
