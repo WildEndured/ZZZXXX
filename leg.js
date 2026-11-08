@@ -11,17 +11,16 @@ App.Leg = (function () {
     const span = y1 - y0;
     const sectionH = span / n;
     const headH = state.head.height * sectionH;
-    const headW = state.head.width * sectionH;
+    
+    const baseHeadW = state.baseHeadWidth * sectionH;
 
-    // Базовые точки
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
-    const chestRx = (headW * state.chest.width) / 2;
+    const chestRx = (baseHeadW * state.chest.width) / 2;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
     const pelvisBottomY = pelvisY0 + pelvisH;
 
-    // Привязка к запястьям (для оси X ног)
     const shoulderRadius = (chestHeightPx / 3) / 2;
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
@@ -34,7 +33,6 @@ App.Leg = (function () {
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
-    // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
     const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
     const kneeLeftCx_base = wristLeftCx;
@@ -67,7 +65,6 @@ App.Leg = (function () {
     ankleLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(ankleLeft);
 
-    // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
     const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
