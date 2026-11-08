@@ -176,12 +176,18 @@
             </label>
           </section>
           <section class="block border-none">
-            <h4>Мышцы предплечья</h4>
-            <label>Крепление (высота): <span id="forearmAttachVal">50%</span>
-              <input type="range" id="forearmAttach" min="0" max="100" value="50">
+            <h4>Рельеф предплечья</h4>
+            <label>Внешняя выпуклость: <span id="forearmOuterBulgeVal">50%</span>
+              <input type="range" id="forearmOuterBulge" min="-100" max="300" value="50">
             </label>
-            <label>Выпуклость: <span id="forearmBulgeVal">20%</span>
-              <input type="range" id="forearmBulge" min="-50" max="100" value="20">
+            <label>Внешняя высота: <span id="forearmOuterAttachVal">50%</span>
+              <input type="range" id="forearmOuterAttach" min="0" max="100" value="50">
+            </label>
+            <label>Внутренняя выпуклость: <span id="forearmInnerBulgeVal">50%</span>
+              <input type="range" id="forearmInnerBulge" min="-100" max="300" value="50">
+            </label>
+            <label>Внутренняя высота: <span id="forearmInnerAttachVal">50%</span>
+              <input type="range" id="forearmInnerAttach" min="0" max="100" value="50">
             </label>
           </section>
         </div>
@@ -190,6 +196,7 @@
       <details class="accordion" open>
         <summary>Ноги</summary>
         <div class="accordion-content">
+          <!-- ... блок ног без изменений ... -->
           <section class="block border-none">
             <h4>Колени</h4>
             <label>Левое X: <span id="kneeLeftXVal">50%</span>
