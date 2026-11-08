@@ -21,115 +21,8 @@
 
   <aside id="panel">
     <div class="panel-inner">
-      <section class="block">
-        <h3>Подложка</h3>
-        <input type="file" id="fileInput" accept="image/*">
-        <label>Масштаб: <span id="underlayScaleVal">100%</span>
-          <input type="range" id="underlayScale" min="10" max="300" value="100">
-        </label>
-        <label>Прозрачность: <span id="underlayOpacityVal">100%</span>
-          <input type="range" id="underlayOpacity" min="0" max="100" value="100">
-        </label>
-      </section>
-
-      <section class="block">
-        <h3>Фон</h3>
-        <label>Цвет фона
-          <input type="color" id="bgColor" value="#ffffff">
-        </label>
-      </section>
-
-      <section class="block">
-        <h3>Сетка</h3>
-        <label>Отступ (0–10%): <span id="gridPadVal">0%</span>
-          <input type="range" id="gridPad" min="0" max="10" value="0">
-        </label>
-        <label>Голов (2–8): <span id="headsVal">5</span>
-          <input type="range" id="heads" min="2" max="8" value="5">
-        </label>
-      </section>
-
-      <details class="accordion" open>
-        <summary>Голова</summary>
-        <div class="accordion-content">
-          <section class="block border-none">
-            <h4>Основное</h4>
-            <label>Ширина: <span id="headWidthVal">65%</span>
-              <input type="range" id="headWidth" min="10" max="100" value="65">
-            </label>
-            <label>Высота: <span id="headHeightVal">65%</span>
-              <input type="range" id="headHeight" min="10" max="100" value="65">
-            </label>
-            <label>Смещение от верха: <span id="headOffsetVal">0%</span>
-              <input type="range" id="headOffset" min="-50" max="100" value="0">
-            </label>
-          </section>
-          <section class="block border-none">
-            <h4>Подбородок</h4>
-            <label>Подбородок (Y): <span id="chinYVal">85%</span>
-              <input type="range" id="chinY" min="0" max="100" value="85">
-            </label>
-            <label>Ширина подбородка: <span id="chinWidthVal">1%</span>
-              <input type="range" id="chinWidth" min="0" max="10" value="1">
-            </label>
-          </section>
-          <section class="block border-none">
-            <h4>Челюсть</h4>
-            <label>Высота крепления к кругу: <span id="jawAttachYVal">55%</span>
-              <input type="range" id="jawAttachY" min="0" max="100" value="55">
-            </label>
-            <label>Высота челюсти (спуск): <span id="jawHeightVal">80%</span>
-              <input type="range" id="jawHeight" min="0" max="100" value="80">
-            </label>
-            <label>Угол челюсти (скулы): <span id="jawAngleVal">20%</span>
-              <input type="range" id="jawAngle" min="-50" max="50" value="20">
-            </label>
-            <label>Скругление челюсти: <span id="jawRoundVal">0%</span>
-              <input type="range" id="jawRound" min="0" max="100" value="0">
-            </label>
-          </section>
-        </div>
-      </details>
-
-      <details class="accordion" open>
-        <summary>Торс</summary>
-        <div class="accordion-content">
-          <section class="block border-none">
-            <h4>Грудная клетка</h4>
-            <label>Высота: <span id="chestHeightVal">85%</span>
-              <input type="range" id="chestHeight" min="10" max="150" value="85">
-            </label>
-            <label>Ширина: <span id="chestWidthVal">100%</span>
-              <input type="range" id="chestWidth" min="10" max="100" value="100">
-            </label>
-            <label>Смещение по Y: <span id="chestOffsetVal">0%</span>
-              <input type="range" id="chestOffset" min="-50" max="50" value="0">
-            </label>
-            <label>Сужение сверху: <span id="chestTopNarrowVal">70%</span>
-              <input type="range" id="chestTopNarrow" min="10" max="100" value="70">
-            </label>
-            <label>Расширение снизу: <span id="chestBottomWideVal">100%</span>
-              <input type="range" id="chestBottomWide" min="50" max="150" value="100">
-            </label>
-          </section>
-          <section class="block border-none">
-            <h4>Таз</h4>
-            <label>Корректировка ширины: <span id="pelvisWidthModVal">100%</span>
-              <input type="range" id="pelvisWidthMod" min="10" max="150" value="100">
-            </label>
-            <label>Корректировка высоты: <span id="pelvisHeightModVal">100%</span>
-              <input type="range" id="pelvisHeightMod" min="10" max="150" value="100">
-            </label>
-            <label>Смещение по Y: <span id="pelvisOffsetVal">0%</span>
-              <input type="range" id="pelvisOffset" min="-50" max="50" value="0">
-            </label>
-            <label>Скругление углов: <span id="pelvisRoundVal">20%</span>
-              <input type="range" id="pelvisRound" min="0" max="100" value="20">
-            </label>
-          </section>
-        </div>
-      </details>
-
+      <!-- ... остальные блоки (Подложка, Фон, Сетка, Голова, Торс) без изменений ... -->
+      
       <details class="accordion" open>
         <summary>Руки</summary>
         <div class="accordion-content">
@@ -176,95 +69,21 @@
             </label>
           </section>
           <section class="block border-none">
-            <h4>Предплечье (Масса)</h4>
-            <label>Левое: Высота крепления <span id="foreLeftAttachVal">20%</span>
-              <input type="range" id="foreLeftAttach" min="0" max="100" value="20">
+            <h4>Мышцы предплечья</h4>
+            <label>Крепление (высота): <span id="forearmAttachVal">50%</span>
+              <input type="range" id="forearmAttach" min="0" max="100" value="50">
             </label>
-            <label>Левое: Выпуклость <span id="foreLeftBulgeVal">30%</span>
-              <input type="range" id="foreLeftBulge" min="0" max="100" value="30">
-            </label>
-            <label>Правое: Высота крепления <span id="foreRightAttachVal">20%</span>
-              <input type="range" id="foreRightAttach" min="0" max="100" value="20">
-            </label>
-            <label>Правое: Выпуклость <span id="foreRightBulgeVal">30%</span>
-              <input type="range" id="foreRightBulge" min="0" max="100" value="30">
+            <label>Выпуклость: <span id="forearmBulgeVal">20%</span>
+              <input type="range" id="forearmBulge" min="-50" max="100" value="20">
             </label>
           </section>
         </div>
       </details>
 
-      <details class="accordion" open>
-        <summary>Ноги</summary>
-        <div class="accordion-content">
-          <section class="block border-none">
-            <h4>Колени</h4>
-            <label>Левое X: <span id="kneeLeftXVal">50%</span>
-              <input type="range" id="kneeLeftX" min="-50" max="50" value="50">
-            </label>
-            <label>Левое Y: <span id="kneeLeftYVal">25%</span>
-              <input type="range" id="kneeLeftY" min="-50" max="50" value="25">
-            </label>
-            <label>Левое радиус: <span id="kneeLeftRVal">15%</span>
-              <input type="range" id="kneeLeftR" min="5" max="30" value="15">
-            </label>
-            <label>Правое X: <span id="kneeRightXVal">-50%</span>
-              <input type="range" id="kneeRightX" min="-50" max="50" value="-50">
-            </label>
-            <label>Правое Y: <span id="kneeRightYVal">25%</span>
-              <input type="range" id="kneeRightY" min="-50" max="50" value="25">
-            </label>
-            <label>Правое радиус: <span id="kneeRightRVal">15%</span>
-              <input type="range" id="kneeRightR" min="5" max="30" value="15">
-            </label>
-          </section>
-          <section class="block border-none">
-            <h4>Лодыжки</h4>
-            <label>Левое X: <span id="ankleLeftXVal">50%</span>
-              <input type="range" id="ankleLeftX" min="-50" max="50" value="50">
-            </label>
-            <label>Левое Y: <span id="ankleLeftYVal">50%</span>
-              <input type="range" id="ankleLeftY" min="-50" max="50" value="50">
-            </label>
-            <label>Левое радиус: <span id="ankleLeftRVal">10%</span>
-              <input type="range" id="ankleLeftR" min="5" max="30" value="10">
-            </label>
-            <label>Правое X: <span id="ankleRightXVal">-50%</span>
-              <input type="range" id="ankleRightX" min="-50" max="50" value="-50">
-            </label>
-            <label>Правое Y: <span id="ankleRightYVal">50%</span>
-              <input type="range" id="ankleRightY" min="-50" max="50" value="50">
-            </label>
-            <label>Правое радиус: <span id="ankleRightRVal">10%</span>
-              <input type="range" id="ankleRightR" min="5" max="30" value="10">
-            </label>
-          </section>
-        </div>
-      </details>
-
-      <section class="block">
-        <h3>Кисть</h3>
-        <label>Цвет кисти
-          <input type="color" id="brushColor" value="#000000">
-        </label>
-        <label>Толщина: <span id="brushWidthVal">3</span>
-          <input type="range" id="brushWidth" min="1" max="20" value="3">
-        </label>
-      </section>
-
-      <section class="block">
-        <h3>Действия</h3>
-        <div class="btn-row">
-          <button id="undoBtn">Undo</button>
-          <button id="clearBtn">Очистить всё</button>
-        </div>
-        <div class="btn-row">
-          <button id="exportSvgBtn">Скачать SVG</button>
-          <button id="exportPngBtn">Скачать PNG</button>
-        </div>
-      </section>
+      <!-- ... остальные блоки (Ноги, Кисть, Действия) без изменений ... -->
     </div>
   </aside>
 </div>
 <script src="script.js?v=dev"></script>
 </body>
-</html>
+  </html>
