@@ -412,31 +412,29 @@
     gridGroup.appendChild(elbowLeft);
 
     // Контур левой руки (Плечо -> Локоть -> Запястье)
-    // Вектор от плеча к локтю
     const dxSL = elbowLeftCx - shoulderLeftCx;
     const dySL = elbowLeftCy - shoulderLeftCy;
     const distSL = Math.hypot(dxSL, dySL);
+    
+    // Нормаль наружу (для левой руки отнимаем)
     const nxSL = -dySL / distSL;
     const nySL = dxSL / distSL;
 
-    // Вектор от локтя к запястью
     const dxL = wristLeftCx - elbowLeftCx;
     const dyL = wristLeftCy - elbowLeftCy;
     const distL = Math.hypot(dxL, dyL);
     const nxL = -dyL / distL;
     const nyL = dxL / distL;
 
-    // Точки для верхней части (плечо -> локоть)
     const shLeftTop = { x: shoulderLeftCx + nxSL * shoulderRadius, y: shoulderLeftCy + nySL * shoulderRadius };
     const elLeftTop = { x: elbowLeftCx + nxSL * elbowLeftRadiusPx, y: elbowLeftCy + nySL * elbowLeftRadiusPx };
     const midTopX = (shLeftTop.x + elLeftTop.x) / 2;
     const midTopY = (shLeftTop.y + elLeftTop.y) / 2;
     
-    // Выпуклость для бицепса (наружу)
+    // Выпуклость для бицепса (по нормали наружу)
     const bulge = shoulderRadius * 0.4; 
-    const ctrlTop = { x: midTopX - bulge, y: midTopY };
+    const ctrlTop = { x: midTopX + nxSL * bulge, y: midTopY + nySL * bulge };
 
-    // Точки для нижней части (локоть -> запястье)
     const elLeftTopW = { x: elbowLeftCx + nxL * elbowLeftRadiusPx, y: elbowLeftCy + nyL * elbowLeftRadiusPx };
     const wrLeftTop = { x: wristLeftCx + nxL * wristLeftRadiusPx, y: wristLeftCy + nyL * wristLeftRadiusPx };
 
@@ -473,7 +471,6 @@
     armLeftPathBot.setAttribute('stroke-width', '1');
     armLeftPathBot.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(armLeftPathBot);
-
 
     // --- Правая рука ---
     // Запястье
@@ -528,8 +525,8 @@
     const midTopXR = (shRightTop.x + elRightTop.x) / 2;
     const midTopYR = (shRightTop.y + elRightTop.y) / 2;
 
-    // Выпуклость для бицепса (наружу)
-    const ctrlTopR = { x: midTopXR + bulge, y: midTopYR }; // +bulge так как правая рука
+    // Выпуклость для бицепса (по нормали)
+    const ctrlTopR = { x: midTopXR + nxSR * bulge, y: midTopYR + nySR * bulge }; 
 
     const elRightTopW = { x: elbowRightCx + nxR * elbowRightRadiusPx, y: elbowRightCy + nyR * elbowRightRadiusPx };
     const wrRightTop = { x: wristRightCx + nxR * wristRightRadiusPx, y: wristRightCy + nyR * wristRightRadiusPx };
