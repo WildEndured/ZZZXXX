@@ -265,10 +265,21 @@
     </div>
   </aside>
 </div>
+
+<!-- Подключаем модули строго по порядку -->
 <script src="main.js?v=dev"></script>
 <script src="head.js?v=dev"></script>
 <script src="torso.js?v=dev"></script>
 <script src="arm.js?v=dev"></script>
 <script src="leg.js?v=dev"></script>
+
+<!-- Запускаем инициализацию только после загрузки всех модулей -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.App && App.init) {
+      App.init();
+    }
+  });
+</script>
 </body>
 </html>
