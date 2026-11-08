@@ -16,12 +16,12 @@ App.Arm = (function () {
     const y1 = 1 - pad;
     const span = y1 - y0;
     const sectionH = span / n;
-    const headW = state.head.width * sectionH;
+    
+    const baseHeadW = state.baseHeadWidth * sectionH;
 
-    // Координаты низа таза (для привязки запястий)
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
-    const chestRx = (headW * state.chest.width) / 2;
+    const chestRx = (baseHeadW * state.chest.width) / 2;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
     const pelvisBottomY = pelvisY0 + pelvisH;
@@ -39,7 +39,6 @@ App.Arm = (function () {
     const shoulderLeftCx = 0.5 - curveWidth - shoulderRadius;
     const shoulderRightCx = 0.5 + curveWidth + shoulderRadius;
 
-    // --- Левая рука ---
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = 0.5 - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
@@ -130,7 +129,6 @@ App.Arm = (function () {
     armLeftCurveInner.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(armLeftCurveInner);
 
-    // --- Правая рука ---
     const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
