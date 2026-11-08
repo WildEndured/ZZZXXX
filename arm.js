@@ -39,6 +39,7 @@ App.Arm = (function () {
     const shoulderLeftCx = 0.5 - curveWidth - shoulderRadius;
     const shoulderRightCx = 0.5 + curveWidth + shoulderRadius;
 
+    // --- Левая рука ---
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = 0.5 - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
@@ -79,28 +80,7 @@ App.Arm = (function () {
     const wrLeftOuter = { x: wristLeftCx + nxL * wristLeftRadiusPx, y: wristLeftCy + nyL * wristLeftRadiusPx };
     const wrLeftInner = { x: wristLeftCx - nxL * wristLeftRadiusPx, y: wristLeftCy - nyL * wristLeftRadiusPx };
 
-    const armLeftLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineOuter.setAttribute('x1', String(elLeftOuter.x));
-    armLeftLineOuter.setAttribute('y1', String(elLeftOuter.y));
-    armLeftLineOuter.setAttribute('x2', String(wrLeftOuter.x));
-    armLeftLineOuter.setAttribute('y2', String(wrLeftOuter.y));
-    armLeftLineOuter.setAttribute('stroke', '#ff0000');
-    armLeftLineOuter.setAttribute('stroke-width', '0.5');
-    armLeftLineOuter.setAttribute('stroke-dasharray', '2 2');
-    armLeftLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armLeftLineOuter);
-
-    const armLeftLineInner = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLineInner.setAttribute('x1', String(elLeftInner.x));
-    armLeftLineInner.setAttribute('y1', String(elLeftInner.y));
-    armLeftLineInner.setAttribute('x2', String(wrLeftInner.x));
-    armLeftLineInner.setAttribute('y2', String(wrLeftInner.y));
-    armLeftLineInner.setAttribute('stroke', '#ff0000');
-    armLeftLineInner.setAttribute('stroke-width', '0.5');
-    armLeftLineInner.setAttribute('stroke-dasharray', '2 2');
-    armLeftLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armLeftLineInner);
-
+    // Точки крепления на запястье (с учетом ползунков высоты)
     const bulgeOuterL = state.forearmOuter.bulge * shoulderRadius * 3;
     const bulgeInnerL = state.forearmInner.bulge * shoulderRadius * 3;
     const attachOuterShiftL = (state.forearmOuter.attach - 0.5) * 2 * wristLeftRadiusPx;
@@ -109,26 +89,44 @@ App.Arm = (function () {
     const wrLeftOuterCurve = { x: wrLeftOuter.x + (dxL / distL) * attachOuterShiftL, y: wrLeftOuter.y + (dyL / distL) * attachOuterShiftL };
     const wrLeftInnerCurve = { x: wrLeftInner.x + (dxL / distL) * attachInnerShiftL, y: wrLeftInner.y + (dyL / distL) * attachInnerShiftL };
 
-    const midOuterL = { x: (elLeftOuter.x + wrLeftOuterCurve.x) / 2, y: (elLeftOuter.y + wrLeftOuterCurve.y) / 2 };
-    const ctrlOuterL = { x: midOuterL.x + nxL * bulgeOuterL, y: midOuterL.y + nyL * bulgeOuterL };
-    const armLeftCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    armLeftCurveOuter.setAttribute('d', `M ${elLeftOuter.x} ${elLeftOuter.y} Q ${ctrlOuterL.x} ${ctrlOuterL.y} ${wrLeftOuterCurve.x} ${wrLeftOuterCurve.y}`);
-    armLeftCurveOuter.setAttribute('fill', 'none');
-    armLeftCurveOuter.setAttribute('stroke', '#ff0000');
-    armLeftCurveOuter.setAttribute('stroke-width', '1');
-    armLeftCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armLeftCurveOuter);
+    // Разбиваем на 1/3 и 2/3
+    const l_1_3_x = elLeftOuter.x + dxL * 0.33;
+    const l_1_3_y = elLeftOuter.y + dyL * 0.33;
+    const l_2_3_x = wrLeftOuterCurve.x;
+    const l_2_3_y = wrLeftOuterCurve.y;
 
-    const midInnerL = { x: (elLeftInner.x + wrLeftInnerCurve.x) / 2, y: (elLeftInner.y + wrLeftInnerCurve.y) / 2 };
-    const ctrlInnerL = { x: midInnerL.x - nxL * bulgeInnerL, y: midInnerL.y - nyL * bulgeInnerL };
-    const armLeftCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    armLeftCurveInner.setAttribute('d', `M ${elLeftInner.x} ${elLeftInner.y} Q ${ctrlInnerL.x} ${ctrlInnerL.y} ${wrLeftInnerCurve.x} ${wrLeftInnerCurve.y}`);
-    armLeftCurveInner.setAttribute('fill', 'none');
-    armLeftCurveInner.setAttribute('stroke', '#ff0000');
-    armLeftCurveInner.setAttribute('stroke-width', '1');
-    armLeftCurveInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armLeftCurveInner);
+    // Внешняя сторона: 1/3 выпуклая, 2/3 прямая
+    const pathOuterL = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dOuterL = `
+      M ${elLeftOuter.x} ${elLeftOuter.y}
+      Q ${(elLeftOuter.x + l_1_3_x) / 2 + nxL * bulgeOuterL} ${(elLeftOuter.y + l_1_3_y) / 2 + nyL * bulgeOuterL} ${l_1_3_x} ${l_1_3_y}
+      L ${l_2_3_x} ${l_2_3_y}
+    `;
+    pathOuterL.setAttribute('d', dOuterL.trim());
+    pathOuterL.setAttribute('fill', 'none');
+    pathOuterL.setAttribute('stroke', '#ff0000');
+    pathOuterL.setAttribute('stroke-width', '1');
+    pathOuterL.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(pathOuterL);
 
+    // Внутренняя сторона: 1/3 выпуклая, 2/3 вогнутая
+    const pathInnerL = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const l_inner_1_3_x = elLeftInner.x + dxL * 0.33;
+    const l_inner_1_3_y = elLeftInner.y + dyL * 0.33;
+    
+    const dInnerL = `
+      M ${elLeftInner.x} ${elLeftInner.y}
+      Q ${(elLeftInner.x + l_inner_1_3_x) / 2 - nxL * bulgeInnerL} ${(elLeftInner.y + l_inner_1_3_y) / 2 - nyL * bulgeInnerL} ${l_inner_1_3_x} ${l_inner_1_3_y}
+      Q ${(l_inner_1_3_x + wrLeftInnerCurve.x) / 2 - nxL * bulgeInnerL} ${(l_inner_1_3_y + wrLeftInnerCurve.y) / 2 - nyL * bulgeInnerL} ${wrLeftInnerCurve.x} ${wrLeftInnerCurve.y}
+    `;
+    pathInnerL.setAttribute('d', dInnerL.trim());
+    pathInnerL.setAttribute('fill', 'none');
+    pathInnerL.setAttribute('stroke', '#ff0000');
+    pathInnerL.setAttribute('stroke-width', '1');
+    pathInnerL.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(pathInnerL);
+
+    // --- Правая рука ---
     const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
@@ -169,28 +167,6 @@ App.Arm = (function () {
     const wrRightOuter = { x: wristRightCx + nxR * wristRightRadiusPx, y: wristRightCy + nyR * wristRightRadiusPx };
     const wrRightInner = { x: wristRightCx - nxR * wristRightRadiusPx, y: wristRightCy - nyR * wristRightRadiusPx };
 
-    const armRightLineOuter = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineOuter.setAttribute('x1', String(elRightOuter.x));
-    armRightLineOuter.setAttribute('y1', String(elRightOuter.y));
-    armRightLineOuter.setAttribute('x2', String(wrRightOuter.x));
-    armRightLineOuter.setAttribute('y2', String(wrRightOuter.y));
-    armRightLineOuter.setAttribute('stroke', '#ff0000');
-    armRightLineOuter.setAttribute('stroke-width', '0.5');
-    armRightLineOuter.setAttribute('stroke-dasharray', '2 2');
-    armRightLineOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armRightLineOuter);
-
-    const armRightLineInner = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLineInner.setAttribute('x1', String(elRightInner.x));
-    armRightLineInner.setAttribute('y1', String(elRightInner.y));
-    armRightLineInner.setAttribute('x2', String(wrRightInner.x));
-    armRightLineInner.setAttribute('y2', String(wrRightInner.y));
-    armRightLineInner.setAttribute('stroke', '#ff0000');
-    armRightLineInner.setAttribute('stroke-width', '0.5');
-    armRightLineInner.setAttribute('stroke-dasharray', '2 2');
-    armRightLineInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armRightLineInner);
-
     const bulgeOuterR = state.forearmOuter.bulge * shoulderRadius * 3;
     const bulgeInnerR = state.forearmInner.bulge * shoulderRadius * 3;
     const attachOuterShiftR = (state.forearmOuter.attach - 0.5) * 2 * wristRightRadiusPx;
@@ -199,25 +175,42 @@ App.Arm = (function () {
     const wrRightOuterCurve = { x: wrRightOuter.x + (dxR / distR) * attachOuterShiftR, y: wrRightOuter.y + (dyR / distR) * attachOuterShiftR };
     const wrRightInnerCurve = { x: wrRightInner.x + (dxR / distR) * attachInnerShiftR, y: wrRightInner.y + (dyR / distR) * attachInnerShiftR };
 
-    const midOuterR = { x: (elRightOuter.x + wrRightOuterCurve.x) / 2, y: (elRightOuter.y + wrRightOuterCurve.y) / 2 };
-    const ctrlOuterR = { x: midOuterR.x + nxR * bulgeOuterR, y: midOuterR.y + nyR * bulgeOuterR };
-    const armRightCurveOuter = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    armRightCurveOuter.setAttribute('d', `M ${elRightOuter.x} ${elRightOuter.y} Q ${ctrlOuterR.x} ${ctrlOuterR.y} ${wrRightOuterCurve.x} ${wrRightOuterCurve.y}`);
-    armRightCurveOuter.setAttribute('fill', 'none');
-    armRightCurveOuter.setAttribute('stroke', '#ff0000');
-    armRightCurveOuter.setAttribute('stroke-width', '1');
-    armRightCurveOuter.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armRightCurveOuter);
+    // Разбиваем на 1/3 и 2/3
+    const r_1_3_x = elRightOuter.x + dxR * 0.33;
+    const r_1_3_y = elRightOuter.y + dyR * 0.33;
+    const r_2_3_x = wrRightOuterCurve.x;
+    const r_2_3_y = wrRightOuterCurve.y;
 
-    const midInnerR = { x: (elRightInner.x + wrRightInnerCurve.x) / 2, y: (elRightInner.y + wrRightInnerCurve.y) / 2 };
-    const ctrlInnerR = { x: midInnerR.x - nxR * bulgeInnerR, y: midInnerR.y - nyR * bulgeInnerR };
-    const armRightCurveInner = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    armRightCurveInner.setAttribute('d', `M ${elRightInner.x} ${elRightInner.y} Q ${ctrlInnerR.x} ${ctrlInnerR.y} ${wrRightInnerCurve.x} ${wrRightInnerCurve.y}`);
-    armRightCurveInner.setAttribute('fill', 'none');
-    armRightCurveInner.setAttribute('stroke', '#ff0000');
-    armRightCurveInner.setAttribute('stroke-width', '1');
-    armRightCurveInner.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(armRightCurveInner);
+    // Внешняя сторона: 1/3 выпуклая, 2/3 прямая
+    const pathOuterR = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const dOuterR = `
+      M ${elRightOuter.x} ${elRightOuter.y}
+      Q ${(elRightOuter.x + r_1_3_x) / 2 + nxR * bulgeOuterR} ${(elRightOuter.y + r_1_3_y) / 2 + nyR * bulgeOuterR} ${r_1_3_x} ${r_1_3_y}
+      L ${r_2_3_x} ${r_2_3_y}
+    `;
+    pathOuterR.setAttribute('d', dOuterR.trim());
+    pathOuterR.setAttribute('fill', 'none');
+    pathOuterR.setAttribute('stroke', '#ff0000');
+    pathOuterR.setAttribute('stroke-width', '1');
+    pathOuterR.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(pathOuterR);
+
+    // Внутренняя сторона: 1/3 выпуклая, 2/3 вогнутая
+    const pathInnerR = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const r_inner_1_3_x = elRightInner.x + dxR * 0.33;
+    const r_inner_1_3_y = elRightInner.y + dyR * 0.33;
+    
+    const dInnerR = `
+      M ${elRightInner.x} ${elRightInner.y}
+      Q ${(elRightInner.x + r_inner_1_3_x) / 2 - nxR * bulgeInnerR} ${(elRightInner.y + r_inner_1_3_y) / 2 - nyR * bulgeInnerR} ${r_inner_1_3_x} ${r_inner_1_3_y}
+      Q ${(r_inner_1_3_x + wrRightInnerCurve.x) / 2 - nxR * bulgeInnerR} ${(r_inner_1_3_y + wrRightInnerCurve.y) / 2 - nyR * bulgeInnerR} ${wrRightInnerCurve.x} ${wrRightInnerCurve.y}
+    `;
+    pathInnerR.setAttribute('d', dInnerR.trim());
+    pathInnerR.setAttribute('fill', 'none');
+    pathInnerR.setAttribute('stroke', '#ff0000');
+    pathInnerR.setAttribute('stroke-width', '1');
+    pathInnerR.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(pathInnerR);
   }
 
   return { render };
