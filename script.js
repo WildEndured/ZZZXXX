@@ -233,6 +233,60 @@
       `translate(${left}px, ${top}px) scale(${s})`;
   }
 
+  // ===== Функция отрисовки руки =====
+  function drawArm(shCx, shCy, elCx, elCy, wrCx, wrCy, shR, elR, wrR, isLeft) {
+    // Определяем направление руки (внутрь или наружу) для правильных изгибов
+    // Если левая рука (isLeft = true), изгиб вовнутрь - это +
+    // Если правая, изгиб вовнутрь - это -
+    const dir = isLeft ? 1 : -1;
+
+    // Ширина руки на разных участках
+    const shWidth = shR * 1.2;
+    const elWidth = elR * 1.1;
+    const wrWidth = wrR * 0.8;
+
+    // Вспомогательная функция для интерполяции
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    // Точки для верхней части руки (от плеча до локтя)
+    // Внешняя сторона
+    const bicepTopOuter = { x: shCx + (isLeft ? -shWidth : shWidth), y: shCy + (elCy - shCy) * 0.1 };
+    const bicepMidOuter = { x: shCx + (isLeft ? -shWidth * 0.9 : shWidth * 0.9), y: lerp(shCy, elCy, 0.33) };
+    const bicepBotOuter = { x: lerp(bicepMidOuter.x, elCx, 0.8), y: lerp(shCy, elCy, 0.8) };
+    
+    // Внутренняя сторона (вогнутая)
+    const bicepTopInner = { x: shCx + (isLeft ? shWidth * 0.5 : -shWidth * 0.5), y: shCy };
+    const bicepMidInner = { x: shCx + (isLeft ? shWidth * 0.2 : -shWidth * 0.2), y: lerp(shCy, elCy, 0.5) };
+    const bicepBotInner = { x: elCx + (isLeft ? elWidth * 0.5 : -elWidth * 0.5), y: elCy };
+
+    // Точки для предплечья (от локтя до запястья)
+    // Первая треть - расширение, остальное - сужение
+    const foreMidOuter = { x: lerp(elCx, wrCx, 0.33) + (isLeft ? -elWidth * 1.1 : elWidth * 1.1), y: lerp(elCy, wrCy, 0.33) };
+    const foreBotOuter = { x: lerp(elCx, wrCx, 0.8), y: lerp(elCy, wrCy, 0.8) };
+    
+    // Внутренняя сторона предплечья
+    const foreMidInner = { x: lerp(elCx, wrCx, 0.33) + (isLeft ? elWidth * 0.2 : -elWidth * 0.2), y: lerp(elCy, wrCy, 0.33) };
+    const foreBotInner = { x: lerp(elCx, wrCx, 0.8) + (isLeft ? wrWidth * 0.5 : -wrWidth * 0.5), y: lerp(elCy, wrCy, 0.8) };
+
+    const d = `
+      M ${bicepTopOuter.x} ${bicepTopOuter.y}
+      C ${bicepMidOuter.x} ${bicepMidOuter.y}, ${bicepBotOuter.x} ${bicepBotOuter.y}, ${elCx + (isLeft ? -elWidth : elWidth)} ${elCy}
+      C ${foreMidOuter.x} ${foreMidOuter.y}, ${foreBotOuter.x} ${foreBotOuter.y}, ${wrCx + (isLeft ? -wrWidth : wrWidth)} ${wrCy}
+      L ${wrCx + (isLeft ? wrWidth : -wrWidth)} ${wrCy}
+      C ${foreBotInner.x} ${foreBotInner.y}, ${foreMidInner.x} ${foreMidInner.y}, ${elCx + (isLeft ? elWidth : -elWidth)} ${elCy}
+      C ${bicepBotInner.x} ${bicepBotInner.y}, ${bicepMidInner.x} ${bicepMidInner.y}, ${bicepTopInner.x} ${bicepTopInner.y}
+      Z
+    `;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d.trim());
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#ff0000');
+    path.setAttribute('stroke-width', '1');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    gridGroup.appendChild(path);
+  }
+
   // ===== Сетка =====
   function renderGrid() {
     while (gridGroup.firstChild) gridGroup.removeChild(gridGroup.firstChild);
@@ -268,9 +322,8 @@
       gridGroup.appendChild(line);
     }
 
-    // ===== Голова (эллипс в первой секции) =====
+    // ===== Голова =====
     const sectionH = span / n;
-
     const headH = state.head.height * sectionH;
     const headW = state.head.width * sectionH;
     const rx = headW / 2;
@@ -289,19 +342,17 @@
     ellipse.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(ellipse);
 
-    // ===== Грудная клетка (яйцо во второй секции) =====
+    // ===== Грудная клетка =====
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (headW * state.chest.width) / 2;
     
     const narrowFactor = state.chest.topNarrow;
     const wideFactor = state.chest.bottomWide;
-
     const cpTopX = chestRx * narrowFactor;
     const cpBottomX = chestRx * wideFactor;
 
     const chestPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    
     const d = `
       M ${cx} ${chestY0}
       C ${cx + cpTopX} ${chestY0}, ${cx + chestRx} ${chestY0 + chestHeightPx * 0.3}, ${cx + chestRx} ${chestY0 + chestHeightPx * 0.6}
@@ -317,7 +368,7 @@
     chestPath.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(chestPath);
 
-    // ===== Плечи (круги) =====
+    // ===== Плечи =====
     const shoulderRadius = (chestHeightPx / 3) / 2;
     const shoulderCy = chestY0 + shoulderRadius;
     
@@ -374,7 +425,7 @@
     pelvisRect.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(pelvisRect);
 
-    // ===== Руки (Запястья и Локти) =====
+    // ===== Руки =====
     const pelvisBottomY = pelvisY0 + pelvisH;
 
     // Левая рука
@@ -382,6 +433,17 @@
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = cx - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
 
+    const shoulderLeftCy = shoulderCy;
+    const elbowLeftRadiusPx = state.elbowLeft.r * sectionH;
+    const elbowLeftCx_base = (shoulderLeftCx + wristLeftCx) / 2;
+    const elbowLeftCy_base = (shoulderLeftCy + wristLeftCy) / 2;
+    const elbowLeftCx = elbowLeftCx_base + (state.elbowLeft.x * sectionH);
+    const elbowLeftCy = elbowLeftCy_base + (state.elbowLeft.y * sectionH);
+
+    // Отрисовка контура левой руки
+    drawArm(shoulderLeftCx, shoulderLeftCy, elbowLeftCx, elbowLeftCy, wristLeftCx, wristLeftCy, shoulderRadius, elbowLeftRadiusPx, wristLeftRadiusPx, true);
+
+    // Круги для левой руки (направляющие)
     const wristLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     wristLeft.setAttribute('cx', String(wristLeftCx));
     wristLeft.setAttribute('cy', String(wristLeftCy));
@@ -391,13 +453,6 @@
     wristLeft.setAttribute('stroke-width', '1');
     wristLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristLeft);
-
-    const shoulderLeftCy = shoulderCy;
-    const elbowLeftRadiusPx = state.elbowLeft.r * sectionH;
-    const elbowLeftCx_base = (shoulderLeftCx + wristLeftCx) / 2;
-    const elbowLeftCy_base = (shoulderLeftCy + wristLeftCy) / 2;
-    const elbowLeftCx = elbowLeftCx_base + (state.elbowLeft.x * sectionH);
-    const elbowLeftCy = elbowLeftCy_base + (state.elbowLeft.y * sectionH);
 
     const elbowLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     elbowLeft.setAttribute('cx', String(elbowLeftCx));
@@ -409,31 +464,20 @@
     elbowLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowLeft);
 
-    // Линии для левой руки
-    const armLeftLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLine1.setAttribute('x1', String(shoulderLeftCx));
-    armLeftLine1.setAttribute('y1', String(shoulderLeftCy));
-    armLeftLine1.setAttribute('x2', String(elbowLeftCx));
-    armLeftLine1.setAttribute('y2', String(elbowLeftCy));
-    armLeftLine1.setAttribute('stroke', '#ff0000');
-    armLeftLine1.setAttribute('stroke-width', '1');
-    armLeftLine1.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLine1);
-
-    const armLeftLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armLeftLine2.setAttribute('x1', String(elbowLeftCx));
-    armLeftLine2.setAttribute('y1', String(elbowLeftCy));
-    armLeftLine2.setAttribute('x2', String(wristLeftCx));
-    armLeftLine2.setAttribute('y2', String(wristLeftCy));
-    armLeftLine2.setAttribute('stroke', '#ff0000');
-    armLeftLine2.setAttribute('stroke-width', '1');
-    armLeftLine2.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armLeftLine2);
-
     // Правая рука
     const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = cx + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
+
+    const shoulderRightCy = shoulderCy;
+    const elbowRightRadiusPx = state.elbowRight.r * sectionH;
+    const elbowRightCx_base = (shoulderRightCx + wristRightCx) / 2;
+    const elbowRightCy_base = (shoulderRightCy + wristRightCy) / 2;
+    const elbowRightCx = elbowRightCx_base + (state.elbowRight.x * sectionH);
+    const elbowRightCy = elbowRightCy_base + (state.elbowRight.y * sectionH);
+
+    // Отрисовка контура правой руки
+    drawArm(shoulderRightCx, shoulderRightCy, elbowRightCx, elbowRightCy, wristRightCx, wristRightCy, shoulderRadius, elbowRightRadiusPx, wristRightRadiusPx, false);
 
     const wristRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     wristRight.setAttribute('cx', String(wristRightCx));
@@ -445,13 +489,6 @@
     wristRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(wristRight);
 
-    const shoulderRightCy = shoulderCy;
-    const elbowRightRadiusPx = state.elbowRight.r * sectionH;
-    const elbowRightCx_base = (shoulderRightCx + wristRightCx) / 2;
-    const elbowRightCy_base = (shoulderRightCy + wristRightCy) / 2;
-    const elbowRightCx = elbowRightCx_base + (state.elbowRight.x * sectionH);
-    const elbowRightCy = elbowRightCy_base + (state.elbowRight.y * sectionH);
-
     const elbowRight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     elbowRight.setAttribute('cx', String(elbowRightCx));
     elbowRight.setAttribute('cy', String(elbowRightCy));
@@ -462,38 +499,13 @@
     elbowRight.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(elbowRight);
 
-    // Линии для правой руки
-    const armRightLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLine1.setAttribute('x1', String(shoulderRightCx));
-    armRightLine1.setAttribute('y1', String(shoulderRightCy));
-    armRightLine1.setAttribute('x2', String(elbowRightCx));
-    armRightLine1.setAttribute('y2', String(elbowRightCy));
-    armRightLine1.setAttribute('stroke', '#ff0000');
-    armRightLine1.setAttribute('stroke-width', '1');
-    armRightLine1.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLine1);
-
-    const armRightLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    armRightLine2.setAttribute('x1', String(elbowRightCx));
-    armRightLine2.setAttribute('y1', String(elbowRightCy));
-    armRightLine2.setAttribute('x2', String(wristRightCx));
-    armRightLine2.setAttribute('y2', String(wristRightCy));
-    armRightLine2.setAttribute('stroke', '#ff0000');
-    armRightLine2.setAttribute('stroke-width', '1');
-    armRightLine2.setAttribute('vector-effect', 'non-scaling-stroke');
-    gridGroup.appendChild(armRightLine2);
-
-    // ===== Ноги (Колени и Лодыжки) =====
-    
-    // Отступ в одну голову от таза
+    // ===== Ноги =====
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
-    // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
     const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
     const kneeLeftCx_base = wristLeftCx;
-    
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
 
@@ -510,7 +522,6 @@
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
     const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
     const ankleLeftCx_base = kneeLeftCx_base;
-
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
 
@@ -524,11 +535,9 @@
     ankleLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     gridGroup.appendChild(ankleLeft);
 
-    // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
     const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
-
     const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
     const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
 
@@ -545,7 +554,6 @@
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
     const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
     const ankleRightCx_base = kneeRightCx_base;
-
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
 
