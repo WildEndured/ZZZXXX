@@ -125,7 +125,6 @@ window.App = (function () {
   const ankleRightR = document.getElementById('ankleRightR');
   const ankleRightRVal = document.getElementById('ankleRightRVal');
 
-  // --- Новые элементы: бёдра ---
   const thighLeftAttachY = document.getElementById('thighLeftAttachY');
   const thighLeftAttachYVal = document.getElementById('thighLeftAttachYVal');
   const thighLeftRound = document.getElementById('thighLeftRound');
@@ -465,7 +464,6 @@ window.App = (function () {
   wristRightY.addEventListener('input', () => { state.wristRight.y = parseInt(wristRightY.value, 10) / 100; wristRightYVal.textContent = wristRightY.value + '%'; renderAll(); });
   wristRightR.addEventListener('input', () => { state.wristRight.r = parseInt(wristRightR.value, 10) / 100; wristRightRVal.textContent = wristRightR.value + '%'; renderAll(); });
 
-  // Бёдра
   thighLeftAttachY.addEventListener('input', () => { state.thighLeft.attachY = parseInt(thighLeftAttachY.value, 10) / 100; thighLeftAttachYVal.textContent = thighLeftAttachY.value + '%'; renderAll(); });
   thighLeftRound.addEventListener('input', () => { state.thighLeft.round = parseInt(thighLeftRound.value, 10) / 100; thighLeftRoundVal.textContent = thighLeftRound.value + '%'; renderAll(); });
   thighLeftAngle.addEventListener('input', () => { state.thighLeft.angle = parseInt(thighLeftAngle.value, 10); thighLeftAngleVal.textContent = thighLeftAngle.value + '°'; renderAll(); });
