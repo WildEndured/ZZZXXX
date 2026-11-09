@@ -59,13 +59,13 @@ App.Leg = (function () {
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
 
-    // 1. Верхняя линия бедра (кривая) + возврат её конца
+    // 1. Верхняя кривая бедра
     const leftThighEnd = drawThigh(group, state, 'left', sectionH);
     const rightThighEnd = drawThigh(group, state, 'right', sectionH);
 
-    // 2. Нижняя линия бедра: от конца верхней прямо к внешнему краю колена
-    drawLowerThigh(group, state, 'left', leftThighEnd, kneeLeftCx - kneeLeftRadiusPx, kneeLeftCy, sectionH);
-    drawLowerThigh(group, state, 'right', rightThighEnd, kneeRightCx + kneeRightRadiusPx, kneeRightCy, sectionH);
+    // 2. Прямая от конца верхней кривой к внешнему краю колена
+    drawLineToKnee(group, leftThighEnd, kneeLeftCx - kneeLeftRadiusPx, kneeLeftCy);
+    drawLineToKnee(group, rightThighEnd, kneeRightCx + kneeRightRadiusPx, kneeRightCy);
 
     // 3. Круги коленей и лодыжек
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -163,32 +163,10 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Нижняя линия бедра: идет от конца верхней линии к внешнему краю колена
-  // (с учетом ползунков угла и длины для регулировки ширины бедра)
-  function drawLowerThigh(group, state, side, startPoint, kneeEdgeX, kneeEdgeY, sectionH) {
-    const thigh = side === 'left' ? state.thighLeft : state.thighRight;
-    
-    // Вектор от старта к внешнему краю колена
-    const dx = kneeEdgeX - startPoint.x;
-    const dy = kneeEdgeY - startPoint.y;
-    const dist = Math.hypot(dx, dy);
-    
-    // Базовый угол (направление на колено)
-    let baseAngle = Math.atan2(dx, dy); // относительно вертикали вниз
-    const rad = (thigh.lowerAngle * Math.PI / 180);
-    
-    // Итоговый угол с учетом смещения ползунка
-    const outwardSign = side === 'left' ? -1 : 1;
-    const finalRad = baseAngle + outwardSign * rad;
-    
-    // Длина берется либо до колена, либо масштабируется ползунком
-    const len = dist * (thigh.lowerLength / 0.40); // 40% - это дефолт, чтобы на дефолте прийти ровно в колено
-    
-    const endX = startPoint.x + Math.sin(finalRad) * len;
-    const endY = startPoint.y + Math.cos(finalRad) * len;
-
+  // Прямая линия от конца верхней кривой к внешнему краю колена
+  function drawLineToKnee(group, startPoint, targetX, targetY) {
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} L ${endX} ${endY}`);
+    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} L ${targetX} ${targetY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
