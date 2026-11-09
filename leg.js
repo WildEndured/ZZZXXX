@@ -14,17 +14,22 @@ App.Leg = (function () {
 
     const baseHeadW = state.baseHeadWidth * sectionH;
 
+    // 1. Грудная клетка (совпадает с torso.js)
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (baseHeadW * state.chest.width) / 2;
 
+    // 2. Таз (ТОЧНО те же формулы, что в torso.js)
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
     const pelvisBottomY = pelvisY0 + pelvisH;
-    const pelvisX0 = 0.5 - pelvisW / 2;
+    
+    // Привязываем строго к боковым граням таза
+    const pelvisX0 = 0.5 - pelvisW / 2; 
     const pelvisX1 = 0.5 + pelvisW / 2;
 
+    // 3. Руки
     const shoulderRadius = (chestHeightPx / 3) / 2;
 
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
@@ -35,9 +40,11 @@ App.Leg = (function () {
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
 
+    // 4. Рисуем Бёдра
     drawThigh(group, state, 'left', pelvisX0, pelvisY0, pelvisH, sectionH);
     drawThigh(group, state, 'right', pelvisX1, pelvisY0, pelvisH, sectionH);
 
+    // 5. Колени и Лодыжки
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
@@ -106,25 +113,31 @@ App.Leg = (function () {
     group.appendChild(ankleRight);
   }
 
+  // Функция отрисовки верхней линии бедра
   function drawThigh(group, state, side, attachX, pelvisY0, pelvisH, sectionH) {
     const thigh = side === 'left' ? state.thighLeft : state.thighRight;
 
+    // Точка крепления ровно на грани таза
     const attachY = pelvisY0 + thigh.attachY * pelvisH;
 
     const rad = thigh.angle * Math.PI / 180;
     const len = thigh.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1;
+    const outwardSign = side === 'left' ? -1 : 1; // Наружу: для левого -1 (влево), для правого +1 (вправо)
 
     const endX = attachX + outwardSign * Math.sin(rad) * len;
     const endY = attachY + Math.cos(rad) * len;
 
+    // Выпуклость (квадратичная кривая Безье)
     const midX = (attachX + endX) / 2;
     const midY = (attachY + endY) / 2;
     const dx = endX - attachX;
     const dy = endY - attachY;
 
+    // Перпендикуляр к хорде
     let perpX = dy;
     let perpY = -dx;
+    
+    // Направляем выпуклость НАРУЖУ от центра фигуры
     if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
       perpX = -perpX;
       perpY = -perpY;
