@@ -41,8 +41,8 @@ App.Leg = (function () {
     const kneeLeftCx_base = wristLeftCx;
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
-    const kneeLeftEdgeX = kneeLeftCx - kneeLeftRadiusPx; // внешний край
-    const kneeLeftInnerX = kneeLeftCx + kneeLeftRadiusPx; // внутренний край
+    const kneeLeftEdgeX = kneeLeftCx - kneeLeftRadiusPx;
+    const kneeLeftInnerX = kneeLeftCx + kneeLeftRadiusPx; // Внутренний край (справа от центра)
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
     const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
@@ -50,7 +50,7 @@ App.Leg = (function () {
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
     const ankleLeftEdgeX = ankleLeftCx - ankleLeftRadiusPx;
-    const ankleLeftInnerX = ankleLeftCx + ankleLeftRadiusPx;
+    const ankleLeftInnerX = ankleLeftCx + ankleLeftRadiusPx; // Внутренний край (справа от центра)
 
     // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
@@ -58,8 +58,8 @@ App.Leg = (function () {
     const kneeRightCx_base = wristRightCx;
     const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
     const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
-    const kneeRightEdgeX = kneeRightCx + kneeRightRadiusPx; // внешний край
-    const kneeRightInnerX = kneeRightCx - kneeRightRadiusPx; // внутренний край
+    const kneeRightEdgeX = kneeRightCx + kneeRightRadiusPx;
+    const kneeRightInnerX = kneeRightCx - kneeRightRadiusPx; // Внутренний край (слева от центра)
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
     const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
@@ -67,7 +67,7 @@ App.Leg = (function () {
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
     const ankleRightEdgeX = ankleRightCx + ankleRightRadiusPx;
-    const ankleRightInnerX = ankleRightCx - ankleRightRadiusPx;
+    const ankleRightInnerX = ankleRightCx - ankleRightRadiusPx; // Внутренний край (слева от центра)
 
     // --- Внешние линии ---
     const leftThighEnd = drawThigh(group, state, 'left', sectionH);
@@ -83,7 +83,6 @@ App.Leg = (function () {
     drawLine(group, rightCalfEnd.x, rightCalfEnd.y, ankleRightEdgeX, ankleRightCy);
 
     // --- Внутренние линии ---
-    // Бедро: кривая от таза вниз, потом прямая к внутреннему краю колена
     const leftInnerThighStart = { x: 0.5 - pelvisW / 2 + pelvisW * 0.2, y: pelvisBottomY };
     const rightInnerThighStart = { x: 0.5 + pelvisW / 2 - pelvisW * 0.2, y: pelvisBottomY };
 
@@ -93,12 +92,19 @@ App.Leg = (function () {
     drawLine(group, leftInnerThighEnd.x, leftInnerThighEnd.y, kneeLeftInnerX, kneeLeftCy);
     drawLine(group, rightInnerThighEnd.x, rightInnerThighEnd.y, kneeRightInnerX, kneeRightCy);
 
-    // Икра: прямая от внутреннего края колена, потом кривая к внутреннему краю лодыжки
-    const leftInnerCalfKnee = { x: kneeLeftInnerX, y: kneeLeftCy };
-    const rightInnerCalfKnee = { x: kneeRightInnerX, y: kneeRightCy };
-
-    drawInnerCalf(group, state, 'left', leftInnerCalfKnee, ankleLeftInnerX, ankleLeftCy, sectionH);
-    drawInnerCalf(group, state, 'right', rightInnerCalfKnee, ankleRightInnerX, ankleRightCy, sectionH);
+    // Внутренняя икра (теперь передаем точные точки колена и стопы)
+    drawInnerCalf(
+      group, state, 'left',
+      { x: kneeLeftInnerX, y: kneeLeftCy },
+      { x: ankleLeftInnerX, y: ankleLeftCy },
+      sectionH
+    );
+    drawInnerCalf(
+      group, state, 'right',
+      { x: kneeRightInnerX, y: kneeRightCy },
+      { x: ankleRightInnerX, y: ankleRightCy },
+      sectionH
+    );
 
     // --- Точки ---
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -238,7 +244,7 @@ App.Leg = (function () {
 
     const rad = thigh.angle * Math.PI / 180;
     const len = thigh.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1; // Направление вниз-наружу
+    const outwardSign = side === 'left' ? -1 : 1;
 
     const endX = startPoint.x + outwardSign * Math.sin(rad) * len;
     const endY = startPoint.y + Math.cos(rad) * len;
@@ -250,8 +256,7 @@ App.Leg = (function () {
 
     let perpX = dy;
     let perpY = -dx;
-    
-    // Инвертируем направление перпендикуляра для внутреннего бедра (выпуклость внутрь)
+    // Для внутреннего бедра перпендикуляр направлен внутрь
     if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
       perpX = -perpX;
       perpY = -perpY;
@@ -272,46 +277,49 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Внутренняя икра: прямая от колена к середине, затем кривая к лодыжке, и прямая до края круга
-  function drawInnerCalf(group, state, side, kneeInner, ankleInnerX, ankleInnerY, sectionH) {
+  // Внутренняя икра: прямая от колена, кривая, и прямая до стопы. Начало и конец жестко зафиксированы.
+  function drawInnerCalf(group, state, side, start, end, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
 
-    const midX = (kneeInner.x + ankleInnerX) / 2;
-    const midY = (kneeInner.y + ankleInnerY) / 2;
+    // Находим середину между коленом и стопой
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
 
+    // Рассчитываем точку для контрольной точки кривой, чтобы сделать изгиб
+    // Двигаем контрольную точку от середины в сторону наружу (или внутрь, в зависимости от side)
     const rad = calf.angle * Math.PI / 180;
-    const len = calf.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1; // Кривизна наружу или внутрь в зависимости от настроек
-
-    const endX = midX + outwardSign * Math.sin(rad) * len;
-    const endY = midY + Math.cos(rad) * len;
-
-    const cMidX = (midX + endX) / 2;
-    const cMidY = (midY + endY) / 2;
-    const cdx = endX - midX;
-    const cdy = endY - midY;
-
-    let perpX = cdy;
-    let perpY = -cdx;
-    if ((cMidX < 0.5 && perpX > 0) || (cMidX > 0.5 && perpX < 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
+    // Длина кривой (насколько сильно выпирает)
+    const bulge = calf.length * sectionH * Math.sin(rad);
+    
+    // Смещение перпендикулярно вектору колено->стопа
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const len = Math.hypot(dx, dy) || 1;
+    
+    // Нормаль
+    let nx = dy / len;
+    let ny = -dx / len;
+    
+    // Направляем нормаль наружу от центра фигуры (для левой ноги - влево, для правой - вправо)
+    const outwardSign = side === 'left' ? -1 : 1;
+    if ((side === 'left' && nx > 0) || (side === 'right' && nx < 0)) {
+       nx = -nx;
+       ny = -ny;
     }
 
+    // Контрольная точка (с учётом скругления)
     const k = 0.5 * calf.round;
-    const cpX = cMidX + perpX * k;
-    const cpY = cMidY + perpY * k;
+    const cpX = midX + nx * bulge * k;
+    const cpY = midY + ny * bulge * k;
 
-    // Линия: колено -> середина (прямая) -> кривая -> конец. И от конца до края стопы.
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${kneeInner.x} ${kneeInner.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${endX} ${endY} L ${ankleInnerX} ${ankleInnerY}`);
+    // Сначала прямая до середины, потом кривая до конца, потом прямая до лодыжки
+    path.setAttribute('d', `M ${start.x} ${start.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(path);
-
-    return { x: ankleInnerX, y: ankleInnerY };
   }
 
   function drawLine(group, x1, y1, x2, y2) {
