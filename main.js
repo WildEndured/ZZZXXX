@@ -19,7 +19,7 @@ window.App = (function () {
   const gridPadVal = document.getElementById('gridPadVal');
   const heads = document.getElementById('heads');
   const headsVal = document.getElementById('headsVal');
-  
+
   const brushColor = document.getElementById('brushColor');
   const brushWidth = document.getElementById('brushWidth');
   const brushWidthVal = document.getElementById('brushWidthVal');
@@ -34,7 +34,7 @@ window.App = (function () {
   const headHeightVal = document.getElementById('headHeightVal');
   const headOffset = document.getElementById('headOffset');
   const headOffsetVal = document.getElementById('headOffsetVal');
-  
+
   const chinY = document.getElementById('chinY');
   const chinYVal = document.getElementById('chinYVal');
   const chinWidth = document.getElementById('chinWidth');
@@ -125,6 +125,25 @@ window.App = (function () {
   const ankleRightR = document.getElementById('ankleRightR');
   const ankleRightRVal = document.getElementById('ankleRightRVal');
 
+  // --- Новые элементы: бёдра ---
+  const thighLeftAttachY = document.getElementById('thighLeftAttachY');
+  const thighLeftAttachYVal = document.getElementById('thighLeftAttachYVal');
+  const thighLeftRound = document.getElementById('thighLeftRound');
+  const thighLeftRoundVal = document.getElementById('thighLeftRoundVal');
+  const thighLeftAngle = document.getElementById('thighLeftAngle');
+  const thighLeftAngleVal = document.getElementById('thighLeftAngleVal');
+  const thighLeftLength = document.getElementById('thighLeftLength');
+  const thighLeftLengthVal = document.getElementById('thighLeftLengthVal');
+
+  const thighRightAttachY = document.getElementById('thighRightAttachY');
+  const thighRightAttachYVal = document.getElementById('thighRightAttachYVal');
+  const thighRightRound = document.getElementById('thighRightRound');
+  const thighRightRoundVal = document.getElementById('thighRightRoundVal');
+  const thighRightAngle = document.getElementById('thighRightAngle');
+  const thighRightAngleVal = document.getElementById('thighRightAngleVal');
+  const thighRightLength = document.getElementById('thighRightLength');
+  const thighRightLengthVal = document.getElementById('thighRightLengthVal');
+
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
     bgColor: '#ffffff', underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
@@ -138,6 +157,8 @@ window.App = (function () {
     wristLeft: { x: -0.20, y: 0, r: 0.10 }, wristRight: { x: 0.20, y: 0, r: 0.10 },
     kneeLeft: { x: 0.50, y: 0.25, r: 0.15 }, kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
     ankleLeft: { x: 0.50, y: 0.50, r: 0.10 }, ankleRight: { x: -0.50, y: 0.50, r: 0.10 },
+    thighLeft: { attachY: 0.0, round: 0.30, angle: 20, length: 0.80 },
+    thighRight: { attachY: 0.0, round: 0.30, angle: 20, length: 0.80 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
@@ -443,6 +464,17 @@ window.App = (function () {
   wristRightX.addEventListener('input', () => { state.wristRight.x = parseInt(wristRightX.value, 10) / 100; wristRightXVal.textContent = wristRightX.value + '%'; renderAll(); });
   wristRightY.addEventListener('input', () => { state.wristRight.y = parseInt(wristRightY.value, 10) / 100; wristRightYVal.textContent = wristRightY.value + '%'; renderAll(); });
   wristRightR.addEventListener('input', () => { state.wristRight.r = parseInt(wristRightR.value, 10) / 100; wristRightRVal.textContent = wristRightR.value + '%'; renderAll(); });
+
+  // Бёдра
+  thighLeftAttachY.addEventListener('input', () => { state.thighLeft.attachY = parseInt(thighLeftAttachY.value, 10) / 100; thighLeftAttachYVal.textContent = thighLeftAttachY.value + '%'; renderAll(); });
+  thighLeftRound.addEventListener('input', () => { state.thighLeft.round = parseInt(thighLeftRound.value, 10) / 100; thighLeftRoundVal.textContent = thighLeftRound.value + '%'; renderAll(); });
+  thighLeftAngle.addEventListener('input', () => { state.thighLeft.angle = parseInt(thighLeftAngle.value, 10); thighLeftAngleVal.textContent = thighLeftAngle.value + '°'; renderAll(); });
+  thighLeftLength.addEventListener('input', () => { state.thighLeft.length = parseInt(thighLeftLength.value, 10) / 100; thighLeftLengthVal.textContent = thighLeftLength.value + '%'; renderAll(); });
+
+  thighRightAttachY.addEventListener('input', () => { state.thighRight.attachY = parseInt(thighRightAttachY.value, 10) / 100; thighRightAttachYVal.textContent = thighRightAttachY.value + '%'; renderAll(); });
+  thighRightRound.addEventListener('input', () => { state.thighRight.round = parseInt(thighRightRound.value, 10) / 100; thighRightRoundVal.textContent = thighRightRound.value + '%'; renderAll(); });
+  thighRightAngle.addEventListener('input', () => { state.thighRight.angle = parseInt(thighRightAngle.value, 10); thighRightAngleVal.textContent = thighRightAngle.value + '°'; renderAll(); });
+  thighRightLength.addEventListener('input', () => { state.thighRight.length = parseInt(thighRightLength.value, 10) / 100; thighRightLengthVal.textContent = thighRightLength.value + '%'; renderAll(); });
 
   kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
   kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
