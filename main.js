@@ -160,6 +160,8 @@ window.App = (function () {
   const calfRightLengthVal = document.getElementById('calfRightLengthVal');
 
   // Внутреннее бедро
+  const innerThighLeftAttachX = document.getElementById('innerThighLeftAttachX');
+  const innerThighLeftAttachXVal = document.getElementById('innerThighLeftAttachXVal');
   const innerThighLeftRound = document.getElementById('innerThighLeftRound');
   const innerThighLeftRoundVal = document.getElementById('innerThighLeftRoundVal');
   const innerThighLeftAngle = document.getElementById('innerThighLeftAngle');
@@ -167,6 +169,8 @@ window.App = (function () {
   const innerThighLeftLength = document.getElementById('innerThighLeftLength');
   const innerThighLeftLengthVal = document.getElementById('innerThighLeftLengthVal');
 
+  const innerThighRightAttachX = document.getElementById('innerThighRightAttachX');
+  const innerThighRightAttachXVal = document.getElementById('innerThighRightAttachXVal');
   const innerThighRightRound = document.getElementById('innerThighRightRound');
   const innerThighRightRoundVal = document.getElementById('innerThighRightRoundVal');
   const innerThighRightAngle = document.getElementById('innerThighRightAngle');
@@ -206,8 +210,8 @@ window.App = (function () {
     thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     calfLeft: { round: 0.50, angle: 10, length: 0.50 },
     calfRight: { round: 0.50, angle: 10, length: 0.50 },
-    innerThighLeft: { round: 0.50, angle: -25, length: 0.50 },
-    innerThighRight: { round: 0.50, angle: -25, length: 0.50 },
+    innerThighLeft: { attachX: 0.20, round: 0.50, angle: -25, length: 0.50 },
+    innerThighRight: { attachX: 0.20, round: 0.50, angle: -25, length: 0.50 },
     innerCalfLeft: { round: 0.50, angle: -25, length: 0.50 },
     innerCalfRight: { round: 0.50, angle: -25, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
@@ -534,10 +538,12 @@ window.App = (function () {
   calfRightAngle.addEventListener('input', () => { state.calfRight.angle = parseInt(calfRightAngle.value, 10); calfRightAngleVal.textContent = calfRightAngle.value + '°'; renderAll(); });
   calfRightLength.addEventListener('input', () => { state.calfRight.length = parseInt(calfRightLength.value, 10) / 100; calfRightLengthVal.textContent = calfRightLength.value + '%'; renderAll(); });
 
+  innerThighLeftAttachX.addEventListener('input', () => { state.innerThighLeft.attachX = parseInt(innerThighLeftAttachX.value, 10) / 100; innerThighLeftAttachXVal.textContent = innerThighLeftAttachX.value + '%'; renderAll(); });
   innerThighLeftRound.addEventListener('input', () => { state.innerThighLeft.round = parseInt(innerThighLeftRound.value, 10) / 100; innerThighLeftRoundVal.textContent = innerThighLeftRound.value + '%'; renderAll(); });
   innerThighLeftAngle.addEventListener('input', () => { state.innerThighLeft.angle = parseInt(innerThighLeftAngle.value, 10); innerThighLeftAngleVal.textContent = innerThighLeftAngle.value + '°'; renderAll(); });
   innerThighLeftLength.addEventListener('input', () => { state.innerThighLeft.length = parseInt(innerThighLeftLength.value, 10) / 100; innerThighLeftLengthVal.textContent = innerThighLeftLength.value + '%'; renderAll(); });
 
+  innerThighRightAttachX.addEventListener('input', () => { state.innerThighRight.attachX = parseInt(innerThighRightAttachX.value, 10) / 100; innerThighRightAttachXVal.textContent = innerThighRightAttachX.value + '%'; renderAll(); });
   innerThighRightRound.addEventListener('input', () => { state.innerThighRight.round = parseInt(innerThighRightRound.value, 10) / 100; innerThighRightRoundVal.textContent = innerThighRightRound.value + '%'; renderAll(); });
   innerThighRightAngle.addEventListener('input', () => { state.innerThighRight.angle = parseInt(innerThighRightAngle.value, 10); innerThighRightAngleVal.textContent = innerThighRightAngle.value + '°'; renderAll(); });
   innerThighRightLength.addEventListener('input', () => { state.innerThighRight.length = parseInt(innerThighRightLength.value, 10) / 100; innerThighRightLengthVal.textContent = innerThighRightLength.value + '%'; renderAll(); });
