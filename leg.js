@@ -262,25 +262,24 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // ИСПРАВЛЕННАЯ ВНУТРЕННЯЯ ИКРА
-  // Длина регулирует силу изгиба, Угол - направление изгиба (внутрь/наружу)
+  // Внутренняя икра: структура "прямая-кривая"
   function drawInnerCalf(group, state, side, start, end, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
 
-    // Находим середину хорды между коленом и стопой
+    // Находим середину между коленом и стопой
     const midX = (start.x + end.x) / 2;
     const midY = (start.y + end.y) / 2;
 
-    // Вектор от колена к стопе
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
+    // Вектор второй половины (от середины до конца)
+    const dx = end.x - midX;
+    const dy = end.y - midY;
     const dist = Math.hypot(dx, dy) || 1;
 
-    // Перпендикуляр к вектору (нормаль)
+    // Перпендикуляр к вектору второй половины (нормаль)
     let nx = dy / dist;
     let ny = -dx / dist;
 
-    // Направляем нормаль строго внутрь фигуры (к центру X=0.5)
+    // Направляем нормаль внутрь фигуры (к центру X=0.5)
     const isLeft = side === 'left';
     if ((isLeft && nx > 0) || (!isLeft && nx < 0)) {
       nx = -nx;
@@ -290,17 +289,16 @@ App.Leg = (function () {
     // Ползунок "Скругление" (round) управляет знаком: >0.5 - внутрь, <0.5 - наружу
     const direction = (calf.round > 0.5) ? 1 : -1;
     
-    // Ползунок "Длина" (length) управляет амплитудой выгиба
-    // Умножаем на 100%, чтобы при 100% выгиб был заметным, но не ломал фигуру
+    // Ползунок "Длина" (length) управляет силой выгиба второй части
     const bulge = dist * calf.length * direction;
 
-    // Координаты контрольной точки
+    // Контрольная точка для кривой (середина второй части + выгиб)
     const cpX = midX + nx * bulge;
     const cpY = midY + ny * bulge;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Одна плавная кривая от колена к стопе
-    path.setAttribute('d', `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
+    // Прямая от колена до середины, затем кривая от середины к стопе
+    path.setAttribute('d', `M ${start.x} ${start.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
