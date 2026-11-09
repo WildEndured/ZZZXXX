@@ -242,7 +242,7 @@ App.Leg = (function () {
 
     let perpX = dy;
     let perpY = -dx;
-    // Выгибаем внутрь (в сторону центра)
+    // Выгибаем внутрь
     if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
       perpX = -perpX;
       perpY = -perpY;
@@ -263,33 +263,32 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Внутренняя икра: изгибается внутрь, соединяется от колена к стопе
+  // ИСПРАВЛЕННАЯ ВНУТРЕННЯЯ ИКРА
   function drawInnerCalf(group, state, side, start, end, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
-
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
-
-    const rad = calf.angle * Math.PI / 180;
-    const len = calf.length * sectionH;
-    // Направление изгиба внутрь (к центру 0.5)
-    const outwardSign = side === 'left' ? 1 : -1; 
 
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const dist = Math.hypot(dx, dy) || 1;
 
-    // Перпендикуляр
-    let perpX = dy / dist;
-    let perpY = -dx / dist;
+    // Базовый угол направления от колена к стопе
+    let baseAngle = Math.atan2(dy, dx); 
 
-    // Контрольная точка
-    const cpX = midX + perpX * len * outwardSign;
-    const cpY = midY + perpY * len * outwardSign;
+    // Добавляем угол скругления (в радианах)
+    const rad = calf.angle * Math.PI / 180;
+    const finalAngle = baseAngle + rad;
+
+    // Длина контрольной точки (влияет на выпуклость)
+    const len = dist * (calf.length * 0.5); 
+    const outwardSign = side === 'left' ? 1 : -1;
+
+    // Координаты контрольной точки
+    const cpX = start.x + Math.cos(finalAngle) * len * outwardSign;
+    const cpY = start.y + Math.sin(finalAngle) * len * outwardSign;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Линия от колена -> середина (прямая), потом кривая до стопы
-    path.setAttribute('d', `M ${start.x} ${start.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
+    // Рисуем квадратичную кривую от колена к стопе с учетом контрольной точки
+    path.setAttribute('d', `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
