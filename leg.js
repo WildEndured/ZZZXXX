@@ -78,7 +78,7 @@ App.Leg = (function () {
     drawLine(group, leftCalfEnd.x, leftCalfEnd.y, ankleLeftEdgeX, ankleLeftCy);
     drawLine(group, rightCalfEnd.x, rightCalfEnd.y, ankleRightEdgeX, ankleRightCy);
 
-    // --- Внутренние линии ---
+    // --- Внутренние линии (только бедра) ---
     const leftInnerThighStart = { x: (0.5 - pelvisW / 2) + pelvisW * state.innerThighLeft.attachX, y: pelvisBottomY };
     const rightInnerThighStart = { x: (0.5 + pelvisW / 2) - pelvisW * state.innerThighRight.attachX, y: pelvisBottomY };
 
@@ -183,28 +183,35 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // ВНЕШНЯЯ ИКРА (5-6)
+  // СТАРАЯ ВНЕШНЯЯ ИКРА (плавная кривая от колена к стопе)
   function drawCalf(group, state, side, kneeEdgeX, kneeEdgeY, sectionH) {
     const calf = side === 'left' ? state.calfLeft : state.calfRight;
 
-    const baseLen = (calf.length * sectionH);
-    const outwardSign = side === 'left' ? -1 : 1;
-    
-    // Точка излома
-    const midX = kneeEdgeX; 
-    const midY = kneeEdgeY + baseLen * 0.4;
-
-    // Конечная точка
     const rad = calf.angle * Math.PI / 180;
-    const endX = midX + outwardSign * Math.sin(rad) * baseLen;
-    const endY = midY + Math.cos(rad) * baseLen;
+    const len = calf.length * sectionH;
+    const outwardSign = side === 'left' ? -1 : 1;
 
-    // Контрольная точка
-    const cpX = midX + outwardSign * (endX - midX) * calf.round;
-    const cpY = midY + (endY - midY) * 0.5;
+    const endX = kneeEdgeX + outwardSign * Math.sin(rad) * len;
+    const endY = kneeEdgeY + Math.cos(rad) * len;
+
+    const midX = (kneeEdgeX + endX) / 2;
+    const midY = (kneeEdgeY + endY) / 2;
+    const dx = endX - kneeEdgeX;
+    const dy = endY - kneeEdgeY;
+
+    let perpX = dy;
+    let perpY = -dx;
+    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
+      perpX = -perpX;
+      perpY = -perpY;
+    }
+
+    const k = 0.5 * calf.round;
+    const cpX = midX + perpX * k;
+    const cpY = midY + perpY * k;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${kneeEdgeX} ${kneeEdgeY} L ${midX} ${midY} Q ${cpX} ${cpY} ${endX} ${endY}`);
+    path.setAttribute('d', `M ${kneeEdgeX} ${kneeEdgeY} Q ${cpX} ${cpY} ${endX} ${endY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
