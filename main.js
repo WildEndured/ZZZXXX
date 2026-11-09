@@ -125,6 +125,7 @@ window.App = (function () {
   const ankleRightR = document.getElementById('ankleRightR');
   const ankleRightRVal = document.getElementById('ankleRightRVal');
 
+  // Внешнее бедро
   const thighLeftAttachY = document.getElementById('thighLeftAttachY');
   const thighLeftAttachYVal = document.getElementById('thighLeftAttachYVal');
   const thighLeftRound = document.getElementById('thighLeftRound');
@@ -143,6 +144,7 @@ window.App = (function () {
   const thighRightLength = document.getElementById('thighRightLength');
   const thighRightLengthVal = document.getElementById('thighRightLengthVal');
 
+  // Внешняя икра
   const calfLeftRound = document.getElementById('calfLeftRound');
   const calfLeftRoundVal = document.getElementById('calfLeftRoundVal');
   const calfLeftAngle = document.getElementById('calfLeftAngle');
@@ -156,6 +158,36 @@ window.App = (function () {
   const calfRightAngleVal = document.getElementById('calfRightAngleVal');
   const calfRightLength = document.getElementById('calfRightLength');
   const calfRightLengthVal = document.getElementById('calfRightLengthVal');
+
+  // Внутреннее бедро
+  const innerThighLeftRound = document.getElementById('innerThighLeftRound');
+  const innerThighLeftRoundVal = document.getElementById('innerThighLeftRoundVal');
+  const innerThighLeftAngle = document.getElementById('innerThighLeftAngle');
+  const innerThighLeftAngleVal = document.getElementById('innerThighLeftAngleVal');
+  const innerThighLeftLength = document.getElementById('innerThighLeftLength');
+  const innerThighLeftLengthVal = document.getElementById('innerThighLeftLengthVal');
+
+  const innerThighRightRound = document.getElementById('innerThighRightRound');
+  const innerThighRightRoundVal = document.getElementById('innerThighRightRoundVal');
+  const innerThighRightAngle = document.getElementById('innerThighRightAngle');
+  const innerThighRightAngleVal = document.getElementById('innerThighRightAngleVal');
+  const innerThighRightLength = document.getElementById('innerThighRightLength');
+  const innerThighRightLengthVal = document.getElementById('innerThighRightLengthVal');
+
+  // Внутренняя икра
+  const innerCalfLeftRound = document.getElementById('innerCalfLeftRound');
+  const innerCalfLeftRoundVal = document.getElementById('innerCalfLeftRoundVal');
+  const innerCalfLeftAngle = document.getElementById('innerCalfLeftAngle');
+  const innerCalfLeftAngleVal = document.getElementById('innerCalfLeftAngleVal');
+  const innerCalfLeftLength = document.getElementById('innerCalfLeftLength');
+  const innerCalfLeftLengthVal = document.getElementById('innerCalfLeftLengthVal');
+
+  const innerCalfRightRound = document.getElementById('innerCalfRightRound');
+  const innerCalfRightRoundVal = document.getElementById('innerCalfRightRoundVal');
+  const innerCalfRightAngle = document.getElementById('innerCalfRightAngle');
+  const innerCalfRightAngleVal = document.getElementById('innerCalfRightAngleVal');
+  const innerCalfRightLength = document.getElementById('innerCalfRightLength');
+  const innerCalfRightLengthVal = document.getElementById('innerCalfRightLengthVal');
 
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
@@ -174,6 +206,10 @@ window.App = (function () {
     thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     calfLeft: { round: 0.50, angle: 10, length: 0.50 },
     calfRight: { round: 0.50, angle: 10, length: 0.50 },
+    innerThighLeft: { round: 0.50, angle: 10, length: 0.50 },
+    innerThighRight: { round: 0.50, angle: 10, length: 0.50 },
+    innerCalfLeft: { round: 0.50, angle: -10, length: 0.50 },
+    innerCalfRight: { round: 0.50, angle: -10, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
@@ -497,6 +533,22 @@ window.App = (function () {
   calfRightRound.addEventListener('input', () => { state.calfRight.round = parseInt(calfRightRound.value, 10) / 100; calfRightRoundVal.textContent = calfRightRound.value + '%'; renderAll(); });
   calfRightAngle.addEventListener('input', () => { state.calfRight.angle = parseInt(calfRightAngle.value, 10); calfRightAngleVal.textContent = calfRightAngle.value + '°'; renderAll(); });
   calfRightLength.addEventListener('input', () => { state.calfRight.length = parseInt(calfRightLength.value, 10) / 100; calfRightLengthVal.textContent = calfRightLength.value + '%'; renderAll(); });
+
+  innerThighLeftRound.addEventListener('input', () => { state.innerThighLeft.round = parseInt(innerThighLeftRound.value, 10) / 100; innerThighLeftRoundVal.textContent = innerThighLeftRound.value + '%'; renderAll(); });
+  innerThighLeftAngle.addEventListener('input', () => { state.innerThighLeft.angle = parseInt(innerThighLeftAngle.value, 10); innerThighLeftAngleVal.textContent = innerThighLeftAngle.value + '°'; renderAll(); });
+  innerThighLeftLength.addEventListener('input', () => { state.innerThighLeft.length = parseInt(innerThighLeftLength.value, 10) / 100; innerThighLeftLengthVal.textContent = innerThighLeftLength.value + '%'; renderAll(); });
+
+  innerThighRightRound.addEventListener('input', () => { state.innerThighRight.round = parseInt(innerThighRightRound.value, 10) / 100; innerThighRightRoundVal.textContent = innerThighRightRound.value + '%'; renderAll(); });
+  innerThighRightAngle.addEventListener('input', () => { state.innerThighRight.angle = parseInt(innerThighRightAngle.value, 10); innerThighRightAngleVal.textContent = innerThighRightAngle.value + '°'; renderAll(); });
+  innerThighRightLength.addEventListener('input', () => { state.innerThighRight.length = parseInt(innerThighRightLength.value, 10) / 100; innerThighRightLengthVal.textContent = innerThighRightLength.value + '%'; renderAll(); });
+
+  innerCalfLeftRound.addEventListener('input', () => { state.innerCalfLeft.round = parseInt(innerCalfLeftRound.value, 10) / 100; innerCalfLeftRoundVal.textContent = innerCalfLeftRound.value + '%'; renderAll(); });
+  innerCalfLeftAngle.addEventListener('input', () => { state.innerCalfLeft.angle = parseInt(innerCalfLeftAngle.value, 10); innerCalfLeftAngleVal.textContent = innerCalfLeftAngle.value + '°'; renderAll(); });
+  innerCalfLeftLength.addEventListener('input', () => { state.innerCalfLeft.length = parseInt(innerCalfLeftLength.value, 10) / 100; innerCalfLeftLengthVal.textContent = innerCalfLeftLength.value + '%'; renderAll(); });
+
+  innerCalfRightRound.addEventListener('input', () => { state.innerCalfRight.round = parseInt(innerCalfRightRound.value, 10) / 100; innerCalfRightRoundVal.textContent = innerCalfRightRound.value + '%'; renderAll(); });
+  innerCalfRightAngle.addEventListener('input', () => { state.innerCalfRight.angle = parseInt(innerCalfRightAngle.value, 10); innerCalfRightAngleVal.textContent = innerCalfRightAngle.value + '°'; renderAll(); });
+  innerCalfRightLength.addEventListener('input', () => { state.innerCalfRight.length = parseInt(innerCalfRightLength.value, 10) / 100; innerCalfRightLengthVal.textContent = innerCalfRightLength.value + '%'; renderAll(); });
 
   kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
   kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
