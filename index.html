@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Адаптивный холст для рисования</title>
-<link rel="stylesheet" href="style.css?v=1006">
+<link rel="stylesheet" href="style.css?v=1007">
 </head>
 <body>
 <div id="app">
@@ -239,14 +239,14 @@
 
           <section class="block border-none">
             <h4>Внутреннее бедро левое</h4>
-            <label>Точка роста: <span id="innerThighLeftAttachXVal">20%</span>
-              <input type="range" id="innerThighLeftAttachX" min="0" max="100" value="20">
+            <label>Точка роста: <span id="innerThighLeftAttachXVal">40%</span>
+              <input type="range" id="innerThighLeftAttachX" min="0" max="100" value="40">
             </label>
-            <label>Скругление линии: <span id="innerThighLeftRoundVal">50%</span>
-              <input type="range" id="innerThighLeftRound" min="0" max="100" value="50">
+            <label>Скругление линии: <span id="innerThighLeftRoundVal">45%</span>
+              <input type="range" id="innerThighLeftRound" min="0" max="100" value="45">
             </label>
-            <label>Угол: <span id="innerThighLeftAngleVal">-25°</span>
-              <input type="range" id="innerThighLeftAngle" min="-90" max="90" value="-25">
+            <label>Угол: <span id="innerThighLeftAngleVal">0°</span>
+              <input type="range" id="innerThighLeftAngle" min="-90" max="90" value="0">
             </label>
             <label>Длина линии: <span id="innerThighLeftLengthVal">50%</span>
               <input type="range" id="innerThighLeftLength" min="10" max="200" value="50">
@@ -254,14 +254,14 @@
           </section>
           <section class="block border-none">
             <h4>Внутреннее бедро правое</h4>
-            <label>Точка роста: <span id="innerThighRightAttachXVal">20%</span>
-              <input type="range" id="innerThighRightAttachX" min="0" max="100" value="20">
+            <label>Точка роста: <span id="innerThighRightAttachXVal">40%</span>
+              <input type="range" id="innerThighRightAttachX" min="0" max="100" value="40">
             </label>
-            <label>Скругление линии: <span id="innerThighRightRoundVal">50%</span>
-              <input type="range" id="innerThighRightRound" min="0" max="100" value="50">
+            <label>Скругление линии: <span id="innerThighRightRoundVal">45%</span>
+              <input type="range" id="innerThighRightRound" min="0" max="100" value="45">
             </label>
-            <label>Угол: <span id="innerThighRightAngleVal">-25°</span>
-              <input type="range" id="innerThighRightAngle" min="-90" max="90" value="-25">
+            <label>Угол: <span id="innerThighRightAngleVal">0°</span>
+              <input type="range" id="innerThighRightAngle" min="-90" max="90" value="0">
             </label>
             <label>Длина линии: <span id="innerThighRightLengthVal">50%</span>
               <input type="range" id="innerThighRightLength" min="10" max="200" value="50">
@@ -269,51 +269,27 @@
           </section>
 
           <section class="block border-none">
-            <h4>Внутренняя икра левая</h4>
-            <label>Скругление линии: <span id="innerCalfLeftRoundVal">50%</span>
-              <input type="range" id="innerCalfLeftRound" min="0" max="100" value="50">
-            </label>
-            <label>Угол: <span id="innerCalfLeftAngleVal">-25°</span>
-              <input type="range" id="innerCalfLeftAngle" min="-90" max="90" value="-25">
-            </label>
-            <label>Длина линии: <span id="innerCalfLeftLengthVal">50%</span>
-              <input type="range" id="innerCalfLeftLength" min="10" max="200" value="50">
-            </label>
-          </section>
-          <section class="block border-none">
-            <h4>Внутренняя икра правая</h4>
-            <label>Скругление линии: <span id="innerCalfRightRoundVal">50%</span>
-              <input type="range" id="innerCalfRightRound" min="0" max="100" value="50">
-            </label>
-            <label>Угол: <span id="innerCalfRightAngleVal">-25°</span>
-              <input type="range" id="innerCalfRightAngle" min="-90" max="90" value="-25">
-            </label>
-            <label>Длина линии: <span id="innerCalfRightLengthVal">50%</span>
-              <input type="range" id="innerCalfRightLength" min="10" max="200" value="50">
-            </label>
-          </section>
-
-          <section class="block border-none">
             <h4>Колени</h4>
             <label>Левое X: <span id="kneeLeftXVal">50%</span>
-              <input type="range" id="kneeLeftX" min="-50" max="50" value="50">
+              <input type="range" id="kneeLeftX" min="-150" max="150" value="50">
             </label>
             <label>Левое Y: <span id="kneeLeftYVal">25%</span>
-              <input type="range" id="kneeLeftY" min="-50" max="50" value="25">
+              <input type="range" id="kneeLeftY" min="-150" max="150" value="25">
             </label>
             <label>Левое радиус: <span id="kneeLeftRVal">15%</span>
               <input type="range" id="kneeLeftR" min="5" max="30" value="15">
             </label>
             <label>Правое X: <span id="kneeRightXVal">-50%</span>
-              <input type="range" id="kneeRightX" min="-50" max="50" value="-50">
+              <input type="range" id="kneeRightX" min="-150" max="150" value="-50">
             </label>
             <label>Правое Y: <span id="kneeRightYVal">25%</span>
-              <input type="range" id="kneeRightY" min="-50" max="50" value="25">
+              <input type="range" id="kneeRightY" min="-150" max="150" value="25">
             </label>
             <label>Правое радиус: <span id="kneeRightRVal">15%</span>
               <input type="range" id="kneeRightR" min="5" max="30" value="15">
             </label>
           </section>
+          
           <section class="block border-none">
             <h4>Лодыжки</h4>
             <label>Левое X: <span id="ankleLeftXVal">50%</span>
@@ -363,11 +339,11 @@
   </aside>
 </div>
 
-<script src="main.js?v=1006"></script>
-<script src="head.js?v=1006"></script>
-<script src="torso.js?v=1006"></script>
-<script src="arm.js?v=1006"></script>
-<script src="leg.js?v=1006"></script>
+<script src="main.js?v=1007"></script>
+<script src="head.js?v=1007"></script>
+<script src="torso.js?v=1007"></script>
+<script src="arm.js?v=1007"></script>
+<script src="leg.js?v=1007"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && App.init) {
