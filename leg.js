@@ -75,9 +75,10 @@ App.Leg = (function () {
     drawLine(group, leftThighEnd.x, leftThighEnd.y, kneeLeftEdgeX, kneeLeftCy);
     drawLine(group, rightThighEnd.x, rightThighEnd.y, kneeRightEdgeX, kneeRightCy);
 
-    // Внешняя икра (от колена к стопе)
-    drawCalf(group, state, 'left', kneeLeftEdgeX, kneeLeftCy, ankleLeftEdgeX, ankleLeftCy);
-    drawCalf(group, state, 'right', kneeRightEdgeX, kneeRightCy, ankleRightEdgeX, ankleRightCy);
+    const leftCalfEnd = drawCalf(group, state, 'left', kneeLeftEdgeX, kneeLeftCy, sectionH);
+    const rightCalfEnd = drawCalf(group, state, 'right', kneeRightEdgeX, kneeRightCy, sectionH);
+    drawLine(group, leftCalfEnd.x, leftCalfEnd.y, ankleLeftEdgeX, ankleLeftCy);
+    drawLine(group, rightCalfEnd.x, rightCalfEnd.y, ankleRightEdgeX, ankleRightCy);
 
     // --- Внутренние линии ---
     const leftInnerThighStart = { x: (0.5 - pelvisW / 2) + pelvisW * state.innerThighLeft.attachX, y: pelvisBottomY };
@@ -88,9 +89,8 @@ App.Leg = (function () {
     drawLine(group, leftInnerThighEnd.x, leftInnerThighEnd.y, kneeLeftInnerX, kneeLeftCy);
     drawLine(group, rightInnerThighEnd.x, rightInnerThighEnd.y, kneeRightInnerX, kneeRightCy);
 
-    // Внутренняя икра (от колена к стопе)
-    drawInnerCalf(group, state, 'left', { x: kneeLeftInnerX, y: kneeLeftCy }, { x: ankleLeftInnerX, y: ankleLeftCy });
-    drawInnerCalf(group, state, 'right', { x: kneeRightInnerX, y: kneeRightCy }, { x: ankleRightInnerX, y: ankleRightCy });
+    drawInnerCalf(group, state, 'left', { x: kneeLeftInnerX, y: kneeLeftCy }, { x: ankleLeftInnerX, y: ankleLeftCy }, sectionH);
+    drawInnerCalf(group, state, 'right', { x: kneeRightInnerX, y: kneeRightCy }, { x: ankleRightInnerX, y: ankleRightCy }, sectionH);
 
     // --- Точки ---
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -188,40 +188,37 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Внешняя икра: плавная дуга от колена к лодыжке
-  function drawCalf(group, state, side, startX, startY, endX, endY) {
+  // ВНЕШНЯЯ ИКРА (5-6)
+  // Строится: от колена прямая вниз, затем кривая наружу к стопе
+  function drawCalf(group, state, side, kneeEdgeX, kneeEdgeY, sectionH) {
     const calf = side === 'left' ? state.calfLeft : state.calfRight;
-    
-    // Вычисляем середину
-    const midX = (startX + endX) / 2;
-    const midY = (startY + endY) / 2;
 
-    // Вектор направления
-    const dx = endX - startX;
-    const dy = endY - startY;
+    // Базовая длина от колена до стопы (для отступа)
+    const baseLen = (calf.length * sectionH);
+    const outwardSign = side === 'left' ? -1 : 1;
     
-    // Перпендикуляр (наружу от центра)
-    let perpX = dy;
-    let perpY = -dx;
-    const isLeft = side === 'left';
-    // Для левой ноги наружу - это влево (минус), для правой - вправо (плюс)
-    if ((isLeft && perpX > 0) || (!isLeft && perpX < 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
-    }
+    // Точка излома (отходим вниз на 40% длины)
+    const midX = kneeEdgeX; 
+    const midY = kneeEdgeY + baseLen * 0.4;
 
-    // Контрольная точка (выпуклость)
-    const bulge = (dx * dx + dy * dy) * calf.length * 0.5; // масштабируем длину
-    const cpX = midX + perpX * bulge;
-    const cpY = midY + perpY * bulge;
+    // Конечная точка дуги (уходим наружу и вниз)
+    const rad = calf.angle * Math.PI / 180;
+    const endX = midX + outwardSign * Math.sin(rad) * baseLen;
+    const endY = midY + Math.cos(rad) * baseLen;
+
+    // Контрольная точка для кривой (выгибаем наружу)
+    const cpX = midX + outwardSign * (endX - midX) * calf.round;
+    const cpY = midY + (endY - midY) * 0.5;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${startX} ${startY} Q ${cpX} ${cpY} ${endX} ${endY}`);
+    path.setAttribute('d', `M ${kneeEdgeX} ${kneeEdgeY} L ${midX} ${midY} Q ${cpX} ${cpY} ${endX} ${endY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(path);
+
+    return { x: endX, y: endY };
   }
 
   function drawInnerThigh(group, state, side, startPoint, sectionH) {
@@ -241,7 +238,6 @@ App.Leg = (function () {
 
     let perpX = dy;
     let perpY = -dx;
-    // Выгибаем внутрь
     if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
       perpX = -perpX;
       perpY = -perpY;
@@ -262,35 +258,44 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Внутренняя икра: плавная дуга от колена к лодыжке
-  function drawInnerCalf(group, state, side, start, end) {
+  // ВНУТРЕННЯЯ ИКРА (8-7)
+  // Строится: от колена прямая вниз, затем кривая внутрь к стопе
+  function drawInnerCalf(group, state, side, start, end, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
-    
-    // Вычисляем середину
-    const midX = (start.x + end.x) / 2;
-    const midY = (start.y + end.y) / 2;
 
-    // Вектор направления
+    // Вектор от колена к стопе
     const dx = end.x - start.x;
     const dy = end.y - start.y;
-    
-    // Перпендикуляр (внутрь к центру)
-    let perpX = dy;
-    let perpY = -dx;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    // Точка излома (середина)
+    const midX = start.x + dx * 0.5;
+    const midY = start.y + dy * 0.5;
+
+    // Перпендикуляр к вектору (нормаль)
+    let nx = dy / dist;
+    let ny = -dx / dist;
+
+    // Направляем нормаль строго внутрь фигуры (к центру X=0.5)
     const isLeft = side === 'left';
-    // Для левой ноги внутрь - это вправо (плюс), для правой - влево (минус)
-    if ((isLeft && perpX < 0) || (!isLeft && perpX > 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
+    if ((isLeft && nx > 0) || (!isLeft && nx < 0)) {
+      nx = -nx;
+      ny = -ny;
     }
 
-    // Контрольная точка (выпуклость)
-    const bulge = (dx * dx + dy * dy) * calf.length * 0.5;
-    const cpX = midX + perpX * bulge;
-    const cpY = midY + perpY * bulge;
+    // Ползунок "Скругление" управляет знаком (внутрь/наружу)
+    const direction = (calf.round > 0.5) ? 1 : -1;
+    
+    // Ползунок "Длина" управляет силой выгиба
+    const bulge = dist * calf.length * direction;
+
+    // Контрольная точка для кривой
+    const cpX = midX + nx * bulge;
+    const cpY = midY + ny * bulge;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
+    // Прямая от колена до середины, затем кривая от середины к стопе
+    path.setAttribute('d', `M ${start.x} ${start.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
