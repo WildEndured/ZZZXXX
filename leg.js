@@ -63,9 +63,9 @@ App.Leg = (function () {
     const leftThighEnd = drawThigh(group, state, 'left', sectionH);
     const rightThighEnd = drawThigh(group, state, 'right', sectionH);
 
-    // 2. Прямая от конца верхней линии к колену
-    drawLineToKnee(group, leftThighEnd, kneeLeftCx, kneeLeftCy);
-    drawLineToKnee(group, rightThighEnd, kneeRightCx, kneeRightCy);
+    // 2. Прямая от конца верхней линии к внешнему краю колена
+    drawLineToKnee(group, leftThighEnd, kneeLeftCx, kneeLeftCy, kneeLeftRadiusPx, 'left');
+    drawLineToKnee(group, rightThighEnd, kneeRightCx, kneeRightCy, kneeRightRadiusPx, 'right');
 
     // 3. Нижняя внешняя линия бедра
     drawLowerThigh(group, state, 'left', leftThighEnd, sectionH);
@@ -168,9 +168,13 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  function drawLineToKnee(group, startPoint, kneeX, kneeY) {
+  function drawLineToKnee(group, startPoint, kneeX, kneeY, kneeRadius, side) {
+    // Внешний край колена: для левой ноги — левее центра, для правой — правее
+    const targetX = side === 'left' ? (kneeX - kneeRadius) : (kneeX + kneeRadius);
+    const targetY = kneeY;
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} L ${kneeX} ${kneeY}`);
+    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} L ${targetX} ${targetY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
