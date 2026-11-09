@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Адаптивный холст для рисования</title>
-<link rel="stylesheet" href="style.css?v=1007">
+<link rel="stylesheet" href="style.css?v=1008">
 </head>
 <body>
 <div id="app">
@@ -293,19 +293,19 @@
           <section class="block border-none">
             <h4>Лодыжки</h4>
             <label>Левое X: <span id="ankleLeftXVal">50%</span>
-              <input type="range" id="ankleLeftX" min="-50" max="50" value="50">
+              <input type="range" id="ankleLeftX" min="-150" max="150" value="50">
             </label>
             <label>Левое Y: <span id="ankleLeftYVal">50%</span>
-              <input type="range" id="ankleLeftY" min="-50" max="50" value="50">
+              <input type="range" id="ankleLeftY" min="-150" max="150" value="50">
             </label>
             <label>Левое радиус: <span id="ankleLeftRVal">10%</span>
               <input type="range" id="ankleLeftR" min="5" max="30" value="10">
             </label>
             <label>Правое X: <span id="ankleRightXVal">-50%</span>
-              <input type="range" id="ankleRightX" min="-50" max="50" value="-50">
+              <input type="range" id="ankleRightX" min="-150" max="150" value="-50">
             </label>
             <label>Правое Y: <span id="ankleRightYVal">50%</span>
-              <input type="range" id="ankleRightY" min="-50" max="50" value="50">
+              <input type="range" id="ankleRightY" min="-150" max="150" value="50">
             </label>
             <label>Правое радиус: <span id="ankleRightRVal">10%</span>
               <input type="range" id="ankleRightR" min="5" max="30" value="10">
@@ -339,11 +339,11 @@
   </aside>
 </div>
 
-<script src="main.js?v=1007"></script>
-<script src="head.js?v=1007"></script>
-<script src="torso.js?v=1007"></script>
-<script src="arm.js?v=1007"></script>
-<script src="leg.js?v=1007"></script>
+<script src="main.js?v=1008"></script>
+<script src="head.js?v=1008"></script>
+<script src="torso.js?v=1008"></script>
+<script src="arm.js?v=1008"></script>
+<script src="leg.js?v=1008"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && App.init) {
