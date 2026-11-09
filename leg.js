@@ -242,7 +242,6 @@ App.Leg = (function () {
 
     let perpX = dy;
     let perpY = -dx;
-    // Выгибаем внутрь
     if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
       perpX = -perpX;
       perpY = -perpY;
@@ -264,30 +263,43 @@ App.Leg = (function () {
   }
 
   // ИСПРАВЛЕННАЯ ВНУТРЕННЯЯ ИКРА
+  // Длина регулирует силу изгиба, Угол - направление изгиба (внутрь/наружу)
   function drawInnerCalf(group, state, side, start, end, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
 
+    // Находим середину хорды между коленом и стопой
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+
+    // Вектор от колена к стопе
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const dist = Math.hypot(dx, dy) || 1;
 
-    // Базовый угол направления от колена к стопе
-    let baseAngle = Math.atan2(dy, dx); 
+    // Перпендикуляр к вектору (нормаль)
+    let nx = dy / dist;
+    let ny = -dx / dist;
 
-    // Добавляем угол скругления (в радианах)
-    const rad = calf.angle * Math.PI / 180;
-    const finalAngle = baseAngle + rad;
+    // Направляем нормаль строго внутрь фигуры (к центру X=0.5)
+    const isLeft = side === 'left';
+    if ((isLeft && nx > 0) || (!isLeft && nx < 0)) {
+      nx = -nx;
+      ny = -ny;
+    }
 
-    // Длина контрольной точки (влияет на выпуклость)
-    const len = dist * (calf.length * 0.5); 
-    const outwardSign = side === 'left' ? 1 : -1;
+    // Ползунок "Скругление" (round) управляет знаком: >0.5 - внутрь, <0.5 - наружу
+    const direction = (calf.round > 0.5) ? 1 : -1;
+    
+    // Ползунок "Длина" (length) управляет амплитудой выгиба
+    // Умножаем на 100%, чтобы при 100% выгиб был заметным, но не ломал фигуру
+    const bulge = dist * calf.length * direction;
 
     // Координаты контрольной точки
-    const cpX = start.x + Math.cos(finalAngle) * len * outwardSign;
-    const cpY = start.y + Math.sin(finalAngle) * len * outwardSign;
+    const cpX = midX + nx * bulge;
+    const cpY = midY + ny * bulge;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Рисуем квадратичную кривую от колена к стопе с учетом контрольной точки
+    // Одна плавная кривая от колена к стопе
     path.setAttribute('d', `M ${start.x} ${start.y} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
