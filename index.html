@@ -21,12 +21,166 @@
 
   <aside id="panel">
     <div class="panel-inner">
-      <!-- ... верхние блоки без изменений ... -->
+      <section class="block">
+        <h3>Подложка</h3>
+        <input type="file" id="fileInput" accept="image/*">
+        <label>Масштаб: <span id="underlayScaleVal">100%</span>
+          <input type="range" id="underlayScale" min="10" max="300" value="100">
+        </label>
+        <label>Прозрачность: <span id="underlayOpacityVal">100%</span>
+          <input type="range" id="underlayOpacity" min="0" max="100" value="100">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Фон</h3>
+        <label>Цвет фона
+          <input type="color" id="bgColor" value="#ffffff">
+        </label>
+      </section>
+
+      <section class="block">
+        <h3>Сетка</h3>
+        <label>Отступ (0–10%): <span id="gridPadVal">0%</span>
+          <input type="range" id="gridPad" min="0" max="10" value="0">
+        </label>
+        <label>Голов (2–8): <span id="headsVal">5</span>
+          <input type="range" id="heads" min="2" max="8" value="5">
+        </label>
+      </section>
+
+      <details class="accordion" open>
+        <summary>Голова</summary>
+        <div class="accordion-content">
+          <section class="block border-none">
+            <h4>Основное</h4>
+            <label>Ширина: <span id="headWidthVal">65%</span>
+              <input type="range" id="headWidth" min="10" max="200" value="65">
+            </label>
+            <label>Высота: <span id="headHeightVal">65%</span>
+              <input type="range" id="headHeight" min="10" max="200" value="65">
+            </label>
+            <label>Смещение от верха: <span id="headOffsetVal">0%</span>
+              <input type="range" id="headOffset" min="-150" max="150" value="0">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Подбородок</h4>
+            <label>Подбородок (Y): <span id="chinYVal">85%</span>
+              <input type="range" id="chinY" min="0" max="150" value="85">
+            </label>
+            <label>Ширина подбородка: <span id="chinWidthVal">1%</span>
+              <input type="range" id="chinWidth" min="0" max="50" value="1">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Челюсть</h4>
+            <label>Высота крепления к кругу: <span id="jawAttachYVal">55%</span>
+              <input type="range" id="jawAttachY" min="-50" max="150" value="55">
+            </label>
+            <label>Высота челюсти (спуск): <span id="jawHeightVal">80%</span>
+              <input type="range" id="jawHeight" min="0" max="200" value="80">
+            </label>
+            <label>Угол челюсти (скулы): <span id="jawAngleVal">20%</span>
+              <input type="range" id="jawAngle" min="-100" max="100" value="20">
+            </label>
+            <label>Скругление челюсти: <span id="jawRoundVal">0%</span>
+              <input type="range" id="jawRound" min="0" max="100" value="0">
+            </label>
+          </section>
+        </div>
+      </details>
+
+      <details class="accordion" open>
+        <summary>Торс</summary>
+        <div class="accordion-content">
+          <section class="block border-none">
+            <h4>Грудная клетка</h4>
+            <label>Высота: <span id="chestHeightVal">85%</span>
+              <input type="range" id="chestHeight" min="10" max="200" value="85">
+            </label>
+            <label>Ширина: <span id="chestWidthVal">100%</span>
+              <input type="range" id="chestWidth" min="10" max="200" value="100">
+            </label>
+            <label>Смещение по Y: <span id="chestOffsetVal">0%</span>
+              <input type="range" id="chestOffset" min="-150" max="150" value="0">
+            </label>
+            <label>Сужение сверху: <span id="chestTopNarrowVal">70%</span>
+              <input type="range" id="chestTopNarrow" min="0" max="150" value="70">
+            </label>
+            <label>Расширение снизу: <span id="chestBottomWideVal">100%</span>
+              <input type="range" id="chestBottomWide" min="0" max="200" value="100">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Таз</h4>
+            <label>Корректировка ширины: <span id="pelvisWidthModVal">100%</span>
+              <input type="range" id="pelvisWidthMod" min="10" max="200" value="100">
+            </label>
+            <label>Корректировка высоты: <span id="pelvisHeightModVal">100%</span>
+              <input type="range" id="pelvisHeightMod" min="10" max="200" value="100">
+            </label>
+            <label>Смещение по Y: <span id="pelvisOffsetVal">0%</span>
+              <input type="range" id="pelvisOffset" min="-150" max="150" value="0">
+            </label>
+            <label>Скругление углов: <span id="pelvisRoundVal">20%</span>
+              <input type="range" id="pelvisRound" min="0" max="100" value="20">
+            </label>
+          </section>
+        </div>
+      </details>
+
+      <details class="accordion" open>
+        <summary>Руки</summary>
+        <div class="accordion-content">
+          <section class="block border-none">
+            <h4>Локти</h4>
+            <label>Левое X: <span id="elbowLeftXVal">0%</span>
+              <input type="range" id="elbowLeftX" min="-50" max="50" value="0">
+            </label>
+            <label>Левое Y: <span id="elbowLeftYVal">0%</span>
+              <input type="range" id="elbowLeftY" min="-50" max="50" value="0">
+            </label>
+            <label>Левое радиус: <span id="elbowLeftRVal">8%</span>
+              <input type="range" id="elbowLeftR" min="5" max="30" value="8">
+            </label>
+            <label>Правое X: <span id="elbowRightXVal">0%</span>
+              <input type="range" id="elbowRightX" min="-50" max="50" value="0">
+            </label>
+            <label>Правое Y: <span id="elbowRightYVal">0%</span>
+              <input type="range" id="elbowRightY" min="-50" max="50" value="0">
+            </label>
+            <label>Правое радиус: <span id="elbowRightRVal">8%</span>
+              <input type="range" id="elbowRightR" min="5" max="30" value="8">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Запястья</h4>
+            <label>Левое X: <span id="wristLeftXVal">-20%</span>
+              <input type="range" id="wristLeftX" min="-50" max="50" value="-20">
+            </label>
+            <label>Левое Y: <span id="wristLeftYVal">0%</span>
+              <input type="range" id="wristLeftY" min="-50" max="50" value="0">
+            </label>
+            <label>Левое радиус: <span id="wristLeftRVal">10%</span>
+              <input type="range" id="wristLeftR" min="5" max="30" value="10">
+            </label>
+            <label>Правое X: <span id="wristRightXVal">20%</span>
+              <input type="range" id="wristRightX" min="-50" max="50" value="20">
+            </label>
+            <label>Правое Y: <span id="wristRightYVal">0%</span>
+              <input type="range" id="wristRightY" min="-50" max="50" value="0">
+            </label>
+            <label>Правое радиус: <span id="wristRightRVal">10%</span>
+              <input type="range" id="wristRightR" min="5" max="30" value="10">
+            </label>
+          </section>
+        </div>
+      </details>
 
       <details class="accordion" open>
         <summary>Ноги</summary>
         <div class="accordion-content">
-          <!-- внешние линии бедра и икры без изменений -->
           <section class="block border-none">
             <h4>Бедро левое</h4>
             <label>Высота крепления к тазу: <span id="thighLeftAttachYVal">50%</span>
@@ -139,7 +293,6 @@
             </label>
           </section>
 
-          <!-- колени и лодыжки без изменений -->
           <section class="block border-none">
             <h4>Колени</h4>
             <label>Левое X: <span id="kneeLeftXVal">50%</span>
@@ -185,7 +338,6 @@
         </div>
       </details>
 
-      <!-- ... нижние блоки (Кисть, Действия) ... -->
       <section class="block">
         <h3>Кисть</h3>
         <label>Цвет кисти
