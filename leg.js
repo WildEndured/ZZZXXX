@@ -14,12 +14,10 @@ App.Leg = (function () {
 
     const baseHeadW = state.baseHeadWidth * sectionH;
 
-    // --- Грудная клетка (те же формулы, что и в torso.js) ---
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (baseHeadW * state.chest.width) / 2;
 
-    // --- Таз (те же формулы, что и в torso.js) ---
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
@@ -27,7 +25,6 @@ App.Leg = (function () {
     const pelvisX0 = 0.5 - pelvisW / 2;
     const pelvisX1 = 0.5 + pelvisW / 2;
 
-    // --- Плечи / запястья ---
     const shoulderRadius = (chestHeightPx / 3) / 2;
 
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
@@ -38,23 +35,9 @@ App.Leg = (function () {
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
 
-    // --- Бёдра: крепимся ровно к боковым граням таза ---
-    drawThigh(group, state, {
-      side: 'left',
-      attachX: pelvisX0,        // левая грань таза
-      pelvisY0,
-      pelvisH,
-      sectionH,
-    });
-    drawThigh(group, state, {
-      side: 'right',
-      attachX: pelvisX1,        // правая грань таза
-      pelvisY0,
-      pelvisH,
-      sectionH,
-    });
+    drawThigh(group, state, 'left', pelvisX0, pelvisY0, pelvisH, sectionH);
+    drawThigh(group, state, 'right', pelvisX1, pelvisY0, pelvisH, sectionH);
 
-    // --- Колени и лодыжки ---
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
@@ -123,14 +106,11 @@ App.Leg = (function () {
     group.appendChild(ankleRight);
   }
 
-  // Верхняя линия бедра: кривая от боковой грани таза наружу и вниз
-  function drawThigh(group, state, opts) {
-    const { side, attachX, pelvisY0, pelvisH, sectionH } = opts;
+  function drawThigh(group, state, side, attachX, pelvisY0, pelvisH, sectionH) {
     const thigh = side === 'left' ? state.thighLeft : state.thighRight;
 
     const attachY = pelvisY0 + thigh.attachY * pelvisH;
 
-    // Угол: 0 = строго вниз; положительный = наружу
     const rad = thigh.angle * Math.PI / 180;
     const len = thigh.length * sectionH;
     const outwardSign = side === 'left' ? -1 : 1;
@@ -138,8 +118,6 @@ App.Leg = (function () {
     const endX = attachX + outwardSign * Math.sin(rad) * len;
     const endY = attachY + Math.cos(rad) * len;
 
-    // Выпуклость: квадратичная Безье, контрольная точка отходит от середины хорды
-    // перпендикулярно ей, в сторону наружу от центра фигуры.
     const midX = (attachX + endX) / 2;
     const midY = (attachY + endY) / 2;
     const dx = endX - attachX;
@@ -157,8 +135,7 @@ App.Leg = (function () {
     const cpY = midY + perpY * k;
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const d = `M ${attachX} ${attachY} Q ${cpX} ${cpY} ${endX} ${endY}`;
-    path.setAttribute('d', d);
+    path.setAttribute('d', `M ${attachX} ${attachY} Q ${cpX} ${cpY} ${endX} ${endY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
