@@ -11,25 +11,51 @@ App.Leg = (function () {
     const span = y1 - y0;
     const sectionH = span / n;
     const headH = state.head.height * sectionH;
-    
+
     const baseHeadW = state.baseHeadWidth * sectionH;
 
+    // --- Грудная клетка ---
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (baseHeadW * state.chest.width) / 2;
+
+    // --- Таз ---
+    const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
     const pelvisBottomY = pelvisY0 + pelvisH;
+    const pelvisX0 = 0.5 - pelvisW / 2;
+    const pelvisX1 = 0.5 + pelvisW / 2;
 
+    // --- Плечи / запястья ---
     const shoulderRadius = (chestHeightPx / 3) / 2;
+    const shoulderCy = chestY0 + shoulderRadius;
+
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
     const wristLeftCx = 0.5 - chestRx - shoulderRadius * 1.5 + (state.wristLeft.x * sectionH);
-    
+
     const wristRightRadiusPx = state.wristRight.r * sectionH;
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
 
+    // --- Бёдра (верхняя линия бедра: кривая от бока таза наружу и вниз) ---
+    drawThigh(group, state, {
+      side: 'left',
+      attachX: pelvisX0,
+      pelvisY0,
+      pelvisH,
+      sectionH,
+    });
+    drawThigh(group, state, {
+      side: 'right',
+      attachX: pelvisX1,
+      pelvisY0,
+      pelvisH,
+      sectionH,
+    });
+
+    // --- Колени ---
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
@@ -65,6 +91,7 @@ App.Leg = (function () {
     ankleLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(ankleLeft);
 
+    // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
     const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
@@ -96,6 +123,51 @@ App.Leg = (function () {
     ankleRight.setAttribute('stroke-width', '1');
     ankleRight.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(ankleRight);
+  }
+
+  // Верхняя линия бедра: кривая от боковой грани таза наружу и вниз
+  function drawThigh(group, state, opts) {
+    const { side, attachX, pelvisY0, pelvisH, sectionH } = opts;
+    const thigh = side === 'left' ? state.thighLeft : state.thighRight;
+
+    const attachY = pelvisY0 + thigh.attachY * pelvisH;
+
+    // Угол: 0 = строго вниз; положительный = наружу (для левого — влево, для правого — вправо)
+    const rad = thigh.angle * Math.PI / 180;
+    const len = thigh.length * sectionH;
+    const outwardSign = side === 'left' ? -1 : 1;
+
+    const endX = attachX + outwardSign * Math.sin(rad) * len;
+    const endY = attachY + Math.cos(rad) * len;
+
+    // Выпуклость: квадратичная Безье, контрольная точка отходит от середины хорды
+    // перпендикулярно ей, в сторону наружу.
+    const midX = (attachX + endX) / 2;
+    const midY = (attachY + endY) / 2;
+    const dx = endX - attachX;
+    const dy = endY - attachY;
+
+    // Перпендикуляр к (dx, dy). Знак выберем так, чтобы он смотрел наружу от центра фигуры (0.5)
+    let perpX = dy;
+    let perpY = -dx;
+    // «Наружу» — в сторону от x = 0.5:
+    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
+      perpX = -perpX;
+      perpY = -perpY;
+    }
+
+    const k = 0.5 * thigh.round; // 0..0.5
+    const cpX = midX + perpX * k;
+    const cpY = midY + perpY * k;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const d = `M ${attachX} ${attachY} Q ${cpX} ${cpY} ${endX} ${endY}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#ff0000');
+    path.setAttribute('stroke-width', '1');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(path);
   }
 
   return { render };
