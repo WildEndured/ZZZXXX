@@ -35,39 +35,53 @@ App.Leg = (function () {
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
+    // --- Левая нога ---
     const kneeLeftRadiusPx = state.kneeLeft.r * sectionH;
     const kneeLeftCy_base = pelvisBottomY + kneeOffsetY;
     const kneeLeftCx_base = wristLeftCx;
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
+    const kneeLeftEdgeX = kneeLeftCx - kneeLeftRadiusPx;
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
     const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
     const ankleLeftCx_base = kneeLeftCx_base;
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
+    const ankleLeftEdgeX = ankleLeftCx - ankleLeftRadiusPx;
 
+    // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
     const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
     const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
     const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
+    const kneeRightEdgeX = kneeRightCx + kneeRightRadiusPx;
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
     const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
     const ankleRightCx_base = kneeRightCx_base;
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
+    const ankleRightEdgeX = ankleRightCx + ankleRightRadiusPx;
 
     // 1. Верхняя кривая бедра
     const leftThighEnd = drawThigh(group, state, 'left', sectionH);
     const rightThighEnd = drawThigh(group, state, 'right', sectionH);
 
-    // 2. Прямая от конца верхней кривой к внешнему краю колена
-    drawLineToKnee(group, leftThighEnd, kneeLeftCx - kneeLeftRadiusPx, kneeLeftCy);
-    drawLineToKnee(group, rightThighEnd, kneeRightCx + kneeRightRadiusPx, kneeRightCy);
+    // 2. Прямая от конца верхней кривой бедра к внешнему краю колена
+    drawLine(group, leftThighEnd.x, leftThighEnd.y, kneeLeftEdgeX, kneeLeftCy);
+    drawLine(group, rightThighEnd.x, rightThighEnd.y, kneeRightEdgeX, kneeRightCy);
 
-    // 3. Круги коленей и лодыжек
+    // 3. Верхняя кривая икры (от внешнего края колена)
+    const leftCalfEnd = drawCalf(group, state, 'left', kneeLeftEdgeX, kneeLeftCy, sectionH);
+    const rightCalfEnd = drawCalf(group, state, 'right', kneeRightEdgeX, kneeRightCy, sectionH);
+
+    // 4. Прямая от конца верхней кривой икры к внешнему краю лодыжки
+    drawLine(group, leftCalfEnd.x, leftCalfEnd.y, ankleLeftEdgeX, ankleLeftCy);
+    drawLine(group, rightCalfEnd.x, rightCalfEnd.y, ankleRightEdgeX, ankleRightCy);
+
+    // 5. Круги коленей и лодыжек
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     kneeLeft.setAttribute('cx', String(kneeLeftCx));
     kneeLeft.setAttribute('cy', String(kneeLeftCy));
@@ -163,10 +177,46 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Прямая линия от конца верхней кривой к внешнему краю колена
-  function drawLineToKnee(group, startPoint, targetX, targetY) {
+  function drawCalf(group, state, side, kneeEdgeX, kneeEdgeY, sectionH) {
+    const calf = side === 'left' ? state.calfLeft : state.calfRight;
+
+    const rad = calf.angle * Math.PI / 180;
+    const len = calf.length * sectionH;
+    const outwardSign = side === 'left' ? -1 : 1;
+
+    const endX = kneeEdgeX + outwardSign * Math.sin(rad) * len;
+    const endY = kneeEdgeY + Math.cos(rad) * len;
+
+    const midX = (kneeEdgeX + endX) / 2;
+    const midY = (kneeEdgeY + endY) / 2;
+    const dx = endX - kneeEdgeX;
+    const dy = endY - kneeEdgeY;
+
+    let perpX = dy;
+    let perpY = -dx;
+    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
+      perpX = -perpX;
+      perpY = -perpY;
+    }
+
+    const k = 0.5 * calf.round;
+    const cpX = midX + perpX * k;
+    const cpY = midY + perpY * k;
+
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} L ${targetX} ${targetY}`);
+    path.setAttribute('d', `M ${kneeEdgeX} ${kneeEdgeY} Q ${cpX} ${cpY} ${endX} ${endY}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#ff0000');
+    path.setAttribute('stroke-width', '1');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    group.appendChild(path);
+
+    return { x: endX, y: endY };
+  }
+
+  function drawLine(group, x1, y1, x2, y2) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} L ${x2} ${y2}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
