@@ -206,10 +206,10 @@ window.App = (function () {
     thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     calfLeft: { round: 0.50, angle: 10, length: 0.50 },
     calfRight: { round: 0.50, angle: 10, length: 0.50 },
-    innerThighLeft: { round: 0.50, angle: 10, length: 0.50 },
-    innerThighRight: { round: 0.50, angle: 10, length: 0.50 },
-    innerCalfLeft: { round: 0.50, angle: -10, length: 0.50 },
-    innerCalfRight: { round: 0.50, angle: -10, length: 0.50 },
+    innerThighLeft: { round: 0.50, angle: -25, length: 0.50 },
+    innerThighRight: { round: 0.50, angle: -25, length: 0.50 },
+    innerCalfLeft: { round: 0.50, angle: -25, length: 0.50 },
+    innerCalfRight: { round: 0.50, angle: -25, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
