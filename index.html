@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Адаптивный холст для рисования</title>
-<link rel="stylesheet" href="style.css?v=1001">
+<link rel="stylesheet" href="style.css?v=1003">
 </head>
 <body>
 <div id="app">
@@ -195,12 +195,6 @@
             <label>Длина линии: <span id="thighLeftLengthVal">50%</span>
               <input type="range" id="thighLeftLength" min="10" max="200" value="50">
             </label>
-            <label>Нижняя линия: Угол <span id="thighLeftLowerAngleVal">15°</span>
-              <input type="range" id="thighLeftLowerAngle" min="-90" max="90" value="15">
-            </label>
-            <label>Нижняя линия: Длина <span id="thighLeftLowerLengthVal">40%</span>
-              <input type="range" id="thighLeftLowerLength" min="10" max="200" value="40">
-            </label>
           </section>
           <section class="block border-none">
             <h4>Бедро правое</h4>
@@ -216,13 +210,33 @@
             <label>Длина линии: <span id="thighRightLengthVal">50%</span>
               <input type="range" id="thighRightLength" min="10" max="200" value="50">
             </label>
-            <label>Нижняя линия: Угол <span id="thighRightLowerAngleVal">15°</span>
-              <input type="range" id="thighRightLowerAngle" min="-90" max="90" value="15">
+          </section>
+
+          <section class="block border-none">
+            <h4>Икра левая</h4>
+            <label>Скругление линии: <span id="calfLeftRoundVal">50%</span>
+              <input type="range" id="calfLeftRound" min="0" max="100" value="50">
             </label>
-            <label>Нижняя линия: Длина <span id="thighRightLowerLengthVal">40%</span>
-              <input type="range" id="thighRightLowerLength" min="10" max="200" value="40">
+            <label>Угол: <span id="calfLeftAngleVal">10°</span>
+              <input type="range" id="calfLeftAngle" min="-90" max="90" value="10">
+            </label>
+            <label>Длина линии: <span id="calfLeftLengthVal">50%</span>
+              <input type="range" id="calfLeftLength" min="10" max="200" value="50">
             </label>
           </section>
+          <section class="block border-none">
+            <h4>Икра правая</h4>
+            <label>Скругление линии: <span id="calfRightRoundVal">50%</span>
+              <input type="range" id="calfRightRound" min="0" max="100" value="50">
+            </label>
+            <label>Угол: <span id="calfRightAngleVal">10°</span>
+              <input type="range" id="calfRightAngle" min="-90" max="90" value="10">
+            </label>
+            <label>Длина линии: <span id="calfRightLengthVal">50%</span>
+              <input type="range" id="calfRightLength" min="10" max="200" value="50">
+            </label>
+          </section>
+
           <section class="block border-none">
             <h4>Колени</h4>
             <label>Левое X: <span id="kneeLeftXVal">50%</span>
@@ -293,11 +307,11 @@
   </aside>
 </div>
 
-<script src="main.js?v=1001"></script>
-<script src="head.js?v=1001"></script>
-<script src="torso.js?v=1001"></script>
-<script src="arm.js?v=1001"></script>
-<script src="leg.js?v=1001"></script>
+<script src="main.js?v=1003"></script>
+<script src="head.js?v=1003"></script>
+<script src="torso.js?v=1003"></script>
+<script src="arm.js?v=1003"></script>
+<script src="leg.js?v=1003"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && App.init) {
