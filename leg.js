@@ -14,12 +14,12 @@ App.Leg = (function () {
 
     const baseHeadW = state.baseHeadWidth * sectionH;
 
-    // --- Грудная клетка ---
+    // --- Грудная клетка (те же формулы, что и в torso.js) ---
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (baseHeadW * state.chest.width) / 2;
 
-    // --- Таз ---
+    // --- Таз (те же формулы, что и в torso.js) ---
     const pelvisW = chestHeightPx * state.pelvis.widthMod;
     const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
     const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
@@ -29,7 +29,6 @@ App.Leg = (function () {
 
     // --- Плечи / запястья ---
     const shoulderRadius = (chestHeightPx / 3) / 2;
-    const shoulderCy = chestY0 + shoulderRadius;
 
     const wristLeftRadiusPx = state.wristLeft.r * sectionH;
     const wristLeftCy = pelvisBottomY - wristLeftRadiusPx + (state.wristLeft.y * sectionH);
@@ -39,23 +38,23 @@ App.Leg = (function () {
     const wristRightCy = pelvisBottomY - wristRightRadiusPx + (state.wristRight.y * sectionH);
     const wristRightCx = 0.5 + chestRx + shoulderRadius * 1.5 + (state.wristRight.x * sectionH);
 
-    // --- Бёдра (верхняя линия бедра: кривая от бока таза наружу и вниз) ---
+    // --- Бёдра: крепимся ровно к боковым граням таза ---
     drawThigh(group, state, {
       side: 'left',
-      attachX: pelvisX0,
+      attachX: pelvisX0,        // левая грань таза
       pelvisY0,
       pelvisH,
       sectionH,
     });
     drawThigh(group, state, {
       side: 'right',
-      attachX: pelvisX1,
+      attachX: pelvisX1,        // правая грань таза
       pelvisY0,
       pelvisH,
       sectionH,
     });
 
-    // --- Колени ---
+    // --- Колени и лодыжки ---
     const kneeOffsetY = headH;
     const ankleOffsetY = headH;
 
@@ -91,7 +90,6 @@ App.Leg = (function () {
     ankleLeft.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(ankleLeft);
 
-    // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
     const kneeRightCy_base = pelvisBottomY + kneeOffsetY;
     const kneeRightCx_base = wristRightCx;
@@ -132,7 +130,7 @@ App.Leg = (function () {
 
     const attachY = pelvisY0 + thigh.attachY * pelvisH;
 
-    // Угол: 0 = строго вниз; положительный = наружу (для левого — влево, для правого — вправо)
+    // Угол: 0 = строго вниз; положительный = наружу
     const rad = thigh.angle * Math.PI / 180;
     const len = thigh.length * sectionH;
     const outwardSign = side === 'left' ? -1 : 1;
@@ -141,22 +139,20 @@ App.Leg = (function () {
     const endY = attachY + Math.cos(rad) * len;
 
     // Выпуклость: квадратичная Безье, контрольная точка отходит от середины хорды
-    // перпендикулярно ей, в сторону наружу.
+    // перпендикулярно ей, в сторону наружу от центра фигуры.
     const midX = (attachX + endX) / 2;
     const midY = (attachY + endY) / 2;
     const dx = endX - attachX;
     const dy = endY - attachY;
 
-    // Перпендикуляр к (dx, dy). Знак выберем так, чтобы он смотрел наружу от центра фигуры (0.5)
     let perpX = dy;
     let perpY = -dx;
-    // «Наружу» — в сторону от x = 0.5:
     if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
       perpX = -perpX;
       perpY = -perpY;
     }
 
-    const k = 0.5 * thigh.round; // 0..0.5
+    const k = 0.5 * thigh.round;
     const cpX = midX + perpX * k;
     const cpY = midY + perpY * k;
 
