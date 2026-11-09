@@ -210,8 +210,9 @@ window.App = (function () {
     thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     calfLeft: { round: 0.50, angle: 10, length: 0.50 },
     calfRight: { round: 0.50, angle: 10, length: 0.50 },
-    innerThighLeft: { attachX: 0.20, round: 0.50, angle: -25, length: 0.50 },
-    innerThighRight: { attachX: 0.20, round: 0.50, angle: -25, length: 0.50 },
+    // Установлены дефолтные значения для внутренних бедер по просьбе
+    innerThighLeft: { attachX: 0.40, round: 0.45, angle: 0, length: 0.50 },
+    innerThighRight: { attachX: 0.40, round: 0.45, angle: 0, length: 0.50 },
     innerCalfLeft: { round: 0.50, angle: -25, length: 0.50 },
     innerCalfRight: { round: 0.50, angle: -25, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
