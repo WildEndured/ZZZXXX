@@ -50,7 +50,6 @@ App.Leg = (function () {
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
     const ankleLeftEdgeX = ankleLeftCx - ankleLeftRadiusPx;
-    const ankleLeftInnerX = ankleLeftCx + ankleLeftRadiusPx;
 
     // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
@@ -67,7 +66,6 @@ App.Leg = (function () {
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
     const ankleRightEdgeX = ankleRightCx + ankleRightRadiusPx;
-    const ankleRightInnerX = ankleRightCx - ankleRightRadiusPx;
 
     // --- Внешние линии ---
     const leftThighEnd = drawThigh(group, state, 'left', sectionH);
@@ -88,9 +86,6 @@ App.Leg = (function () {
     const rightInnerThighEnd = drawInnerThigh(group, state, 'right', rightInnerThighStart, sectionH);
     drawLine(group, leftInnerThighEnd.x, leftInnerThighEnd.y, kneeLeftInnerX, kneeLeftCy);
     drawLine(group, rightInnerThighEnd.x, rightInnerThighEnd.y, kneeRightInnerX, kneeRightCy);
-
-    drawInnerCalf(group, state, 'left', { x: kneeLeftInnerX, y: kneeLeftCy }, { x: ankleLeftInnerX, y: ankleLeftCy }, sectionH);
-    drawInnerCalf(group, state, 'right', { x: kneeRightInnerX, y: kneeRightCy }, { x: ankleRightInnerX, y: ankleRightCy }, sectionH);
 
     // --- Точки ---
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -189,24 +184,22 @@ App.Leg = (function () {
   }
 
   // ВНЕШНЯЯ ИКРА (5-6)
-  // Строится: от колена прямая вниз, затем кривая наружу к стопе
   function drawCalf(group, state, side, kneeEdgeX, kneeEdgeY, sectionH) {
     const calf = side === 'left' ? state.calfLeft : state.calfRight;
 
-    // Базовая длина от колена до стопы (для отступа)
     const baseLen = (calf.length * sectionH);
     const outwardSign = side === 'left' ? -1 : 1;
     
-    // Точка излома (отходим вниз на 40% длины)
+    // Точка излома
     const midX = kneeEdgeX; 
     const midY = kneeEdgeY + baseLen * 0.4;
 
-    // Конечная точка дуги (уходим наружу и вниз)
+    // Конечная точка
     const rad = calf.angle * Math.PI / 180;
     const endX = midX + outwardSign * Math.sin(rad) * baseLen;
     const endY = midY + Math.cos(rad) * baseLen;
 
-    // Контрольная точка для кривой (выгибаем наружу)
+    // Контрольная точка
     const cpX = midX + outwardSign * (endX - midX) * calf.round;
     const cpY = midY + (endY - midY) * 0.5;
 
@@ -256,51 +249,6 @@ App.Leg = (function () {
     group.appendChild(path);
 
     return { x: endX, y: endY };
-  }
-
-  // ВНУТРЕННЯЯ ИКРА (8-7)
-  // Строится: от колена прямая вниз, затем кривая внутрь к стопе
-  function drawInnerCalf(group, state, side, start, end, sectionH) {
-    const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
-
-    // Вектор от колена к стопе
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const dist = Math.hypot(dx, dy) || 1;
-
-    // Точка излома (середина)
-    const midX = start.x + dx * 0.5;
-    const midY = start.y + dy * 0.5;
-
-    // Перпендикуляр к вектору (нормаль)
-    let nx = dy / dist;
-    let ny = -dx / dist;
-
-    // Направляем нормаль строго внутрь фигуры (к центру X=0.5)
-    const isLeft = side === 'left';
-    if ((isLeft && nx > 0) || (!isLeft && nx < 0)) {
-      nx = -nx;
-      ny = -ny;
-    }
-
-    // Ползунок "Скругление" управляет знаком (внутрь/наружу)
-    const direction = (calf.round > 0.5) ? 1 : -1;
-    
-    // Ползунок "Длина" управляет силой выгиба
-    const bulge = dist * calf.length * direction;
-
-    // Контрольная точка для кривой
-    const cpX = midX + nx * bulge;
-    const cpY = midY + ny * bulge;
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    // Прямая от колена до середины, затем кривая от середины к стопе
-    path.setAttribute('d', `M ${start.x} ${start.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${end.x} ${end.y}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ff0000');
-    path.setAttribute('stroke-width', '1');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(path);
   }
 
   function drawLine(group, x1, y1, x2, y2) {
