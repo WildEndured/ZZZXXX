@@ -178,21 +178,6 @@ window.App = (function () {
   const innerThighRightLength = document.getElementById('innerThighRightLength');
   const innerThighRightLengthVal = document.getElementById('innerThighRightLengthVal');
 
-  // Внутренняя икра
-  const innerCalfLeftRound = document.getElementById('innerCalfLeftRound');
-  const innerCalfLeftRoundVal = document.getElementById('innerCalfLeftRoundVal');
-  const innerCalfLeftAngle = document.getElementById('innerCalfLeftAngle');
-  const innerCalfLeftAngleVal = document.getElementById('innerCalfLeftAngleVal');
-  const innerCalfLeftLength = document.getElementById('innerCalfLeftLength');
-  const innerCalfLeftLengthVal = document.getElementById('innerCalfLeftLengthVal');
-
-  const innerCalfRightRound = document.getElementById('innerCalfRightRound');
-  const innerCalfRightRoundVal = document.getElementById('innerCalfRightRoundVal');
-  const innerCalfRightAngle = document.getElementById('innerCalfRightAngle');
-  const innerCalfRightAngleVal = document.getElementById('innerCalfRightAngleVal');
-  const innerCalfRightLength = document.getElementById('innerCalfRightLength');
-  const innerCalfRightLengthVal = document.getElementById('innerCalfRightLengthVal');
-
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
     bgColor: '#ffffff', underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
@@ -210,11 +195,8 @@ window.App = (function () {
     thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     calfLeft: { round: 0.50, angle: 10, length: 0.50 },
     calfRight: { round: 0.50, angle: 10, length: 0.50 },
-    // Установлены дефолтные значения для внутренних бедер по просьбе
     innerThighLeft: { attachX: 0.40, round: 0.45, angle: 0, length: 0.50 },
     innerThighRight: { attachX: 0.40, round: 0.45, angle: 0, length: 0.50 },
-    innerCalfLeft: { round: 0.50, angle: -25, length: 0.50 },
-    innerCalfRight: { round: 0.50, angle: -25, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
@@ -548,14 +530,6 @@ window.App = (function () {
   innerThighRightRound.addEventListener('input', () => { state.innerThighRight.round = parseInt(innerThighRightRound.value, 10) / 100; innerThighRightRoundVal.textContent = innerThighRightRound.value + '%'; renderAll(); });
   innerThighRightAngle.addEventListener('input', () => { state.innerThighRight.angle = parseInt(innerThighRightAngle.value, 10); innerThighRightAngleVal.textContent = innerThighRightAngle.value + '°'; renderAll(); });
   innerThighRightLength.addEventListener('input', () => { state.innerThighRight.length = parseInt(innerThighRightLength.value, 10) / 100; innerThighRightLengthVal.textContent = innerThighRightLength.value + '%'; renderAll(); });
-
-  innerCalfLeftRound.addEventListener('input', () => { state.innerCalfLeft.round = parseInt(innerCalfLeftRound.value, 10) / 100; innerCalfLeftRoundVal.textContent = innerCalfLeftRound.value + '%'; renderAll(); });
-  innerCalfLeftAngle.addEventListener('input', () => { state.innerCalfLeft.angle = parseInt(innerCalfLeftAngle.value, 10); innerCalfLeftAngleVal.textContent = innerCalfLeftAngle.value + '°'; renderAll(); });
-  innerCalfLeftLength.addEventListener('input', () => { state.innerCalfLeft.length = parseInt(innerCalfLeftLength.value, 10) / 100; innerCalfLeftLengthVal.textContent = innerCalfLeftLength.value + '%'; renderAll(); });
-
-  innerCalfRightRound.addEventListener('input', () => { state.innerCalfRight.round = parseInt(innerCalfRightRound.value, 10) / 100; innerCalfRightRoundVal.textContent = innerCalfRightRound.value + '%'; renderAll(); });
-  innerCalfRightAngle.addEventListener('input', () => { state.innerCalfRight.angle = parseInt(innerCalfRightAngle.value, 10); innerCalfRightAngleVal.textContent = innerCalfRightAngle.value + '°'; renderAll(); });
-  innerCalfRightLength.addEventListener('input', () => { state.innerCalfRight.length = parseInt(innerCalfRightLength.value, 10) / 100; innerCalfRightLengthVal.textContent = innerCalfRightLength.value + '%'; renderAll(); });
 
   kneeLeftX.addEventListener('input', () => { state.kneeLeft.x = parseInt(kneeLeftX.value, 10) / 100; kneeLeftXVal.textContent = kneeLeftX.value + '%'; renderAll(); });
   kneeLeftY.addEventListener('input', () => { state.kneeLeft.y = parseInt(kneeLeftY.value, 10) / 100; kneeLeftYVal.textContent = kneeLeftY.value + '%'; renderAll(); });
