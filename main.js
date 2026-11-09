@@ -156,8 +156,8 @@ window.App = (function () {
     wristLeft: { x: -0.20, y: 0, r: 0.10 }, wristRight: { x: 0.20, y: 0, r: 0.10 },
     kneeLeft: { x: 0.50, y: 0.25, r: 0.15 }, kneeRight: { x: -0.50, y: 0.25, r: 0.15 },
     ankleLeft: { x: 0.50, y: 0.50, r: 0.10 }, ankleRight: { x: -0.50, y: 0.50, r: 0.10 },
-    thighLeft: { attachY: 0.0, round: 0.30, angle: 20, length: 0.80 },
-    thighRight: { attachY: 0.0, round: 0.30, angle: 20, length: 0.80 },
+    thighLeft: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
+    thighRight: { attachY: 0.50, round: 0.50, angle: 25, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
 
