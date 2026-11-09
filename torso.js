@@ -10,9 +10,9 @@ App.Torso = (function () {
     const y1 = 1 - pad;
     const span = y1 - y0;
     const sectionH = span / n;
-
+    
     const baseHeadW = state.baseHeadWidth * sectionH;
-
+    
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
     const chestHeightPx = sectionH * state.chest.height;
     const chestRx = (baseHeadW * state.chest.width) / 2;
@@ -47,7 +47,7 @@ App.Torso = (function () {
     } else {
       curveWidth = chestRx;
     }
-
+    
     const shoulderLeftCx = 0.5 - curveWidth - shoulderRadius;
     const shoulderRightCx = 0.5 + curveWidth + shoulderRadius;
 
