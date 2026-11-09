@@ -238,7 +238,7 @@ App.Leg = (function () {
 
     const rad = thigh.angle * Math.PI / 180;
     const len = thigh.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1;
+    const outwardSign = side === 'left' ? -1 : 1; // Направление вниз-наружу
 
     const endX = startPoint.x + outwardSign * Math.sin(rad) * len;
     const endY = startPoint.y + Math.cos(rad) * len;
@@ -250,7 +250,9 @@ App.Leg = (function () {
 
     let perpX = dy;
     let perpY = -dx;
-    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
+    
+    // Инвертируем направление перпендикуляра для внутреннего бедра (выпуклость внутрь)
+    if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
       perpX = -perpX;
       perpY = -perpY;
     }
@@ -270,18 +272,16 @@ App.Leg = (function () {
     return { x: endX, y: endY };
   }
 
-  // Внутренняя икра: прямая от колена, затем кривая к лодыжке
+  // Внутренняя икра: прямая от колена к середине, затем кривая к лодыжке, и прямая до края круга
   function drawInnerCalf(group, state, side, kneeInner, ankleInnerX, ankleInnerY, sectionH) {
     const calf = side === 'left' ? state.innerCalfLeft : state.innerCalfRight;
 
-    // Находим середину между коленом и лодыжкой
     const midX = (kneeInner.x + ankleInnerX) / 2;
     const midY = (kneeInner.y + ankleInnerY) / 2;
 
-    // Параметры кривой от середины до лодыжки
     const rad = calf.angle * Math.PI / 180;
     const len = calf.length * sectionH;
-    const outwardSign = side === 'left' ? 1 : -1; // Для внутренней икры кривизна обычно внутрь
+    const outwardSign = side === 'left' ? -1 : 1; // Кривизна наружу или внутрь в зависимости от настроек
 
     const endX = midX + outwardSign * Math.sin(rad) * len;
     const endY = midY + Math.cos(rad) * len;
@@ -302,15 +302,16 @@ App.Leg = (function () {
     const cpX = cMidX + perpX * k;
     const cpY = cMidY + perpY * k;
 
+    // Линия: колено -> середина (прямая) -> кривая -> конец. И от конца до края стопы.
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${kneeInner.x} ${kneeInner.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${endX} ${endY}`);
+    path.setAttribute('d', `M ${kneeInner.x} ${kneeInner.y} L ${midX} ${midY} Q ${cpX} ${cpY} ${endX} ${endY} L ${ankleInnerX} ${ankleInnerY}`);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', '#ff0000');
     path.setAttribute('stroke-width', '1');
     path.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(path);
 
-    return { x: endX, y: endY };
+    return { x: ankleInnerX, y: ankleInnerY };
   }
 
   function drawLine(group, x1, y1, x2, y2) {
