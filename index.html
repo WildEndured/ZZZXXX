@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Адаптивный холст для рисования</title>
-<link rel="stylesheet" href="style.css?v=1008">
+<link rel="stylesheet" href="style.css?v=1009">
 </head>
 <body>
 <div id="app">
@@ -45,7 +45,7 @@
           <input type="range" id="gridPad" min="0" max="10" value="0">
         </label>
         <label>Голов (2–8): <span id="headsVal">5</span>
-          <input type="range" id="heads" min="2" max="8" value="5">
+          <input type="range" id="heads" min="2" max="8" step="0.5" value="5">
         </label>
       </section>
 
@@ -339,11 +339,11 @@
   </aside>
 </div>
 
-<script src="main.js?v=1008"></script>
-<script src="head.js?v=1008"></script>
-<script src="torso.js?v=1008"></script>
-<script src="arm.js?v=1008"></script>
-<script src="leg.js?v=1008"></script>
+<script src="main.js?v=1009"></script>
+<script src="head.js?v=1009"></script>
+<script src="torso.js?v=1009"></script>
+<script src="arm.js?v=1009"></script>
+<script src="leg.js?v=1009"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && App.init) {
