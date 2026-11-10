@@ -178,6 +178,13 @@ window.App = (function () {
   const innerThighRightLength = document.getElementById('innerThighRightLength');
   const innerThighRightLengthVal = document.getElementById('innerThighRightLengthVal');
 
+  // Пресеты
+  const presetSelect = document.getElementById('presetSelect');
+  const presetName = document.getElementById('presetName');
+  const presetSaveBtn = document.getElementById('presetSaveBtn');
+  const presetLoadBtn = document.getElementById('presetLoadBtn');
+  const presetDeleteBtn = document.getElementById('presetDeleteBtn');
+
   const state = {
     canvasSize: 800, scale: 1, tx: 0, ty: 0, minScale: 1, maxScale: 20,
     bgColor: '#ffffff', underlay: { src: null, imgW: 0, imgH: 0, scale: 1.0, opacity: 1.0 },
@@ -199,6 +206,189 @@ window.App = (function () {
     innerThighRight: { attachX: 0.40, round: 0.45, angle: 0, length: 0.50 },
     brush: { color: '#000000', width: 3 }, paths: []
   };
+
+  // ---- Пресеты (Сохранение / Загрузка) ----
+  
+  function getPresets() {
+    const data = localStorage.getItem('app_presets');
+    return data ? JSON.parse(data) : {};
+  }
+
+  function savePresets(presets) {
+    localStorage.setItem('app_presets', JSON.stringify(presets));
+  }
+
+  function updatePresetSelect() {
+    const presets = getPresets();
+    presetSelect.innerHTML = '<option value="">-- Выберите пресет --</option>';
+    Object.keys(presets).forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      presetSelect.appendChild(opt);
+    });
+  }
+
+  presetSaveBtn.addEventListener('click', () => {
+    const name = presetName.value.trim();
+    if (!name) {
+      alert('Введите имя пресета');
+      return;
+    }
+    const presets = getPresets();
+    // Копируем state, исключая пути (paths) и размеры канваса
+    const stateToSave = { ...state };
+    delete stateToSave.paths;
+    delete stateToSave.scale;
+    delete stateToSave.tx;
+    delete stateToSave.ty;
+    delete stateToSave.canvasSize;
+    
+    presets[name] = stateToSave;
+    savePresets(presets);
+    updatePresetSelect();
+    presetSelect.value = name;
+    alert('Пресет сохранен!');
+  });
+
+  presetLoadBtn.addEventListener('click', () => {
+    const name = presetSelect.value;
+    if (!name) return;
+    const presets = getPresets();
+    if (!presets[name]) return;
+    
+    // Восстанавливаем state
+    const loaded = presets[name];
+    Object.assign(state, loaded);
+    
+    // Очищаем пути, так как это не рисунок, а сетка
+    state.paths = [];
+    redrawAllPaths();
+    
+    // Обновляем все UI элементы
+    updateUIFromState();
+    renderAll();
+    applyUnderlay();
+    alert(`Пресет "${name}" загружен!`);
+  });
+
+  presetDeleteBtn.addEventListener('click', () => {
+    const name = presetSelect.value;
+    if (!name) return;
+    if (!confirm(`Удалить пресет "${name}"?`)) return;
+    
+    const presets = getPresets();
+    delete presets[name];
+    savePresets(presets);
+    updatePresetSelect();
+    alert('Пресет удален.');
+  });
+
+  function updateUIFromState() {
+    // Обновляем ползунки
+    heads.value = state.heads;
+    headsVal.textContent = String(state.heads).replace('.', ',');
+    gridPad.value = state.gridPad * 100;
+    gridPadVal.textContent = gridPad.value + '%';
+    bgColorInput.value = state.bgColor;
+    bgLayer.style.background = state.bgColor;
+    
+    // Голова
+    headWidth.value = state.head.width * 100; headWidthVal.textContent = headWidth.value + '%';
+    headHeight.value = state.head.height * 100; headHeightVal.textContent = headHeight.value + '%';
+    headOffset.value = state.head.offset * 100; headOffsetVal.textContent = headOffset.value + '%';
+    chinY.value = state.head.chinY * 100; chinYVal.textContent = chinY.value + '%';
+    chinWidth.value = state.head.chinWidth * 100; chinWidthVal.textContent = chinWidth.value + '%';
+    
+    // Челюсть
+    jawAttachY.value = state.jaw.attachY * 100; jawAttachYVal.textContent = jawAttachY.value + '%';
+    jawHeight.value = state.jaw.height * 100; jawHeightVal.textContent = jawHeight.value + '%';
+    jawAngle.value = state.jaw.angle * 100; jawAngleVal.textContent = jawAngle.value + '%';
+    jawRound.value = state.jaw.round * 100; jawRoundVal.textContent = jawRound.value + '%';
+
+    // Торс
+    chestHeight.value = state.chest.height * 100; chestHeightVal.textContent = chestHeight.value + '%';
+    chestWidth.value = state.chest.width * 100; chestWidthVal.textContent = chestWidth.value + '%';
+    chestOffset.value = state.chest.offset * 100; chestOffsetVal.textContent = chestOffset.value + '%';
+    chestTopNarrow.value = state.chest.topNarrow * 100; chestTopNarrowVal.textContent = chestTopNarrow.value + '%';
+    chestBottomWide.value = state.chest.bottomWide * 100; chestBottomWideVal.textContent = chestBottomWide.value + '%';
+
+    // Таз
+    pelvisWidthMod.value = state.pelvis.widthMod * 100; pelvisWidthModVal.textContent = pelvisWidthMod.value + '%';
+    pelvisHeightMod.value = state.pelvis.heightMod * 100; pelvisHeightModVal.textContent = pelvisHeightMod.value + '%';
+    pelvisOffset.value = state.pelvis.offset * 100; pelvisOffsetVal.textContent = pelvisOffset.value + '%';
+    pelvisRound.value = state.pelvis.round * 100; pelvisRoundVal.textContent = pelvisRound.value + '%';
+
+    // Руки - Локти
+    elbowLeftX.value = state.elbowLeft.x * 100; elbowLeftXVal.textContent = elbowLeftX.value + '%';
+    elbowLeftY.value = state.elbowLeft.y * 100; elbowLeftYVal.textContent = elbowLeftY.value + '%';
+    elbowLeftR.value = state.elbowLeft.r * 100; elbowLeftRVal.textContent = elbowLeftR.value + '%';
+    elbowRightX.value = state.elbowRight.x * 100; elbowRightXVal.textContent = elbowRightX.value + '%';
+    elbowRightY.value = state.elbowRight.y * 100; elbowRightYVal.textContent = elbowRightY.value + '%';
+    elbowRightR.value = state.elbowRight.r * 100; elbowRightRVal.textContent = elbowRightR.value + '%';
+
+    // Руки - Запястья
+    wristLeftX.value = state.wristLeft.x * 100; wristLeftXVal.textContent = wristLeftX.value + '%';
+    wristLeftY.value = state.wristLeft.y * 100; wristLeftYVal.textContent = wristLeftY.value + '%';
+    wristLeftR.value = state.wristLeft.r * 100; wristLeftRVal.textContent = wristLeftR.value + '%';
+    wristRightX.value = state.wristRight.x * 100; wristRightXVal.textContent = wristRightX.value + '%';
+    wristRightY.value = state.wristRight.y * 100; wristRightYVal.textContent = wristRightY.value + '%';
+    wristRightR.value = state.wristRight.r * 100; wristRightRVal.textContent = wristRightR.value + '%';
+
+    // Ноги - Бедро
+    thighLeftAttachY.value = state.thighLeft.attachY * 100; thighLeftAttachYVal.textContent = thighLeftAttachY.value + '%';
+    thighLeftRound.value = state.thighLeft.round * 100; thighLeftRoundVal.textContent = thighLeftRound.value + '%';
+    thighLeftAngle.value = state.thighLeft.angle; thighLeftAngleVal.textContent = thighLeftAngle.value + '°';
+    thighLeftLength.value = state.thighLeft.length * 100; thighLeftLengthVal.textContent = thighLeftLength.value + '%';
+
+    thighRightAttachY.value = state.thighRight.attachY * 100; thighRightAttachYVal.textContent = thighRightAttachY.value + '%';
+    thighRightRound.value = state.thighRight.round * 100; thighRightRoundVal.textContent = thighRightRound.value + '%';
+    thighRightAngle.value = state.thighRight.angle; thighRightAngleVal.textContent = thighRightAngle.value + '°';
+    thighRightLength.value = state.thighRight.length * 100; thighRightLengthVal.textContent = thighRightLength.value + '%';
+
+    // Ноги - Икра
+    calfLeftRound.value = state.calfLeft.round * 100; calfLeftRoundVal.textContent = calfLeftRound.value + '%';
+    calfLeftAngle.value = state.calfLeft.angle; calfLeftAngleVal.textContent = calfLeftAngle.value + '°';
+    calfLeftLength.value = state.calfLeft.length * 100; calfLeftLengthVal.textContent = calfLeftLength.value + '%';
+
+    calfRightRound.value = state.calfRight.round * 100; calfRightRoundVal.textContent = calfRightRound.value + '%';
+    calfRightAngle.value = state.calfRight.angle; calfRightAngleVal.textContent = calfRightAngle.value + '°';
+    calfRightLength.value = state.calfRight.length * 100; calfRightLengthVal.textContent = calfRightLength.value + '%';
+
+    // Ноги - Внутреннее бедро
+    innerThighLeftAttachX.value = state.innerThighLeft.attachX * 100; innerThighLeftAttachXVal.textContent = innerThighLeftAttachX.value + '%';
+    innerThighLeftRound.value = state.innerThighLeft.round * 100; innerThighLeftRoundVal.textContent = innerThighLeftRound.value + '%';
+    innerThighLeftAngle.value = state.innerThighLeft.angle; innerThighLeftAngleVal.textContent = innerThighLeftAngle.value + '°';
+    innerThighLeftLength.value = state.innerThighLeft.length * 100; innerThighLeftLengthVal.textContent = innerThighLeftLength.value + '%';
+
+    innerThighRightAttachX.value = state.innerThighRight.attachX * 100; innerThighRightAttachXVal.textContent = innerThighRightAttachX.value + '%';
+    innerThighRightRound.value = state.innerThighRight.round * 100; innerThighRightRoundVal.textContent = innerThighRightRound.value + '%';
+    innerThighRightAngle.value = state.innerThighRight.angle; innerThighRightAngleVal.textContent = innerThighRightAngle.value + '°';
+    innerThighRightLength.value = state.innerThighRight.length * 100; innerThighRightLengthVal.textContent = innerThighRightLength.value + '%';
+
+    // Ноги - Колени
+    kneeLeftX.value = state.kneeLeft.x * 100; kneeLeftXVal.textContent = kneeLeftX.value + '%';
+    kneeLeftY.value = state.kneeLeft.y * 100; kneeLeftYVal.textContent = kneeLeftY.value + '%';
+    kneeLeftR.value = state.kneeLeft.r * 100; kneeLeftRVal.textContent = kneeLeftR.value + '%';
+
+    kneeRightX.value = state.kneeRight.x * 100; kneeRightXVal.textContent = kneeRightX.value + '%';
+    kneeRightY.value = state.kneeRight.y * 100; kneeRightYVal.textContent = kneeRightY.value + '%';
+    kneeRightR.value = state.kneeRight.r * 100; kneeRightRVal.textContent = kneeRightR.value + '%';
+
+    // Ноги - Лодыжки
+    ankleLeftX.value = state.ankleLeft.x * 100; ankleLeftXVal.textContent = ankleLeftX.value + '%';
+    ankleLeftY.value = state.ankleLeft.y * 100; ankleLeftYVal.textContent = ankleLeftY.value + '%';
+    ankleLeftR.value = state.ankleLeft.r * 100; ankleLeftRVal.textContent = ankleLeftR.value + '%';
+
+    ankleRightX.value = state.ankleRight.x * 100; ankleRightXVal.textContent = ankleRightX.value + '%';
+    ankleRightY.value = state.ankleRight.y * 100; ankleRightYVal.textContent = ankleRightY.value + '%';
+    ankleRightR.value = state.ankleRight.r * 100; ankleRightRVal.textContent = ankleRightR.value + '%';
+  }
+
+  // Инициализация пресетов
+  updatePresetSelect();
+
+  // ---------------------------------------------
 
   function getBaseOffset() {
     const vp = viewport.getBoundingClientRect();
