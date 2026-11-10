@@ -14,6 +14,7 @@ window.App = (function () {
   const underlayScaleVal = document.getElementById('underlayScaleVal');
   const underlayOpacity = document.getElementById('underlayOpacity');
   const underlayOpacityVal = document.getElementById('underlayOpacityVal');
+  const underlayRemoveBtn = document.getElementById('underlayRemoveBtn');
   const bgColorInput = document.getElementById('bgColor');
   const gridPad = document.getElementById('gridPad');
   const gridPadVal = document.getElementById('gridPadVal');
@@ -236,13 +237,15 @@ window.App = (function () {
       return;
     }
     const presets = getPresets();
-    // Копируем state, исключая пути (paths) и размеры канваса
-    const stateToSave = { ...state };
+    
+    // Копируем state, ИСКЛЮЧАЯ подложку, пути, камеру и т.д.
+    const stateToSave = JSON.parse(JSON.stringify(state));
     delete stateToSave.paths;
     delete stateToSave.scale;
     delete stateToSave.tx;
     delete stateToSave.ty;
     delete stateToSave.canvasSize;
+    delete stateToSave.underlay; // <--- Подложка не сохраняется
     
     presets[name] = stateToSave;
     savePresets(presets);
@@ -257,9 +260,15 @@ window.App = (function () {
     const presets = getPresets();
     if (!presets[name]) return;
     
-    // Восстанавливаем state
     const loaded = presets[name];
+    
+    // Сохраняем текущую подложку, чтобы случайно её не стереть
+    const currentUnderlay = JSON.parse(JSON.stringify(state.underlay));
+    
     Object.assign(state, loaded);
+    
+    // Возвращаем подложку обратно
+    state.underlay = currentUnderlay;
     
     // Очищаем пути, так как это не рисунок, а сетка
     state.paths = [];
@@ -639,6 +648,14 @@ window.App = (function () {
     state.underlay.opacity = parseInt(underlayOpacity.value, 10) / 100;
     underlayOpacityVal.textContent = underlayOpacity.value + '%';
     applyUnderlay();
+  });
+
+  underlayRemoveBtn.addEventListener('click', () => {
+    state.underlay.src = null;
+    state.underlay.imgW = 0;
+    state.underlay.imgH = 0;
+    applyUnderlay();
+    fileInput.value = ''; // Сбрасываем input, чтобы можно было загрузить тот же файл снова
   });
 
   bgColorInput.addEventListener('input', () => {
