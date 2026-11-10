@@ -463,8 +463,8 @@ window.App = (function () {
   });
 
   heads.addEventListener('input', () => {
-    state.heads = parseInt(heads.value, 10);
-    headsVal.textContent = String(state.heads);
+    state.heads = parseFloat(heads.value);
+    headsVal.textContent = String(state.heads).replace('.', ',');
     renderAll();
   });
 
@@ -656,6 +656,8 @@ window.App = (function () {
   });
 
   function init() {
+    state.heads = parseFloat(heads.value);
+    headsVal.textContent = String(state.heads).replace('.', ',');
     bgLayer.style.background = state.bgColor;
     underlayLayer.style.display = 'none';
     renderAll();
