@@ -41,15 +41,12 @@ App.Leg = (function () {
     const kneeLeftCx_base = wristLeftCx;
     const kneeLeftCx = kneeLeftCx_base + (state.kneeLeft.x * sectionH);
     const kneeLeftCy = kneeLeftCy_base + (state.kneeLeft.y * sectionH);
-    const kneeLeftEdgeX = kneeLeftCx - kneeLeftRadiusPx;
-    const kneeLeftInnerX = kneeLeftCx + kneeLeftRadiusPx;
 
     const ankleLeftRadiusPx = state.ankleLeft.r * sectionH;
     const ankleLeftCy_base = kneeLeftCy_base + ankleOffsetY;
     const ankleLeftCx_base = kneeLeftCx_base;
     const ankleLeftCx = ankleLeftCx_base + (state.ankleLeft.x * sectionH);
     const ankleLeftCy = ankleLeftCy_base + (state.ankleLeft.y * sectionH);
-    const ankleLeftEdgeX = ankleLeftCx - ankleLeftRadiusPx;
 
     // --- Правая нога ---
     const kneeRightRadiusPx = state.kneeRight.r * sectionH;
@@ -57,37 +54,14 @@ App.Leg = (function () {
     const kneeRightCx_base = wristRightCx;
     const kneeRightCx = kneeRightCx_base + (state.kneeRight.x * sectionH);
     const kneeRightCy = kneeRightCy_base + (state.kneeRight.y * sectionH);
-    const kneeRightEdgeX = kneeRightCx + kneeRightRadiusPx;
-    const kneeRightInnerX = kneeRightCx - kneeRightRadiusPx;
 
     const ankleRightRadiusPx = state.ankleRight.r * sectionH;
     const ankleRightCy_base = kneeRightCy_base + ankleOffsetY;
     const ankleRightCx_base = kneeRightCx_base;
     const ankleRightCx = ankleRightCx_base + (state.ankleRight.x * sectionH);
     const ankleRightCy = ankleRightCy_base + (state.ankleRight.y * sectionH);
-    const ankleRightEdgeX = ankleRightCx + ankleRightRadiusPx;
 
-    // --- Внешние линии ---
-    const leftThighEnd = drawThigh(group, state, 'left', sectionH);
-    const rightThighEnd = drawThigh(group, state, 'right', sectionH);
-    drawLine(group, leftThighEnd.x, leftThighEnd.y, kneeLeftEdgeX, kneeLeftCy);
-    drawLine(group, rightThighEnd.x, rightThighEnd.y, kneeRightEdgeX, kneeRightCy);
-
-    const leftCalfEnd = drawCalf(group, state, 'left', kneeLeftEdgeX, kneeLeftCy, sectionH);
-    const rightCalfEnd = drawCalf(group, state, 'right', kneeRightEdgeX, kneeRightCy, sectionH);
-    drawLine(group, leftCalfEnd.x, leftCalfEnd.y, ankleLeftEdgeX, ankleLeftCy);
-    drawLine(group, rightCalfEnd.x, rightCalfEnd.y, ankleRightEdgeX, ankleRightCy);
-
-    // --- Внутренние линии (только бедра) ---
-    const leftInnerThighStart = { x: (0.5 - pelvisW / 2) + pelvisW * state.innerThighLeft.attachX, y: pelvisBottomY };
-    const rightInnerThighStart = { x: (0.5 + pelvisW / 2) - pelvisW * state.innerThighRight.attachX, y: pelvisBottomY };
-
-    const leftInnerThighEnd = drawInnerThigh(group, state, 'left', leftInnerThighStart, sectionH);
-    const rightInnerThighEnd = drawInnerThigh(group, state, 'right', rightInnerThighStart, sectionH);
-    drawLine(group, leftInnerThighEnd.x, leftInnerThighEnd.y, kneeLeftInnerX, kneeLeftCy);
-    drawLine(group, rightInnerThighEnd.x, rightInnerThighEnd.y, kneeRightInnerX, kneeRightCy);
-
-    // --- Точки ---
+    // --- Точки (только колени и лодыжки) ---
     const kneeLeft = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     kneeLeft.setAttribute('cx', String(kneeLeftCx));
     kneeLeft.setAttribute('cy', String(kneeLeftCy));
@@ -127,145 +101,6 @@ App.Leg = (function () {
     ankleRight.setAttribute('stroke-width', '1');
     ankleRight.setAttribute('vector-effect', 'non-scaling-stroke');
     group.appendChild(ankleRight);
-  }
-
-  function drawThigh(group, state, side, sectionH) {
-    const pad = state.gridPad;
-    const n = state.heads;
-    const y0 = pad;
-    const y1 = 1 - pad;
-
-    const baseHeadW = state.baseHeadWidth * sectionH;
-    const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
-    const chestHeightPx = sectionH * state.chest.height;
-    const chestRx = (baseHeadW * state.chest.width) / 2;
-
-    const pelvisW = chestHeightPx * state.pelvis.widthMod;
-    const pelvisH = (chestRx * 2) * state.pelvis.heightMod;
-    const pelvisY0 = chestY0 + chestHeightPx + (state.pelvis.offset * sectionH);
-
-    const attachX = side === 'left' ? (0.5 - pelvisW / 2) : (0.5 + pelvisW / 2);
-
-    const thigh = side === 'left' ? state.thighLeft : state.thighRight;
-    const attachY = pelvisY0 + thigh.attachY * pelvisH;
-
-    const rad = thigh.angle * Math.PI / 180;
-    const len = thigh.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1;
-
-    const endX = attachX + outwardSign * Math.sin(rad) * len;
-    const endY = attachY + Math.cos(rad) * len;
-
-    const midX = (attachX + endX) / 2;
-    const midY = (attachY + endY) / 2;
-    const dx = endX - attachX;
-    const dy = endY - attachY;
-
-    let perpX = dy;
-    let perpY = -dx;
-    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
-    }
-
-    const k = 0.5 * thigh.round;
-    const cpX = midX + perpX * k;
-    const cpY = midY + perpY * k;
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${attachX} ${attachY} Q ${cpX} ${cpY} ${endX} ${endY}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ff0000');
-    path.setAttribute('stroke-width', '1');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(path);
-
-    return { x: endX, y: endY };
-  }
-
-  // СТАРАЯ ВНЕШНЯЯ ИКРА (плавная кривая от колена к стопе)
-  function drawCalf(group, state, side, kneeEdgeX, kneeEdgeY, sectionH) {
-    const calf = side === 'left' ? state.calfLeft : state.calfRight;
-
-    const rad = calf.angle * Math.PI / 180;
-    const len = calf.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1;
-
-    const endX = kneeEdgeX + outwardSign * Math.sin(rad) * len;
-    const endY = kneeEdgeY + Math.cos(rad) * len;
-
-    const midX = (kneeEdgeX + endX) / 2;
-    const midY = (kneeEdgeY + endY) / 2;
-    const dx = endX - kneeEdgeX;
-    const dy = endY - kneeEdgeY;
-
-    let perpX = dy;
-    let perpY = -dx;
-    if ((midX < 0.5 && perpX > 0) || (midX > 0.5 && perpX < 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
-    }
-
-    const k = 0.5 * calf.round;
-    const cpX = midX + perpX * k;
-    const cpY = midY + perpY * k;
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${kneeEdgeX} ${kneeEdgeY} Q ${cpX} ${cpY} ${endX} ${endY}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ff0000');
-    path.setAttribute('stroke-width', '1');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(path);
-
-    return { x: endX, y: endY };
-  }
-
-  function drawInnerThigh(group, state, side, startPoint, sectionH) {
-    const thigh = side === 'left' ? state.innerThighLeft : state.innerThighRight;
-
-    const rad = thigh.angle * Math.PI / 180;
-    const len = thigh.length * sectionH;
-    const outwardSign = side === 'left' ? -1 : 1;
-
-    const endX = startPoint.x + outwardSign * Math.sin(rad) * len;
-    const endY = startPoint.y + Math.cos(rad) * len;
-
-    const midX = (startPoint.x + endX) / 2;
-    const midY = (startPoint.y + endY) / 2;
-    const dx = endX - startPoint.x;
-    const dy = endY - startPoint.y;
-
-    let perpX = dy;
-    let perpY = -dx;
-    if ((midX < 0.5 && perpX < 0) || (midX > 0.5 && perpX > 0)) {
-      perpX = -perpX;
-      perpY = -perpY;
-    }
-
-    const k = 0.5 * thigh.round;
-    const cpX = midX + perpX * k;
-    const cpY = midY + perpY * k;
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${startPoint.x} ${startPoint.y} Q ${cpX} ${cpY} ${endX} ${endY}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ff0000');
-    path.setAttribute('stroke-width', '1');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(path);
-
-    return { x: endX, y: endY };
-  }
-
-  function drawLine(group, x1, y1, x2, y2) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${x1} ${y1} L ${x2} ${y2}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#ff0000');
-    path.setAttribute('stroke-width', '1');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
-    group.appendChild(path);
   }
 
   return { render };
