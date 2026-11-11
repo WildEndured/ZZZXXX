@@ -14,11 +14,19 @@ App.Torso = (function () {
     const baseHeadW = state.baseHeadWidth * sectionH;
     
     // --- Шея ---
-    // Голова (чтобы понять, где её низ)
+    // Голова
     const headH = state.head.height * sectionH;
     const headRy = headH / 2;
     const headCy = y0 + state.head.offset * sectionH + headRy;
-    const headBottomY = headCy + headRy; // Самая нижняя точка эллипса головы
+    
+    // Линия челюсти (вычисляем так же, как в head.js)
+    // state.head.chinY * sectionH - это отступ от верха секции, а headCy - центр эллипса.
+    // Но проще всего взять точку, где заканчивается челюсть: headCy - headRy + state.head.chinY * sectionH
+    // Однако в head.js формула такая: chinYPos = y0 + state.head.chinY * sectionH;
+    const chinYPos = y0 + state.head.chinY * sectionH;
+    
+    // Начало шеи (чуть ниже линии челюсти, чтобы не наезжать на линию подбородка)
+    const neckStartY = chinYPos; 
 
     // Грудная клетка
     const chestY0 = y0 + sectionH + (state.chest.offset * sectionH);
@@ -29,7 +37,7 @@ App.Torso = (function () {
     // Рисуем две вертикальные линии шеи
     const neckLeft = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     neckLeft.setAttribute('x1', String(0.5 - neckHalfWidth));
-    neckLeft.setAttribute('y1', String(headBottomY));
+    neckLeft.setAttribute('y1', String(neckStartY));
     neckLeft.setAttribute('x2', String(0.5 - neckHalfWidth));
     neckLeft.setAttribute('y2', String(chestY0));
     neckLeft.setAttribute('stroke', '#ff0000');
@@ -39,7 +47,7 @@ App.Torso = (function () {
 
     const neckRight = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     neckRight.setAttribute('x1', String(0.5 + neckHalfWidth));
-    neckRight.setAttribute('y1', String(headBottomY));
+    neckRight.setAttribute('y1', String(neckStartY));
     neckRight.setAttribute('x2', String(0.5 + neckHalfWidth));
     neckRight.setAttribute('y2', String(chestY0));
     neckRight.setAttribute('stroke', '#ff0000');
