@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Адаптивный холст для рисования</title>
-<link rel="stylesheet" href="style.css?v=1012">
+<link rel="stylesheet" href="style.css?v=1013">
 </head>
 <body>
 <div id="app">
@@ -81,6 +81,12 @@
             </label>
             <label>Смещение от верха: <span id="headOffsetVal">0%</span>
               <input type="range" id="headOffset" min="-150" max="150" value="0">
+            </label>
+          </section>
+          <section class="block border-none">
+            <h4>Шея</h4>
+            <label>Ширина шеи: <span id="neckWidthVal">20%</span>
+              <input type="range" id="neckWidth" min="5" max="100" value="20">
             </label>
           </section>
           <section class="block border-none">
@@ -271,11 +277,11 @@
   </aside>
 </div>
 
-<script src="main.js?v=1012"></script>
-<script src="head.js?v=1012"></script>
-<script src="torso.js?v=1012"></script>
-<script src="arm.js?v=1012"></script>
-<script src="leg.js?v=1012"></script>
+<script src="main.js?v=1013"></script>
+<script src="head.js?v=1013"></script>
+<script src="torso.js?v=1013"></script>
+<script src="arm.js?v=1013"></script>
+<script src="leg.js?v=1013"></script>
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     if (window.App && App.init) {
