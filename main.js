@@ -36,6 +36,9 @@ window.App = (function () {
   const headOffset = document.getElementById('headOffset');
   const headOffsetVal = document.getElementById('headOffsetVal');
 
+  const neckWidth = document.getElementById('neckWidth');
+  const neckWidthVal = document.getElementById('neckWidthVal');
+
   const chinY = document.getElementById('chinY');
   const chinYVal = document.getElementById('chinYVal');
   const chinWidth = document.getElementById('chinWidth');
@@ -139,6 +142,7 @@ window.App = (function () {
     gridPad: 0.00, heads: 5,
     baseHeadWidth: 0.65,
     head: { width: 0.65, height: 0.65, offset: 0.00, chinY: 0.85, chinWidth: 0.01 },
+    neck: { width: 0.20 },
     jaw: { attachY: 0.55, height: 0.80, angle: 0.20, round: 0.00 },
     chest: { height: 0.85, width: 1.00, offset: 0.00, topNarrow: 0.70, bottomWide: 1.00 },
     pelvis: { widthMod: 1.00, heightMod: 1.00, offset: 0.00, round: 0.20 },
@@ -250,6 +254,9 @@ window.App = (function () {
     chinY.value = state.head.chinY * 100; chinYVal.textContent = chinY.value + '%';
     chinWidth.value = state.head.chinWidth * 100; chinWidthVal.textContent = chinWidth.value + '%';
     
+    // Шея
+    neckWidth.value = state.neck.width * 100; neckWidthVal.textContent = neckWidth.value + '%';
+
     // Челюсть
     jawAttachY.value = state.jaw.attachY * 100; jawAttachYVal.textContent = jawAttachY.value + '%';
     jawHeight.value = state.jaw.height * 100; jawHeightVal.textContent = jawHeight.value + '%';
@@ -588,6 +595,9 @@ window.App = (function () {
   headWidth.addEventListener('input', () => { state.head.width = parseInt(headWidth.value, 10) / 100; headWidthVal.textContent = headWidth.value + '%'; renderAll(); });
   headHeight.addEventListener('input', () => { state.head.height = parseInt(headHeight.value, 10) / 100; headHeightVal.textContent = headHeight.value + '%'; renderAll(); });
   headOffset.addEventListener('input', () => { state.head.offset = parseInt(headOffset.value, 10) / 100; headOffsetVal.textContent = headOffset.value + '%'; renderAll(); });
+  
+  neckWidth.addEventListener('input', () => { state.neck.width = parseInt(neckWidth.value, 10) / 100; neckWidthVal.textContent = neckWidth.value + '%'; renderAll(); });
+
   chinY.addEventListener('input', () => { state.head.chinY = parseInt(chinY.value, 10) / 100; chinYVal.textContent = chinY.value + '%'; renderAll(); });
   chinWidth.addEventListener('input', () => { state.head.chinWidth = parseInt(chinWidth.value, 10) / 100; chinWidthVal.textContent = chinWidth.value + '%'; renderAll(); });
   jawAttachY.addEventListener('input', () => { state.jaw.attachY = parseInt(jawAttachY.value, 10) / 100; jawAttachYVal.textContent = jawAttachY.value + '%'; renderAll(); });
