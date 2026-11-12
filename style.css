@@ -1,3 +1,6 @@
+/* =========================================
+   БАЗОВЫЕ НАСТРОЙКИ И ПЕРЕМЕННЫЕ
+   ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -18,15 +21,18 @@ body {
   color: var(--text);
   font-size: 13px;
   height: 100vh;
+  height: 100dvh; /* Для мобильных браузеров с учетом адресной строки */
   overflow: hidden;
 }
 
 .app {
   display: flex;
-  height: 100vh;
+  height: 100%;
 }
 
-/* ---------- СЦЕНА ---------- */
+/* =========================================
+   СЦЕНА (ХОЛСТ)
+   ========================================= */
 .stage {
   flex: 1;
   display: flex;
@@ -43,6 +49,7 @@ body {
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   height: 48px;
+  flex-shrink: 0;
 }
 
 .stage__meta {
@@ -50,6 +57,7 @@ body {
   gap: 16px;
   color: var(--text-dim);
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .stage__actions {
@@ -62,8 +70,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: auto;
+  overflow: hidden; /* Скрываем скролл, масштабируем через JS */
   padding: 24px;
+  background-color: #131315;
   background-image:
     linear-gradient(45deg, #1c1c20 25%, transparent 25%),
     linear-gradient(-45deg, #1c1c20 25%, transparent 25%),
@@ -74,20 +83,24 @@ body {
 }
 
 #canvas {
-  max-width: 100%;
-  max-height: 100%;
-  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  /* Размеры задаются через JS (fitCanvasToViewport) */
   background: #fff;
-  image-rendering: auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  display: block;
+  max-width: none;
+  max-height: none;
 }
 
-/* ---------- ПАНЕЛЬ ---------- */
+/* =========================================
+   ПАНЕЛЬ УПРАВЛЕНИЯ
+   ========================================= */
 .panel {
   width: 340px;
   background: var(--panel);
   border-left: 1px solid var(--border);
   overflow-y: auto;
   flex-shrink: 0;
+  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
 }
 
 .panel__section {
@@ -99,6 +112,7 @@ body {
   display: flex;
   justify-content: flex-end;
   border-bottom: none;
+  padding-bottom: 24px;
 }
 
 .panel__title {
@@ -115,11 +129,15 @@ body {
   color: var(--text-dim);
   margin: 12px 0 8px;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .panel__subtitle:first-child { margin-top: 0; }
 
-/* ---------- КОНТРОЛЫ ---------- */
+/* =========================================
+   КОНТРОЛЫ (ПОЛЗУНКИ)
+   ========================================= */
 .controls {
   display: flex;
   flex-direction: column;
@@ -139,6 +157,7 @@ body {
   font-size: 12px;
   color: var(--text);
   grid-column: 1 / 2;
+  cursor: pointer;
 }
 
 .control output {
@@ -150,6 +169,7 @@ body {
   min-width: 40px;
 }
 
+/* Стилизация ползунков (Webkit) */
 .control input[type="range"] {
   grid-column: 1 / -1;
   width: 100%;
@@ -159,39 +179,70 @@ body {
   background: var(--panel-2);
   border-radius: 2px;
   outline: none;
+  margin-top: 6px;
 }
 
 .control input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+
+.control input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--accent-hover);
+  transform: scale(1.1);
+}
+
+/* Стилизация ползунков (Firefox) */
+.control input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
   transition: background .15s;
 }
 
-.control input[type="range"]::-webkit-slider-thumb:hover {
+.control input[type="range"]::-moz-range-thumb:hover {
   background: var(--accent-hover);
 }
 
-.control input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: none;
-  border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer;
-}
-
+/* Поле загрузки файла */
 .control input[type="file"] {
   grid-column: 1 / -1;
   font-size: 11px;
   color: var(--text-dim);
+  background: var(--panel-2);
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  cursor: pointer;
 }
 
-/* ---------- КНОПКИ ---------- */
+.control input[type="file"]::file-selector-button {
+  background: var(--border);
+  border: none;
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.control input[type="file"]::file-selector-button:hover {
+  background: #4a4a52;
+}
+
+/* =========================================
+   КНОПКИ
+   ========================================= */
 .btn {
   padding: 6px 14px;
   border: 1px solid var(--border);
@@ -201,6 +252,8 @@ body {
   cursor: pointer;
   font-size: 12px;
   transition: background .15s, border-color .15s;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .btn:hover {
@@ -223,7 +276,13 @@ body {
   background: transparent;
 }
 
-/* ---------- ПРЕСЕТЫ ---------- */
+.btn--ghost:hover {
+  background: var(--panel-2);
+}
+
+/* =========================================
+   ПРЕСЕТЫ
+   ========================================= */
 .presets {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -238,11 +297,84 @@ body {
   border-radius: var(--radius);
   cursor: pointer;
   font-size: 12px;
-  text-align: left;
+  text-align: center;
   transition: background .15s, border-color .15s;
 }
 
 .preset:hover {
   background: #35353b;
   border-color: var(--accent);
+}
+
+.preset:active {
+  background: var(--accent);
+}
+
+/* =========================================
+   АДАПТИВНОСТЬ (ПЛАНШЕТЫ И ТЕЛЕФОНЫ)
+   ========================================= */
+
+/* Планшеты и узкие окна десктопа */
+@media (max-width: 900px) {
+  .app {
+    flex-direction: column-reverse; /* Панель сверху, холст снизу. Или column — тогда холст сверху */
+  }
+
+  .stage {
+    flex: 1;
+    min-height: 40vh; /* Холст занимает оставшееся место */
+  }
+
+  .stage__viewport {
+    padding: 12px;
+  }
+
+  .panel {
+    width: 100%;
+    height: 50vh; /* Панель занимает половину экрана */
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .panel__section {
+    padding: 12px 20px; /* Чуть больше воздуха по бокам */
+  }
+}
+
+/* Телефоны */
+@media (max-width: 600px) {
+  .stage__toolbar {
+    padding: 6px 12px;
+    height: 44px;
+  }
+
+  .stage__meta {
+    font-size: 11px;
+  }
+
+  .stage__meta span:first-child {
+    display: none; /* Прячем разрешение на узких экранах, оставляем только зум */
+  }
+
+  .btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .panel {
+    height: 55vh; /* Панели чуть больше места для удобства скролла */
+  }
+
+  .panel__section {
+    padding: 10px 14px;
+  }
+  
+  .control input[type="range"] {
+    margin-top: 8px; /* Чуть увеличиваем хитбокс для пальца */
+  }
+
+  .control input[type="range"]::-webkit-slider-thumb {
+    width: 20px; /* Увеличиваем ползунок для пальцев */
+    height: 20px;
+  }
 }
