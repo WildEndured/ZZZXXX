@@ -70,7 +70,11 @@ function computeEllipse(layout, s) {
     const { headLines, headH, canvasSize } = layout;
     const headTopY = headLines[0];
 
-    const baseCy = headTopY + headH * 0.5;
+    // Центр круга смещен вверх (0.35 от высоты головы),
+    // чтобы освободить место снизу для челюсти и шеи.
+    const baseCy = headTopY + headH * 0.35;
+
+    // Базовый радиус = 1.5/5 * headH (занимает 3/5 высоты головы)
     const baseRy = (headH / 5) * 1.5;
 
     const shiftY  = (s.top + s.bottom) * 0.5 * headH;
