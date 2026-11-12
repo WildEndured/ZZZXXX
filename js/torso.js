@@ -1,36 +1,29 @@
-// Торс: занимает 2 модуля (i=1..2)
 export function drawTorso(r, L, cfg, headA){
   const { mTop, moduleH, cx } = L;
-  const y1 = mTop + moduleH;   // начало торса (2/Х — второй модуль)
+  const y1 = mTop + moduleH;
   const h  = moduleH;
 
-  // --- грудная клетка: эллипс с расширением верха/низа ---
   const baseRx = h * 0.5 * (1 + cfg.chest.width / 100);
   const topEx  = cfg.chest.top / 100;
   const botEx  = cfg.chest.bottom / 100;
   const ry     = h * 0.5 * (1 + cfg.chest.height / 100);
 
-  const chestCy = y1 + ry;        // эллипс вписан в модуль
+  const chestCy = y1 + ry;
   const rxTop   = baseRx * (1 + topEx);
   const rxBot   = baseRx * (1 + botEx);
 
-  // рисуем верхнюю и нижнюю дуги
   const steps = 64;
   const pts = [];
-  // верхняя половина (от π до 2π) с rxTop
   for (let i = 0; i <= steps; i++){
-    const t = Math.PI + (Math.PI) * i / steps;
+    const t = Math.PI + Math.PI * i / steps;
     pts.push([cx + Math.cos(t) * rxTop, chestCy + Math.sin(t) * ry]);
   }
-  // нижняя половина (от 0 до π) с rxBot, добавляем в обратном порядке
   for (let i = 0; i <= steps; i++){
-    const t = Math.PI - (Math.PI) * i / steps;
+    const t = Math.PI - Math.PI * i / steps;
     pts.push([cx + Math.cos(t) * rxBot, chestCy + Math.sin(t) * ry]);
   }
   r.path(pts, true);
 
-  // --- таз: прямоугольник ---
-  // по ТЗ: h_rect = w_ellipse (ширина эллипса = 2*rx), w_rect = h_ellipse (высота = 2*ry)
   const ellipseWidth  = 2 * baseRx;
   const ellipseHeight = 2 * ry;
 
@@ -56,20 +49,16 @@ export function drawTorso(r, L, cfg, headA){
   };
 }
 
-// Якоря для рук и ног
 export function torsoAnchors(cfg, torso){
   const { chest, pelvis } = torso;
-  // плечи: 1/3 высоты эллипса (сверху)
   const shoulderY = chest.top + (2 * chest.ry) / 3;
   const shoulderL = { x: chest.cx - chest.rxTop, y: shoulderY };
   const shoulderR = { x: chest.cx + chest.rxTop, y: shoulderY };
 
-  // запястья: над нижней границей таза, по бокам
-  const wristY = pelvis.top + pelvis.h * 0.1;   // чуть выше низа
+  const wristY = pelvis.top + pelvis.h * 0.1;
   const wristL = { x: pelvis.left,  y: wristY };
   const wristR = { x: pelvis.right, y: wristY };
 
-  // дно таза — 2/5 и 4/5 для ног
   const p25 = pelvis.left + pelvis.w * 0.4;
   const p45 = pelvis.left + pelvis.w * 0.8;
   const pelvisBottom = { y: pelvis.bottom, x2of5: p25, x4of5: p45,
