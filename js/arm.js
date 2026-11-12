@@ -2,13 +2,11 @@ export function drawArms(r, L, cfg, torsoA){
   const { moduleH } = L;
   const h = moduleH;
 
-  // ——— плечи ———
   const shL = torsoA.shoulderL, shR = torsoA.shoulderR;
-  const shR_L = h * 0.09 * (1 + cfg.shoulder.radius / 100);
-  r.ellipse(shL.x, shL.y, shR_L, shR_L);
-  r.ellipse(shR.x, shR.y, shR_L, shR_L);
+  const shRadius = h * 0.09 * (1 + cfg.shoulder.radius / 100);
+  r.ellipse(shL.x, shL.y, shRadius, shRadius);
+  r.ellipse(shR.x, shR.y, shRadius, shRadius);
 
-  // ——— запястья ———
   const wrL = torsoA.wristL, wrR = torsoA.wristR;
   const wShiftX = cfg.wrist.dx / 100 * h * 0.2;
   const wShiftY = cfg.wrist.dy / 100 * h * 0.2;
@@ -19,7 +17,6 @@ export function drawArms(r, L, cfg, torsoA){
   r.ellipse(wL.x, wL.y, wrRadius, wrRadius);
   r.ellipse(wR.x, wR.y, wrRadius, wrRadius);
 
-  // ——— локти ———
   const eShiftX = cfg.elbow.dx / 100 * h * 0.2;
   const eShiftY = cfg.elbow.dy / 100 * h * 0.2;
   const eRadius = h * 0.07 * (1 + cfg.elbow.radius / 100);
@@ -35,11 +32,8 @@ export function drawArms(r, L, cfg, torsoA){
   r.ellipse(eL.x, eL.y, eRadius, eRadius);
   r.ellipse(eR.x, eR.y, eRadius, eRadius);
 
-  // ——— линии с делением на 3 ———
   const seg3 = (a, b, markerR) => {
-    // сама линия
-    r.path([ [a.x,a.y], [b.x,b.y] ]);
-    // маркеры 1/3 и 2/3
+    r.path([[a.x,a.y],[b.x,b.y]]);
     for (let i = 1; i <= 2; i++){
       const t = i / 3;
       const px = a.x + (b.x - a.x) * t;
@@ -49,8 +43,8 @@ export function drawArms(r, L, cfg, torsoA){
   };
 
   const mR = h * 0.02;
-  seg3(shL, eL, mR);  seg3(eL, wL, mR);   // левая рука
-  seg3(shR, eR, mR);  seg3(eR, wR, mR);   // правая рука
+  seg3(shL, eL, mR);  seg3(eL, wL, mR);
+  seg3(shR, eR, mR);  seg3(eR, wR, mR);
 
   return { shoulderL: shL, shoulderR: shR, elbowL: eL, elbowR: eR, wristL: wL, wristR: wR };
 }
