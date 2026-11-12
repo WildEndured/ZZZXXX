@@ -10,14 +10,19 @@
 <body>
 
 <div class="app" id="app">
+
+    <!-- Кнопка-переключатель панели (только мобильные) -->
     <button class="panel-toggle" id="panelToggle" aria-label="Открыть панель управления">
         <span class="panel-toggle__icon">☰</span>
         <span class="panel-toggle__label">Настройки</span>
     </button>
 
+    <!-- Затенение фона под панелью (только мобильные) -->
     <div class="panel-backdrop" id="panelBackdrop" hidden></div>
 
+    <!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
     <aside class="panel" id="panel" aria-label="Панель управления">
+
         <div class="panel__handle" aria-hidden="true"></div>
 
         <div class="panel__head">
@@ -27,11 +32,13 @@
 
         <section class="group">
             <h2>Общее</h2>
+
             <label class="row">
                 <span class="row__label">Рост в головах</span>
                 <input type="range" id="growth" min="1" max="12" step="0.5" value="5" />
                 <output id="growthOut">5</output>
             </label>
+
             <label class="row">
                 <span class="row__label">Отступы сверху/снизу, %</span>
                 <input type="range" id="padding" min="0" max="10" step="0.1" value="0" />
@@ -39,52 +46,110 @@
             </label>
         </section>
 
+        <!-- ═══════════════ ГОЛОВА ═══════════════ -->
         <section class="group">
             <h2>Голова</h2>
+
             <details class="subgroup" open>
-                <summary>Череп</summary>
-                <label class="row"><span class="row__label">Верх головы</span><input type="range" id="head_top" min="-50" max="50" step="1" value="0" /><output id="head_top_out">0</output></label>
-                <label class="row"><span class="row__label">Низ головы</span><input type="range" id="head_bottom" min="-50" max="50" step="1" value="0" /><output id="head_bottom_out">0</output></label>
-                <label class="row"><span class="row__label">Ширина головы</span><input type="range" id="head_width" min="50" max="150" step="1" value="100" /><output id="head_width_out">100</output></label>
-                <label class="row"><span class="row__label">Радиус головы</span><input type="range" id="head_radius" min="50" max="150" step="1" value="100" /><output id="head_radius_out">100</output></label>
+                <summary>Основная масса</summary>
+                <label class="row">
+                    <span class="row__label">Верх головы</span>
+                    <input type="range" id="hCircleTop" min="-20" max="20" step="1" value="0" />
+                    <output id="hCircleTopOut">0</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Низ головы</span>
+                    <input type="range" id="hCircleBottom" min="-20" max="20" step="1" value="0" />
+                    <output id="hCircleBottomOut">0</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Ширина</span>
+                    <input type="range" id="hCircleWidth" min="50" max="150" step="1" value="100" />
+                    <output id="hCircleWidthOut">100</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Радиус</span>
+                    <input type="range" id="hCircleRadius" min="50" max="150" step="1" value="100" />
+                    <output id="hCircleRadiusOut">100</output>
+                </label>
             </details>
-            <details class="subgroup">
+
+            <details class="subgroup" open>
                 <summary>Подбородок</summary>
-                <label class="row"><span class="row__label">Высота</span><input type="range" id="chin_height" min="-50" max="50" step="1" value="0" /><output id="chin_height_out">0</output></label>
-                <label class="row"><span class="row__label">Ширина</span><input type="range" id="chin_width" min="10" max="100" step="1" value="50" /><output id="chin_width_out">50</output></label>
-                <label class="row"><span class="row__label">Скругление</span><input type="range" id="chin_round" min="0" max="50" step="1" value="10" /><output id="chin_round_out">10</output></label>
+                <label class="row">
+                    <span class="row__label">Высота</span>
+                    <input type="range" id="hChinHeight" min="-10" max="20" step="1" value="0" />
+                    <output id="hChinHeightOut">0</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Ширина</span>
+                    <input type="range" id="hChinWidth" min="10" max="80" step="1" value="40" />
+                    <output id="hChinWidthOut">40</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Скругление</span>
+                    <input type="range" id="hChinRound" min="0" max="100" step="1" value="50" />
+                    <output id="hChinRoundOut">50</output>
+                </label>
             </details>
-            <details class="subgroup">
+
+            <details class="subgroup" open>
                 <summary>Челюсть</summary>
-                <label class="row"><span class="row__label">Высота крепления</span><input type="range" id="jaw_attach" min="-50" max="50" step="1" value="0" /><output id="jaw_attach_out">0</output></label>
-                <label class="row"><span class="row__label">Длина</span><input type="range" id="jaw_length" min="-50" max="50" step="1" value="0" /><output id="jaw_length_out">0</output></label>
-                <label class="row"><span class="row__label">Угол</span><input type="range" id="jaw_angle" min="0" max="100" step="1" value="50" /><output id="jaw_angle_out">50</output></label>
-                <label class="row"><span class="row__label">Ширина</span><input type="range" id="jaw_width" min="10" max="100" step="1" value="80" /><output id="jaw_width_out">80</output></label>
+                <label class="row">
+                    <span class="row__label">Высота крепления</span>
+                    <input type="range" id="hJawAttachY" min="0" max="100" step="1" value="50" />
+                    <output id="hJawAttachYOut">50</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Длина</span>
+                    <input type="range" id="hJawLength" min="50" max="150" step="1" value="100" />
+                    <output id="hJawLengthOut">100</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Угол</span>
+                    <input type="range" id="hJawAngle" min="-45" max="45" step="1" value="0" />
+                    <output id="hJawAngleOut">0</output>
+                </label>
+                <label class="row">
+                    <span class="row__label">Ширина</span>
+                    <input type="range" id="hJawWidth" min="20" max="200" step="1" value="100" />
+                    <output id="hJawWidthOut">100</output>
+                </label>
             </details>
-            <details class="subgroup">
+
+            <details class="subgroup" open>
                 <summary>Шея</summary>
-                <label class="row"><span class="row__label">Ширина</span><input type="range" id="neck_width" min="10" max="100" step="1" value="40" /><output id="neck_width_out">40</output></label>
+                <label class="row">
+                    <span class="row__label">Ширина</span>
+                    <input type="range" id="hNeckWidth" min="10" max="60" step="1" value="30" />
+                    <output id="hNeckWidthOut">30</output>
+                </label>
             </details>
         </section>
+        <!-- ══════════════════════════════════════ -->
 
         <section class="group">
             <h2>Подложка</h2>
+
             <div class="row row--file">
                 <label class="file-btn">
                     <input type="file" id="bgFile" accept="image/*" />
                     <span>Выбрать изображение</span>
                 </label>
             </div>
+
             <label class="row">
                 <span class="row__label">Прозрачность</span>
                 <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1" disabled />
                 <output id="bgOpacityOut">1</output>
             </label>
+
             <label class="row">
                 <span class="row__label">Масштаб</span>
                 <input type="range" id="bgScale" min="0.1" max="3" step="0.01" value="1" disabled />
                 <output id="bgScaleOut">1</output>
             </label>
+
             <div class="row row--buttons">
                 <button id="bgRemove" class="btn btn--danger" disabled>Удалить подложку</button>
             </div>
@@ -92,14 +157,17 @@
 
         <section class="group">
             <h2>Пресеты</h2>
+
             <div class="row row--stack">
                 <input type="text" id="presetName" placeholder="Имя пресета" />
                 <button id="presetSave" class="btn btn--primary">Сохранить</button>
             </div>
+
             <ul id="presetList" class="preset-list"></ul>
         </section>
     </aside>
 
+    <!-- ОБЛАСТЬ ХОЛСТА -->
     <main class="stage">
         <div class="stage-toolbar">
             <button id="exportSvg" class="btn">SVG</button>
@@ -125,6 +193,7 @@
             </svg>
         </div>
     </main>
+
 </div>
 
 <script src="js/main.js" type="module"></script>
