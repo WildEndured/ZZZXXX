@@ -1,7 +1,3 @@
-/* ══════════════════════════════════════════════════
-   БАЗА
-   ══════════════════════════════════════════════════ */
-
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -39,10 +35,6 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* ══════════════════════════════════════════════════
-   РАСКЛАДКА (DESKTOP)
-   ══════════════════════════════════════════════════ */
-
 .app {
     display: flex;
     height: 100vh;
@@ -51,7 +43,6 @@ html, body {
     position: relative;
 }
 
-/* Панель (по умолчанию для десктопа) */
 .panel {
     flex: 0 0 var(--panel-w);
     width: var(--panel-w);
@@ -67,12 +58,10 @@ html, body {
     z-index: 10;
 }
 
-/* Заголовок панели и крестик — скрыты на десктопе */
 .panel__head, .panel__handle {
     display: none;
 }
 
-/* Сцена */
 .stage {
     flex: 1 1 auto;
     display: flex;
@@ -111,10 +100,6 @@ html, body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
     border-radius: 2px;
 }
-
-/* ══════════════════════════════════════════════════
-   ЭЛЕМЕНТЫ УПРАВЛЕНИЯ
-   ══════════════════════════════════════════════════ */
 
 .group {
     margin-bottom: 24px;
@@ -190,7 +175,6 @@ input[type="text"]:focus {
     border-color: var(--accent);
 }
 
-/* СКРЫТИЕ СТАНДАРТНОГО ИНПУТА ФАЙЛА */
 input[type="file"] {
     display: none;
 }
@@ -217,7 +201,6 @@ input[type="file"] {
 .btn--danger { background: transparent; color: var(--danger); border-color: var(--danger); }
 .btn--danger:hover:not(:disabled) { background: rgba(224, 87, 91, 0.12); }
 
-/* Кнопка выбора файла */
 .file-btn {
     display: inline-flex;
     align-items: center;
@@ -234,7 +217,6 @@ input[type="file"] {
 }
 .file-btn:hover { background: #4a4d52; }
 
-/* Пресеты */
 .preset-list { list-style: none; }
 
 .preset-list li {
@@ -270,16 +252,41 @@ input[type="file"] {
 }
 .preset-list li button:hover { color: var(--danger); background: rgba(224, 87, 91, 0.1); }
 
-/* Скрываем мобильные элементы на десктопе */
 .panel-toggle, .panel-backdrop { display: none; }
 
-/* ══════════════════════════════════════════════════
-   ПЛАНШЕТ И ТЕЛЕФОН (≤ 1024px) — панель снизу
-   ══════════════════════════════════════════════════ */
+/* Аккордеон */
+.subgroup {
+    margin-bottom: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+}
+.subgroup summary {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 0;
+    list-style: none;
+}
+.subgroup summary::-webkit-details-marker { display: none; }
+.subgroup summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s;
+}
+.subgroup[open] summary::before { transform: rotate(90deg); }
+.subgroup summary:hover { color: var(--text); }
+.subgroup[open] summary {
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-soft);
+    padding-bottom: 8px;
+}
 
 @media (max-width: 1024px) {
-
-    /* Кнопка «Настройки» (фиксирована внизу слева) */
     .panel-toggle {
         display: inline-flex;
         align-items: center;
@@ -301,7 +308,6 @@ input[type="file"] {
     .panel-toggle__icon { font-size: 16px; line-height: 1; }
     .panel-toggle[aria-expanded="true"] { display: none; }
 
-    /* Затемнение фона */
     .panel-backdrop {
         display: block;
         position: fixed;
@@ -317,40 +323,32 @@ input[type="file"] {
         pointer-events: auto;
     }
 
-    /* Панель как Bottom Sheet */
     .panel {
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
         z-index: 50;
-
-        width: 100%; /* Переопределяем десктопную ширину */
+        width: 100%;
         flex: none;
         max-height: 85dvh;
         height: auto;
-
         padding: 0 20px calc(24px + var(--safe-bottom));
         padding-left:  calc(20px + var(--safe-left));
         padding-right: calc(20px + var(--safe-right));
-
         background: var(--bg-panel);
         border-right: none;
         border-top: 1px solid var(--border);
         border-radius: 20px 20px 0 0;
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.55);
-
         transform: translateY(100%);
         transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
         overflow-y: auto;
         overscroll-behavior: contain;
     }
 
-    .panel.is-open {
-        transform: translateY(0);
-    }
+    .panel.is-open { transform: translateY(0); }
 
-    /* Внутренности панели */
     .panel__handle {
         display: block;
         width: 40px;
@@ -360,11 +358,10 @@ input[type="file"] {
         border-radius: 999px;
     }
 
-    /* Заголовок и крестик */
     .panel__head {
         display: flex;
         align-items: center;
-        justify-content: space-between; /* Заголовок слева, крестик справа */
+        justify-content: space-between;
         position: sticky;
         top: 0;
         z-index: 1;
@@ -374,33 +371,21 @@ input[type="file"] {
         border-bottom: 1px solid var(--border);
     }
 
-    .panel__title {
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-    }
+    .panel__title { font-size: 18px; font-weight: 700; letter-spacing: 0.02em; }
 
     .panel__close {
-        width: 36px;
-        height: 36px;
+        width: 36px; height: 36px;
         font-size: 16px;
         color: var(--text-dim);
         background: transparent;
         border: none;
         border-radius: 999px;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
     }
     .panel__close:hover { background: var(--bg-hover); color: var(--text); }
 
-    /* Сцена */
-    .stage {
-        width: 100%;
-        height: 100%;
-    }
-
+    .stage { width: 100%; height: 100%; }
     .stage-toolbar {
         position: sticky;
         top: 0;
@@ -408,31 +393,16 @@ input[type="file"] {
         padding-top: calc(10px + var(--safe-top));
         background: var(--bg-panel);
     }
-
     .canvas-wrap {
         padding: 12px;
-        padding-bottom: calc(12px + var(--safe-bottom) + 72px); /* Отступ снизу под кнопку "Настройки" */
+        padding-bottom: calc(12px + var(--safe-bottom) + 72px);
     }
 
-    /* Ползунки */
-    .row {
-        flex-wrap: wrap;
-    }
-    .row__label {
-        flex: 1 1 100%;
-        margin-bottom: 2px;
-    }
-    .row > input[type="range"] {
-        flex: 1 1 auto;
-    }
-    .row > output {
-        flex: 0 0 48px;
-    }
+    .row { flex-wrap: wrap; }
+    .row__label { flex: 1 1 100%; margin-bottom: 2px; }
+    .row > input[type="range"] { flex: 1 1 auto; }
+    .row > output { flex: 0 0 48px; }
 }
-
-/* ══════════════════════════════════════════════════
-   ТЕЛЕФОН (≤ 480px)
-   ══════════════════════════════════════════════════ */
 
 @media (max-width: 480px) {
     .panel {
@@ -442,17 +412,14 @@ input[type="file"] {
         padding-right: calc(16px + var(--safe-right));
         border-radius: 16px 16px 0 0;
     }
+    .stage-toolbar .btn { flex: 1 1 0; }
+    .btn, .file-btn { min-height: 44px; }
+    .panel-toggle { padding: 12px 20px; font-size: 15px; }
+}
 
-    .stage-toolbar .btn {
-        flex: 1 1 0;
-    }
-
-    .btn, .file-btn {
-        min-height: 44px; /* Удобный тач-таргет */
-    }
-
-    .panel-toggle {
-        padding: 12px 20px;
-        font-size: 15px;
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
     }
 }
