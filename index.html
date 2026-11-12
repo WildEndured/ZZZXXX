@@ -57,6 +57,25 @@
       <label>Скругление таза <input type="range" data-key="torso.pelvis.rounding" min="0" max="1" step="0.01" value="0.3"><output></output></label>
     </details>
 
+    <details><summary>Руки</summary>
+      <label>Радиус плеча <input type="range" data-key="arms.shoulder.radius" min="-50" max="100" value="0"><output></output></label>
+      <label>Радиус локтя <input type="range" data-key="arms.elbow.radius" min="-50" max="100" value="0"><output></output></label>
+      <label>Локоть X <input type="range" data-key="arms.elbow.dx" min="-100" max="100" value="0"><output></output></label>
+      <label>Локоть Y <input type="range" data-key="arms.elbow.dy" min="-100" max="100" value="0"><output></output></label>
+      <label>Радиус запястья <input type="range" data-key="arms.wrist.radius" min="-50" max="100" value="0"><output></output></label>
+      <label>Запястье X <input type="range" data-key="arms.wrist.dx" min="-100" max="100" value="0"><output></output></label>
+      <label>Запястье Y <input type="range" data-key="arms.wrist.dy" min="-100" max="100" value="0"><output></output></label>
+    </details>
+
+    <details><summary>Ноги</summary>
+      <label>Радиус лодыжки <input type="range" data-key="legs.ankle.radius" min="-50" max="100" value="0"><output></output></label>
+      <label>Лодыжка X <input type="range" data-key="legs.ankle.dx" min="-100" max="100" value="0"><output></output></label>
+      <label>Радиус колена <input type="range" data-key="legs.knee.radius" min="-50" max="100" value="0"><output></output></label>
+      <label>Колено X <input type="range" data-key="legs.knee.dx" min="-100" max="100" value="0"><output></output></label>
+      <label>Колено Y <input type="range" data-key="legs.knee.dy" min="-100" max="100" value="0"><output></output></label>
+      <label>Показывать сочленения <input type="checkbox" data-key="legs.showJoints"></label>
+    </details>
+
     <details><summary>Подложка</summary>
       <input type="file" id="underlayFile" accept="image/*">
       <label>Прозрачность <input type="range" data-key="underlay.opacity" min="0" max="1" step="0.01" value="0.4"><output></output></label>
