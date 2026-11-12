@@ -65,40 +65,30 @@ function dispatchRender() {
     document.dispatchEvent(new CustomEvent('head:changed'));
 }
 
-/**
- * Вычисляет параметры эллипса.
- * Базовая верхняя точка = L0 (макушка), базовая нижняя = L3.
- * Центр = L1.5. Базовый радиус = 1.5/5 (или 30% от высоты головы).
- */
 function computeEllipse(layout, s) {
     const { headLines, headH, canvasSize } = layout;
     
-    // headLines[0] — это L0 (макушка)
-    const yL0 = headLines[0];
-    const yL3 = headLines[3];
+    // Берем координаты строго внутри ПЕРВОЙ головы
+    const yL0 = headLines[0];                  // Макушка (0/5)
+    const yL3 = headLines[0] + headH * (3/5);  // Низ круга (3/5)
 
-    // Ползунки "Верх" и "Низ" сдвигают соответствующие границы
+    // Ползунки сдвигают границы
     const shiftTop    = s.top    * headH; 
     const shiftBottom = s.bottom * headH; 
 
-    // Итоговые координаты верхней и нижней точек круга
     const yTop    = yL0 + shiftTop;
     const yBottom = yL3 + shiftBottom;
 
-    // Центр — ровно середина между верхней и нижней точками
+    // Центр и радиус эллипса
     const cy = (yTop + yBottom) / 2;
-    
-    // Вертикальный радиус — половина расстояния между ними
-    // (если не трогать ползунки, это ровно 1.5/5 от headH)
     const ryBase = Math.abs(yBottom - yTop) / 2;
 
-    // Ширина и общий радиус
     const cx = canvasSize / 2;
     
-    // Базовый радиус для ширины берем таким же, как идеальный вертикальный
-    // (1.5/5 от headH = headH * 0.3)
+    // Идеальный базовый радиус (1.5/5 от высоты головы)
     const baseR = headH * 0.3;
 
+    // Применяем ползунки ширины и общего радиуса
     const rx = baseR * s.width * s.radius;
     const ry = ryBase * s.radius;
 
