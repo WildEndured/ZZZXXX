@@ -1,8 +1,5 @@
 // ════════════════════════════════════════════════════════════
 // main.js — точка входа
-// Холст, общие ползунки, подложка, пресеты, экспорт, UI.
-// Модули head.js / torso.js / arm.js / leg.js подключаются
-// отдельными файлами и экспортируют renderX(g, layout, state).
 // ════════════════════════════════════════════════════════════
 
 import { renderHead }  from './head.js';
@@ -10,50 +7,34 @@ import { renderTorso } from './torso.js';
 import { renderArms }  from './arm.js';
 import { renderLegs }  from './leg.js';
 
-// ────────────────────────────────────────────────
-// КОНСТАНТЫ ХОЛСТА
-// ────────────────────────────────────────────────
-
-const CANVAS_SIZE = 4096;   // px, квадрат
-const DPI         = 300;    // 300 dpi — используется при экспорте PNG
-
-// ────────────────────────────────────────────────
-// СОСТОЯНИЕ
-// ────────────────────────────────────────────────
+const CANVAS_SIZE = 4096;
 
 const state = {
-    growth:  5,           // рост в головах (шаг 0.5)
-    padding: 0,           // отступ сверху/снизу, % (0–10)
-
+    growth:  5,
+    padding: 0,
     bg: {
-        src:     null,    // dataURL подложки
-        image:   null,    // HTMLImageElement
-        opacity: 1,
-        scale:   1,
-        fitMode: 'height' // 'height' | 'width'
+        src: null, image: null, opacity: 1, scale: 1, fitMode: 'height'
     },
-
-    // Параметры фигуры — заполняются модулями head/torso/arm/leg.
-    // Пока пусто, будет расширяться по мере реализации.
-    figure: {}
+    figure: {
+        head: {
+            top: 0, bottom: 0, width: 100, radius: 100,
+            chinHeight: 0, chinWidth: 50, chinRound: 10,
+            jawAttach: 0, jawLength: 0, jawAngle: 50, jawWidth: 80,
+            neckWidth: 40
+        }
+    }
 };
 
-// ────────────────────────────────────────────────
-// ССЫЛКИ НА DOM
-// ────────────────────────────────────────────────
-
-// SVG и слои
+// DOM
 const svg       = document.getElementById('canvas');
 const layerBg   = document.getElementById('layerBg');
 const layerGrid = document.getElementById('layerGrid');
 
-// Общие ползунки
 const growthIn   = document.getElementById('growth');
 const growthOut  = document.getElementById('growthOut');
 const paddingIn  = document.getElementById('padding');
 const paddingOut = document.getElementById('paddingOut');
 
-// Подложка
 const bgFile     = document.getElementById('bgFile');
 const bgOpacity  = document.getElementById('bgOpacity');
 const bgOpacityO = document.getElementById('bgOpacityOut');
@@ -61,34 +42,19 @@ const bgScale    = document.getElementById('bgScale');
 const bgScaleO   = document.getElementById('bgScaleOut');
 const bgRemove   = document.getElementById('bgRemove');
 
-// Пресеты
 const presetName = document.getElementById('presetName');
 const presetSave = document.getElementById('presetSave');
 const presetList = document.getElementById('presetList');
 
-// Экспорт
 const exportSvgBtn = document.getElementById('exportSvg');
 const exportPngBtn = document.getElementById('exportPng');
 
-// Мобильное меню
-const app           = document.getElementById('app');
 const panelEl       = document.getElementById('panel');
 const panelToggle   = document.getElementById('panelToggle');
 const panelClose    = document.getElementById('panelClose');
 const panelBackdrop = document.getElementById('panelBackdrop');
 
-// ────────────────────────────────────────────────
-// ГЕОМЕТРИЯ ХОЛСТА
-// ────────────────────────────────────────────────
-
-/**
- * Возвращает метрики раскладки:
- *  - top / bottom — координаты рабочей области (с учётом отступов)
- *  - height       — высота рабочей области
- *  - headH        — высота одной головы (height / growth)
- *  - headLines[]  — Y-координаты линий деления (сверху вниз), длина growth+1
- *  - canvasSize   — размер холста
- */
+// Layout
 function computeLayout() {
     const padPx  = (state.padding / 100) * CANVAS_SIZE;
     const top    = padPx;
@@ -101,37 +67,20 @@ function computeLayout() {
         headLines.push(top + i * headH);
     }
 
-    return {
-        top,
-        bottom,
-        height,
-        headH,
-        growth: state.growth,
-        headLines,
-        canvasSize: CANVAS_SIZE
-    };
+    return { top, bottom, height, headH, growth: state.growth, headLines, canvasSize: CANVAS_SIZE };
 }
 
-// ────────────────────────────────────────────────
-// ОТРИСОВКА
-// ────────────────────────────────────────────────
-
+// Render
 function renderAll() {
     const L = computeLayout();
-
     renderHead (document.getElementById('figureHead'),  L, state);
     renderTorso(document.getElementById('figureTorso'), L, state);
     renderArms (document.getElementById('figureArms'),  L, state);
     renderLegs (document.getElementById('figureLegs'),  L, state);
-
     renderGuides(L);
     renderBackground();
 }
 
-/**
- * Вспомогательная сетка — линии деления на головы.
- * Не попадает в экспорт.
- */
 function renderGuides(L) {
     layerGrid.innerHTML = '';
     const NS = 'http://www.w3.org/2000/svg';
@@ -151,10 +100,7 @@ function renderGuides(L) {
     }
 }
 
-// ────────────────────────────────────────────────
-// ПОДЛОЖКА
-// ────────────────────────────────────────────────
-
+// Подложка
 function renderBackground() {
     layerBg.innerHTML = '';
     if (!state.bg.image) return;
@@ -162,7 +108,6 @@ function renderBackground() {
     const NS = 'http://www.w3.org/2000/svg';
     const img = state.bg.image;
 
-    // Базовая подгонка под высоту или ширину, затем * scale
     const fit = state.bg.fitMode === 'height'
         ? CANVAS_SIZE / img.height
         : CANVAS_SIZE / img.width;
@@ -223,21 +168,18 @@ bgScale.addEventListener('input', () => {
 });
 
 bgRemove.addEventListener('click', () => {
-    state.bg.src   = null;
+    state.bg.src = null;
     state.bg.image = null;
-    bgFile.value   = '';
+    bgFile.value = '';
     bgOpacity.value = 1;
-    bgScale.value   = 1;
+    bgScale.value = 1;
     bgOpacityO.value = '1.00';
-    bgScaleO.value   = '1.00';
+    bgScaleO.value = '1.00';
     setBackgroundEnabled(false);
     renderBackground();
 });
 
-// ────────────────────────────────────────────────
-// ОБЩИЕ ПОЛЗУНКИ
-// ────────────────────────────────────────────────
-
+// Общие ползунки
 growthIn.addEventListener('input', () => {
     state.growth = parseFloat(growthIn.value);
     growthOut.value = state.growth.toFixed(1);
@@ -250,20 +192,12 @@ paddingIn.addEventListener('input', () => {
     renderAll();
 });
 
-// ────────────────────────────────────────────────
-// ПРЕСЕТЫ
-// Хранят growth, padding и (позже) параметры фигуры.
-// Подложка НЕ сохраняется.
-// ────────────────────────────────────────────────
-
+// Пресеты
 const PRESET_KEY = 'anacords.presets.v1';
 
 function loadPresets() {
-    try {
-        return JSON.parse(localStorage.getItem(PRESET_KEY)) || [];
-    } catch {
-        return [];
-    }
+    try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || []; }
+    catch { return []; }
 }
 
 function savePresets(list) {
@@ -285,7 +219,6 @@ function renderPresetList() {
 
     list.forEach((preset, index) => {
         const li = document.createElement('li');
-
         const name = document.createElement('span');
         name.className = 'preset-name';
         name.textContent = preset.name;
@@ -316,20 +249,37 @@ function applyPreset(preset) {
     paddingIn.value  = preset.padding;
     paddingOut.value = preset.padding.toFixed(1);
 
-    // Параметры фигуры — если модули умеют их сериализовать
-    if (preset.figure && typeof state.figure === 'object') {
-        Object.assign(state.figure, preset.figure);
+    if (preset.figure) {
+        state.figure = JSON.parse(JSON.stringify(preset.figure));
+        syncHeadUIFromState();
     }
 
     renderAll();
 }
 
+// Синхронизация UI головы с состоянием
+function syncHeadUIFromState() {
+    const head = state.figure.head;
+    if (!head) return;
+    const uiMap = {
+        head_top: 'top', head_bottom: 'bottom', head_width: 'width', head_radius: 'radius',
+        chin_height: 'chinHeight', chin_width: 'chinWidth', chin_round: 'chinRound',
+        jaw_attach: 'jawAttach', jaw_length: 'jawLength', jaw_angle: 'jawAngle', jaw_width: 'jawWidth',
+        neck_width: 'neckWidth'
+    };
+    for (const [id, key] of Object.entries(uiMap)) {
+        const input = document.getElementById(id);
+        const out = document.getElementById(id + '_out');
+        if (input && head[key] !== undefined) {
+            input.value = head[key];
+            if (out) out.value = head[key];
+        }
+    }
+}
+
 presetSave.addEventListener('click', () => {
     const name = presetName.value.trim();
-    if (!name) {
-        presetName.focus();
-        return;
-    }
+    if (!name) { presetName.focus(); return; }
 
     const list = loadPresets();
     list.push({
@@ -343,28 +293,16 @@ presetSave.addEventListener('click', () => {
     renderPresetList();
 });
 
-// ────────────────────────────────────────────────
-// ЭКСПОРТ
-// ────────────────────────────────────────────────
-
-/**
- * Клонирует SVG, убирает служебные слои (сетку и подложку)
- * для экспорта одной фигуры.
- */
+// Экспорт
 function makeExportSvg() {
     const clone = svg.cloneNode(true);
-
     const grid = clone.querySelector('#layerGrid');
     if (grid) grid.remove();
-
-    // Подложка в экспорт не идёт. Нужна — закомментируй 2 строки ниже.
     const bg = clone.querySelector('#layerBg');
     if (bg) bg.remove();
-
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width',  CANVAS_SIZE);
     clone.setAttribute('height', CANVAS_SIZE);
-
     return new XMLSerializer().serializeToString(clone);
 }
 
@@ -378,29 +316,21 @@ exportPngBtn.addEventListener('click', async () => {
     const xml  = makeExportSvg();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
-
     try {
         const img = await loadImage(url);
         const c   = document.createElement('canvas');
         c.width   = CANVAS_SIZE;
         c.height  = CANVAS_SIZE;
         const ctx = c.getContext('2d');
-
-        // Фон белый — иначе PNG получится прозрачным
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
         const pngBlob = await new Promise(res => c.toBlob(res, 'image/png'));
         downloadBlob(pngBlob, 'figure.png');
     } finally {
         URL.revokeObjectURL(url);
     }
 });
-
-// ────────────────────────────────────────────────
-// УТИЛИТЫ
-// ────────────────────────────────────────────────
 
 function loadImage(src) {
     return new Promise((resolve, reject) => {
@@ -422,10 +352,7 @@ function downloadBlob(blob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ────────────────────────────────────────────────
-// МОБИЛЬНОЕ МЕНЮ (bottom sheet)
-// ────────────────────────────────────────────────
-
+// Мобильное меню
 function openPanel() {
     panelEl.classList.add('is-open');
     panelBackdrop.hidden = false;
@@ -446,22 +373,15 @@ panelToggle.addEventListener('click', openPanel);
 panelClose.addEventListener('click', closePanel);
 panelBackdrop.addEventListener('click', closePanel);
 
-// Закрытие по Esc
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && panelEl.classList.contains('is-open')) {
-        closePanel();
-    }
+    if (e.key === 'Escape' && panelEl.classList.contains('is-open')) closePanel();
 });
 
-// Автозакрытие при ресайзе до десктопа
 const mql = window.matchMedia('(min-width: 1025px)');
 mql.addEventListener('change', e => {
-    if (e.matches && panelEl.classList.contains('is-open')) {
-        closePanel();
-    }
+    if (e.matches && panelEl.classList.contains('is-open')) closePanel();
 });
 
-// Свайп вниз для закрытия (bottom sheet)
 (() => {
     let startY = 0, currentY = 0, dragging = false;
 
@@ -492,10 +412,7 @@ mql.addEventListener('change', e => {
     });
 })();
 
-// ────────────────────────────────────────────────
-// СТАРТ
-// ────────────────────────────────────────────────
-
+// Старт
 setBackgroundEnabled(false);
 renderPresetList();
 renderAll();
