@@ -1,25 +1,41 @@
-// Абстрактный бэкенд: canvas и SVG
 export class CanvasRenderer {
-  constructor(ctx, color, lineWidth){ this._ctx = ctx; this.color = color; this.lw = lineWidth; }
+  constructor(ctx, color, lineWidth){
+    this._ctx = ctx; this.color = color; this.lw = lineWidth;
+  }
   begin(){ this._ctx.beginPath(); }
   moveTo(x,y){ this._ctx.moveTo(x,y); }
   lineTo(x,y){ this._ctx.lineTo(x,y); }
   close(){ this._ctx.closePath(); }
-  stroke(){ this._ctx.lineWidth = this.lw; this._ctx.strokeStyle = this.color; this._ctx.lineCap='round'; this._ctx.lineJoin='round'; this._ctx.stroke(); }
-  ellipse(cx,cy,rx,ry,rot=0,start=0,end=Math.PI*2){
-    this._ctx.beginPath(); this._ctx.ellipse(cx,cy,rx,ry,rot,start,end); this._ctx.stroke();
+  stroke(){
+    this._ctx.lineWidth = this.lw;
+    this._ctx.strokeStyle = this.color;
+    this._ctx.lineCap = 'round';
+    this._ctx.lineJoin = 'round';
+    this._ctx.stroke();
+  }
+  ellipse(cx,cy,rx,ry){
+    this._ctx.beginPath();
+    this._ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+    this._ctx.lineWidth = this.lw;
+    this._ctx.strokeStyle = this.color;
+    this._ctx.stroke();
   }
   rect(x,y,w,h,r=0){
     this._ctx.beginPath();
-    this._ctx.roundRect(x,y,w,h,r); this._ctx.stroke();
+    if (this._ctx.roundRect) this._ctx.roundRect(x,y,w,h,r);
+    else this._ctx.rect(x,y,w,h);
+    this._ctx.lineWidth = this.lw;
+    this._ctx.strokeStyle = this.color;
+    this._ctx.stroke();
   }
-  // многоточечный path
   path(points, closed=false){
     this._ctx.beginPath();
     points.forEach(([x,y],i)=> i ? this._ctx.lineTo(x,y) : this._ctx.moveTo(x,y));
     if (closed) this._ctx.closePath();
-    this._ctx.lineWidth = this.lw; this._ctx.strokeStyle = this.color;
-    this._ctx.lineCap = this._ctx.lineJoin = 'round';
+    this._ctx.lineWidth = this.lw;
+    this._ctx.strokeStyle = this.color;
+    this._ctx.lineCap = 'round';
+    this._ctx.lineJoin = 'round';
     this._ctx.stroke();
   }
 }
