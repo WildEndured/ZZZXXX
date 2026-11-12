@@ -1,77 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Анатомический конструктор</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Анекорды — конструктор фигуры</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- Панель управления -->
-    <aside class="panel">
-      <h1>Конструктор</h1>
 
-      <section class="group">
-        <h2>Общее</h2>
+<div class="app">
 
-        <label>Рост в головах: <output id="outHeads">5</output></label>
-        <input type="range" id="inpHeads" min="1" max="12" step="0.5" value="5">
+    <!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
+    <aside class="panel" id="panel">
 
-        <label>Отступ сверху/снизу: <output id="outPad">0</output>%</label>
-        <input type="range" id="inpPad" min="0" max="10" step="0.5" value="0">
-      </section>
+        <section class="group">
+            <h2>Общее</h2>
 
-      <section class="group">
-        <h2>Подложка</h2>
-        <input type="file" id="inpImage" accept="image/*">
-        <label>Прозрачность: <output id="outOpacity">100</output>%</label>
-        <input type="range" id="inpOpacity" min="0" max="100" step="1" value="100">
-        <label>Масштаб: <output id="outImgScale">100</output>%</label>
-        <input type="range" id="inpImgScale" min="10" max="300" step="1" value="100">
-        <button id="btnRemoveImage">Удалить подложку</button>
-      </section>
+            <label class="row">
+                <span>Рост в головах</span>
+                <input type="range" id="growth" min="1" max="12" step="0.5" value="5" />
+                <output id="growthOut">5</output>
+            </label>
 
-      <section class="group">
-        <h2>Пресеты</h2>
-        <input type="text" id="inpPresetName" placeholder="Название пресета">
-        <button id="btnSavePreset">Сохранить</button>
-        <ul id="presetList"></ul>
-      </section>
+            <label class="row">
+                <span>Отступы сверху/снизу, %</span>
+                <input type="range" id="padding" min="0" max="10" step="0.1" value="0" />
+                <output id="paddingOut">0</output>
+            </label>
+        </section>
 
-      <section class="group">
-        <h2>Фигура</h2>
-        <div id="figureControls"><!-- сюда модули добавят свои контролы --></div>
-      </section>
+        <section class="group">
+            <h2>Подложка</h2>
 
-      <section class="group">
-        <h2>Экспорт</h2>
-        <button id="btnExportSvg">SVG</button>
-        <button id="btnExportPng">PNG</button>
-      </section>
+            <div class="row buttons">
+                <input type="file" id="bgFile" accept="image/*" />
+            </div>
+
+            <label class="row">
+                <span>Прозрачность</span>
+                <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1" disabled />
+                <output id="bgOpacityOut">1</output>
+            </label>
+
+            <label class="row">
+                <span>Масштаб</span>
+                <input type="range" id="bgScale" min="0.1" max="3" step="0.01" value="1" disabled />
+                <output id="bgScaleOut">1</output>
+            </label>
+
+            <div class="row buttons">
+                <button id="bgRemove" disabled>Удалить подложку</button>
+            </div>
+        </section>
+
+        <section class="group">
+            <h2>Пресеты</h2>
+
+            <div class="row buttons">
+                <input type="text" id="presetName" placeholder="Имя пресета" />
+                <button id="presetSave">Сохранить</button>
+            </div>
+
+            <ul id="presetList" class="preset-list"></ul>
+        </section>
+
     </aside>
 
-    <!-- Холст -->
+    <!-- ОБЛАСТЬ ХОЛСТА -->
     <main class="stage">
-      <div class="canvas-wrap" id="canvasWrap">
-        <svg id="stage"
-             xmlns="http://www.w3.org/2000/svg"
-             width="4096" height="4096"
-             viewBox="0 0 4096 4096">
-          <!-- слой подложки -->
-          <g id="layerBackdrop"></g>
-          <!-- слой построений (сетка голов) -->
-          <g id="layerGuides"></g>
-          <!-- слой фигуры (модули) -->
-          <g id="layerFigure"></g>
-        </svg>
-      </div>
-    </main>
-  </div>
+        <div class="stage-toolbar">
+            <button id="exportSvg">Экспорт SVG</button>
+            <button id="exportPng">Экспорт PNG</button>
+        </div>
 
-  <script src="js/head.js"></script>
-  <script src="js/torso.js"></script>
-  <script src="js/arm.js"></script>
-  <script src="js/leg.js"></script>
-  <script src="js/main.js"></script>
+        <div class="canvas-wrap">
+            <!-- Вся отрисовка — внутри SVG -->
+            <svg id="canvas"
+                 xmlns="http://www.w3.org/2000/svg"
+                 width="4096"
+                 height="4096"
+                 viewBox="0 0 4096 4096"
+                 preserveAspectRatio="xMidYMid meet">
+                <defs id="defs"></defs>
+                <g id="layerBg"></g>
+                <g id="layerGrid"></g>
+                <g id="layerFigure">
+                    <g id="figureHead"></g>
+                    <g id="figureTorso"></g>
+                    <g id="figureArms"></g>
+                    <g id="figureLegs"></g>
+                </g>
+            </svg>
+        </div>
+    </main>
+
+</div>
+
+<script src="js/main.js" type="module"></script>
 </body>
 </html>
