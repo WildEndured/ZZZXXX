@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Figure Builder</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -14,7 +14,7 @@
       <div class="stage__toolbar">
         <div class="stage__meta">
           <span id="canvasInfo">4096 × 4096 · 300 dpi</span>
-          <span id="zoomInfo">100%</span>
+          <span id="zoomInfo">Fit</span>
         </div>
         <div class="stage__actions">
           <button id="btnExportPNG" class="btn btn--primary">PNG</button>
@@ -33,11 +33,17 @@
       <!-- ПРЕСЕТЫ -->
       <section class="panel__section">
         <h2 class="panel__title">Пресеты</h2>
-        <div class="presets" id="presets">
-          <button class="preset" data-preset="default">По умолчанию</button>
-          <button class="preset" data-preset="heroic">Героический</button>
-          <button class="preset" data-preset="realistic">Реалистичный</button>
-          <button class="preset" data-preset="chibi">Chibi</button>
+        
+        <div class="presets" id="presetsContainer">
+          <!-- Сюда JS будет вставлять кнопки -->
+        </div>
+        
+        <div class="preset-manager">
+          <input type="text" id="presetName" placeholder="Название пресета...">
+          <div class="preset-manager__actions">
+            <button id="btnSavePreset" class="btn btn--primary" title="Сохранить текущие настройки">Сохранить</button>
+            <button id="btnDeletePreset" class="btn btn--ghost" title="Удалить выбранный пресет">Удалить</button>
+          </div>
         </div>
       </section>
 
@@ -47,18 +53,18 @@
         <div class="controls" data-group="canvas">
           <div class="control">
             <label>Количество голов (X)</label>
-            <input type="range" data-key="canvas.X" min="4" max="10" step="1" value="8">
+            <input type="range" data-key="canvas.X" min="4" max="12" step="1" value="8">
             <output data-for="canvas.X">8</output>
           </div>
           <div class="control">
-            <label>Отступ сверху</label>
-            <input type="range" data-key="canvas.marginTop" min="0" max="800" step="10" value="200">
-            <output data-for="canvas.marginTop">200</output>
+            <label>Отступ сверху (%)</label>
+            <input type="range" data-key="canvas.marginTop" min="0" max="10" step="0.5" value="5">
+            <output data-for="canvas.marginTop">5</output>
           </div>
           <div class="control">
-            <label>Отступ снизу</label>
-            <input type="range" data-key="canvas.marginBottom" min="0" max="800" step="10" value="200">
-            <output data-for="canvas.marginBottom">200</output>
+            <label>Отступ снизу (%)</label>
+            <input type="range" data-key="canvas.marginBottom" min="0" max="10" step="0.5" value="5">
+            <output data-for="canvas.marginBottom">5</output>
           </div>
         </div>
       </section>
