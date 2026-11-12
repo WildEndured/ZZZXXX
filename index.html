@@ -2,311 +2,76 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Figure Builder</title>
+  <title>Анатомический конструктор</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
+    <!-- Панель управления -->
+    <aside class="panel">
+      <h1>Конструктор</h1>
 
-    <!-- ЛЕВАЯ ПАНЕЛЬ: КАНВАС -->
+      <section class="group">
+        <h2>Общее</h2>
+
+        <label>Рост в головах: <output id="outHeads">5</output></label>
+        <input type="range" id="inpHeads" min="1" max="12" step="0.5" value="5">
+
+        <label>Отступ сверху/снизу: <output id="outPad">0</output>%</label>
+        <input type="range" id="inpPad" min="0" max="10" step="0.5" value="0">
+      </section>
+
+      <section class="group">
+        <h2>Подложка</h2>
+        <input type="file" id="inpImage" accept="image/*">
+        <label>Прозрачность: <output id="outOpacity">100</output>%</label>
+        <input type="range" id="inpOpacity" min="0" max="100" step="1" value="100">
+        <label>Масштаб: <output id="outImgScale">100</output>%</label>
+        <input type="range" id="inpImgScale" min="10" max="300" step="1" value="100">
+        <button id="btnRemoveImage">Удалить подложку</button>
+      </section>
+
+      <section class="group">
+        <h2>Пресеты</h2>
+        <input type="text" id="inpPresetName" placeholder="Название пресета">
+        <button id="btnSavePreset">Сохранить</button>
+        <ul id="presetList"></ul>
+      </section>
+
+      <section class="group">
+        <h2>Фигура</h2>
+        <div id="figureControls"><!-- сюда модули добавят свои контролы --></div>
+      </section>
+
+      <section class="group">
+        <h2>Экспорт</h2>
+        <button id="btnExportSvg">SVG</button>
+        <button id="btnExportPng">PNG</button>
+      </section>
+    </aside>
+
+    <!-- Холст -->
     <main class="stage">
-      <div class="stage__toolbar">
-        <div class="stage__meta">
-          <span id="canvasInfo">4096 × 4096 · 300 dpi</span>
-          <span id="zoomInfo">Fit</span>
-        </div>
-        <div class="stage__actions">
-          <button id="btnExportPNG" class="btn btn--primary">PNG</button>
-          <button id="btnExportSVG" class="btn">SVG</button>
-        </div>
-      </div>
-
-      <div class="stage__viewport" id="viewport">
-        <canvas id="canvas" width="4096" height="4096"></canvas>
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg id="stage"
+             xmlns="http://www.w3.org/2000/svg"
+             width="4096" height="4096"
+             viewBox="0 0 4096 4096">
+          <!-- слой подложки -->
+          <g id="layerBackdrop"></g>
+          <!-- слой построений (сетка голов) -->
+          <g id="layerGuides"></g>
+          <!-- слой фигуры (модули) -->
+          <g id="layerFigure"></g>
+        </svg>
       </div>
     </main>
-
-    <!-- ПРАВАЯ ПАНЕЛЬ: НАСТРОЙКИ -->
-    <aside class="panel">
-
-      <!-- ПРЕСЕТЫ -->
-      <section class="panel__section">
-        <h2 class="panel__title">Пресеты</h2>
-        
-        <div class="presets" id="presetsContainer">
-          <!-- Сюда JS будет вставлять кнопки -->
-        </div>
-        
-        <div class="preset-manager">
-          <input type="text" id="presetName" placeholder="Название пресета...">
-          <div class="preset-manager__actions">
-            <button id="btnSavePreset" class="btn btn--primary" title="Сохранить текущие настройки">Сохранить</button>
-            <button id="btnDeletePreset" class="btn btn--ghost" title="Удалить выбранный пресет">Удалить</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ХОЛСТ -->
-      <section class="panel__section">
-        <h2 class="panel__title">Холст</h2>
-        <div class="controls" data-group="canvas">
-          <div class="control">
-            <label>Рост (в головах)</label>
-            <input type="range" data-key="canvas.X" min="1" max="12" step="0.5" value="5">
-            <output data-for="canvas.X">5</output>
-          </div>
-          <div class="control">
-            <label>Отступ сверху (%)</label>
-            <input type="range" data-key="canvas.marginTop" min="0" max="10" step="0.5" value="0">
-            <output data-for="canvas.marginTop">0</output>
-          </div>
-          <div class="control">
-            <label>Отступ снизу (%)</label>
-            <input type="range" data-key="canvas.marginBottom" min="0" max="10" step="0.5" value="0">
-            <output data-for="canvas.marginBottom">0</output>
-          </div>
-        </div>
-      </section>
-
-      <!-- ГОЛОВА -->
-      <section class="panel__section">
-        <h2 class="panel__title">Голова</h2>
-        <div class="controls" data-group="head">
-          <div class="control">
-            <label>Верх головы</label>
-            <input type="range" data-key="head.top" min="-100" max="100" value="0">
-            <output data-for="head.top">0</output>
-          </div>
-          <div class="control">
-            <label>Низ головы</label>
-            <input type="range" data-key="head.bottom" min="-100" max="100" value="0">
-            <output data-for="head.bottom">0</output>
-          </div>
-          <div class="control">
-            <label>Ширина головы</label>
-            <input type="range" data-key="head.width" min="-100" max="100" value="0">
-            <output data-for="head.width">0</output>
-          </div>
-          <div class="control">
-            <label>Радиус головы</label>
-            <input type="range" data-key="head.radius" min="-100" max="100" value="0">
-            <output data-for="head.radius">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Подбородок</h3>
-          <div class="control">
-            <label>Высота подбородка</label>
-            <input type="range" data-key="head.chin.height" min="-100" max="100" value="0">
-            <output data-for="head.chin.height">0</output>
-          </div>
-          <div class="control">
-            <label>Ширина подбородка</label>
-            <input type="range" data-key="head.chin.width" min="-100" max="100" value="0">
-            <output data-for="head.chin.width">0</output>
-          </div>
-          <div class="control">
-            <label>Скругление подбородка</label>
-            <input type="range" data-key="head.chin.rounding" min="0" max="100" value="0">
-            <output data-for="head.chin.rounding">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Челюсть</h3>
-          <div class="control">
-            <label>Высота крепления</label>
-            <input type="range" data-key="head.jaw.attach" min="-100" max="100" value="0">
-            <output data-for="head.jaw.attach">0</output>
-          </div>
-          <div class="control">
-            <label>Длина челюсти</label>
-            <input type="range" data-key="head.jaw.length" min="-100" max="100" value="0">
-            <output data-for="head.jaw.length">0</output>
-          </div>
-          <div class="control">
-            <label>Угол челюсти</label>
-            <input type="range" data-key="head.jaw.angle" min="-100" max="100" value="0">
-            <output data-for="head.jaw.angle">0</output>
-          </div>
-          <div class="control">
-            <label>Ширина челюсти</label>
-            <input type="range" data-key="head.jaw.width" min="-100" max="100" value="0">
-            <output data-for="head.jaw.width">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Шея</h3>
-          <div class="control">
-            <label>Ширина шеи</label>
-            <input type="range" data-key="head.neck.width" min="-100" max="100" value="0">
-            <output data-for="head.neck.width">0</output>
-          </div>
-        </div>
-      </section>
-
-      <!-- ТОРС -->
-      <section class="panel__section">
-        <h2 class="panel__title">Торс</h2>
-        <div class="controls" data-group="torso">
-          <h3 class="panel__subtitle">Грудная клетка</h3>
-          <div class="control">
-            <label>Расширение верха</label>
-            <input type="range" data-key="torso.chest.top" min="-100" max="100" value="0">
-            <output data-for="torso.chest.top">0</output>
-          </div>
-          <div class="control">
-            <label>Расширение низа</label>
-            <input type="range" data-key="torso.chest.bottom" min="-100" max="100" value="0">
-            <output data-for="torso.chest.bottom">0</output>
-          </div>
-          <div class="control">
-            <label>Высота</label>
-            <input type="range" data-key="torso.chest.height" min="-100" max="100" value="0">
-            <output data-for="torso.chest.height">0</output>
-          </div>
-          <div class="control">
-            <label>Ширина</label>
-            <input type="range" data-key="torso.chest.width" min="-100" max="100" value="0">
-            <output data-for="torso.chest.width">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Таз</h3>
-          <div class="control">
-            <label>Корректировка ширины</label>
-            <input type="range" data-key="torso.pelvis.width" min="-100" max="100" value="0">
-            <output data-for="torso.pelvis.width">0</output>
-          </div>
-          <div class="control">
-            <label>Корректировка высоты</label>
-            <input type="range" data-key="torso.pelvis.height" min="-100" max="100" value="0">
-            <output data-for="torso.pelvis.height">0</output>
-          </div>
-          <div class="control">
-            <label>Скругление углов</label>
-            <input type="range" data-key="torso.pelvis.rounding" min="0" max="100" value="0">
-            <output data-for="torso.pelvis.rounding">0</output>
-          </div>
-        </div>
-      </section>
-
-      <!-- РУКИ -->
-      <section class="panel__section">
-        <h2 class="panel__title">Руки</h2>
-        <div class="controls" data-group="arms">
-          <h3 class="panel__subtitle">Плечи</h3>
-          <div class="control">
-            <label>Радиус</label>
-            <input type="range" data-key="arms.shoulder.radius" min="-100" max="100" value="0">
-            <output data-for="arms.shoulder.radius">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Локти</h3>
-          <div class="control">
-            <label>Радиус</label>
-            <input type="range" data-key="arms.elbow.radius" min="-100" max="100" value="0">
-            <output data-for="arms.elbow.radius">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение X</label>
-            <input type="range" data-key="arms.elbow.dx" min="-100" max="100" value="0">
-            <output data-for="arms.elbow.dx">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение Y</label>
-            <input type="range" data-key="arms.elbow.dy" min="-100" max="100" value="0">
-            <output data-for="arms.elbow.dy">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Запястья</h3>
-          <div class="control">
-            <label>Радиус</label>
-            <input type="range" data-key="arms.wrist.radius" min="-100" max="100" value="0">
-            <output data-for="arms.wrist.radius">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение X</label>
-            <input type="range" data-key="arms.wrist.dx" min="-100" max="100" value="0">
-            <output data-for="arms.wrist.dx">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение Y</label>
-            <input type="range" data-key="arms.wrist.dy" min="-100" max="100" value="0">
-            <output data-for="arms.wrist.dy">0</output>
-          </div>
-        </div>
-      </section>
-
-      <!-- НОГИ -->
-      <section class="panel__section">
-        <h2 class="panel__title">Ноги</h2>
-        <div class="controls" data-group="legs">
-          <h3 class="panel__subtitle">Колени</h3>
-          <div class="control">
-            <label>Радиус</label>
-            <input type="range" data-key="legs.knee.radius" min="-100" max="100" value="0">
-            <output data-for="legs.knee.radius">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение X</label>
-            <input type="range" data-key="legs.knee.dx" min="-100" max="100" value="0">
-            <output data-for="legs.knee.dx">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение Y</label>
-            <input type="range" data-key="legs.knee.dy" min="-100" max="100" value="0">
-            <output data-for="legs.knee.dy">0</output>
-          </div>
-
-          <h3 class="panel__subtitle">Лодыжки</h3>
-          <div class="control">
-            <label>Радиус</label>
-            <input type="range" data-key="legs.ankle.radius" min="-100" max="100" value="0">
-            <output data-for="legs.ankle.radius">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение X</label>
-            <input type="range" data-key="legs.ankle.dx" min="-100" max="100" value="0">
-            <output data-for="legs.ankle.dx">0</output>
-          </div>
-        </div>
-      </section>
-
-      <!-- ПОДЛОЖКА -->
-      <section class="panel__section">
-        <h2 class="panel__title">Подложка</h2>
-        <div class="controls" data-group="underlay">
-          <div class="control">
-            <label>Файл</label>
-            <input type="file" id="underlayFile" accept="image/*">
-          </div>
-          <div class="control">
-            <label>Прозрачность</label>
-            <input type="range" data-key="underlay.opacity" min="0" max="100" value="40">
-            <output data-for="underlay.opacity">40</output>
-          </div>
-          <div class="control">
-            <label>Масштаб</label>
-            <input type="range" data-key="underlay.scale" min="10" max="200" value="100">
-            <output data-for="underlay.scale">100</output>
-          </div>
-          <div class="control">
-            <label>Смещение X</label>
-            <input type="range" data-key="underlay.x" min="-1000" max="1000" value="0">
-            <output data-for="underlay.x">0</output>
-          </div>
-          <div class="control">
-            <label>Смещение Y</label>
-            <input type="range" data-key="underlay.y" min="-1000" max="1000" value="0">
-            <output data-for="underlay.y">0</output>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel__section panel__section--footer">
-        <button id="btnReset" class="btn btn--ghost">Сброс</button>
-      </section>
-
-    </aside>
   </div>
 
-  <script type="module" src="js/main.js"></script>
+  <script src="js/head.js"></script>
+  <script src="js/torso.js"></script>
+  <script src="js/arm.js"></script>
+  <script src="js/leg.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
