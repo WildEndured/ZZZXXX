@@ -72,23 +72,29 @@ function computeEllipse(layout, s) {
     const yL0 = headLines[0];                  // Макушка (0/5)
     const yL3 = headLines[0] + headH * (3/5);  // Низ круга (3/5)
 
-    // Ползунки сдвигают границы
+    // Ползунки "Верх" и "Низ" сдвигают соответствующие границы.
+    // s.top < 0 тянет вверх, s.bottom > 0 тянет вниз.
     const shiftTop    = s.top    * headH; 
     const shiftBottom = s.bottom * headH; 
 
+    // Итоговые координаты верхней и нижней точек круга
     const yTop    = yL0 + shiftTop;
     const yBottom = yL3 + shiftBottom;
 
-    // Центр и радиус эллипса
+    // Центр — ровно середина между верхней и нижней точками
     const cy = (yTop + yBottom) / 2;
+    
+    // Вертикальный радиус — половина расстояния между ними
     const ryBase = Math.abs(yBottom - yTop) / 2;
 
+    // Центр по X
     const cx = canvasSize / 2;
     
-    // Идеальный базовый радиус (1.5/5 от высоты головы)
+    // Базовый горизонтальный радиус (1.5/5 от headH = 0.3 * headH)
+    // Берем его равным идеальному вертикальному радиусу, чтобы круг был ровным
     const baseR = headH * 0.3;
 
-    // Применяем ползунки ширины и общего радиуса
+    // Применяем множители ширины и общего радиуса
     const rx = baseR * s.width * s.radius;
     const ry = ryBase * s.radius;
 
