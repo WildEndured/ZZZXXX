@@ -415,7 +415,6 @@ body {
     height: 20px;
   }
 
-  /* Пресеты в один столбец на мобильных */
   .presets {
     grid-template-columns: 1fr;
   }
