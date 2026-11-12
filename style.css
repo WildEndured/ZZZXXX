@@ -51,7 +51,6 @@ html, body {
     position: relative;
 }
 
-/* Панель (по умолчанию для десктопа) */
 .panel {
     flex: 0 0 var(--panel-w);
     width: var(--panel-w);
@@ -67,12 +66,10 @@ html, body {
     z-index: 10;
 }
 
-/* Заголовок панели и крестик — скрыты на десктопе */
 .panel__head, .panel__handle {
     display: none;
 }
 
-/* Сцена */
 .stage {
     flex: 1 1 auto;
     display: flex;
@@ -190,7 +187,6 @@ input[type="text"]:focus {
     border-color: var(--accent);
 }
 
-/* СКРЫТИЕ СТАНДАРТНОГО ИНПУТА ФАЙЛА */
 input[type="file"] {
     display: none;
 }
@@ -217,7 +213,6 @@ input[type="file"] {
 .btn--danger { background: transparent; color: var(--danger); border-color: var(--danger); }
 .btn--danger:hover:not(:disabled) { background: rgba(224, 87, 91, 0.12); }
 
-/* Кнопка выбора файла */
 .file-btn {
     display: inline-flex;
     align-items: center;
@@ -234,7 +229,6 @@ input[type="file"] {
 }
 .file-btn:hover { background: #4a4d52; }
 
-/* Пресеты */
 .preset-list { list-style: none; }
 
 .preset-list li {
@@ -270,62 +264,14 @@ input[type="file"] {
 }
 .preset-list li button:hover { color: var(--danger); background: rgba(224, 87, 91, 0.1); }
 
-/* Скрываем мобильные элементы на десктопе */
 .panel-toggle, .panel-backdrop { display: none; }
 
 /* ══════════════════════════════════════════════════
-   ГРУППЫ (СВОРАЧИВАЕМЫЕ)
-   ══════════════════════════════════════════════════ */
-
-.subgroup {
-    margin-bottom: 12px;
-    padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-soft);
-    border-radius: var(--radius);
-}
-
-.subgroup > summary {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    list-style: none;
-    padding: 4px 0;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.subgroup > summary::-webkit-details-marker {
-    display: none;
-}
-
-.subgroup > summary::before {
-    content: '▸';
-    font-size: 10px;
-    color: var(--text-dim);
-    transition: transform 0.15s;
-    display: inline-block;
-}
-
-.subgroup[open] > summary::before {
-    transform: rotate(90deg);
-}
-
-.subgroup .row {
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
-
-/* ══════════════════════════════════════════════════
-   ПЛАНШЕТ И ТЕЛЕФОН (≤ 1024px) — панель снизу
+   ПЛАНШЕТ И ТЕЛЕФОН (≤ 1024px)
    ══════════════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
 
-    /* Кнопка «Настройки» */
     .panel-toggle {
         display: inline-flex;
         align-items: center;
@@ -347,7 +293,6 @@ input[type="file"] {
     .panel-toggle__icon { font-size: 16px; line-height: 1; }
     .panel-toggle[aria-expanded="true"] { display: none; }
 
-    /* Затемнение фона */
     .panel-backdrop {
         display: block;
         position: fixed;
@@ -363,7 +308,6 @@ input[type="file"] {
         pointer-events: auto;
     }
 
-    /* Панель как Bottom Sheet */
     .panel {
         position: fixed;
         left: 0;
@@ -485,10 +429,6 @@ input[type="file"] {
         border-radius: 16px 16px 0 0;
     }
 
-    .subgroup {
-        padding: 6px 8px;
-    }
-
     .stage-toolbar .btn {
         flex: 1 1 0;
     }
@@ -500,61 +440,5 @@ input[type="file"] {
     .panel-toggle {
         padding: 12px 20px;
         font-size: 15px;
-    }
-}
-
-/* ══════════════════════════════════════════════════
-   ЛАНДШАФТ НА ТЕЛЕФОНЕ
-   ══════════════════════════════════════════════════ */
-
-@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
-    .panel {
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: auto;
-        width: min(360px, 80vw);
-        max-height: none;
-        height: auto;
-        border-radius: 0 16px 16px 0;
-        border-top: none;
-        border-right: 1px solid var(--border);
-        transform: translateX(-100%);
-    }
-    .panel.is-open {
-        transform: translateX(0);
-    }
-    .canvas-wrap {
-        padding-bottom: 12px;
-    }
-}
-
-/* ══════════════════════════════════════════════════
-   БОЛЬШИЕ ЭКРАНЫ (≥ 1600px)
-   ══════════════════════════════════════════════════ */
-
-@media (min-width: 1600px) {
-    :root {
-        --panel-w: 380px;
-    }
-    .panel {
-        padding: 28px 24px;
-    }
-    .group h2 {
-        font-size: 13px;
-    }
-    .row {
-        font-size: 14px;
-    }
-}
-
-/* ══════════════════════════════════════════════════
-   REDUCED MOTION
-   ══════════════════════════════════════════════════ */
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.001ms !important;
-        transition-duration: 0.001ms !important;
     }
 }
