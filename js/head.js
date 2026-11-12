@@ -1,178 +1,246 @@
 // ════════════════════════════════════════════════════════════
-// head.js — модуль отрисовки головы
+// head.js — модуль головы
+// Экспортирует: renderHead(g, layout, state), initHeadUI()
 // ════════════════════════════════════════════════════════════
 
-const NS = 'http://www.w3.org/2000/svg';
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
-function el(name, attrs = {}) {
-    const node = document.createElementNS(NS, name);
-    for (const [k, v] of Object.entries(attrs)) {
-        node.setAttribute(k, v);
-    }
-    return node;
-}
-
-export function renderHead(g, layout, state) {
-    g.innerHTML = '';
-    if (!state.figure) state.figure = {};
-    if (!state.figure.head) state.figure.head = {};
-    const p = state.figure.head;
-
-    // Привязка UI (выполняется один раз)
-    bindHeadUI(state, () => renderHead(g, layout, state));
-
-    // ── Геометрия ──────────────────────────────────────────────
-    const headTopY = layout.headLines[0];
-    const headH = layout.headH;
-    const step = headH / 5;
-    const cx = layout.canvasSize / 2;
-
-    const y0 = headTopY;
-    const y3 = headTopY + step * 3;
-    const y4 = headTopY + step * 4;
-    const y5 = headTopY + step * 5;
-
-    // Базовый радиус круга = 3/5 от step
-    const baseR = step * 3;
-
-    // Модификаторы
-    const radiusMod = p.radius / 100;
-    const widthMod  = p.width / 100;
-
-    // rx/ry эллипса
-    const rx = baseR * radiusMod * widthMod;
-    const ry = baseR * radiusMod;
-
-    // Смещение центра эллипса по Y (верх/низ головы)
-    const shiftY = ((p.bottom - p.top) / 100) * step * 0.5;
-    const cy = y3 + shiftY;
-
-    // Границы эллипса
-    const ellipseTop = cy - ry;
-    const ellipseBottom = cy + ry;
-    const ellipseLeft = cx - rx;
-    const ellipseRight = cx + rx;
-
-    // Точки крепления челюсти (на эллипсе слева/справа)
-    const attachRatio = 0.6 + (p.jawAttach / 100) * 0.4; // 0.2..1.0
-    const attachY = ellipseTop + (ellipseBottom - ellipseTop) * attachRatio;
-    const attachDy = attachY - cy;
-    let attachDx = 0;
-    if (Math.abs(attachDy) < ry) {
-        attachDx = rx * Math.sqrt(1 - (attachDy * attachDy) / (ry * ry));
-    }
+// ────────────────────────────────────────────────
+// СОСТОЯНИЕ ГОЛОВЫ
+// Все значения в процентах от headH, кроме radius (множитель от базового)
+// ────────────────────────────────────────────────
+export const headState = {
+    // Круг (основная масса)
+    circleTop:    0,   // сдвиг верхней точки вверх (отрицательное) / вниз (положительное), %
+    circleBottom: 0,   // сдвиг нижней точки
+    circleWidth:  100, // ширина (100% = 0.6 * headH)
+    circleRadius: 100, // радиус (100% = 0.3 * headH)
 
     // Подбородок
-    const chinHalfW = rx * (p.chinWidth / 100);
-    const chinRoundRatio = p.chinRound / 50;
-    const chinBaseY = y4 + (p.chinHeight / 100) * step;
-    const chinTipY = chinBaseY + (p.jawLength / 100) * step;
+    chinHeight:   0,   // смещение по Y от 4/5
+    chinWidth:    40,  // ширина в % от headH
+    chinRound:    50,  // % скругления (0 = острый, 100 = круглый)
 
-    // Угол челюсти: 0 — широкая, 100 — узкая
-    const jawAngleMod = 0.4 + (p.jawAngle / 100) * 0.6; // 0.4..1.0
-    const chinTipX = chinHalfW * jawAngleMod;
+    // Челюсть
+    jawAttachY:   50,  // % от высоты круга (где крепится челюсть)
+    jawLength:    100, // % длины (влияет на X-координату подбородка)
+    jawAngle:     0,   // -50..50 градусов (наклон)
+    jawWidth:     100, // % ширины (толщина линии челюсти)
 
-    // ── Отрисовка ─────────────────────────────────────────────
+    // Шея
+    neckWidth:    30   // % от headH
+};
 
-    // 1. Череп
-    const skull = el('ellipse', {
-        cx, cy, rx, ry,
-        fill: '#e8eaf0',
-        stroke: '#2a2c30',
-        'stroke-width': 6
-    });
-    g.appendChild(skull);
+// ────────────────────────────────────────────────
+// РЕНДЕРИНГ
+// ────────────────────────────────────────────────
+export function renderHead(g, layout, state) {
+    if (!g) return;
+    g.innerHTML = ''; // очистка
 
-    // 2. Челюсть и подбородок
-    // Контрольные точки для кубической кривой Безье
-    const jawCtrlY = attachY + (chinBaseY - attachY) * 0.6;
+    const H = layout.headH;          // высота одной головы
+    const top = layout.headLines[0]; // макушка (0/5)
+    const cx = layout.canvasSize / 2;
 
-    // Правая сторона (от подбородка к правому креплению)
-    const jawRight = el('path', {
-        d: `M ${cx + attachDx} ${attachY}
-            C ${cx + attachDx + (chinTipX - attachDx) * 0.2} ${jawCtrlY}
-              ${cx + chinTipX + (attachDx - chinTipX) * 0.4} ${chinBaseY}
-              ${cx + chinTipX} ${chinTipY}
-            L ${cx - chinTipX} ${chinTipY}
-            C ${cx - chinTipX - (attachDx - chinTipX) * 0.4} ${chinBaseY}
-              ${cx - attachDx - (chinTipX - attachDx) * 0.2} ${jawCtrlY}
-              ${cx - attachDx} ${attachY}`,
-        fill: '#e8eaf0',
-        stroke: '#2a2c30',
-        'stroke-width': 6,
-        'stroke-linejoin': 'round',
-        'stroke-linecap': 'round'
-    });
-    g.appendChild(jawRight);
+    // Базовые точки уровней (0/5 ... 5/5)
+    const y0 = top;                  // 0/5
+    const y1 = top + H * 0.2;        // 1/5
+    const y2 = top + H * 0.4;        // 2/5
+    const y3 = top + H * 0.6;        // 3/5 (базовая линия круга)
+    const y4 = top + H * 0.8;        // 4/5 (подбородок)
+    const y5 = top + H;              // 5/5 (низ головы / шея)
 
-    // 3. Шея (под подбородком)
-    const neckHalfW = rx * (p.neckWidth / 100);
-    const neckTopY = chinTipY;
-    const neck = el('path', {
-        d: `M ${cx - neckHalfW} ${neckTopY}
-            L ${cx - neckHalfW} ${y5}
-            L ${cx + neckHalfW} ${y5}
-            L ${cx + neckHalfW} ${neckTopY} Z`,
-        fill: '#d0d4dd',
-        stroke: '#2a2c30',
-        'stroke-width': 6,
-        'stroke-linejoin': 'round'
-    });
-    g.appendChild(neck);
+    const s = headState;
 
-    // 4. Линия подбородка (поверх шеи, чтобы стык был чистым)
-    const chinLine = el('path', {
-        d: `M ${cx - chinTipX} ${chinTipY}
-            Q ${cx} ${chinTipY + (1 - chinRoundRatio) * step * 0.15}
-              ${cx + chinTipX} ${chinTipY}`,
-        fill: 'none',
-        stroke: '#2a2c30',
-        'stroke-width': 6,
-        'stroke-linecap': 'round'
-    });
-    g.appendChild(chinLine);
+    // ── 1. Расчёт КРУГА ──────────────────────────
+    // Базовый радиус 0.3 * H (по ТЗ 3/5 от 1/2 головы)
+    const baseR = H * 0.3;
+    const r  = baseR * (s.circleRadius / 100);
+    const rx = baseR * (s.circleWidth  / 100); // эллипс по X
+    const ry = baseR * (s.circleRadius / 100); // эллипс по Y
+
+    // Центр круга по Y: середина между y2 и y4 (2/5 и 4/5)
+    // + сдвиги от «Верх» и «Низ» ползунков
+    let circleCY = y3; // базовая линия 3/5
+    circleCY += (s.circleTop    / 100) * H * 0.5;
+    circleCY += (s.circleBottom / 100) * H * 0.5;
+
+    // Крайние точки эллипса по вертикали
+    const circleTopY    = circleCY - ry;
+    const circleBottomY = circleCY + ry;
+
+    // ── 2. Расчёт ПОДБОРОДКА ─────────────────────
+    const chinY = y4 + (s.chinHeight / 100) * H;
+    const chinHalfW = (s.chinWidth / 100) * H / 2; // половина ширины
+
+    // Скругление подбородка: 0 = острый, 100 = максимально круглый
+    // Через контрольные точки кривой Безье
+    const chinRoundK = (s.chinRound / 100) * chinHalfW;
+
+    // Точки подбородка (левая и правая)
+    const chinLeft  = { x: cx - chinHalfW, y: chinY };
+    const chinRight = { x: cx + chinHalfW, y: chinY };
+
+    // ── 3. Расчёт ЧЕЛЮСТИ ────────────────────────
+    // Точка крепления к кругу: доля от высоты круга
+    const attachRatio = s.jawAttachY / 100;
+    const attachY = circleTopY + (circleBottomY - circleTopY) * attachRatio;
+
+    // Точка на круге (пересечение с горизонталью attachY)
+    // x = cx ± rx * sqrt(1 - ((attachY - circleCY) / ry)^2)
+    const dy = (attachY - circleCY) / ry;
+    const dx = rx * Math.sqrt(Math.max(0, 1 - dy * dy));
+    const attachLeft  = { x: cx - dx, y: attachY };
+    const attachRight = { x: cx + dx, y: attachY };
+
+    // Точки челюсти у подбородка — с учётом длины и угла
+    // Длина: множитель к X (100% — на уровне краёв подбородка)
+    // Угол: наклон в градусах
+    const jawLen = (s.jawLength / 100);
+    const jawAng = (s.jawAngle    * Math.PI) / 180;
+
+    const jawDeltaX = (attachLeft.x - chinLeft.x) * jawLen;
+    const jawDeltaY = (attachLeft.y - chinLeft.y) * jawLen;
+
+    // Поворот точки вокруг подбородка на угол jawAngle
+    const rotX = jawDeltaX * Math.cos(jawAng) - jawDeltaY * Math.sin(jawAng);
+    const rotY = jawDeltaX * Math.sin(jawAng) + jawDeltaY * Math.cos(jawAng);
+
+    // Итоговые точки челюсти у подбородка
+    const jawLeft  = { x: chinLeft.x  + rotX, y: chinLeft.y  + rotY };
+    const jawRight = { x: chinRight.x - rotX, y: chinRight.y + rotY };
+
+    // Толщина челюсти (влияет на stroke-width линии)
+    const jawStroke = Math.max(2, (s.jawWidth / 100) * H * 0.05);
+
+    // ── 4. Расчёт ШЕИ ────────────────────────────
+    const neckHalfW = (s.neckWidth / 100) * H / 2;
+    const neckTop   = y5 - H * 0.1;  // чуть выше подбородка, чтобы перекрыть
+    const neckBot   = y5 + H * 0.3;  // уходит за пределы своей зоны, в торс
+
+    // ── 5. ОТРИСОВКА (порядок важен: сзади → спереди) ──
+
+    // 5.1 Шея
+    const neckPath = document.createElementNS(SVG_NS, 'path');
+    neckPath.setAttribute('d', `
+        M ${cx - neckHalfW} ${neckTop}
+        L ${cx + neckHalfW} ${neckTop}
+        L ${cx + neckHalfW} ${neckBot}
+        L ${cx - neckHalfW} ${neckBot}
+        Z
+    `);
+    neckPath.setAttribute('fill', 'none');
+    neckPath.setAttribute('stroke', '#000');
+    neckPath.setAttribute('stroke-width', Math.max(2, H * 0.008));
+    neckPath.setAttribute('stroke-linejoin', 'round');
+    g.appendChild(neckPath);
+
+    // 5.2 Круг (голова)
+    const head = document.createElementNS(SVG_NS, 'ellipse');
+    head.setAttribute('cx', cx);
+    head.setAttribute('cy', circleCY);
+    head.setAttribute('rx', rx);
+    head.setAttribute('ry', ry);
+    head.setAttribute('fill', 'none');
+    head.setAttribute('stroke', '#000');
+    head.setAttribute('stroke-width', Math.max(2, H * 0.008));
+    g.appendChild(head);
+
+    // 5.3 Челюсти (левая и правая линии) — поверх круга
+    const jawLine = (a, b) => {
+        const l = document.createElementNS(SVG_NS, 'line');
+        l.setAttribute('x1', a.x); l.setAttribute('y1', a.y);
+        l.setAttribute('x2', b.x); l.setAttribute('y2', b.y);
+        l.setAttribute('stroke', '#000');
+        l.setAttribute('stroke-width', jawStroke);
+        l.setAttribute('stroke-linecap', 'round');
+        return l;
+    };
+    g.appendChild(jawLine(attachLeft,  jawLeft));
+    g.appendChild(jawLine(attachRight, jawRight));
+
+    // 5.4 Подбородок (закруглённая линия через Безье)
+    const chin = document.createElementNS(SVG_NS, 'path');
+    const chinD = `
+        M ${jawLeft.x} ${jawLeft.y}
+        C ${jawLeft.x + chinRoundK} ${chinY},
+          ${jawRight.x - chinRoundK} ${chinY},
+          ${jawRight.x} ${jawRight.y}
+    `;
+    chin.setAttribute('d', chinD);
+    chin.setAttribute('fill', 'none');
+    chin.setAttribute('stroke', '#000');
+    chin.setAttribute('stroke-width', jawStroke);
+    chin.setAttribute('stroke-linecap', 'round');
+    g.appendChild(chin);
 }
 
-// ════════════════════════════════════════════════════════════
-// Привязка UI
-// ════════════════════════════════════════════════════════════
+// ────────────────────────────────────────────────
+// UI ИНИЦИАЛИЗАЦИЯ
+// Вызывается один раз из main.js
+// ────────────────────────────────────────────────
+export function initHeadUI(onChange) {
+    const bind = (id, key, outId) => {
+        const el  = document.getElementById(id);
+        const out = document.getElementById(outId);
+        if (!el) return;
+        
+        // начальная синхронизация
+        el.value = headState[key];
+        if (out) out.value = el.value;
 
-let uiBound = false;
-
-function bindHeadUI(state, onChange) {
-    if (uiBound) return;
-    uiBound = true;
-
-    const map = {
-        head_top:    'top',
-        head_bottom: 'bottom',
-        head_width:  'width',
-        head_radius: 'radius',
-        chin_height: 'chinHeight',
-        chin_width:  'chinWidth',
-        chin_round:  'chinRound',
-        jaw_attach:  'jawAttach',
-        jaw_length:  'jawLength',
-        jaw_angle:   'jawAngle',
-        jaw_width:   'jawWidth',
-        neck_width:  'neckWidth'
+        el.addEventListener('input', () => {
+            headState[key] = parseFloat(el.value);
+            if (out) out.value = el.value;
+            onChange(); // → renderAll() в main.js
+        });
     };
 
-    for (const [id, key] of Object.entries(map)) {
-        const input = document.getElementById(id);
-        const out   = document.getElementById(id + '_out');
-        if (!input) continue;
+    bind('hCircleTop',    'circleTop',    'hCircleTopOut');
+    bind('hCircleBottom', 'circleBottom', 'hCircleBottomOut');
+    bind('hCircleWidth',  'circleWidth',  'hCircleWidthOut');
+    bind('hCircleRadius', 'circleRadius', 'hCircleRadiusOut');
 
-        if (state.figure.head[key] !== undefined) {
-            input.value = state.figure.head[key];
-            if (out) out.value = state.figure.head[key];
-        }
+    bind('hChinHeight',   'chinHeight',   'hChinHeightOut');
+    bind('hChinWidth',    'chinWidth',    'hChinWidthOut');
+    bind('hChinRound',    'chinRound',    'hChinRoundOut');
 
-        input.addEventListener('input', () => {
-            const v = parseFloat(input.value);
-            state.figure.head[key] = v;
-            if (out) out.value = v;
-            onChange();
-        });
-    }
+    bind('hJawAttachY',   'jawAttachY',   'hJawAttachYOut');
+    bind('hJawLength',    'jawLength',    'hJawLengthOut');
+    bind('hJawAngle',     'jawAngle',     'hJawAngleOut');
+    bind('hJawWidth',     'jawWidth',     'hJawWidthOut');
+
+    bind('hNeckWidth',    'neckWidth',    'hNeckWidthOut');
+}
+
+// ────────────────────────────────────────────────
+// ПРИМЕНЕНИЕ ПРЕСЕТА
+// ────────────────────────────────────────────────
+export function applyHeadPreset(preset) {
+    if (!preset) return;
+    Object.keys(headState).forEach(k => {
+        if (preset[k] !== undefined) headState[k] = preset[k];
+    });
+
+    // обновляем UI, если он есть
+    const keys = [
+        ['hCircleTop', 'circleTop', 'hCircleTopOut'],
+        ['hCircleBottom', 'circleBottom', 'hCircleBottomOut'],
+        ['hCircleWidth', 'circleWidth', 'hCircleWidthOut'],
+        ['hCircleRadius', 'circleRadius', 'hCircleRadiusOut'],
+        ['hChinHeight', 'chinHeight', 'hChinHeightOut'],
+        ['hChinWidth', 'chinWidth', 'hChinWidthOut'],
+        ['hChinRound', 'chinRound', 'hChinRoundOut'],
+        ['hJawAttachY', 'jawAttachY', 'hJawAttachYOut'],
+        ['hJawLength', 'jawLength', 'hJawLengthOut'],
+        ['hJawAngle', 'jawAngle', 'hJawAngleOut'],
+        ['hJawWidth', 'jawWidth', 'hJawWidthOut'],
+        ['hNeckWidth', 'neckWidth', 'hNeckWidthOut']
+    ];
+    keys.forEach(([id, key, out]) => {
+        const el = document.getElementById(id);
+        const o  = document.getElementById(out);
+        if (el) el.value = headState[key];
+        if (o)  o.value  = headState[key];
+    });
 }
