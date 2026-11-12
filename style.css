@@ -21,7 +21,7 @@ body {
   color: var(--text);
   font-size: 13px;
   height: 100vh;
-  height: 100dvh; /* Для мобильных браузеров с учетом адресной строки */
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -70,7 +70,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden; /* Скрываем скролл, масштабируем через JS */
+  overflow: hidden;
   padding: 24px;
   background-color: #131315;
   background-image:
@@ -83,7 +83,6 @@ body {
 }
 
 #canvas {
-  /* Размеры задаются через JS (fitCanvasToViewport) */
   background: #fff;
   box-shadow: 0 4px 24px rgba(0,0,0,.5);
   display: block;
@@ -100,7 +99,7 @@ body {
   border-left: 1px solid var(--border);
   overflow-y: auto;
   flex-shrink: 0;
-  -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 .panel__section {
@@ -169,7 +168,6 @@ body {
   min-width: 40px;
 }
 
-/* Стилизация ползунков (Webkit) */
 .control input[type="range"] {
   grid-column: 1 / -1;
   width: 100%;
@@ -198,7 +196,6 @@ body {
   transform: scale(1.1);
 }
 
-/* Стилизация ползунков (Firefox) */
 .control input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
@@ -213,7 +210,6 @@ body {
   background: var(--accent-hover);
 }
 
-/* Поле загрузки файла */
 .control input[type="file"] {
   grid-column: 1 / -1;
   font-size: 11px;
@@ -310,6 +306,47 @@ body {
   background: var(--accent);
 }
 
+.preset.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Менеджер пресетов */
+.preset-manager {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-manager input[type="text"] {
+  width: 100%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  outline: none;
+}
+
+.preset-manager input[type="text"]:focus {
+  border-color: var(--accent);
+}
+
+.preset-manager__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.preset-manager__actions .btn {
+  flex: 1;
+  text-align: center;
+}
+
 /* =========================================
    АДАПТИВНОСТЬ (ПЛАНШЕТЫ И ТЕЛЕФОНЫ)
    ========================================= */
@@ -317,12 +354,12 @@ body {
 /* Планшеты и узкие окна десктопа */
 @media (max-width: 900px) {
   .app {
-    flex-direction: column-reverse; /* Панель сверху, холст снизу. Или column — тогда холст сверху */
+    flex-direction: column-reverse; /* Панель сверху, холст снизу */
   }
 
   .stage {
     flex: 1;
-    min-height: 40vh; /* Холст занимает оставшееся место */
+    min-height: 40vh;
   }
 
   .stage__viewport {
@@ -331,13 +368,13 @@ body {
 
   .panel {
     width: 100%;
-    height: 50vh; /* Панель занимает половину экрана */
+    height: 50vh;
     border-left: none;
     border-bottom: 1px solid var(--border);
   }
   
   .panel__section {
-    padding: 12px 20px; /* Чуть больше воздуха по бокам */
+    padding: 12px 20px;
   }
 }
 
@@ -353,7 +390,7 @@ body {
   }
 
   .stage__meta span:first-child {
-    display: none; /* Прячем разрешение на узких экранах, оставляем только зум */
+    display: none;
   }
 
   .btn {
@@ -362,7 +399,7 @@ body {
   }
 
   .panel {
-    height: 55vh; /* Панели чуть больше места для удобства скролла */
+    height: 55vh;
   }
 
   .panel__section {
@@ -370,11 +407,16 @@ body {
   }
   
   .control input[type="range"] {
-    margin-top: 8px; /* Чуть увеличиваем хитбокс для пальца */
+    margin-top: 8px;
   }
 
   .control input[type="range"]::-webkit-slider-thumb {
-    width: 20px; /* Увеличиваем ползунок для пальцев */
+    width: 20px;
     height: 20px;
+  }
+
+  /* Пресеты в один столбец на мобильных */
+  .presets {
+    grid-template-columns: 1fr;
   }
 }
