@@ -2,28 +2,45 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#26282c" />
     <title>Анекорды — конструктор фигуры</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app">
+
+    <!-- Кнопка-переключатель панели (только мобильные) -->
+    <button class="panel-toggle" id="panelToggle" aria-label="Открыть панель управления">
+        <span class="panel-toggle__icon">☰</span>
+        <span class="panel-toggle__label">Настройки</span>
+    </button>
+
+    <!-- Затенение фона под панелью (только мобильные) -->
+    <div class="panel-backdrop" id="panelBackdrop" hidden></div>
 
     <!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
-    <aside class="panel" id="panel">
+    <aside class="panel" id="panel" aria-label="Панель управления">
+
+        <div class="panel__handle" aria-hidden="true"></div>
+
+        <div class="panel__head">
+            <h1 class="panel__title">Анекорды</h1>
+            <button class="panel__close" id="panelClose" aria-label="Закрыть панель">✕</button>
+        </div>
 
         <section class="group">
             <h2>Общее</h2>
 
             <label class="row">
-                <span>Рост в головах</span>
+                <span class="row__label">Рост в головах</span>
                 <input type="range" id="growth" min="1" max="12" step="0.5" value="5" />
                 <output id="growthOut">5</output>
             </label>
 
             <label class="row">
-                <span>Отступы сверху/снизу, %</span>
+                <span class="row__label">Отступы сверху/снизу, %</span>
                 <input type="range" id="padding" min="0" max="10" step="0.1" value="0" />
                 <output id="paddingOut">0</output>
             </label>
@@ -32,49 +49,50 @@
         <section class="group">
             <h2>Подложка</h2>
 
-            <div class="row buttons">
-                <input type="file" id="bgFile" accept="image/*" />
+            <div class="row row--file">
+                <label class="file-btn">
+                    <input type="file" id="bgFile" accept="image/*" />
+                    <span>Выбрать изображение</span>
+                </label>
             </div>
 
             <label class="row">
-                <span>Прозрачность</span>
+                <span class="row__label">Прозрачность</span>
                 <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1" disabled />
                 <output id="bgOpacityOut">1</output>
             </label>
 
             <label class="row">
-                <span>Масштаб</span>
+                <span class="row__label">Масштаб</span>
                 <input type="range" id="bgScale" min="0.1" max="3" step="0.01" value="1" disabled />
                 <output id="bgScaleOut">1</output>
             </label>
 
-            <div class="row buttons">
-                <button id="bgRemove" disabled>Удалить подложку</button>
+            <div class="row row--buttons">
+                <button id="bgRemove" class="btn btn--danger" disabled>Удалить подложку</button>
             </div>
         </section>
 
         <section class="group">
             <h2>Пресеты</h2>
 
-            <div class="row buttons">
+            <div class="row row--stack">
                 <input type="text" id="presetName" placeholder="Имя пресета" />
-                <button id="presetSave">Сохранить</button>
+                <button id="presetSave" class="btn btn--primary">Сохранить</button>
             </div>
 
             <ul id="presetList" class="preset-list"></ul>
         </section>
-
     </aside>
 
     <!-- ОБЛАСТЬ ХОЛСТА -->
     <main class="stage">
         <div class="stage-toolbar">
-            <button id="exportSvg">Экспорт SVG</button>
-            <button id="exportPng">Экспорт PNG</button>
+            <button id="exportSvg" class="btn">SVG</button>
+            <button id="exportPng" class="btn btn--primary">PNG</button>
         </div>
 
         <div class="canvas-wrap">
-            <!-- Вся отрисовка — внутри SVG -->
             <svg id="canvas"
                  xmlns="http://www.w3.org/2000/svg"
                  width="4096"
