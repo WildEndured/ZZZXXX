@@ -1,83 +1,100 @@
-// main.js — точка входа. Холст, общие ползунки, подложка, пресеты, экспорт.
-// Модули head.js / torso.js / arm.js / leg.js подключаются позже.
+// ════════════════════════════════════════════════════════════
+// main.js — точка входа
+// Холст, общие ползунки, подложка, пресеты, экспорт, UI.
+// Модули head.js / torso.js / arm.js / leg.js подключаются
+// отдельными файлами и экспортируют renderX(g, layout, state).
+// ════════════════════════════════════════════════════════════
 
-import { renderHead } from './head.js';
+import { renderHead }  from './head.js';
 import { renderTorso } from './torso.js';
-import { renderArms } from './arm.js';
-import { renderLegs } from './leg.js';
+import { renderArms }  from './arm.js';
+import { renderLegs }  from './leg.js';
 
-/* ────────────────────────────────────────────────
-   КОНСТАНТЫ ХОЛСТА
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// КОНСТАНТЫ ХОЛСТА
+// ────────────────────────────────────────────────
 
 const CANVAS_SIZE = 4096;   // px, квадрат
-const DPI = 300;            // 300 dpi — используется при экспорте PNG
+const DPI         = 300;    // 300 dpi — используется при экспорте PNG
 
-/* ────────────────────────────────────────────────
-   СОСТОЯНИЕ
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// СОСТОЯНИЕ
+// ────────────────────────────────────────────────
 
 const state = {
-    growth: 5,          // рост в головах (шаг 0.5)
-    padding: 0,         // отступ сверху/снизу, % (0–10)
+    growth:  5,           // рост в головах (шаг 0.5)
+    padding: 0,           // отступ сверху/снизу, % (0–10)
+
     bg: {
-        src: null,      // dataURL подложки
-        image: null,    // HTMLImageElement
+        src:     null,    // dataURL подложки
+        image:   null,    // HTMLImageElement
         opacity: 1,
-        scale: 1,
-        /** 'height' | 'width' — по чему подгоняем масштаб */
-        fitMode: 'height'
-    }
+        scale:   1,
+        fitMode: 'height' // 'height' | 'width'
+    },
+
+    // Параметры фигуры — заполняются модулями head/torso/arm/leg.
+    // Пока пусто, будет расширяться по мере реализации.
+    figure: {}
 };
 
-/* ────────────────────────────────────────────────
-   ССЫЛКИ НА DOM
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// ССЫЛКИ НА DOM
+// ────────────────────────────────────────────────
 
+// SVG и слои
 const svg       = document.getElementById('canvas');
 const layerBg   = document.getElementById('layerBg');
 const layerGrid = document.getElementById('layerGrid');
 
-// общие
+// Общие ползунки
 const growthIn   = document.getElementById('growth');
 const growthOut  = document.getElementById('growthOut');
 const paddingIn  = document.getElementById('padding');
 const paddingOut = document.getElementById('paddingOut');
 
-// подложка
-const bgFile      = document.getElementById('bgFile');
-const bgOpacity   = document.getElementById('bgOpacity');
-const bgOpacityO  = document.getElementById('bgOpacityOut');
-const bgScale     = document.getElementById('bgScale');
-const bgScaleO    = document.getElementById('bgScaleOut');
-const bgRemove    = document.getElementById('bgRemove');
+// Подложка
+const bgFile     = document.getElementById('bgFile');
+const bgOpacity  = document.getElementById('bgOpacity');
+const bgOpacityO = document.getElementById('bgOpacityOut');
+const bgScale    = document.getElementById('bgScale');
+const bgScaleO   = document.getElementById('bgScaleOut');
+const bgRemove   = document.getElementById('bgRemove');
 
-// пресеты
+// Пресеты
 const presetName = document.getElementById('presetName');
 const presetSave = document.getElementById('presetSave');
 const presetList = document.getElementById('presetList');
 
-// экспорт
+// Экспорт
 const exportSvgBtn = document.getElementById('exportSvg');
 const exportPngBtn = document.getElementById('exportPng');
 
-/* ────────────────────────────────────────────────
-   ГЕОМЕТРИЯ ХОЛСТА
-   ──────────────────────────────────────────────── */
+// Мобильное меню
+const app           = document.getElementById('app');
+const panelEl       = document.getElementById('panel');
+const panelToggle   = document.getElementById('panelToggle');
+const panelClose    = document.getElementById('panelClose');
+const panelBackdrop = document.getElementById('panelBackdrop');
+
+// ────────────────────────────────────────────────
+// ГЕОМЕТРИЯ ХОЛСТА
+// ────────────────────────────────────────────────
 
 /**
  * Возвращает метрики раскладки:
  *  - top / bottom — координаты рабочей области (с учётом отступов)
  *  - height       — высота рабочей области
  *  - headH        — высота одной головы (height / growth)
- *  - headLines[]  — Y-координаты линий деления (сверху вниз), length = growth + 1
+ *  - headLines[]  — Y-координаты линий деления (сверху вниз), длина growth+1
+ *  - canvasSize   — размер холста
  */
 function computeLayout() {
-    const padPx   = (state.padding / 100) * CANVAS_SIZE;
-    const top     = padPx;
-    const bottom  = CANVAS_SIZE - padPx;
-    const height  = bottom - top;
-    const headH   = height / state.growth;
+    const padPx  = (state.padding / 100) * CANVAS_SIZE;
+    const top    = padPx;
+    const bottom = CANVAS_SIZE - padPx;
+    const height = bottom - top;
+    const headH  = height / state.growth;
 
     const headLines = [];
     for (let i = 0; i <= state.growth; i++) {
@@ -95,27 +112,25 @@ function computeLayout() {
     };
 }
 
-/* ────────────────────────────────────────────────
-   ОТРИСОВКА ВСЕГО
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// ОТРИСОВКА
+// ────────────────────────────────────────────────
 
 function renderAll() {
     const L = computeLayout();
 
-    // Каждый модуль получает layout и общий state.
-    // Пока модули-заглушки — просто ничего не рисуют.
-    renderHead(document.getElementById('figureHead'), L, state);
+    renderHead (document.getElementById('figureHead'),  L, state);
     renderTorso(document.getElementById('figureTorso'), L, state);
-    renderArms(document.getElementById('figureArms'), L, state);
-    renderLegs(document.getElementById('figureLegs'), L, state);
+    renderArms (document.getElementById('figureArms'),  L, state);
+    renderLegs (document.getElementById('figureLegs'),  L, state);
 
     renderGuides(L);
     renderBackground();
 }
 
 /**
- * Вспомогательная сетка: линии деления на головы.
- * Не входит в экспорт (см. exportSvg).
+ * Вспомогательная сетка — линии деления на головы.
+ * Не попадает в экспорт.
  */
 function renderGuides(L) {
     layerGrid.innerHTML = '';
@@ -128,17 +143,17 @@ function renderGuides(L) {
         line.setAttribute('y1', y);
         line.setAttribute('x2', CANVAS_SIZE);
         line.setAttribute('y2', y);
-        line.setAttribute('stroke', i === 0 || i === state.growth ? '#4c8dff' : '#c8c8c8');
-        line.setAttribute('stroke-width', i === 0 || i === state.growth ? 6 : 3);
-        line.setAttribute('stroke-dasharray', i === 0 || i === state.growth ? '' : '16 16');
+        line.setAttribute('stroke', (i === 0 || i === state.growth) ? '#4c8dff' : '#c8c8c8');
+        line.setAttribute('stroke-width', (i === 0 || i === state.growth) ? 6 : 3);
+        line.setAttribute('stroke-dasharray', (i === 0 || i === state.growth) ? '' : '16 16');
         line.setAttribute('data-guide', 'true');
         layerGrid.appendChild(line);
     }
 }
 
-/* ────────────────────────────────────────────────
-   ПОДЛОЖКА
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// ПОДЛОЖКА
+// ────────────────────────────────────────────────
 
 function renderBackground() {
     layerBg.innerHTML = '';
@@ -147,16 +162,16 @@ function renderBackground() {
     const NS = 'http://www.w3.org/2000/svg';
     const img = state.bg.image;
 
-    // Подгонка: базовая вписываем по высоте или ширине холста, затем * scale
+    // Базовая подгонка под высоту или ширину, затем * scale
     const fit = state.bg.fitMode === 'height'
         ? CANVAS_SIZE / img.height
         : CANVAS_SIZE / img.width;
 
-    const k  = fit * state.bg.scale;
-    const w  = img.width  * k;
-    const h  = img.height * k;
-    const x  = (CANVAS_SIZE - w) / 2;
-    const y  = (CANVAS_SIZE - h) / 2;
+    const k = fit * state.bg.scale;
+    const w = img.width  * k;
+    const h = img.height * k;
+    const x = (CANVAS_SIZE - w) / 2;
+    const y = (CANVAS_SIZE - h) / 2;
 
     const node = document.createElementNS(NS, 'image');
     node.setAttribute('href', state.bg.src);
@@ -208,20 +223,20 @@ bgScale.addEventListener('input', () => {
 });
 
 bgRemove.addEventListener('click', () => {
-    state.bg.src = null;
+    state.bg.src   = null;
     state.bg.image = null;
-    bgFile.value = '';
+    bgFile.value   = '';
     bgOpacity.value = 1;
-    bgScale.value = 1;
+    bgScale.value   = 1;
     bgOpacityO.value = '1.00';
-    bgScaleO.value = '1.00';
+    bgScaleO.value   = '1.00';
     setBackgroundEnabled(false);
     renderBackground();
 });
 
-/* ────────────────────────────────────────────────
-   ОБЩИЕ ПОЛЗУНКИ
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// ОБЩИЕ ПОЛЗУНКИ
+// ────────────────────────────────────────────────
 
 growthIn.addEventListener('input', () => {
     state.growth = parseFloat(growthIn.value);
@@ -235,12 +250,11 @@ paddingIn.addEventListener('input', () => {
     renderAll();
 });
 
-/* ────────────────────────────────────────────────
-   ПРЕСЕТЫ
-   ────────────────────────────────────────────────
-   Пресет хранит: growth, padding и (в будущем)
-   параметры фигуры. Подложка НЕ сохраняется.
-*/
+// ────────────────────────────────────────────────
+// ПРЕСЕТЫ
+// Хранят growth, padding и (позже) параметры фигуры.
+// Подложка НЕ сохраняется.
+// ────────────────────────────────────────────────
 
 const PRESET_KEY = 'anacords.presets.v1';
 
@@ -297,14 +311,14 @@ function applyPreset(preset) {
     state.growth  = preset.growth;
     state.padding = preset.padding;
 
-    growthIn.value  = preset.growth;
-    growthOut.value = preset.growth.toFixed(1);
+    growthIn.value   = preset.growth;
+    growthOut.value  = preset.growth.toFixed(1);
     paddingIn.value  = preset.padding;
     paddingOut.value = preset.padding.toFixed(1);
 
-    // Сюда позже добавим применение параметров фигуры
-    if (typeof preset.applyFigure === 'function') {
-        preset.applyFigure(state);
+    // Параметры фигуры — если модули умеют их сериализовать
+    if (preset.figure && typeof state.figure === 'object') {
+        Object.assign(state.figure, preset.figure);
     }
 
     renderAll();
@@ -318,66 +332,61 @@ presetSave.addEventListener('click', () => {
     }
 
     const list = loadPresets();
-    const preset = {
+    list.push({
         name,
         growth:  state.growth,
-        padding: state.padding
-        // Параметры фигуры добавим позже
-    };
-
-    list.push(preset);
+        padding: state.padding,
+        figure:  JSON.parse(JSON.stringify(state.figure || {}))
+    });
     savePresets(list);
     presetName.value = '';
     renderPresetList();
 });
 
-/* ────────────────────────────────────────────────
-   ЭКСПОРТ
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// ЭКСПОРТ
+// ────────────────────────────────────────────────
 
 /**
- * Клонирует SVG, убирает служебные слои (сетку) и подложку
- * для экспорта фигуры.
+ * Клонирует SVG, убирает служебные слои (сетку и подложку)
+ * для экспорта одной фигуры.
  */
 function makeExportSvg() {
     const clone = svg.cloneNode(true);
 
-    // Убираем сетку
     const grid = clone.querySelector('#layerGrid');
     if (grid) grid.remove();
 
-    // Убираем подложку, если нужно экспортировать только фигуру.
-    // Если подложка нужна в экспорте — просто закомментируй эту строку.
+    // Подложка в экспорт не идёт. Нужна — закомментируй 2 строки ниже.
     const bg = clone.querySelector('#layerBg');
     if (bg) bg.remove();
 
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width', CANVAS_SIZE);
+    clone.setAttribute('width',  CANVAS_SIZE);
     clone.setAttribute('height', CANVAS_SIZE);
 
     return new XMLSerializer().serializeToString(clone);
 }
 
 exportSvgBtn.addEventListener('click', () => {
-    const xml = makeExportSvg();
+    const xml  = makeExportSvg();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     downloadBlob(blob, 'figure.svg');
 });
 
 exportPngBtn.addEventListener('click', async () => {
-    const xml = makeExportSvg();
+    const xml  = makeExportSvg();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
 
     try {
         const img = await loadImage(url);
-        const c = document.createElement('canvas');
-        c.width  = CANVAS_SIZE;
-        c.height = CANVAS_SIZE;
+        const c   = document.createElement('canvas');
+        c.width   = CANVAS_SIZE;
+        c.height  = CANVAS_SIZE;
         const ctx = c.getContext('2d');
 
-        // 300 dpi — метаданные pHYs записываются при сохранении
-        // через canvas.toBlob; сам размер в пикселях совпадает.
+        // Фон белый — иначе PNG получится прозрачным
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
@@ -389,9 +398,9 @@ exportPngBtn.addEventListener('click', async () => {
     }
 });
 
-/* ────────────────────────────────────────────────
-   УТИЛИТЫ
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// УТИЛИТЫ
+// ────────────────────────────────────────────────
 
 function loadImage(src) {
     return new Promise((resolve, reject) => {
@@ -407,32 +416,85 @@ function downloadBlob(blob, filename) {
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/* ────────────────────────────────────────────────
-   ЗАГЛУШКИ МОДУЛЕЙ (временно, до реализации)
-   ──────────────────────────────────────────────── */
+// ────────────────────────────────────────────────
+// МОБИЛЬНОЕ МЕНЮ (bottom sheet)
+// ────────────────────────────────────────────────
 
-// Пока модули не готовы, я не импортирую их, а объявляю заглушки здесь.
-// Когда будут реализованы — раскомментируй импорты в начале файла
-// и удали этот блок.
+function openPanel() {
+    panelEl.classList.add('is-open');
+    panelBackdrop.hidden = false;
+    requestAnimationFrame(() => panelBackdrop.classList.add('is-visible'));
+    panelToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+}
 
-// import { renderHead }  from './head.js';
-// import { renderTorso } from './torso.js';
-// import { renderArms }  from './arm.js';
-// import { renderLegs }  from './leg.js';
+function closePanel() {
+    panelEl.classList.remove('is-open');
+    panelBackdrop.classList.remove('is-visible');
+    panelToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    setTimeout(() => { panelBackdrop.hidden = true; }, 250);
+}
 
-// Временно:
-function renderHead()  { /* TODO */ }
-function renderTorso() { /* TODO */ }
-function renderArms()  { /* TODO */ }
-function renderLegs()  { /* TODO */ }
+panelToggle.addEventListener('click', openPanel);
+panelClose.addEventListener('click', closePanel);
+panelBackdrop.addEventListener('click', closePanel);
 
-/* ────────────────────────────────────────────────
-   СТАРТ
-   ──────────────────────────────────────────────── */
+// Закрытие по Esc
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && panelEl.classList.contains('is-open')) {
+        closePanel();
+    }
+});
+
+// Автозакрытие при ресайзе до десктопа
+const mql = window.matchMedia('(min-width: 1025px)');
+mql.addEventListener('change', e => {
+    if (e.matches && panelEl.classList.contains('is-open')) {
+        closePanel();
+    }
+});
+
+// Свайп вниз для закрытия (bottom sheet)
+(() => {
+    let startY = 0, currentY = 0, dragging = false;
+
+    panelEl.addEventListener('touchstart', e => {
+        if (!panelEl.classList.contains('is-open')) return;
+        if (panelEl.scrollTop > 0) return;
+        if (e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        dragging = true;
+        panelEl.style.transition = 'none';
+    }, { passive: true });
+
+    panelEl.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        currentY = e.touches[0].clientY;
+        const dy = Math.max(0, currentY - startY);
+        panelEl.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+
+    panelEl.addEventListener('touchend', () => {
+        if (!dragging) return;
+        dragging = false;
+        const dy = Math.max(0, currentY - startY);
+        panelEl.style.transition = '';
+        panelEl.style.transform  = '';
+        if (dy > 120) closePanel();
+    });
+})();
+
+// ────────────────────────────────────────────────
+// СТАРТ
+// ────────────────────────────────────────────────
 
 setBackgroundEnabled(false);
 renderPresetList();
