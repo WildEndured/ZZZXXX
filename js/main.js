@@ -5,9 +5,9 @@
 /* ---------- Состояние ---------- */
 export const state = {
   canvas: {
-    X: 8,
-    marginTop: 5,    // В процентах (0-10%)
-    marginBottom: 5, // В процентах (0-10%)
+    X: 5,          // Рост в головах (по умолчанию 5)
+    marginTop: 0,  // Отступ сверху (%) (по умолчанию 0)
+    marginBottom: 0, // Отступ снизу (%) (по умолчанию 0)
   },
   head: {
     top: 0, bottom: 0, width: 0, radius: 0,
@@ -82,10 +82,8 @@ function renderPresets() {
     btn.dataset.preset = name;
     
     btn.addEventListener('click', () => {
-      // Подсветка активного
       document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      
       applyPreset(name);
     });
 
@@ -96,7 +94,6 @@ function renderPresets() {
 function applyPreset(name) {
   if (!customPresets[name]) return;
   
-  // Слияние, чтобы не затереть подложку
   const data = deepClone(customPresets[name]);
   for (const group in data) {
     if (state[group]) Object.assign(state[group], data[group]);
@@ -110,7 +107,6 @@ btnSavePreset.addEventListener('click', () => {
   const name = inputPresetName.value.trim();
   if (!name) return alert('Введите название пресета');
 
-  // Сохраняем текущее состояние (кроме подложки)
   const newPreset = {
     canvas: deepClone(state.canvas),
     head:   deepClone(state.head),
@@ -189,11 +185,8 @@ function render() {
     drawUnderlay(ctx);
   }
 
-  drawMargins(ctx);   // Красные линии отступов
-  drawModuleGrid(ctx); // Синяя сетка
-
-  // Будущие вызовы:
-  // drawHead(ctx, state)
+  drawMargins(ctx);
+  drawModuleGrid(ctx);
 }
 
 /* ---------- Отрисовка отступов (Красные линии) ---------- */
@@ -209,13 +202,11 @@ function drawMargins(ctx) {
   ctx.lineWidth = 8;
   ctx.setLineDash([]);
 
-  // Верхняя красная линия
   ctx.beginPath();
   ctx.moveTo(0, topY);
   ctx.lineTo(canvas.width, topY);
   ctx.stroke();
 
-  // Нижняя красная линия
   ctx.beginPath();
   ctx.moveTo(0, bottomY);
   ctx.lineTo(canvas.width, bottomY);
@@ -248,12 +239,15 @@ function drawModuleGrid(ctx) {
   const moduleH = usableHeight / X;
 
   ctx.save();
-  ctx.strokeStyle = 'rgba(91,141,239,0.4)'; // Синий
+  ctx.strokeStyle = 'rgba(91,141,239,0.4)';
   ctx.setLineDash([12, 12]);
   ctx.lineWidth = 3;
 
-  for (let i = 0; i <= X; i++) {
+  const linesCount = Math.ceil(X);
+  for (let i = 0; i <= linesCount; i++) {
     const y = usableTop + i * moduleH;
+    if (y > usableBottom + 1) break; 
+    
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(canvas.width, y);
@@ -272,7 +266,8 @@ function drawModuleGrid(ctx) {
   ctx.font = 'bold 36px sans-serif';
   for (let i = 0; i < X; i++) {
     const y = usableTop + i * moduleH;
-    ctx.fillText(`1/${X}`, 20, y + 45);
+    if (y + 45 > usableBottom) continue;
+    ctx.fillText(`${i + 1}`, 20, y + 45);
   }
   ctx.restore();
 }
@@ -315,9 +310,8 @@ document.getElementById('btnExportSVG').addEventListener('click', () => {
 
 /* ---------- Сброс ---------- */
 document.getElementById('btnReset').addEventListener('click', () => {
-  // Сбрасываем все значения ползунков в 0 (кроме холста)
   const resetData = {
-    canvas: { X: 8, marginTop: 5, marginBottom: 5 },
+    canvas: { X: 5, marginTop: 0, marginBottom: 0 },
     head: { top: 0, bottom: 0, width: 0, radius: 0, chin: { height: 0, width: 0, rounding: 0 }, jaw: { attach: 0, length: 0, angle: 0, width: 0 }, neck: { width: 0 } },
     torso: { chest: { top: 0, bottom: 0, height: 0, width: 0 }, pelvis: { width: 0, height: 0, rounding: 0 } },
     arms: { shoulder: { radius: 0 }, elbow: { radius: 0, dx: 0, dy: 0 }, wrist: { radius: 0, dx: 0, dy: 0 } },
@@ -328,7 +322,6 @@ document.getElementById('btnReset').addEventListener('click', () => {
     if (state[group]) Object.assign(state[group], resetData[group]);
   }
   
-  // Убираем активную подсветку с кнопок пресетов
   document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
   
   syncControlsFromState();
@@ -348,7 +341,7 @@ window.addEventListener('resize', fitCanvasToViewport);
 window.addEventListener('orientationchange', () => setTimeout(fitCanvasToViewport, 100));
 
 /* ---------- Инициализация ---------- */
-renderPresets(); // Рисуем кнопки пресетов (выведет "Нет сохраненных пресетов")
+renderPresets();
 bindControls();
 requestRender();
 setTimeout(fitCanvasToViewport, 50);
