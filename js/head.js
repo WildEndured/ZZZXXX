@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// head.js — модуль головы (этап 1: эллипс по сетке 5 частей)
+// head.js — модуль головы (этап 1: эллипс)
 // ════════════════════════════════════════════════════════════
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -66,43 +66,43 @@ function dispatchRender() {
 }
 
 /**
- * Вычисляет параметры эллипса строго по сетке 1/5.
- * Базовая верхняя точка = 1/5, базовая нижняя = 3/5.
- * Центр = 2/5. Радиус = 1/5.
+ * Вычисляет параметры эллипса.
+ * Базовая верхняя точка = L0 (макушка), базовая нижняя = L3.
+ * Центр = L1.5. Базовый радиус = 1.5/5 (или 30% от высоты головы).
  */
 function computeEllipse(layout, s) {
     const { headLines, headH, canvasSize } = layout;
-    const headTopY = headLines[0];
+    
+    // headLines[0] — это L0 (макушка)
+    const yL0 = headLines[0];
+    const yL3 = headLines[3];
 
-    // Опорные линии (Y-координаты)
-    const y1_5 = headTopY + headH * (1 / 5);  // верхняя граница круга
-    const y3_5 = headTopY + headH * (3 / 5);  // нижняя граница круга
+    // Ползунки "Верх" и "Низ" сдвигают соответствующие границы
+    const shiftTop    = s.top    * headH; 
+    const shiftBottom = s.bottom * headH; 
 
-    // Базовый центр и радиус
-    const baseCy = headTopY + headH * (2 / 5); 
-    const baseRy = headH * (1 / 5);            
+    // Итоговые координаты верхней и нижней точек круга
+    const yTop    = yL0 + shiftTop;
+    const yBottom = yL3 + shiftBottom;
 
-    // Ползунки "Верх" и "Низ" сдвигают соответствующие границы.
-    // s.top < 0 тянет верхнюю границу вверх; s.bottom > 0 тянет нижнюю вниз.
-    const shiftTop    = s.top    * headH;      // при -0.5 поднимает на 0.5*headH вверх
-    const shiftBottom = s.bottom * headH;      // при +0.5 опускает на 0.5*headH вниз
-
-    // Итоговые координаты верхней и нижней точек
-    const yTop    = y1_5 + shiftTop;
-    const yBottom = y3_5 + shiftBottom;
-
-    // Итоговый центр и вертикальный радиус
+    // Центр — ровно середина между верхней и нижней точками
     const cy = (yTop + yBottom) / 2;
-    const ry = Math.abs(yBottom - yTop) / 2;
+    
+    // Вертикальный радиус — половина расстояния между ними
+    // (если не трогать ползунки, это ровно 1.5/5 от headH)
+    const ryBase = Math.abs(yBottom - yTop) / 2;
 
     // Ширина и общий радиус
     const cx = canvasSize / 2;
-    const rx = baseRy * s.width * s.radius;
     
-    // Применяем общий множитель к вертикальному радиусу тоже
-    const finalRy = ry * s.radius;
+    // Базовый радиус для ширины берем таким же, как идеальный вертикальный
+    // (1.5/5 от headH = headH * 0.3)
+    const baseR = headH * 0.3;
 
-    return { cx, cy, rx, ry: finalRy };
+    const rx = baseR * s.width * s.radius;
+    const ry = ryBase * s.radius;
+
+    return { cx, cy, rx, ry };
 }
 
 export function renderHead(g, layout, state) {
