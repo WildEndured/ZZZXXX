@@ -63,26 +63,17 @@ const btnDeletePreset = document.getElementById('btnDeletePreset');
 const underlayFile = document.getElementById('underlayFile');
 
 /* ---------- Динамические пресеты ---------- */
-let customPresets = JSON.parse(localStorage.getItem('figurePresets')) || {
-  default: {
-    canvas: { X: 8, marginTop: 5, marginBottom: 5 },
-    head: { top: 0, bottom: 0, width: 0, radius: 0, chin: { height: 0, width: 0, rounding: 0 }, jaw: { attach: 0, length: 0, angle: 0, width: 0 }, neck: { width: 0 } },
-    torso: { chest: { top: 0, bottom: 0, height: 0, width: 0 }, pelvis: { width: 0, height: 0, rounding: 0 } },
-    arms: { shoulder: { radius: 0 }, elbow: { radius: 0, dx: 0, dy: 0 }, wrist: { radius: 0, dx: 0, dy: 0 } },
-    legs: { knee: { radius: 0, dx: 0, dy: 0 }, ankle: { radius: 0, dx: 0 } },
-  },
-  heroic: {
-    canvas: { X: 9, marginTop: 5, marginBottom: 5 },
-    head: { top: 0, bottom: 0, width: 20, radius: 0, chin: { height: 0, width: 0, rounding: 0 }, jaw: { attach: 0, length: 0, angle: 0, width: 0 }, neck: { width: 0 } },
-    torso: { chest: { top: 30, bottom: 20, height: 0, width: 0 }, pelvis: { width: 0, height: 0, rounding: 0 } },
-    arms: { shoulder: { radius: 30 }, elbow: { radius: 0, dx: 0, dy: 0 }, wrist: { radius: 0, dx: 0, dy: 0 } },
-    legs: { knee: { radius: 0, dx: 0, dy: 0 }, ankle: { radius: 0, dx: 0 } },
-  }
-};
+// При первом запуске загружаем пустой объект
+let customPresets = JSON.parse(localStorage.getItem('figurePresets')) || {};
 
 function renderPresets() {
   presetsContainer.innerHTML = '';
   const presetNames = Object.keys(customPresets);
+
+  if (presetNames.length === 0) {
+    presetsContainer.innerHTML = '<div style="grid-column: 1/-1; font-size: 11px; color: var(--text-dim); text-align: center; padding: 10px;">Нет сохраненных пресетов</div>';
+    return;
+  }
 
   presetNames.forEach(name => {
     const btn = document.createElement('button');
@@ -140,8 +131,7 @@ btnDeletePreset.addEventListener('click', () => {
   if (!activeBtn) return alert('Выберите пресет для удаления');
   
   const name = activeBtn.dataset.preset;
-  if (name === 'default') return alert('Нельзя удалить базовый пресет');
-
+  
   if (confirm(`Удалить пресет "${name}"?`)) {
     delete customPresets[name];
     localStorage.setItem('figurePresets', JSON.stringify(customPresets));
@@ -323,6 +313,28 @@ document.getElementById('btnExportSVG').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+/* ---------- Сброс ---------- */
+document.getElementById('btnReset').addEventListener('click', () => {
+  // Сбрасываем все значения ползунков в 0 (кроме холста)
+  const resetData = {
+    canvas: { X: 8, marginTop: 5, marginBottom: 5 },
+    head: { top: 0, bottom: 0, width: 0, radius: 0, chin: { height: 0, width: 0, rounding: 0 }, jaw: { attach: 0, length: 0, angle: 0, width: 0 }, neck: { width: 0 } },
+    torso: { chest: { top: 0, bottom: 0, height: 0, width: 0 }, pelvis: { width: 0, height: 0, rounding: 0 } },
+    arms: { shoulder: { radius: 0 }, elbow: { radius: 0, dx: 0, dy: 0 }, wrist: { radius: 0, dx: 0, dy: 0 } },
+    legs: { knee: { radius: 0, dx: 0, dy: 0 }, ankle: { radius: 0, dx: 0 } }
+  };
+
+  for (const group in resetData) {
+    if (state[group]) Object.assign(state[group], resetData[group]);
+  }
+  
+  // Убираем активную подсветку с кнопок пресетов
+  document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+  
+  syncControlsFromState();
+  requestRender();
+});
+
 /* ---------- Автомасштаб ---------- */
 function fitCanvasToViewport() {
   const vw = viewport.clientWidth - 32;
@@ -336,7 +348,7 @@ window.addEventListener('resize', fitCanvasToViewport);
 window.addEventListener('orientationchange', () => setTimeout(fitCanvasToViewport, 100));
 
 /* ---------- Инициализация ---------- */
-renderPresets(); // Рисуем кнопки пресетов
+renderPresets(); // Рисуем кнопки пресетов (выведет "Нет сохраненных пресетов")
 bindControls();
 requestRender();
 setTimeout(fitCanvasToViewport, 50);
