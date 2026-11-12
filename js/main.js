@@ -1,187 +1,321 @@
-import { drawHead } from './head.js';
-import { drawTorso, torsoAnchors } from './torso.js';
-import { drawArms } from './arm.js';
-import { drawLegs } from './leg.js';
-import { CanvasRenderer, SVGRenderer } from './renderer.js';
+/* =========================================================
+   main.js — состояние, ползунки, пресеты, экспорт
+   Отрисовка фигур будет подключаться в следующих шагах.
+   ========================================================= */
 
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-const W = canvas.width, H = canvas.height;
-
-const PRESETS = {
-  heroic:    { canvas: { X: 8 },    torso: { chest: { width: 15 } }, head: { radius: -5 } },
-  stylized7: { canvas: { X: 7 } },
-  chibi:     { canvas: { X: 3 },    head: { radius: 25, chin: { height: 30 } } }
-};
-
-const state = {
-  color: '#d32f2f',
-  canvas: { X: 5, marginTopPct: 3, marginBottomPct: 3 },
+/* ---------- Состояние ---------- */
+export const state = {
+  canvas: {
+    X: 8,
+    marginTop: 200,
+    marginBottom: 200,
+  },
   head: {
     top: 0, bottom: 0, width: 0, radius: 0,
-    chin: { height: 50, width: 50, rounding: 0.5 },
-    jaw:  { attach: 40, length: 50, angle: 0, width: 50 },
-    neck: { width: 0 }
+    chin:  { height: 0, width: 0, rounding: 0 },
+    jaw:   { attach: 0, length: 0, angle: 0, width: 0 },
+    neck:  { width: 0 },
   },
   torso: {
     chest:  { top: 0, bottom: 0, height: 0, width: 0 },
-    pelvis: { width: 0, height: 0, rounding: 0.3 }
+    pelvis: { width: 0, height: 0, rounding: 0 },
   },
   arms: {
     shoulder: { radius: 0 },
     elbow:    { radius: 0, dx: 0, dy: 0 },
-    wrist:    { radius: 0, dx: 0, dy: 0 }
+    wrist:    { radius: 0, dx: 0, dy: 0 },
   },
   legs: {
-    ankle: { radius: 0, dx: 0 },
     knee:  { radius: 0, dx: 0, dy: 0 },
-    showJoints: false
+    ankle: { radius: 0, dx: 0 },
   },
-  underlay: { img: null, opacity: 0.4, scale: 1, x: 0, y: 0, flip: false }
+  underlay: {
+    image: null,      // HTMLImageElement
+    opacity: 40,
+    scale: 100,
+    x: 0, y: 0,
+  },
 };
 
-const DEFAULT_STATE = structuredClone({
-  color: state.color,
-  canvas: state.canvas,
-  head: state.head,
-  torso: state.torso,
-  arms: state.arms,
-  legs: state.legs
-});
-
-function getDeep(obj, path){ return path.split('.').reduce((o,k)=>o[k], obj); }
-function setDeep(obj, path, v){
-  const keys = path.split('.'); const last = keys.pop();
-  const t = keys.reduce((o,k)=>o[k], obj); t[last] = v;
-}
-function deepMerge(a, b){
-  for (const k in b){
-    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k])) deepMerge(a[k] ??= {}, b[k]);
-    else a[k] = b[k];
-  }
+/* ---------- Утилиты ---------- */
+function getByPath(obj, path) {
+  return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 }
 
-function syncInputs(){
-  document.querySelectorAll('[data-key]').forEach(el=>{
-    const v = getDeep(state, el.dataset.key);
-    if (el.type === 'checkbox') el.checked = !!v;
-    else el.value = v;
-    const out = el.parentElement.querySelector('output');
-    if (out) out.value = v;
-  });
+function setByPath(obj, path, value) {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o, k) => o[k], obj);
+  target[last] = value;
 }
 
-function bindInputs(){
-  document.querySelectorAll('[data-key]').forEach(el=>{
-    const ev = (el.type === 'range' || el.type === 'color') ? 'input' : 'change';
-    el.addEventListener(ev, ()=>{
-      const k = el.dataset.key;
-      let v;
-      if (el.type === 'checkbox') v = el.checked;
-      else if (el.type === 'range') v = +el.value;
-      else v = el.value;
-      setDeep(state, k, v);
-      const out = el.parentElement.querySelector('output');
-      if (out) out.value = v;
-      render();
+/* ---------- DOM ---------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const viewport = document.getElementById('viewport');
+const presetsEl = document.getElementById('presets');
+const underlayFile = document.getElementById('underlayFile');
+
+/* ---------- Привязка ползунков ---------- */
+function bindControls() {
+  document.querySelectorAll('input[type="range"][data-key]').forEach(input => {
+    const key = input.dataset.key;
+    const output = document.querySelector(`output[data-for="${key}"]`);
+
+    // начальное значение из state
+    const initial = getByPath(state, key);
+    if (initial !== undefined) input.value = initial;
+    if (output) output.textContent = input.value;
+
+    input.addEventListener('input', () => {
+      const value = Number(input.value);
+      setByPath(state, key, value);
+      if (output) output.textContent = value;
+      requestRender();
     });
   });
 }
 
-function applyPreset(name){
-  for (const k of Object.keys(DEFAULT_STATE)){
-    if (typeof DEFAULT_STATE[k] === 'object' && DEFAULT_STATE[k] !== null){
-      for (const kk of Object.keys(DEFAULT_STATE[k])){
-        state[k][kk] = structuredClone(DEFAULT_STATE[k][kk]);
-      }
-    } else {
-      state[k] = DEFAULT_STATE[k];
-    }
-  }
-  if (name !== 'default' && PRESETS[name]) deepMerge(state, PRESETS[name]);
-  syncInputs(); render();
+/* ---------- Рендер ---------- */
+let rafId = null;
+
+function requestRender() {
+  if (rafId) return;
+  rafId = requestAnimationFrame(() => {
+    rafId = null;
+    render();
+  });
 }
 
-function layout(){
+function render() {
+  // Очистка холста (белый фон)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Подложка (если есть)
+  if (state.underlay.image) {
+    drawUnderlay(ctx);
+  }
+
+  // Вспомогательная сетка модулей
+  drawModuleGrid(ctx);
+
+  // ⬇⬇⬇ Здесь будут вызываться в будущем:
+  // drawHead(ctx, state)
+  // drawTorso(ctx, state)
+  // drawArms(ctx, state)
+  // drawLegs(ctx, state)
+}
+
+/* ---------- Подложка ---------- */
+function drawUnderlay(ctx) {
+  const img = state.underlay.image;
+  const s = state.underlay.scale / 100;
+  const w = img.width * s;
+  const h = img.height * s;
+  
+  // Центрируем подложку и добавляем смещение ползунками
+  const x = (canvas.width - w) / 2 + state.underlay.x;
+  const y = (canvas.height - h) / 2 + state.underlay.y;
+
+  ctx.save();
+  ctx.globalAlpha = state.underlay.opacity / 100;
+  ctx.drawImage(img, x, y, w, h);
+  ctx.restore();
+}
+
+/* ---------- Вспомогательная сетка (временно) ---------- */
+function drawModuleGrid(ctx) {
   const X = state.canvas.X;
-  const mTop = H * state.canvas.marginTopPct / 100;
-  const mBot = H * state.canvas.marginBottomPct / 100;
-  const usable = H - mTop - mBot;
-  return { X, mTop, mBot, usable, moduleH: usable / X, cx: W / 2 };
-}
+  const top = state.canvas.marginTop;
+  const bottom = state.canvas.marginBottom;
+  const usable = canvas.height - top - bottom;
+  const moduleH = usable / X;
 
-function drawUnderlay(){
-  const u = state.underlay, img = u.img;
   ctx.save();
-  ctx.globalAlpha = u.opacity;
-  const s = u.scale;
-  ctx.translate(W/2 + u.x, H/2 + u.y);
-  if (u.flip) ctx.scale(-1, 1);
-  ctx.drawImage(img, -img.width*s/2, -img.height*s/2, img.width*s, img.height*s);
-  ctx.restore();
-}
+  ctx.strokeStyle = 'rgba(91,141,239,0.35)';
+  ctx.setLineDash([12, 12]);
+  ctx.lineWidth = 3;
 
-function drawGuides(L){
-  ctx.save();
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 2;
-  for (let i = 0; i <= Math.ceil(L.X); i++){
-    const y = L.mTop + i * L.moduleH;
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  // Горизонтальные линии модулей
+  for (let i = 0; i <= X; i++) {
+    const y = top + i * moduleH;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+
+  // Центральная вертикаль
+  ctx.beginPath();
+  ctx.moveTo(canvas.width / 2, 0);
+  ctx.lineTo(canvas.width / 2, canvas.height);
+  ctx.stroke();
+
+  // Подписи модулей
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(91,141,239,0.9)';
+  ctx.font = 'bold 36px sans-serif';
+  for (let i = 0; i < X; i++) {
+    const y = top + i * moduleH;
+    ctx.fillText(`1/${X}`, 20, y + 45);
   }
   ctx.restore();
 }
 
-function drawAll(r, L){
-  const headA  = drawHead(r, L, state.head);
-  const torso  = drawTorso(r, L, state.torso, headA);
-  const torsoA = torsoAnchors(state.torso, torso);
-  drawArms(r, L, state.arms, torsoA);
-  drawLegs(r, L, state.legs, torsoA);
+/* ---------- Пресеты ---------- */
+function deepClone(o) {
+  return JSON.parse(JSON.stringify(o));
 }
 
-function render(){
-  ctx.clearRect(0, 0, W, H);
-  if (state.underlay.img) drawUnderlay();
-  const L = layout();
-  drawGuides(L);
-  const r = new CanvasRenderer(ctx, state.color, 6);
-  drawAll(r, L);
+const PRESETS = {
+  default: () => deepClone({
+    canvas: { X: 8, marginTop: 200, marginBottom: 200 },
+    head: {
+      top: 0, bottom: 0, width: 0, radius: 0,
+      chin: { height: 0, width: 0, rounding: 0 },
+      jaw:  { attach: 0, length: 0, angle: 0, width: 0 },
+      neck: { width: 0 },
+    },
+    torso: {
+      chest:  { top: 0, bottom: 0, height: 0, width: 0 },
+      pelvis: { width: 0, height: 0, rounding: 0 },
+    },
+    arms: {
+      shoulder: { radius: 0 },
+      elbow: { radius: 0, dx: 0, dy: 0 },
+      wrist: { radius: 0, dx: 0, dy: 0 },
+    },
+    legs: {
+      knee:  { radius: 0, dx: 0, dy: 0 },
+      ankle: { radius: 0, dx: 0 },
+    },
+  }),
+  heroic: () => {
+    const p = PRESETS.default();
+    p.canvas.X = 9;
+    p.head.width = 20;
+    p.torso.chest.top = 30;
+    p.torso.chest.bottom = 20;
+    p.arms.shoulder.radius = 30;
+    return p;
+  },
+  realistic: () => {
+    const p = PRESETS.default();
+    p.canvas.X = 8;
+    return p;
+  },
+  chibi: () => {
+    const p = PRESETS.default();
+    p.canvas.X = 4;
+    p.head.radius = 60;
+    p.head.width = 40;
+    return p;
+  },
+};
+
+function applyPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) return;
+  const data = preset();
+
+  // Слияние с сохранением подложки
+  for (const group in data) {
+    Object.assign(state[group], data[group]);
+  }
+
+  syncControlsFromState();
+  requestRender();
 }
 
-function exportPNG(){
-  canvas.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'figure.png'; a.click();
-    URL.revokeObjectURL(url);
-  }, 'image/png');
+function syncControlsFromState() {
+  document.querySelectorAll('input[type="range"][data-key]').forEach(input => {
+    const value = getByPath(state, input.dataset.key);
+    if (value !== undefined) {
+      input.value = value;
+      const output = document.querySelector(`output[data-for="${input.dataset.key}"]`);
+      if (output) output.textContent = value;
+    }
+  });
 }
 
-function exportSVG(){
-  const svg = SVGRenderer.create(W, H);
-  const L = layout();
-  const r = new SVGRenderer.Renderer(svg, state.color, 6);
-  drawAll(r, L);
-  const blob = new Blob([SVGRenderer.serialize(svg)], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'figure.svg'; a.click();
-  URL.revokeObjectURL(url);
-}
-
-document.getElementById('preset').addEventListener('change', e => applyPreset(e.target.value));
-document.getElementById('exportPng').addEventListener('click', exportPNG);
-document.getElementById('exportSvg').addEventListener('click', exportSVG);
-document.getElementById('reset').addEventListener('click', () => applyPreset('default'));
-
-document.getElementById('underlayFile').addEventListener('change', e=>{
-  const f = e.target.files[0]; if (!f) return;
-  const img = new Image();
-  img.onload = ()=>{ state.underlay.img = img; render(); };
-  img.src = URL.createObjectURL(f);
+presetsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.preset');
+  if (!btn) return;
+  applyPreset(btn.dataset.preset);
 });
 
-bindInputs();
-syncInputs();
-render();
+/* ---------- Подложка: загрузка ---------- */
+underlayFile.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    state.underlay.image = img;
+    requestRender();
+  };
+  img.src = URL.createObjectURL(file);
+});
+
+/* ---------- Экспорт ---------- */
+document.getElementById('btnExportPNG').addEventListener('click', () => {
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `figure-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+});
+
+document.getElementById('btnExportSVG').addEventListener('click', () => {
+  // Временная заглушка: PNG, упакованный в SVG.
+  const dataUrl = canvas.toDataURL('image/png');
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">` +
+    `<image href="${dataUrl}" width="${canvas.width}" height="${canvas.height}"/>` +
+    `</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `figure-${Date.now()}.svg`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- Сброс ---------- */
+document.getElementById('btnReset').addEventListener('click', () => {
+  applyPreset('default');
+});
+
+/* ---------- Автомасштаб холста под экран ---------- */
+function fitCanvasToViewport() {
+  // Получаем доступную ширину и высоту (минус отступы)
+  const vw = viewport.clientWidth - 32;
+  const vh = viewport.clientHeight - 32;
+  
+  // Считаем масштаб, чтобы холст полностью влез
+  const scale = Math.min(vw / canvas.width, vh / canvas.height);
+  
+  // Применяем размеры через CSS
+  canvas.style.width  = `${canvas.width * scale}px`;
+  canvas.style.height = `${canvas.height * scale}px`;
+}
+
+// Следим за изменением размера окна
+window.addEventListener('resize', fitCanvasToViewport);
+
+// Также следим за поворотом экрана на мобильных
+window.addEventListener('orientationchange', () => {
+  setTimeout(fitCanvasToViewport, 100);
+});
+
+/* ---------- Инициализация ---------- */
+bindControls();
+requestRender();
+
+// Вызываем после небольшого таймаута, чтобы DOM точно прогрузился
+setTimeout(fitCanvasToViewport, 50);
