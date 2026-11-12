@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Figure Builder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <div id="stage">
+    <canvas id="c" width="4096" height="4096"></canvas>
+  </div>
+
+  <aside id="panel">
+    <h1>Figure</h1>
+
+    <section>
+      <label>Пресет
+        <select id="preset">
+          <option value="default">По умолчанию (5 голов)</option>
+          <option value="heroic">Героический (8)</option>
+          <option value="stylized7">Стилизованный (7)</option>
+          <option value="chibi">Chibi (3)</option>
+        </select>
+      </label>
+      <label>Цвет <input type="color" data-key="color" value="#d32f2f"></label>
+    </section>
+
+    <details open><summary>Холст</summary>
+      <label>Голов (X) <input type="range" data-key="canvas.X" min="0.5" max="12" step="0.5" value="5"><output></output></label>
+      <label>Отступ сверху % <input type="range" data-key="canvas.marginTopPct" min="0" max="10" step="0.1" value="3"><output></output></label>
+      <label>Отступ снизу % <input type="range" data-key="canvas.marginBottomPct" min="0" max="10" step="0.1" value="3"><output></output></label>
+    </details>
+
+    <details open><summary>Голова</summary>
+      <label>Радиус <input type="range" data-key="head.radius" min="-50" max="50" value="0"><output></output></label>
+      <label>Верх <input type="range" data-key="head.top" min="-50" max="50" value="0"><output></output></label>
+      <label>Низ <input type="range" data-key="head.bottom" min="-50" max="50" value="0"><output></output></label>
+      <label>Ширина <input type="range" data-key="head.width" min="-50" max="50" value="0"><output></output></label>
+      <label>Высота подбородка <input type="range" data-key="head.chin.height" min="0" max="100" value="50"><output></output></label>
+      <label>Ширина подбородка <input type="range" data-key="head.chin.width" min="0" max="100" value="50"><output></output></label>
+      <label>Скругление подбородка <input type="range" data-key="head.chin.rounding" min="0" max="1" step="0.01" value="0.5"><output></output></label>
+      <label>Крепление челюсти <input type="range" data-key="head.jaw.attach" min="0" max="100" value="40"><output></output></label>
+      <label>Длина челюсти <input type="range" data-key="head.jaw.length" min="0" max="100" value="50"><output></output></label>
+      <label>Угол челюсти <input type="range" data-key="head.jaw.angle" min="-60" max="60" value="0"><output></output></label>
+      <label>Ширина челюсти <input type="range" data-key="head.jaw.width" min="0" max="100" value="50"><output></output></label>
+      <label>Ширина шеи <input type="range" data-key="head.neck.width" min="-50" max="50" value="0"><output></output></label>
+    </details>
+
+    <details open><summary>Торс</summary>
+      <label>Верх груди <input type="range" data-key="torso.chest.top" min="-50" max="50" value="0"><output></output></label>
+      <label>Низ груди <input type="range" data-key="torso.chest.bottom" min="-50" max="50" value="0"><output></output></label>
+      <label>Высота груди <input type="range" data-key="torso.chest.height" min="-50" max="50" value="0"><output></output></label>
+      <label>Ширина груди <input type="range" data-key="torso.chest.width" min="-50" max="50" value="0"><output></output></label>
+      <label>Ширина таза <input type="range" data-key="torso.pelvis.width" min="-50" max="50" value="0"><output></output></label>
+      <label>Высота таза <input type="range" data-key="torso.pelvis.height" min="-50" max="50" value="0"><output></output></label>
+      <label>Скругление таза <input type="range" data-key="torso.pelvis.rounding" min="0" max="1" step="0.01" value="0.3"><output></output></label>
+    </details>
+
+    <details><summary>Подложка</summary>
+      <input type="file" id="underlayFile" accept="image/*">
+      <label>Прозрачность <input type="range" data-key="underlay.opacity" min="0" max="1" step="0.01" value="0.4"><output></output></label>
+      <label>Масштаб <input type="range" data-key="underlay.scale" min="0.1" max="3" step="0.01" value="1"><output></output></label>
+      <label>X <input type="range" data-key="underlay.x" min="-2000" max="2000" value="0"><output></output></label>
+      <label>Y <input type="range" data-key="underlay.y" min="-2000" max="2000" value="0"><output></output></label>
+      <label>Отразить <input type="checkbox" data-key="underlay.flip"></label>
+    </details>
+
+    <div class="actions">
+      <button id="exportPng">Экспорт PNG</button>
+      <button id="exportSvg">Экспорт SVG</button>
+      <button id="reset">Сброс</button>
+    </div>
+  </aside>
+</main>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
