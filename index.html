@@ -46,87 +46,34 @@
             </label>
         </section>
 
-        <!-- ═══════════════ ГОЛОВА ═══════════════ -->
+        <!-- НОВАЯ СЕКЦИЯ: ГОЛОВА -->
         <section class="group">
             <h2>Голова</h2>
 
-            <details class="subgroup" open>
-                <summary>Основная масса</summary>
-                <label class="row">
-                    <span class="row__label">Верх головы</span>
-                    <input type="range" id="hCircleTop" min="-20" max="20" step="1" value="0" />
-                    <output id="hCircleTopOut">0</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Низ головы</span>
-                    <input type="range" id="hCircleBottom" min="-20" max="20" step="1" value="0" />
-                    <output id="hCircleBottomOut">0</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Ширина</span>
-                    <input type="range" id="hCircleWidth" min="50" max="150" step="1" value="100" />
-                    <output id="hCircleWidthOut">100</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Радиус</span>
-                    <input type="range" id="hCircleRadius" min="50" max="150" step="1" value="100" />
-                    <output id="hCircleRadiusOut">100</output>
-                </label>
-            </details>
+            <label class="row">
+                <span class="row__label">Верх головы</span>
+                <input type="range" id="headTop" min="-0.5" max="0.5" step="0.01" value="0" />
+                <output id="headTopOut">0.00</output>
+            </label>
 
-            <details class="subgroup" open>
-                <summary>Подбородок</summary>
-                <label class="row">
-                    <span class="row__label">Высота</span>
-                    <input type="range" id="hChinHeight" min="-10" max="20" step="1" value="0" />
-                    <output id="hChinHeightOut">0</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Ширина</span>
-                    <input type="range" id="hChinWidth" min="10" max="80" step="1" value="40" />
-                    <output id="hChinWidthOut">40</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Скругление</span>
-                    <input type="range" id="hChinRound" min="0" max="100" step="1" value="50" />
-                    <output id="hChinRoundOut">50</output>
-                </label>
-            </details>
+            <label class="row">
+                <span class="row__label">Низ головы</span>
+                <input type="range" id="headBottom" min="-0.5" max="0.5" step="0.01" value="0" />
+                <output id="headBottomOut">0.00</output>
+            </label>
 
-            <details class="subgroup" open>
-                <summary>Челюсть</summary>
-                <label class="row">
-                    <span class="row__label">Высота крепления</span>
-                    <input type="range" id="hJawAttachY" min="0" max="100" step="1" value="50" />
-                    <output id="hJawAttachYOut">50</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Длина</span>
-                    <input type="range" id="hJawLength" min="50" max="150" step="1" value="100" />
-                    <output id="hJawLengthOut">100</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Угол</span>
-                    <input type="range" id="hJawAngle" min="-45" max="45" step="1" value="0" />
-                    <output id="hJawAngleOut">0</output>
-                </label>
-                <label class="row">
-                    <span class="row__label">Ширина</span>
-                    <input type="range" id="hJawWidth" min="20" max="200" step="1" value="100" />
-                    <output id="hJawWidthOut">100</output>
-                </label>
-            </details>
+            <label class="row">
+                <span class="row__label">Ширина головы</span>
+                <input type="range" id="headWidth" min="0.5" max="1.5" step="0.01" value="1" />
+                <output id="headWidthOut">1.00</output>
+            </label>
 
-            <details class="subgroup" open>
-                <summary>Шея</summary>
-                <label class="row">
-                    <span class="row__label">Ширина</span>
-                    <input type="range" id="hNeckWidth" min="10" max="60" step="1" value="30" />
-                    <output id="hNeckWidthOut">30</output>
-                </label>
-            </details>
+            <label class="row">
+                <span class="row__label">Радиус головы</span>
+                <input type="range" id="headRadius" min="0.7" max="1.3" step="0.01" value="1" />
+                <output id="headRadiusOut">1.00</output>
+            </label>
         </section>
-        <!-- ══════════════════════════════════════ -->
 
         <section class="group">
             <h2>Подложка</h2>
