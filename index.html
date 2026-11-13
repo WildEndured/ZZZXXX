@@ -1,116 +1,123 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Анекорды — конструктор пропорций</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Построение фигуры — Этап 1</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app" id="app">
+  <div class="app">
     <!-- Панель управления -->
     <aside class="panel" id="panel">
-      <h1 class="panel__title">Анекорды</h1>
+      <h1 class="panel__title">Построение фигуры</h1>
 
-      <!-- ОБЩИЕ НАСТРОЙКИ -->
-      <section class="group">
-        <h2 class="group__title">Общие</h2>
+      <!-- 1. Общее -->
+      <section class="section">
+        <h2 class="section__title">Общее</h2>
 
-        <label class="row">
-          <span>Рост в головах: <b id="valHeads">5</b></span>
-          <input type="range" id="heads" min="1" max="12" step="0.5" value="5" />
+        <label class="field">
+          <span class="field__label">
+            Рост в головах
+            <output class="field__value" id="headsOut">5</output>
+          </span>
+          <input type="range" id="headsRange" min="1" max="10" step="0.5" value="5">
         </label>
 
-        <label class="row">
-          <span>Отступ сверху/снизу: <b id="valPad">0%</b></span>
-          <input type="range" id="pad" min="0" max="10" step="0.5" value="0" />
+        <label class="field">
+          <span class="field__label">
+            Отступ сверху/снизу
+            <output class="field__value" id="paddingOut">0%</output>
+          </span>
+          <input type="range" id="paddingRange" min="0" max="10" step="0.5" value="0">
         </label>
 
-        <label class="row">
-          <span>Толщина линий: <b id="valStroke">2</b></span>
-          <input type="range" id="stroke" min="1" max="12" step="1" value="2" />
+        <label class="field">
+          <span class="field__label">
+            Цвет контура
+          </span>
+          <input type="color" id="strokeColor" value="#222222">
         </label>
 
-        <label class="row row--inline">
-          <span>Цвет линий</span>
-          <input type="color" id="strokeColor" value="#000000" />
+        <label class="field">
+          <span class="field__label">
+            Толщина контура
+            <output class="field__value" id="strokeWidthOut">3</output>
+          </span>
+          <input type="range" id="strokeWidthRange" min="1" max="12" step="0.5" value="3">
         </label>
       </section>
 
-      <!-- ПОДЛОЖКА -->
-      <section class="group">
-        <h2 class="group__title">Подложка</h2>
+      <!-- 2. Подложка -->
+      <section class="section">
+        <h2 class="section__title">Подложка</h2>
 
-        <label class="btn">
-          Загрузить изображение
-          <input type="file" id="bgFile" accept="image/*" hidden />
-        </label>
-
-        <label class="row">
-          <span>Прозрачность: <b id="valBgAlpha">50%</b></span>
-          <input type="range" id="bgAlpha" min="0" max="100" step="1" value="50" />
-        </label>
-
-        <label class="row">
-          <span>Масштаб: <b id="valBgScale">100%</b></span>
-          <input type="range" id="bgScale" min="10" max="300" step="1" value="100" />
-        </label>
-
-        <button class="btn btn--danger" id="bgRemove">Удалить подложку</button>
-      </section>
-
-      <!-- ПРЕСЕТЫ -->
-      <section class="group">
-        <h2 class="group__title">Пресеты</h2>
-
-        <div class="row row--inline">
-          <input type="text" id="presetName" placeholder="Название пресета" />
-          <button class="btn" id="presetSave">Сохранить</button>
+        <div class="file-btn-wrap">
+          <input type="file" id="bgInput" accept="image/*" class="file-btn__input">
+          <label for="bgInput" class="file-btn">Загрузить изображение</label>
         </div>
 
-        <ul class="presets" id="presetList"></ul>
+        <label class="field">
+          <span class="field__label">
+            Прозрачность
+            <output class="field__value" id="bgOpacityOut">50%</output>
+          </span>
+          <input type="range" id="bgOpacityRange" min="0" max="100" step="1" value="50" disabled>
+        </label>
+
+        <label class="field">
+          <span class="field__label">
+            Масштаб
+            <output class="field__value" id="bgScaleOut">100%</output>
+          </span>
+          <input type="range" id="bgScaleRange" min="10" max="300" step="1" value="100" disabled>
+        </label>
+
+        <button type="button" class="btn btn--danger" id="bgRemoveBtn" disabled>Удалить подложку</button>
       </section>
 
-      <!-- ЭКСПОРТ -->
-      <section class="group">
-        <h2 class="group__title">Экспорт</h2>
-        <div class="row row--inline">
-          <button class="btn" id="exportSvg">SVG</button>
-          <button class="btn" id="exportPng">PNG</button>
+      <!-- 3. Пресеты -->
+      <section class="section">
+        <h2 class="section__title">Пресеты</h2>
+
+        <div class="preset-save">
+          <input type="text" id="presetName" placeholder="Название пресета" maxlength="40">
+          <button type="button" class="btn" id="presetSaveBtn">Сохранить</button>
+        </div>
+
+        <ul class="preset-list" id="presetList">
+          <li class="preset-list__empty">Пресетов пока нет</li>
+        </ul>
+      </section>
+
+      <!-- 4. Экспорт -->
+      <section class="section">
+        <h2 class="section__title">Экспорт</h2>
+        <div class="export-buttons">
+          <button type="button" class="btn" id="exportSvgBtn">Экспорт SVG</button>
+          <button type="button" class="btn" id="exportPngBtn">Экспорт PNG</button>
         </div>
       </section>
     </aside>
 
     <!-- Холст -->
-    <main class="stage" id="stage">
-      <svg
-        id="canvas"
-        xmlns="http://www.w3.org/2000/svg"
-        width="4096"
-        height="4096"
-        viewBox="0 0 4096 4096"
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <!-- фон холста (белый) -->
-        <rect id="canvasBg" x="0" y="0" width="4096" height="4096" fill="#ffffff" />
+    <main class="canvas-area" id="canvasArea">
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg id="svg"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 4096 4096"
+             preserveAspectRatio="xMidYMid meet">
+          <!-- подложка -->
+          <image id="bgImage" x="0" y="0" width="4096" height="4096"
+                 preserveAspectRatio="xMidYMid meet" style="display:none"></image>
 
-        <!-- подложка -->
-        <image id="bgImage" x="0" y="0" width="0" height="0"
-               preserveAspectRatio="xMidYMid meet" opacity="0.5" href="" />
+          <!-- группа сетки -->
+          <g id="gridLayer" fill="none" stroke="#d0d0d0" stroke-width="2"></g>
 
-        <!-- группа отрисовки фигуры -->
-        <g id="figure"
-           fill="none"
-           stroke="#000000"
-           stroke-width="2"
-           stroke-linecap="round"
-           stroke-linejoin="round">
-        </g>
-
-        <!-- служебная сетка (не экспортируется) -->
-        <g id="grid" fill="none" stroke="#c0c0c0" stroke-width="1"
-           stroke-dasharray="8 8" opacity="0.6"></g>
-      </svg>
+          <!-- группа фигуры -->
+          <g id="figureLayer" fill="none"></g>
+        </svg>
+      </div>
     </main>
   </div>
 
