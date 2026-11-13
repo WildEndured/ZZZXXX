@@ -79,7 +79,7 @@ export function renderHead(g, layout, state) {
     const { headLines, headH, canvasSize } = layout;
     const cx = canvasSize / 2;
 
-    // 1. Круг
+    // 1. Круг (от L0 до L3)
     const yL0 = headLines[0];
     const yL3 = headLines[0] + headH * 0.6;
     
@@ -107,7 +107,7 @@ export function renderHead(g, layout, state) {
     const cornerLeftX = leftAttachX + angleOffset;
     const cornerRightX = rightAttachX - angleOffset;
 
-    // 3. Подбородок
+    // 3. Подбородок на L4
     const yL4 = headLines[0] + headH * 0.8;
     const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
@@ -116,36 +116,43 @@ export function renderHead(g, layout, state) {
 
     g.innerHTML = '';
 
-    // Отрисовка (только линии)
+    // --- ОТРИСОВКА ---
+
+    // Круг
     g.appendChild(el('ellipse', {
         cx, cy, rx, ry: finalRy,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6
     }));
 
+    // Челюсть (левая вертикаль)
     g.appendChild(el('line', {
         x1: leftAttachX, y1: attachY,
         x2: cornerLeftX, y2: cornerY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
+    // Челюсть (правая вертикаль)
     g.appendChild(el('line', {
         x1: rightAttachX, y1: attachY,
         x2: cornerRightX, y2: cornerY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
+    // Диагональ к подбородку (левая)
     g.appendChild(el('line', {
         x1: cornerLeftX, y1: cornerY,
         x2: chinLeftX, y2: chinY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
+    // Диагональ к подбородку (правая)
     g.appendChild(el('line', {
         x1: cornerRightX, y1: cornerY,
         x2: chinRightX, y2: chinY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
+    // Линия подбородка
     g.appendChild(el('line', {
         x1: chinLeftX, y1: chinY,
         x2: chinRightX, y2: chinY,
