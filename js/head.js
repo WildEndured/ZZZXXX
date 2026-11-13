@@ -109,110 +109,64 @@ export function renderHead(g, layout, state) {
     const cornerLeftX = leftAttachX + angleOffset;
     const cornerRightX = rightAttachX - angleOffset;
 
-    // 3. Подбородок
+    // 3. Подбородок (L4)
     const yL4 = headLines[0] + headH * 0.8;
     const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
     const chinLeftX = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
 
-    // 4. Шея
+    // 4. Шея (начинается строго от подбородка L4)
     const yL5 = headLines[0] + headH;
     const neckHalfW = (headState.neckWidth * headH) / 2;
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
-
-    // Функция для нахождения Y-пересечения с эллипсом
-    function getEllipseY(x) {
-        const dx = x - cx;
-        if (Math.abs(dx) >= rx) return yL3;
-        const ratio = dx / rx;
-        const dy = finalRy * Math.sqrt(1 - ratio * ratio);
-        return cy + dy;
-    }
-
-    // Функция для нахождения Y на линии челюсти (интерполяция между углом и подбородком)
-    function getJawY(x) {
-        // Левая сторона
-        if (x <= cx) {
-            if (x >= cornerLeftX) {
-                // Внутри челюсти, интерполируем от cornerLeftX к chinLeftX
-                if (cornerLeftX === chinLeftX) return chinY;
-                const t = (x - cornerLeftX) / (chinLeftX - cornerLeftX);
-                return cornerY + t * (chinY - cornerY);
-            }
-        } 
-        // Правая сторона
-        else {
-            if (x <= cornerRightX) {
-                if (cornerRightX === chinRightX) return chinY;
-                const t = (x - cornerRightX) / (chinRightX - cornerRightX);
-                return cornerY + t * (chinY - cornerY);
-            }
-        }
-        return cornerY; // Если ширина шеи больше челюсти
-    }
-
-    // Берем максимальную точку из круга, челюсти и подбородка
-    const leftStartY = Math.max(getEllipseY(neckLeftX), getJawY(neckLeftX));
-    const rightStartY = Math.max(getEllipseY(neckRightX), getJawY(neckRightX));
+    const neckTopY = chinY; 
 
     g.innerHTML = '';
 
     // --- ОТРИСОВКА ---
 
-    // Круг
-    g.appendChild(el('ellipse', {
-        cx, cy, rx, ry: finalRy,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6
-    }));
-
-    // Челюсть (левая)
+    // 1. Шея (рисуем ПЕРВОЙ, чтобы она ушла под заливку головы)
     g.appendChild(el('line', {
-        x1: leftAttachX, y1: attachY,
-        x2: cornerLeftX, y2: cornerY,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
-    }));
-
-    // Челюсть (правая)
-    g.appendChild(el('line', {
-        x1: rightAttachX, y1: attachY,
-        x2: cornerRightX, y2: cornerY,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
-    }));
-
-    // Диагональ к подбородку (левая)
-    g.appendChild(el('line', {
-        x1: cornerLeftX, y1: cornerY,
-        x2: chinLeftX, y2: chinY,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
-    }));
-
-    // Диагональ к подбородку (правая)
-    g.appendChild(el('line', {
-        x1: cornerRightX, y1: cornerY,
-        x2: chinRightX, y2: chinY,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
-    }));
-
-    // Линия подбородка
-    g.appendChild(el('line', {
-        x1: chinLeftX, y1: chinY,
-        x2: chinRightX, y2: chinY,
-        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
-    }));
-
-    // Шея (левая)
-    g.appendChild(el('line', {
-        x1: neckLeftX, y1: leftStartY,
+        x1: neckLeftX, y1: neckTopY,
         x2: neckLeftX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Шея (правая)
     g.appendChild(el('line', {
-        x1: neckRightX, y1: rightStartY,
+        x1: neckRightX, y1: neckTopY,
         x2: neckRightX, y2: yL5,
+        fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
+    }));
+
+    // 2. Круг (с белой заливкой, которая перекроет шею внутри)
+    g.appendChild(el('ellipse', {
+        cx, cy, rx, ry: finalRy,
+        fill: '#ffffff', // Заливка перекрывает шею
+        stroke: '#1e1f22', 'stroke-width': 6
+    }));
+
+    // 3. Челюсть (с белой заливкой, перекрывает шею)
+    const jawPath = `M ${leftAttachX} ${attachY} ` +
+                    `L ${leftAttachX} ${cornerY} ` +
+                    `L ${chinLeftX} ${chinY} ` +
+                    `L ${chinRightX} ${chinY} ` +
+                    `L ${rightAttachX} ${cornerY} ` +
+                    `L ${rightAttachX} ${attachY} Z`;
+
+    g.appendChild(el('path', {
+        d: jawPath,
+        fill: '#ffffff', // Заливка перекрывает шею
+        stroke: '#1e1f22',
+        'stroke-width': 6,
+        'stroke-linejoin': 'round'
+    }));
+
+    // 4. Линия подбородка (поверх всего)
+    g.appendChild(el('line', {
+        x1: chinLeftX, y1: chinY,
+        x2: chinRightX, y2: chinY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 }
