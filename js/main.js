@@ -1,387 +1,375 @@
-// js/main.js
-// Ядро приложения: состояние, сетка голов, подложка, пресеты, экспорт, UI.
+// ============================================================
+//  Анекорды — ядро (Этап 1)
+//  Общие настройки, подложка, пресеты, экспорт, UI.
+// ============================================================
 
-import { renderHead } from './head.js';
-import { renderTorso } from './torso.js';
-import { renderArm } from './arm.js';
-import { renderLeg } from './leg.js';
+import { drawHead } from './head.js';
+import { drawTorso } from './torso.js';
+import { drawArms } from './arm.js';
+import { drawLegs } from './leg.js';
 
-/* ============================================================
-   КОНСТАНТЫ ХОЛСТА
-   ============================================================ */
-export const CANVAS = 4096;
-export const DPI = 300;
+// ---------- КОНСТАНТЫ ----------
+const CANVAS_SIZE = 4096;
 const STORAGE_KEY = 'anecords.presets.v1';
 
-/* ============================================================
-   СОСТОЯНИЕ ПО УМОЛЧАНИЮ
-   ============================================================ */
-function defaultState() {
+// ---------- СОСТОЯНИЕ ----------
+const state = {
+  headsCount: 5,
+  margin: 0,          // %
+  strokeWidth: 6,
+  strokeColor: '#000000',
+
+  backdrop: {
+    dataUrl: null,    // исходная картинка
+    opacity: 0.5,
+    scale: 1,         // 1 = 100 %
+  },
+
+  // Параметры фигуры (заполняются модулями на следующих этапах)
+  figure: {},
+};
+
+// ---------- DOM ----------
+const $ = (id) => document.getElementById(id);
+
+const els = {
+  stage:        $('stage'),
+  gridLayer:    $('gridLayer'),
+  figureLayer:  $('figureLayer'),
+  backdropImage:$('backdropImage'),
+
+  headsCount:   $('headsCount'),
+  headsCountVal:$('headsCountVal'),
+  margin:       $('margin'),
+  marginVal:    $('marginVal'),
+  strokeWidth:  $('strokeWidth'),
+  strokeWidthVal:$('strokeWidthVal'),
+  strokeColor:  $('strokeColor'),
+
+  backdropFile: $('backdropFile'),
+  backdropOpacity: $('backdropOpacity'),
+  backdropOpacityVal: $('backdropOpacityVal'),
+  backdropScale:$('backdropScale'),
+  backdropScaleVal:$('backdropScaleVal'),
+  backdropRemove:$('backdropRemove'),
+
+  presetName:   $('presetName'),
+  presetSave:   $('presetSave'),
+  presetList:   $('presetList'),
+
+  exportSVG:    $('exportSVG'),
+  exportPNG:    $('exportPNG'),
+};
+
+// ============================================================
+//  ГЕОМЕТРИЯ КАРКАСА
+// ============================================================
+
+/**
+ * Возвращает геометрию базовой сетки головы.
+ * headH — высота одной головы в px холста.
+ * baseY — верхняя точка доступной области (после отступа).
+ */
+export function computeGeometry() {
+  const marginPx = (state.margin / 100) * CANVAS_SIZE;
+  const usableH = CANVAS_SIZE - marginPx * 2;
+  const headH = usableH / state.headsCount;
+
+  const topY = marginPx;
+  const bottomY = CANVAS_SIZE - marginPx;
+
+  const lines = []; // L0..L5 (нормированные внутри головы)
+  for (let i = 0; i <= 5; i++) {
+    lines.push(topY + (headH / 5) * i);
+  }
+
   return {
-    common: {
-      heads: 5,
-      margin: 0,
-      stroke: 6,
-      color: '#000000',
-    },
-    underlay: {
-      src: null,
-      opacity: 0.5,
-      scale: 1.0,
-      naturalW: 0,
-      naturalH: 0,
-    },
-    head: {
-      top: 0,
-      bottom: 0,
-      width: 1.0,
-      radius: 1.0,
-      chinY: 0,
-      chinW: 0.10,
-      jawAttach: 0,
-      jawLen: 0.40,
-      jawAngle: 0.50,
-    },
-    torso: {},
-    arm: {},
-    leg: {},
+    canvasSize: CANVAS_SIZE,
+    cx: CANVAS_SIZE / 2,
+    marginPx,
+    topY,
+    bottomY,
+    usableH,
+    headH,
+    baseRadius: headH * 0.3,
+    headTopY: topY,
+    headLines: lines,
   };
 }
 
-let state = defaultState();
+// ============================================================
+//  ОТРИСОВКА
+// ============================================================
 
-/* ============================================================
-   БЕЗОПАСНЫЙ DOM-ХЕЛПЕР
-   ============================================================ */
-const $ = (id) => {
-  const el = document.getElementById(id);
-  if (!el) console.warn('[anecords] не найден элемент #' + id);
-  return el;
-};
+function drawGrid(geo) {
+  const g = els.gridLayer;
+  g.innerHTML = '';
 
-const safeOn = (el, event, handler) => {
-  if (el) el.addEventListener(event, handler);
-  else console.warn('[anecords] пропущен обработчик: элемент отсутствует');
-};
+  const common = {
+    stroke: '#b9c6ff',
+    'stroke-width': 2,
+    'stroke-dasharray': '14 14',
+    fill: 'none',
+  };
 
-/* ============================================================
-   DOM
-   ============================================================ */
-const svg         = $('stage');
-const layerGrid   = $('layer-grid');
-const layerFigure = $('layer-figure');
-const layerUnder  = $('layer-underlay');
+  const line = (y) => {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    el.setAttribute('x1', 0);
+    el.setAttribute('y1', y);
+    el.setAttribute('x2', CANVAS_SIZE);
+    el.setAttribute('y2', y);
+    for (const k in common) el.setAttribute(k, common[k]);
+    g.appendChild(el);
+  };
 
-const UI = {
-  heads:             $('inpHeads'),
-  headsVal:          $('valHeads'),
-  margin:            $('inpMargin'),
-  marginVal:         $('valMargin'),
-  stroke:            $('inpStroke'),
-  strokeVal:         $('valStroke'),
-  color:             $('inpColor'),
-  underlay:          $('inpUnderlay'),
-  underlayBtn:       $('btnUnderlay'),
-  underlayOpacity:   $('inpUnderlayOpacity'),
-  underlayOpacityVal:$('valUnderlayOpacity'),
-  underlayScale:     $('inpUnderlayScale'),
-  underlayScaleVal:  $('valUnderlayScale'),
-  underlayRemove:    $('btnUnderlayRemove'),
-  presetName:        $('inpPresetName'),
-  presetSave:        $('btnPresetSave'),
-  presetList:        $('presetList'),
-  exportSvg:         $('btnExportSvg'),
-  exportPng:         $('btnExportPng'),
-};
+  // Границы отступов
+  line(geo.topY);
+  line(geo.bottomY);
 
-/* ============================================================
-   ГЕОМЕТРИЯ СЕТКИ ГОЛОВ
-   ============================================================ */
-export function computeGeometry(s = state) {
-  const { heads, margin } = s.common;
-  const marginPx = (margin / 100) * CANVAS;
-  const usableH  = CANVAS - marginPx * 2;
-  const headH    = usableH / heads;
-  const cx       = CANVAS / 2;
-  const topY     = marginPx;
-  const baseR    = headH * 0.3;
+  // Деления «голов»
+  for (let i = 0; i <= state.headsCount; i++) {
+    line(geo.topY + geo.headH * i);
+  }
 
-  const L = {};
-  for (let i = 0; i <= 5; i++) L[i] = topY + (headH * i) / 5;
+  // Деления внутри каждой головы (L1..L4)
+  const inner = {
+    stroke: '#dfe6ff',
+    'stroke-width': 1,
+    'stroke-dasharray': '8 12',
+    fill: 'none',
+  };
+  for (let h = 0; h < state.headsCount; h++) {
+    const top = geo.topY + geo.headH * h;
+    for (let i = 1; i <= 4; i++) {
+      const y = top + (geo.headH / 5) * i;
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      el.setAttribute('x1', 0);
+      el.setAttribute('y1', y);
+      el.setAttribute('x2', CANVAS_SIZE);
+      el.setAttribute('y2', y);
+      for (const k in inner) el.setAttribute(k, inner[k]);
+      g.appendChild(el);
+    }
+  }
 
-  return { heads, marginPx, usableH, headH, cx, topY, baseR, L };
+  // Центральная ось
+  const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  axis.setAttribute('x1', geo.cx);
+  axis.setAttribute('y1', 0);
+  axis.setAttribute('x2', geo.cx);
+  axis.setAttribute('y2', CANVAS_SIZE);
+  axis.setAttribute('stroke', '#c6d2ff');
+  axis.setAttribute('stroke-width', 2);
+  axis.setAttribute('stroke-dasharray', '20 12');
+  g.appendChild(axis);
 }
 
-/* ============================================================
-   РЕНДЕР
-   ============================================================ */
+function drawFigure(geo) {
+  const g = els.figureLayer;
+  g.innerHTML = '';
+
+  const style = {
+    stroke: state.strokeColor,
+    'stroke-width': state.strokeWidth,
+    fill: 'none',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  };
+
+  // Модули фигуры (на Этапе 1 рисуют только каркас)
+  drawHead(g, geo, state, style);
+  drawTorso(g, geo, state, style);
+  drawArms(g, geo, state, style);
+  drawLegs(g, geo, state, style);
+}
+
 export function render() {
   const geo = computeGeometry();
-  const style = {
-    stroke: state.common.stroke,
-    color: state.common.color,
-  };
-
-  // Сетка
-  try { renderGrid(geo); }
-  catch (e) { console.error('[anecords] renderGrid error:', e); }
-
-  // Фигура
-  if (layerFigure) {
-    layerFigure.innerHTML = '';
-    const ctx = { svg, layer: layerFigure, state, geo, style };
-    try { renderHead(ctx); }  catch (e) { console.error('[anecords] head error:', e); }
-    try { renderTorso(ctx); } catch (e) { console.error('[anecords] torso error:', e); }
-    try { renderArm(ctx); }   catch (e) { console.error('[anecords] arm error:', e); }
-    try { renderLeg(ctx); }   catch (e) { console.error('[anecords] leg error:', e); }
-  }
-
-  // Подложка
-  try { renderUnderlay(geo); }
-  catch (e) { console.error('[anecords] renderUnderlay error:', e); }
-
-  // Синхронизация значений в UI
-  if (UI.headsVal)  UI.headsVal.textContent  = String(state.common.heads);
-  if (UI.marginVal) UI.marginVal.textContent = `${state.common.margin}%`;
-  if (UI.strokeVal) UI.strokeVal.textContent = String(state.common.stroke);
-  if (UI.underlayOpacityVal)
-    UI.underlayOpacityVal.textContent = `${Math.round(state.underlay.opacity * 100)}%`;
-  if (UI.underlayScaleVal)
-    UI.underlayScaleVal.textContent = `${Math.round(state.underlay.scale * 100)}%`;
-
-  console.log('[anecords] render: heads=', state.common.heads,
-              'margin=', state.common.margin,
-              'stroke=', state.common.stroke);
+  drawGrid(geo);
+  drawFigure(geo);
 }
 
-/* ---------- Сетка голов ---------- */
-function renderGrid(geo) {
-  if (!layerGrid) return;
-  const { cx, topY, headH, L } = geo;
-  let s = '';
-  const gridColor = 'rgba(47,111,237,0.45)';
-  const gridStroke = 3;
+// ============================================================
+//  ПОДЛОЖКА
+// ============================================================
 
-  for (let i = 0; i <= 5; i++) {
-    const y = L[i];
-    s += `<line x1="0" y1="${y}" x2="${CANVAS}" y2="${y}"
-              stroke="${gridColor}" stroke-width="${gridStroke}" />`;
+function applyBackdrop() {
+  const b = state.backdrop;
+  if (!b.dataUrl) {
+    els.backdropImage.style.display = 'none';
+    els.backdropImage.removeAttribute('href');
+    els.backdropRemove.disabled = true;
+    return;
   }
+  els.backdropImage.style.display = '';
+  els.backdropImage.setAttribute('href', b.dataUrl);
+  els.backdropImage.setAttribute('opacity', b.opacity);
+  els.backdropRemove.disabled = false;
 
-  if (state.common.heads > 1) {
-    for (let h = 1; h < state.common.heads; h++) {
-      const y = topY + headH * h;
-      s += `<line x1="0" y1="${y}" x2="${CANVAS}" y2="${y}"
-                stroke="rgba(47,111,237,0.22)" stroke-width="${gridStroke}"
-                stroke-dasharray="12 12" />`;
-    }
-  }
-
-  s += `<line x1="${cx}" y1="0" x2="${cx}" y2="${CANVAS}"
-            stroke="rgba(214,69,69,0.55)" stroke-width="${gridStroke}"
-            stroke-dasharray="16 12" />`;
-
-  layerGrid.innerHTML = s;
+  // Масштаб: подгоняем под высоту или ширину холста (contain)
+  // Применяем через transform вокруг центра, чтобы не терять пропорции.
+  const w = CANVAS_SIZE;
+  const h = CANVAS_SIZE;
+  const s = b.scale;
+  const tx = w / 2;
+  const ty = h / 2;
+  els.backdropImage.setAttribute(
+    'transform',
+    `translate(${tx} ${ty}) scale(${s}) translate(${-tx} ${-ty})`
+  );
 }
 
-/* ---------- Подложка ---------- */
-function renderUnderlay(geo) {
-  if (!layerUnder) return;
-  const u = state.underlay;
-  layerUnder.innerHTML = '';
-  if (!u.src || !u.naturalW || !u.naturalH) return;
-
-  const fitScale = Math.min(CANVAS / u.naturalW, CANVAS / u.naturalH);
-  const scale = fitScale * u.scale;
-  const w = u.naturalW * scale;
-  const h = u.naturalH * scale;
-  const x = (CANVAS - w) / 2;
-  const y = (CANVAS - h) / 2;
-
-  layerUnder.innerHTML = `
-    <image href="${u.src}" x="${x}" y="${y}" width="${w}" height="${h}"
-           opacity="${u.opacity}" preserveAspectRatio="xMidYMid meet" />
-  `;
-}
-
-/* ============================================================
-   UI: ОБЩИЕ
-   ============================================================ */
-safeOn(UI.heads, 'input', (e) => {
-  state.common.heads = parseFloat(e.target.value);
-  render();
-});
-safeOn(UI.margin, 'input', (e) => {
-  state.common.margin = parseFloat(e.target.value);
-  render();
-});
-safeOn(UI.stroke, 'input', (e) => {
-  state.common.stroke = parseFloat(e.target.value);
-  render();
-});
-safeOn(UI.color, 'input', (e) => {
-  state.common.color = e.target.value;
-  render();
-});
-
-/* ============================================================
-   UI: ПОДЛОЖКА
-   ============================================================ */
-safeOn(UI.underlayBtn, 'click', () => UI.underlay && UI.underlay.click());
-
-safeOn(UI.underlay, 'change', (e) => {
-  const file = e.target.files?.[0];
+function loadBackdropFile(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      state.underlay.src = reader.result;
-      state.underlay.naturalW = img.naturalWidth;
-      state.underlay.naturalH = img.naturalHeight;
-      render();
-    };
-    img.onerror = () => console.error('[anecords] не удалось загрузить изображение');
-    img.src = reader.result;
+  reader.onload = (e) => {
+    state.backdrop.dataUrl = e.target.result;
+    applyBackdrop();
   };
-  reader.onerror = () => console.error('[anecords] FileReader error');
   reader.readAsDataURL(file);
-  e.target.value = '';
-});
+}
 
-safeOn(UI.underlayOpacity, 'input', (e) => {
-  state.underlay.opacity = parseFloat(e.target.value) / 100;
-  render();
-});
-safeOn(UI.underlayScale, 'input', (e) => {
-  state.underlay.scale = parseFloat(e.target.value) / 100;
-  render();
-});
-safeOn(UI.underlayRemove, 'click', () => {
-  state.underlay = { src: null, opacity: 0.5, scale: 1.0, naturalW: 0, naturalH: 0 };
-  if (UI.underlayOpacity) UI.underlayOpacity.value = 50;
-  if (UI.underlayScale) UI.underlayScale.value = 100;
-  render();
-});
+// ============================================================
+//  ПРЕСЕТЫ
+// ============================================================
 
-/* ============================================================
-   ПРЕСЕТЫ
-   ============================================================ */
 function loadPresets() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch { return {}; }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
 }
+
 function savePresets(presets) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-  } catch (e) {
-    console.error('[anecords] не удалось сохранить пресеты:', e);
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  }[c]));
-}
-
-function readPresetList() {
-  if (!UI.presetList) return;
+function renderPresets() {
   const presets = loadPresets();
-  const names = Object.keys(presets).sort();
+  const names = Object.keys(presets).sort((a, b) =>
+    a.localeCompare(b, 'ru')
+  );
+
+  els.presetList.innerHTML = '';
+
   if (!names.length) {
-    UI.presetList.innerHTML = `<li class="preset-empty">Пресетов пока нет</li>`;
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'Пресетов пока нет';
+    els.presetList.appendChild(li);
     return;
   }
-  UI.presetList.innerHTML = names.map((name) => `
-    <li class="preset-item" data-name="${encodeURIComponent(name)}">
-      <span class="preset-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
-      <button class="preset-apply" data-action="apply" title="Применить">Применить</button>
-      <button class="preset-del" data-action="del" title="Удалить">✕</button>
-    </li>
-  `).join('');
+
+  for (const name of names) {
+    const li = document.createElement('li');
+    li.className = 'preset-item';
+
+    const span = document.createElement('span');
+    span.className = 'name';
+    span.textContent = name;
+    span.title = name;
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'btn mini primary';
+    applyBtn.textContent = 'Применить';
+    applyBtn.addEventListener('click', () => applyPreset(name));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn mini danger';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Удалить';
+    delBtn.addEventListener('click', () => {
+      const p = loadPresets();
+      delete p[name];
+      savePresets(p);
+      renderPresets();
+    });
+
+    li.append(span, applyBtn, delBtn);
+    els.presetList.appendChild(li);
+  }
 }
 
-safeOn(UI.presetSave, 'click', () => {
-  const name = UI.presetName?.value.trim();
-  if (!name) return;
-  const presets = loadPresets();
-  presets[name] = {
-    common: { ...state.common },
-    head:   { ...state.head },
-    torso:  { ...state.torso },
-    arm:    { ...state.arm },
-    leg:    { ...state.leg },
+function collectSettings() {
+  return {
+    headsCount: state.headsCount,
+    margin: state.margin,
+    strokeWidth: state.strokeWidth,
+    strokeColor: state.strokeColor,
+    figure: JSON.parse(JSON.stringify(state.figure)),
   };
-  savePresets(presets);
-  if (UI.presetName) UI.presetName.value = '';
-  readPresetList();
-});
+}
 
-safeOn(UI.presetList, 'click', (e) => {
-  const btn = e.target.closest('button');
-  const item = e.target.closest('.preset-item');
-  if (!item) return;
-  const name = decodeURIComponent(item.dataset.name);
-  const presets = loadPresets();
-  const preset = presets[name];
-  if (!preset) return;
-
-  const action = btn?.dataset.action;
-  if (action === 'del') {
-    delete presets[name];
-    savePresets(presets);
-    readPresetList();
-    return;
+function applySettings(data) {
+  if (!data) return;
+  if (typeof data.headsCount === 'number') state.headsCount = data.headsCount;
+  if (typeof data.margin === 'number') state.margin = data.margin;
+  if (typeof data.strokeWidth === 'number') state.strokeWidth = data.strokeWidth;
+  if (typeof data.strokeColor === 'string') state.strokeColor = data.strokeColor;
+  if (data.figure && typeof data.figure === 'object') {
+    state.figure = data.figure;
   }
-  if (action === 'apply' || e.target.classList.contains('preset-name')) {
-    applyPreset(preset);
-  }
-});
-
-function applyPreset(preset) {
-  state.common = { ...defaultState().common, ...preset.common };
-  state.head   = { ...defaultState().head,   ...preset.head };
-  state.torso  = { ...defaultState().torso,  ...preset.torso };
-  state.arm    = { ...defaultState().arm,    ...preset.arm };
-  state.leg    = { ...defaultState().leg,    ...preset.leg };
-
-  if (UI.heads)  UI.heads.value  = state.common.heads;
-  if (UI.margin) UI.margin.value = state.common.margin;
-  if (UI.stroke) UI.stroke.value = state.common.stroke;
-  if (UI.color)  UI.color.value  = state.common.color;
+  syncUIFromState();
   render();
 }
 
-/* ============================================================
-   ЭКСПОРТ
-   ============================================================ */
-function buildExportSvg() {
-  const { stroke, color } = state.common;
-  const clone = layerFigure ? layerFigure.cloneNode(true) : document.createElementNS(
-    'http://www.w3.org/2000/svg', 'g'
-  );
-  clone.querySelectorAll('*').forEach((el) => {
-    const tag = el.tagName.toLowerCase();
-    if (['line','path','circle','rect','ellipse','polyline','polygon'].includes(tag)) {
-      el.setAttribute('fill', 'none');
-      el.setAttribute('stroke', color);
-      el.setAttribute('stroke-width', String(stroke));
-      el.setAttribute('stroke-linecap', 'round');
-      el.setAttribute('stroke-linejoin', 'round');
-    }
-  });
+function applyPreset(name) {
+  const presets = loadPresets();
+  if (!presets[name]) return;
+  applySettings(presets[name]);
+}
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     width="${CANVAS}" height="${CANVAS}"
-     viewBox="0 0 ${CANVAS} ${CANVAS}">
-  <g fill="none" stroke="${color}" stroke-width="${stroke}"
-     stroke-linecap="round" stroke-linejoin="round">
-    ${clone.innerHTML}
-  </g>
-</svg>`;
+function saveCurrentPreset() {
+  const name = els.presetName.value.trim();
+  if (!name) {
+    els.presetName.focus();
+    return;
+  }
+  const presets = loadPresets();
+  presets[name] = collectSettings();
+  savePresets(presets);
+  els.presetName.value = '';
+  renderPresets();
+}
+
+// ============================================================
+//  ЭКСПОРТ
+// ============================================================
+
+function buildExportSVGString({ whiteBg = false } = {}) {
+  const clone = els.stage.cloneNode(true);
+
+  // Убираем подложку и сетку
+  clone.querySelector('#backdropLayer')?.remove();
+  clone.querySelector('#gridLayer')?.remove();
+
+  // Устанавливаем размеры
+  clone.setAttribute('width', CANVAS_SIZE);
+  clone.setAttribute('height', CANVAS_SIZE);
+  clone.setAttribute('viewBox', `0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`);
+
+  // Убираем clip-path, который ссылается на defs (defs остаются в clone)
+  // Просто гарантируем, что defs на месте:
+  if (!clone.querySelector('defs')) {
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `<clipPath id="canvasClip"><rect x="0" y="0" width="${CANVAS_SIZE}" height="${CANVAS_SIZE}"/></clipPath>`;
+    clone.prepend(defs);
+  }
+
+  if (whiteBg) {
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', 0);
+    bg.setAttribute('y', 0);
+    bg.setAttribute('width', CANVAS_SIZE);
+    bg.setAttribute('height', CANVAS_SIZE);
+    bg.setAttribute('fill', '#ffffff');
+    clone.insertBefore(bg, clone.firstChild);
+  }
+
+  const xml = new XMLSerializer().serializeToString(clone);
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`;
 }
 
 function downloadBlob(blob, filename) {
@@ -395,59 +383,139 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-safeOn(UI.exportSvg, 'click', () => {
-  const svgString = buildExportSvg();
-  const blob = new Blob([svgString], { type: 'image/svg+xml' });
-  downloadBlob(blob, 'anecords-figure.svg');
-});
+function exportSVG() {
+  const str = buildExportSVGString();
+  const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
+  downloadBlob(blob, 'anecords.svg');
+}
 
-safeOn(UI.exportPng, 'click', async () => {
-  const svgString = buildExportSvg();
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(svgBlob);
+function exportPNG() {
+  const str = buildExportSVGString({ whiteBg: true });
+  const blob = new Blob([str], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
 
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement('canvas');
-    canvas.width = CANVAS;
-    canvas.height = CANVAS;
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, CANVAS, CANVAS);
-    ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
-    canvas.toBlob((blob) => {
-      if (blob) downloadBlob(blob, 'anecords-figure.png');
+    canvas.toBlob((pngBlob) => {
+      if (pngBlob) downloadBlob(pngBlob, 'anecords.png');
       URL.revokeObjectURL(url);
     }, 'image/png');
   };
   img.onerror = () => {
-    console.error('[anecords] не удалось отрисовать SVG для PNG');
     URL.revokeObjectURL(url);
+    alert('Не удалось экспортировать PNG.');
   };
   img.src = url;
-});
+}
 
-/* ============================================================
-   ИНИЦИАЛИЗАЦИЯ
-   ============================================================ */
-function init() {
-  try {
-    if (UI.heads)  UI.heads.value  = state.common.heads;
-    if (UI.margin) UI.margin.value = state.common.margin;
-    if (UI.stroke) UI.stroke.value = state.common.stroke;
-    if (UI.color)  UI.color.value  = state.common.color;
-    if (UI.underlayOpacity)
-      UI.underlayOpacity.value = Math.round(state.underlay.opacity * 100);
-    if (UI.underlayScale)
-      UI.underlayScale.value = Math.round(state.underlay.scale * 100);
+// ============================================================
+//  СИНХРОНИЗАЦИЯ UI ↔ STATE
+// ============================================================
 
-    readPresetList();
+function syncUIFromState() {
+  els.headsCount.value = state.headsCount;
+  els.headsCountVal.textContent = state.headsCount.toFixed(1);
+
+  els.margin.value = state.margin;
+  els.marginVal.textContent = `${state.margin}%`;
+
+  els.strokeWidth.value = state.strokeWidth;
+  els.strokeWidthVal.textContent = state.strokeWidth;
+
+  els.strokeColor.value = state.strokeColor;
+
+  els.backdropOpacity.value = Math.round(state.backdrop.opacity * 100);
+  els.backdropOpacityVal.textContent = `${Math.round(state.backdrop.opacity * 100)}%`;
+
+  els.backdropScale.value = Math.round(state.backdrop.scale * 100);
+  els.backdropScaleVal.textContent = `${Math.round(state.backdrop.scale * 100)}%`;
+}
+
+// ============================================================
+//  СОБЫТИЯ
+// ============================================================
+
+function bindEvents() {
+  // Общее
+  els.headsCount.addEventListener('input', (e) => {
+    state.headsCount = parseFloat(e.target.value);
+    els.headsCountVal.textContent = state.headsCount.toFixed(1);
     render();
-    console.log('[anecords] init OK');
-  } catch (err) {
-    console.error('[anecords] init failed:', err);
-  }
+  });
+
+  els.margin.addEventListener('input', (e) => {
+    state.margin = parseFloat(e.target.value);
+    els.marginVal.textContent = `${state.margin}%`;
+    render();
+  });
+
+  els.strokeWidth.addEventListener('input', (e) => {
+    state.strokeWidth = parseInt(e.target.value, 10);
+    els.strokeWidthVal.textContent = state.strokeWidth;
+    render();
+  });
+
+  els.strokeColor.addEventListener('input', (e) => {
+    state.strokeColor = e.target.value;
+    render();
+  });
+
+  // Подложка
+  els.backdropFile.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) loadBackdropFile(file);
+    e.target.value = ''; // позволяет повторно выбрать тот же файл
+  });
+
+  els.backdropOpacity.addEventListener('input', (e) => {
+    state.backdrop.opacity = parseInt(e.target.value, 10) / 100;
+    els.backdropOpacityVal.textContent = `${e.target.value}%`;
+    applyBackdrop();
+  });
+
+  els.backdropScale.addEventListener('input', (e) => {
+    state.backdrop.scale = parseInt(e.target.value, 10) / 100;
+    els.backdropScaleVal.textContent = `${e.target.value}%`;
+    applyBackdrop();
+  });
+
+  els.backdropRemove.addEventListener('click', () => {
+    state.backdrop.dataUrl = null;
+    applyBackdrop();
+  });
+
+  // Пресеты
+  els.presetSave.addEventListener('click', saveCurrentPreset);
+  els.presetName.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') saveCurrentPreset();
+  });
+
+  // Экспорт
+  els.exportSVG.addEventListener('click', exportSVG);
+  els.exportPNG.addEventListener('click', exportPNG);
+}
+
+// ============================================================
+//  СТАРТ
+// ============================================================
+
+function init() {
+  bindEvents();
+  syncUIFromState();
+  renderPresets();
+  applyBackdrop();
+  render();
+
+  // Экспонируем для отладки и будущих модулей
+  window.__anecords = { state, render, computeGeometry, CANVAS_SIZE };
 }
 
 init();
