@@ -116,21 +116,27 @@ export function renderHead(g, layout, state) {
     const chinLeftX = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
 
-    // 4. Шея (математически обрезаем по кругу, без заливок)
+    // 4. Шея
     const yL5 = headLines[0] + headH;
     const neckHalfW = (headState.neckWidth * headH) / 2;
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
 
-    function getNeckStartY(x) {
+    // Функция для вычисления Y на границе эллипса
+    function getEllipseY(x) {
         const dx = x - cx;
-        if (Math.abs(dx) >= rx) return yL3; 
+        if (Math.abs(dx) >= rx) return yL3;
         const ratio = dx / rx;
         const dy = finalRy * Math.sqrt(1 - ratio * ratio);
-        return cy + dy; 
+        return cy + dy;
     }
 
-    const neckTopY = Math.max(getNeckStartY(neckLeftX), getNeckStartY(neckRightX));
+    // Вычисляем нижнюю точку для левой и правой границы шеи (либо круг, либо челюсть)
+    const leftJawBottomY = Math.max(getEllipseY(neckLeftX), cornerY);
+    const rightJawBottomY = Math.max(getEllipseY(neckRightX), cornerY);
+
+    // Берем самую нижнюю точку, чтобы обе линии шеи начинались под всеми фигурами
+    const neckTopY = Math.max(leftJawBottomY, rightJawBottomY);
 
     g.innerHTML = '';
 
