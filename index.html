@@ -1,123 +1,119 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Анекорды — конструктор пропорций</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- ХОЛСТ -->
-    <main class="canvas-area" id="canvasArea">
-      <div class="canvas-wrap" id="canvasWrap">
-        <svg id="stage" xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <clipPath id="canvasClip">
-              <rect x="0" y="0" width="4096" height="4096"/>
-            </clipPath>
-          </defs>
-
-          <!-- Подложка (не попадает в экспорт) -->
-          <g id="backdropLayer" clip-path="url(#canvasClip)">
-            <image id="backdropImage" href="" x="0" y="0" width="4096" height="4096"
-                   preserveAspectRatio="xMidYMid meet" opacity="0.5"
-                   style="display:none; pointer-events:none;"/>
-          </g>
-
-          <!-- Сетка (не попадает в экспорт) -->
-          <g id="gridLayer" clip-path="url(#canvasClip)"></g>
-
-          <!-- Фигура -->
-          <g id="figureLayer" clip-path="url(#canvasClip)"></g>
-        </svg>
-      </div>
-    </main>
-
-    <!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+  <div class="app" id="app">
+    <!-- Панель управления -->
     <aside class="panel" id="panel">
-      <div class="panel-inner">
+      <h1 class="panel__title">Анекорды</h1>
 
-        <!-- ОБЩЕЕ -->
-        <section class="group">
-          <h2>Общее</h2>
+      <!-- ОБЩИЕ НАСТРОЙКИ -->
+      <section class="group">
+        <h2 class="group__title">Общие</h2>
 
-          <label class="row">
-            <span>Рост в головах</span>
-            <output id="headsCountVal">5.0</output>
-          </label>
-          <input type="range" id="headsCount" min="1" max="12" step="0.5" value="5">
+        <label class="row">
+          <span>Рост в головах: <b id="valHeads">5</b></span>
+          <input type="range" id="heads" min="1" max="12" step="0.5" value="5" />
+        </label>
 
-          <label class="row">
-            <span>Отступ сверху/снизу</span>
-            <output id="marginVal">0%</output>
-          </label>
-          <input type="range" id="margin" min="0" max="10" step="0.5" value="0">
+        <label class="row">
+          <span>Отступ сверху/снизу: <b id="valPad">0%</b></span>
+          <input type="range" id="pad" min="0" max="10" step="0.5" value="0" />
+        </label>
 
-          <label class="row">
-            <span>Толщина линий</span>
-            <output id="strokeWidthVal">6</output>
-          </label>
-          <input type="range" id="strokeWidth" min="1" max="30" step="1" value="6">
+        <label class="row">
+          <span>Толщина линий: <b id="valStroke">2</b></span>
+          <input type="range" id="stroke" min="1" max="12" step="1" value="2" />
+        </label>
 
-          <label class="row">
-            <span>Цвет линий</span>
-            <input type="color" id="strokeColor" value="#000000">
-          </label>
-        </section>
+        <label class="row row--inline">
+          <span>Цвет линий</span>
+          <input type="color" id="strokeColor" value="#000000" />
+        </label>
+      </section>
 
-        <!-- ПОДЛОЖКА -->
-        <section class="group">
-          <h2>Подложка</h2>
+      <!-- ПОДЛОЖКА -->
+      <section class="group">
+        <h2 class="group__title">Подложка</h2>
 
-          <label class="file-btn">
-            <input type="file" id="backdropFile" accept="image/*" hidden>
-            Загрузить изображение
-          </label>
+        <label class="btn">
+          Загрузить изображение
+          <input type="file" id="bgFile" accept="image/*" hidden />
+        </label>
 
-          <label class="row">
-            <span>Прозрачность</span>
-            <output id="backdropOpacityVal">50%</output>
-          </label>
-          <input type="range" id="backdropOpacity" min="0" max="100" step="1" value="50">
+        <label class="row">
+          <span>Прозрачность: <b id="valBgAlpha">50%</b></span>
+          <input type="range" id="bgAlpha" min="0" max="100" step="1" value="50" />
+        </label>
 
-          <label class="row">
-            <span>Масштаб</span>
-            <output id="backdropScaleVal">100%</output>
-          </label>
-          <input type="range" id="backdropScale" min="10" max="300" step="1" value="100">
+        <label class="row">
+          <span>Масштаб: <b id="valBgScale">100%</b></span>
+          <input type="range" id="bgScale" min="10" max="300" step="1" value="100" />
+        </label>
 
-          <button class="btn danger" id="backdropRemove" disabled>Удалить подложку</button>
-        </section>
+        <button class="btn btn--danger" id="bgRemove">Удалить подложку</button>
+      </section>
 
-        <!-- ПРЕСЕТЫ -->
-        <section class="group">
-          <h2>Пресеты</h2>
+      <!-- ПРЕСЕТЫ -->
+      <section class="group">
+        <h2 class="group__title">Пресеты</h2>
 
-          <div class="preset-save">
-            <input type="text" id="presetName" placeholder="Название пресета" maxlength="40">
-            <button class="btn primary" id="presetSave">Сохранить</button>
-          </div>
+        <div class="row row--inline">
+          <input type="text" id="presetName" placeholder="Название пресета" />
+          <button class="btn" id="presetSave">Сохранить</button>
+        </div>
 
-          <ul class="preset-list" id="presetList">
-            <!-- заполняется из localStorage -->
-          </ul>
-        </section>
+        <ul class="presets" id="presetList"></ul>
+      </section>
 
-        <!-- ЭКСПОРТ -->
-        <section class="group">
-          <h2>Экспорт</h2>
-          <div class="export-row">
-            <button class="btn primary" id="exportSVG">SVG</button>
-            <button class="btn primary" id="exportPNG">PNG</button>
-          </div>
-        </section>
-
-      </div>
+      <!-- ЭКСПОРТ -->
+      <section class="group">
+        <h2 class="group__title">Экспорт</h2>
+        <div class="row row--inline">
+          <button class="btn" id="exportSvg">SVG</button>
+          <button class="btn" id="exportPng">PNG</button>
+        </div>
+      </section>
     </aside>
+
+    <!-- Холст -->
+    <main class="stage" id="stage">
+      <svg
+        id="canvas"
+        xmlns="http://www.w3.org/2000/svg"
+        width="4096"
+        height="4096"
+        viewBox="0 0 4096 4096"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <!-- фон холста (белый) -->
+        <rect id="canvasBg" x="0" y="0" width="4096" height="4096" fill="#ffffff" />
+
+        <!-- подложка -->
+        <image id="bgImage" x="0" y="0" width="0" height="0"
+               preserveAspectRatio="xMidYMid meet" opacity="0.5" href="" />
+
+        <!-- группа отрисовки фигуры -->
+        <g id="figure"
+           fill="none"
+           stroke="#000000"
+           stroke-width="2"
+           stroke-linecap="round"
+           stroke-linejoin="round">
+        </g>
+
+        <!-- служебная сетка (не экспортируется) -->
+        <g id="grid" fill="none" stroke="#c0c0c0" stroke-width="1"
+           stroke-dasharray="8 8" opacity="0.6"></g>
+      </svg>
+    </main>
   </div>
 
-  <script src="js/main.js" type="module"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
