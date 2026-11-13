@@ -11,16 +11,13 @@
 
 <div class="app" id="app">
 
-    <!-- Кнопка-переключатель панели (только мобильные) -->
     <button class="panel-toggle" id="panelToggle" aria-label="Открыть панель управления">
         <span class="panel-toggle__icon">☰</span>
         <span class="panel-toggle__label">Настройки</span>
     </button>
 
-    <!-- Затенение фона под панелью (только мобильные) -->
     <div class="panel-backdrop" id="panelBackdrop" hidden></div>
 
-    <!-- ЛЕВАЯ ПАНЕЛЬ УПРАВЛЕНИЯ -->
     <aside class="panel" id="panel" aria-label="Панель управления">
 
         <div class="panel__handle" aria-hidden="true"></div>
@@ -46,7 +43,7 @@
             </label>
         </section>
 
-        <!-- НОВАЯ СЕКЦИЯ: ГОЛОВА -->
+        <!-- ГОЛОВА -->
         <section class="group">
             <h2>Голова</h2>
 
@@ -72,6 +69,24 @@
                 <span class="row__label">Радиус головы</span>
                 <input type="range" id="headRadius" min="0.7" max="1.3" step="0.01" value="1" />
                 <output id="headRadiusOut">1.00</output>
+            </label>
+
+            <label class="row">
+                <span class="row__label">Высота подбородка</span>
+                <input type="range" id="chinHeight" min="-0.2" max="0.3" step="0.01" value="0" />
+                <output id="chinHeightOut">0.00</output>
+            </label>
+
+            <label class="row">
+                <span class="row__label">Ширина подбородка</span>
+                <input type="range" id="chinWidth" min="0.1" max="0.6" step="0.01" value="0.3" />
+                <output id="chinWidthOut">0.30</output>
+            </label>
+
+            <label class="row">
+                <span class="row__label">Скругление подбородка</span>
+                <input type="range" id="chinRounding" min="0" max="0.2" step="0.01" value="0.05" />
+                <output id="chinRoundingOut">0.05</output>
             </label>
         </section>
 
@@ -114,7 +129,6 @@
         </section>
     </aside>
 
-    <!-- ОБЛАСТЬ ХОЛСТА -->
     <main class="stage">
         <div class="stage-toolbar">
             <button id="exportSvg" class="btn">SVG</button>
