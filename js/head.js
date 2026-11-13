@@ -15,10 +15,10 @@ export const headState = {
     chinWidth:    0.4,
     chinRounding: 0,
     // челюсть
-    jawAttach: 0.2, // Высота крепления (0 = L3, 0.3 = выше)
-    jawLength: 0.1, // Длина челюсти (0 = вертикально, 0.4 = сильно в стороны)
-    jawAngle:  0.5, // Угол (0 = прямо, 1 = разведено)
-    jawWidth:  0.4  // Ширина подбородка для челюсти
+    jawAttach: 0,
+    jawLength: 0.1,
+    jawAngle:  0.5,
+    jawWidth:  0.4
 };
 
 let els = null;
@@ -96,7 +96,7 @@ function computeEllipse(layout, s) {
     const baseR = headH * 0.3;
     const rx = baseR * s.width * s.radius;
     const ry = ryBase * s.radius;
-    return { cx, cy, rx, ry, yL3 };
+    return { cx, cy, rx, ry };
 }
 
 function el(name, attrs) {
@@ -109,35 +109,37 @@ export function renderHead(g, layout, state) {
     initHeadUI();
     if (!g) return;
 
-    const { cx, cy, rx, ry, yL3 } = computeEllipse(layout, headState);
+    const { cx, cy, rx, ry } = computeEllipse(layout, headState);
     const { headLines, headH, canvasSize } = layout;
 
-    // 1. Подбородок (горизонтальная линия на L4)
+    // ── ПОДБОРОДОК (линия на L4) ─────────────────
     const yL4 = headLines[0] + headH * 0.8;
     const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
     const chinLeftX  = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
 
-    // 2. Челюсть
-    // Верхняя точка крепления челюсти к голове.
-    // Берем базовую точку на L3 (низ круга) и поднимаем её на jawAttach.
-    const attachY = yL3 - (headState.jawAttach * headH);
+    // ── ЧЕЛЮСТЬ ──────────────────────────────────
+    // Верхняя точка (крепление к голове). 
+    // По Y: от низа круга (L3) поднимаем вверх на jawAttach.
+    const jawTopY = (headLines[0] + headH * 0.6) - (headState.jawAttach * headH);
     
-    // Разводим точки по X.
-    // jawWidth — базовая ширина крепления. 
-    // jawAngle (0..1) добавляет расширение.
-    const jawBaseW = (headState.jawWidth * headH) / 2;
-    const jawSpread = (headState.jawAngle * headH) * 0.5; 
+    // По X: берем ширину головы (rx) и расширяем/сужаем ползунком jawWidth.
+    // jawLength расширяет челюсть (сдвигает в стороны).
+    // jawAngle наклоняет её.
+    const jawTopHalfW = (rx * headState.jawWidth) + (headState.jawLength * headH);
+    const jawTopLeftX = cx - jawTopHalfW;
+    const jawTopRightX = cx + jawTopHalfW;
+
+    // Применяем угол (насколько сильно верхняя точка смещается в сторону от подбородка)
+    const angleShift = (jawTopHalfW - chinHalfW) * headState.jawAngle;
     
-    // Итоговые координаты крепления (справа и слева)
-    // jawLength (0..0.4) позволяет вытянуть челюсть шире, чем подбородок
-    const jawLeftX  = cx - jawBaseW - (headState.jawLength * headH) - jawSpread;
-    const jawRightX = cx + jawBaseW + (headState.jawLength * headH) + jawSpread;
+    const finalJawLeftX = chinLeftX - angleShift;
+    const finalJawRightX = chinRightX + angleShift;
 
     g.innerHTML = '';
 
-    // Рисуем круг головы
+    // 1. Круг головы
     g.appendChild(el('ellipse', {
         cx, cy, rx, ry,
         fill:           '#e8e8e8',
@@ -145,10 +147,10 @@ export function renderHead(g, layout, state) {
         'stroke-width': 6
     }));
 
-    // Рисуем левую линию челюсти
+    // 2. Левая линия челюсти
     g.appendChild(el('line', {
-        x1: jawLeftX,
-        y1: attachY,
+        x1: finalJawLeftX,
+        y1: jawTopY,
         x2: chinLeftX,
         y2: chinY,
         stroke:          '#1e1f22',
@@ -156,10 +158,10 @@ export function renderHead(g, layout, state) {
         'stroke-linecap':'round'
     }));
 
-    // Рисуем правую линию челюсти
+    // 3. Правая линия челюсти
     g.appendChild(el('line', {
-        x1: jawRightX,
-        y1: attachY,
+        x1: finalJawRightX,
+        y1: jawTopY,
         x2: chinRightX,
         y2: chinY,
         stroke:          '#1e1f22',
@@ -167,7 +169,7 @@ export function renderHead(g, layout, state) {
         'stroke-linecap':'round'
     }));
 
-    // Рисуем линию подбородка
+    // 4. Линия подбородка
     g.appendChild(el('line', {
         x1: chinLeftX,
         y1: chinY,
