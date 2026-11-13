@@ -1,6 +1,8 @@
 (() => {
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const CANVAS = 4096;
+  const DPI = 300;
+  const PPM = Math.round(DPI / 0.0254); // 300 dpi ≈ 11811 пикселей/метр
 
   // ---------- DOM ----------
   const $ = (id) => document.getElementById(id);
@@ -292,6 +294,60 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
+  // Вставка pHYs-чанка в PNG (units=1 → метры, 300 dpi ≈ 11811 px/m)
+  async function setPngDpi(blob, ppm) {
+    const buf = new Uint8Array(await blob.arrayBuffer());
+
+    // Ищем IHDR (всегда первым чанком после сигнатуры) и вставляем pHYs после него.
+    // Сигнатура: 8 байт. Далее чанки: len(4) type(4) data(len) crc(4).
+    const SIG_LEN = 8;
+
+    // Читаем длину и тип первого чанка (IHDR)
+    const view = new DataView(buf.buffer);
+    const ihdrLen = view.getUint32(SIG_LEN);
+    const ihdrTotal = 4 + 4 + ihdrLen + 4; // len + type + data + crc
+    const insertAt = SIG_LEN + ihdrTotal;
+
+    // Собираем pHYs: len=9, type='pHYs', data=X(4)+Y(4)+unit(1), crc(4)
+    const phys = new Uint8Array(4 + 4 + 9 + 4);
+    const dv = new DataView(phys.buffer);
+    dv.setUint32(0, 9);                     // length
+    phys.set([0x70, 0x48, 0x59, 0x73], 4);  // 'pHYs'
+    dv.setUint32(8, ppm);                   // X pixels per unit
+    dv.setUint32(12, ppm);                  // Y pixels per unit
+    phys[16] = 1;                           // unit: 1 = meter
+    // CRC32 над type+data
+    const crc = crc32(phys.subarray(4, 4 + 4 + 9));
+    dv.setUint32(17, crc);
+
+    // Склейка
+    const out = new Uint8Array(buf.length + phys.length);
+    out.set(buf.subarray(0, insertAt), 0);
+    out.set(phys, insertAt);
+    out.set(buf.subarray(insertAt), insertAt + phys.length);
+    return new Blob([out], { type: 'image/png' });
+  }
+
+  // CRC32 (стандартный полином PNG)
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) {
+      c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
   exportSvgEl.addEventListener('click', () => {
     const svg = buildExportSvg({ whiteBg: false });
     const xml = new XMLSerializer().serializeToString(svg);
@@ -319,8 +375,14 @@
       ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
       URL.revokeObjectURL(url);
 
-      canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, 'figure.png');
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          const withDpi = await setPngDpi(blob, PPM);
+          downloadBlob(withDpi, 'figure-4096-300dpi.png');
+        } catch {
+          downloadBlob(blob, 'figure-4096.png');
+        }
       }, 'image/png');
     };
     img.onerror = () => {
