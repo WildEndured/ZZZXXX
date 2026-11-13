@@ -20,13 +20,11 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  /* Жестко запрещаем скролл всей страницы */
-  overflow: hidden; 
+  overflow: hidden; /* Жестко запрещаем скролл всей страницы */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
-  /* Отключаем pull-to-refresh и прочие свайпы страницы */
-  overscroll-behavior: none; 
+  overscroll-behavior: none;
 }
 
 .app {
@@ -37,7 +35,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ===== Панель управления (Десктоп) ===== */
+/* ===== ПАНЕЛЬ УПРАВЛЕНИЯ (ДЕСКТОП) ===== */
 .panel {
   width: var(--panel-width);
   flex: 0 0 var(--panel-width);
@@ -48,10 +46,11 @@ html, body {
   height: 100%;
 }
 
-/* ===== Холст (Десктоп) ===== */
+/* ===== ЗОНА ХОЛСТА (ДЕСКТОП) ===== */
 .canvas-area {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,17 +60,22 @@ html, body {
   height: 100%;
 }
 
+/* Обертка просто занимает всё доступное место */
 .canvas-wrap {
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 1 / 1;
-  width: auto;
+  width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* САМ ХОЛСТ: всегда квадратный, всегда вписан в контейнер */
 #svg {
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
   display: block;
   background: #ffffff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -82,41 +86,188 @@ html, body {
   pointer-events: none;
 }
 
-/* ... (Остальные стили для кнопок, инпутов, пресетов оставляем без изменений) ... */
-.panel__title { font-size: 18px; margin: 0 0 16px; }
-.section { border-top: 1px solid var(--border); padding: 14px 0; }
-.section:first-of-type { border-top: none; padding-top: 0; }
-.section__title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin: 0 0 12px; }
-.field { display: block; margin-bottom: 14px; }
-.field__label { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px; }
-.field__value { font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 12px; }
-input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
-input[type="range"]:disabled { cursor: not-allowed; opacity: 0.5; }
-input[type="color"] { width: 100%; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; cursor: pointer; }
-input[type="text"] { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); outline: none; transition: border-color 0.15s; }
-input[type="text"]:focus { border-color: var(--accent); }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; font-size: 13px; font-weight: 500; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; width: 100%; }
+/* ===== ЭЛЕМЕНТЫ ПАНЕЛИ ===== */
+.panel__title {
+  font-size: 18px;
+  margin: 0 0 16px;
+}
+
+.section {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+
+.section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.section__title {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field__label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.field__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+  width: 100%;
+}
+
 .btn:hover { background: var(--accent-hover); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .btn--danger { background: var(--danger); }
 .btn--danger:hover { background: var(--danger-hover); }
-.btn--ghost { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 4px 8px; font-size: 12px; width: auto; }
-.btn--ghost:hover { background: var(--danger); color: #fff; }
+
 .export-buttons { display: flex; gap: 8px; }
+
+/* Файловая кнопка */
 .file-btn-wrap { margin-bottom: 12px; }
-.file-btn__input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
-.file-btn { display: block; width: 100%; padding: 9px 14px; text-align: center; font-size: 13px; font-weight: 500; background: #eef1f6; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+.file-btn__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.file-btn {
+  display: block;
+  width: 100%;
+  padding: 9px 14px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  background: #eef1f6;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s;
+}
 .file-btn:hover { background: #e2e7f0; }
+
+/* Пресеты */
 .preset-save { display: flex; gap: 8px; margin-bottom: 12px; }
 .preset-save input { flex: 1; }
 .preset-save .btn { width: auto; flex-shrink: 0; }
-.preset-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.preset-list__empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px 0; }
-.preset-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f7f8fa; border: 1px solid var(--border); border-radius: var(--radius); }
-.preset-item__name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.preset-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-list__empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.preset-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f7f8fa;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.preset-item__name {
+  flex: 1;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .preset-item__actions { display: flex; gap: 4px; flex-shrink: 0; }
-.preset-item__btn { border: none; background: transparent; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); transition: background 0.15s; }
+
+.preset-item__btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--accent);
+  transition: background 0.15s;
+}
 .preset-item__btn:hover { background: #e5edfd; }
+
 .preset-item__btn--del { color: var(--danger); }
 .preset-item__btn--del:hover { background: #fbe6e5; }
 
@@ -124,38 +275,29 @@ input[type="text"]:focus { border-color: var(--accent); }
 /* ===== МОБИЛЬНАЯ ВЕРСИЯ (Планшеты и Смартфоны) ===== */
 @media (max-width: 1024px) {
   .app {
-    flex-direction: column; /* Выстраиваем в колонку */
+    flex-direction: column; /* Перестраиваем в колонку */
   }
 
   /* ХОЛСТ - СТРОГО СВЕРХУ */
   .app > .canvas-area {
-    order: -1; /* -1 гарантированно ставит элемент первым */
+    order: -1; /* Поднимаем наверх */
     flex: 1 1 auto; /* Занимает всё свободное место */
     height: auto;
-    min-height: 0; /* Важно, чтобы flex-контейнер мог сжиматься */
+    min-height: 0; /* Позволяет сжиматься */
     padding: 12px;
     width: 100%;
   }
 
-  .canvas-wrap {
-    width: 100%;
-    height: 100%;
-    max-height: 100%;
-    max-width: 100%;
-    /* Квадрат вписывается в оставшееся пространство */
-    aspect-ratio: 1 / 1; 
-  }
-
   /* ПАНЕЛЬ - СТРОГО СНИЗУ */
   .app > .panel {
-    order: 1;
-    flex: 0 0 auto; /* Не растягивается, занимает свою высоту */
+    order: 1; /* Опускаем вниз */
+    flex: 0 0 auto; /* Не растягиваем */
     width: 100%;
-    height: 45dvh; /* Фиксированная высота панели */
+    height: 45dvh; /* Фиксированная высота */
     max-height: 45dvh;
     border-right: none;
     border-top: 1px solid var(--border);
-    overflow-y: auto; /* Внутренний скролл панели */
-    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
+    overflow-y: auto; /* Внутренний скролл */
+    -webkit-overflow-scrolling: touch;
   }
 }
