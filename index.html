@@ -9,24 +9,26 @@
 <body>
   <div class="app">
     
-    <!-- Холст -->
-    <main class="canvas-area" id="canvasArea">
-      <div class="canvas-wrap" id="canvasWrap">
-        <div class="canvas-inner">
-          <svg id="svg"
-               xmlns="http://www.w3.org/2000/svg"
-               viewBox="0 0 4096 4096"
-               preserveAspectRatio="xMidYMid meet">
-            <image id="bgImage" x="0" y="0" width="4096" height="4096"
-                   preserveAspectRatio="xMidYMid meet" style="display:none"></image>
-            <g id="gridLayer" fill="none" stroke="#d0d0d0" stroke-width="2"></g>
-            <g id="figureLayer" fill="none"></g>
-          </svg>
-        </div>
+    <!-- 1. ЗОНА ХОЛСТА (Сверху на мобилках, справа на ПК) -->
+    <main class="canvas-area">
+      <!-- Обертка нужна для центрирования -->
+      <div class="canvas-wrap">
+        <svg id="svg"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 4096 4096"
+             preserveAspectRatio="xMidYMid meet">
+          <!-- подложка -->
+          <image id="bgImage" x="0" y="0" width="4096" height="4096"
+                 preserveAspectRatio="xMidYMid meet" style="display:none"></image>
+          <!-- сетка -->
+          <g id="gridLayer" fill="none" stroke="#d0d0d0" stroke-width="2"></g>
+          <!-- фигура (пока пустая) -->
+          <g id="figureLayer" fill="none"></g>
+        </svg>
       </div>
     </main>
 
-    <!-- Панель управления -->
+    <!-- 2. ПАНЕЛЬ УПРАВЛЕНИЯ (Снизу на мобилках, слева на ПК) -->
     <aside class="panel" id="panel">
       <h1 class="panel__title">Построение фигуры</h1>
 
