@@ -1,9 +1,6 @@
 (function () {
   'use strict';
 
-  // ============================================================
-  //  Константы
-  // ============================================================
   const CANVAS = 4096;
   const DPI = 300;
   const STORAGE_KEY = 'figure-presets-v1';
@@ -14,7 +11,7 @@
   const state = {
     heads: 5,
     margin: 0,
-    head: (window.Head ? window.Head.defaultShape() : {}),
+    head: (window.Head && window.Head.defaultShape) ? window.Head.defaultShape() : {},
     underlay: {
       src: null,
       opacity: 0.5,
@@ -57,6 +54,17 @@
     exportPng: $('exportPng'),
   };
 
+  // Диагностика: сообщим, чего не хватает
+  function checkDom() {
+    const missing = [];
+    for (const [k, v] of Object.entries(dom)) if (!v) missing.push(k);
+    if (!window.Head) missing.push('window.Head (head.js не загрузился)');
+    if (missing.length) {
+      console.warn('[main.js] Отсутствуют элементы/модули:', missing);
+    }
+    return missing;
+  }
+
   // ============================================================
   //  Геометрия холста
   // ============================================================
@@ -85,7 +93,11 @@
     };
   }
 
+  // ============================================================
+  //  Сетка голов
+  // ============================================================
   function renderHeadsGrid(geo) {
+    if (!dom.headsLayer) return;
     const ns = 'http://www.w3.org/2000/svg';
     dom.headsLayer.innerHTML = '';
     for (let i = 0; i <= Math.ceil(geo.heads); i++) {
@@ -101,6 +113,9 @@
     }
   }
 
+  // ============================================================
+  //  Синхронизация модулей
+  // ============================================================
   function syncFigureModules(geo) {
     if (window.Head) window.Head.update(geo);
     if (window.Torso) window.Torso.update(geo);
@@ -108,25 +123,31 @@
     if (window.Leg) window.Leg.update(geo);
   }
 
+  // ============================================================
+  //  Применение состояния
+  // ============================================================
   function applyState() {
     const geo = computeGeometry();
     renderHeadsGrid(geo);
     syncFigureModules(geo);
     renderUnderlay();
-    dom.headsVal.textContent = state.heads;
-    dom.marginVal.textContent = state.margin;
+    if (dom.headsVal) dom.headsVal.textContent = state.heads;
+    if (dom.marginVal) dom.marginVal.textContent = state.margin;
   }
 
   // ============================================================
   //  Подложка
   // ============================================================
   function renderUnderlay() {
+    if (!dom.underlayImage) return;
     const u = state.underlay;
+
     if (!u.src) {
       dom.underlayImage.style.display = 'none';
-      dom.removeUnderlay.disabled = true;
+      if (dom.removeUnderlay) dom.removeUnderlay.disabled = true;
       return;
     }
+
     dom.underlayImage.style.display = 'block';
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
@@ -144,13 +165,14 @@
     dom.underlayImage.setAttribute('width', drawW);
     dom.underlayImage.setAttribute('height', drawH);
     dom.underlayImage.setAttribute('preserveAspectRatio', 'none');
-    dom.removeUnderlay.disabled = false;
+    if (dom.removeUnderlay) dom.removeUnderlay.disabled = false;
   }
 
   // ============================================================
-  //  Фабрика ползунков (логика из «Головы Лумиса»)
+  //  Фабрика ползунков
   // ============================================================
-  function makeSlider(host, p, get, set) {
+  function makeSlider(host, p, get, set, after) {
+    if (!host) return () => {};
     const row = document.createElement('div');
     row.className = 'slider';
     const id = `head-${p.key}`;
@@ -173,23 +195,15 @@
       const v = Number(input.value);
       set(v);
       out.textContent = fmt(v);
-      if (window.Head) {
-        window.Head.params = state.head;
-        window.Head.build();
-      }
+      if (after) after();
     });
 
-    // Двойной клик — сброс к def
     row.addEventListener('dblclick', () => {
       set(p.def);
       sync();
-      if (window.Head) {
-        window.Head.params = state.head;
-        window.Head.build();
-      }
+      if (after) after();
     });
 
-    // Долгое нажатие (touch) — сброс к def
     let timer = 0, start = null;
     input.addEventListener('pointerdown', (e) => {
       if (e.pointerType !== 'touch') return;
@@ -197,10 +211,7 @@
       timer = setTimeout(() => {
         set(p.def);
         sync();
-        if (window.Head) {
-          window.Head.params = state.head;
-          window.Head.build();
-        }
+        if (after) after();
         navigator.vibrate?.(15);
       }, 600);
     });
@@ -215,13 +226,24 @@
   }
 
   // ============================================================
-  //  Построение ползунков головы из SHAPE_PARAMS
+  //  Ползунки головы
   // ============================================================
   const headSyncers = [];
+
   function buildHeadSliders() {
-    if (!window.Head) return;
+    if (!window.Head || !window.Head.SHAPE_PARAMS || !dom.headSliders) {
+      console.warn('[main.js] buildHeadSliders: Head или контейнер недоступны');
+      return;
+    }
     dom.headSliders.innerHTML = '';
     headSyncers.length = 0;
+
+    const rebuild = () => {
+      if (window.Head) {
+        window.Head.params = state.head;
+        window.Head.build();
+      }
+    };
 
     let currentGroup = null;
     for (const p of window.Head.SHAPE_PARAMS) {
@@ -232,76 +254,86 @@
         h.textContent = p.group;
         dom.headSliders.appendChild(h);
       }
-      headSyncers.push(
-        makeSlider(
-          dom.headSliders,
-          p,
-          () => state.head[p.key],
-          (v) => { state.head[p.key] = v; }
-        )
-      );
+      headSyncers.push(makeSlider(
+        dom.headSliders, p,
+        () => state.head[p.key],
+        (v) => { state.head[p.key] = v; },
+        rebuild
+      ));
     }
   }
 
   // ============================================================
-  //  Обработчики: общие
+  //  Общие обработчики
   // ============================================================
-  dom.headsRange.addEventListener('input', (e) => {
-    state.heads = parseFloat(e.target.value);
-    applyState();
-  });
-  dom.marginRange.addEventListener('input', (e) => {
-    state.margin = parseInt(e.target.value, 10);
-    applyState();
-  });
+  if (dom.headsRange) {
+    dom.headsRange.addEventListener('input', (e) => {
+      state.heads = parseFloat(e.target.value);
+      applyState();
+    });
+  }
+  if (dom.marginRange) {
+    dom.marginRange.addEventListener('input', (e) => {
+      state.margin = parseInt(e.target.value, 10);
+      applyState();
+    });
+  }
 
   // ============================================================
   //  Подложка
   // ============================================================
-  dom.underlayFile.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const img = new Image();
-      img.onload = () => {
-        state.underlay.src = dataUrl;
-        state.underlay.naturalWidth = img.naturalWidth;
-        state.underlay.naturalHeight = img.naturalHeight;
-        state.underlay.scale = 1.0;
-        dom.scaleRange.value = 100;
-        dom.scaleVal.textContent = 100;
-        applyState();
+  if (dom.underlayFile) {
+    dom.underlayFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          state.underlay.src = dataUrl;
+          state.underlay.naturalWidth = img.naturalWidth;
+          state.underlay.naturalHeight = img.naturalHeight;
+          state.underlay.scale = 1.0;
+          if (dom.scaleRange) dom.scaleRange.value = 100;
+          if (dom.scaleVal) dom.scaleVal.textContent = 100;
+          applyState();
+        };
+        img.src = dataUrl;
       };
-      img.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  });
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
 
-  dom.opacityRange.addEventListener('input', (e) => {
-    state.underlay.opacity = parseInt(e.target.value, 10) / 100;
-    dom.opacityVal.textContent = e.target.value;
-    renderUnderlay();
-  });
-  dom.scaleRange.addEventListener('input', (e) => {
-    state.underlay.scale = parseInt(e.target.value, 10) / 100;
-    dom.scaleVal.textContent = e.target.value;
-    renderUnderlay();
-  });
-  dom.removeUnderlay.addEventListener('click', () => {
-    state.underlay.src = null;
-    state.underlay.naturalWidth = 0;
-    state.underlay.naturalHeight = 0;
-    state.underlay.scale = 1.0;
-    state.underlay.opacity = 0.5;
-    dom.opacityRange.value = 50;
-    dom.opacityVal.textContent = 50;
-    dom.scaleRange.value = 100;
-    dom.scaleVal.textContent = 100;
-    renderUnderlay();
-  });
+  if (dom.opacityRange) {
+    dom.opacityRange.addEventListener('input', (e) => {
+      state.underlay.opacity = parseInt(e.target.value, 10) / 100;
+      if (dom.opacityVal) dom.opacityVal.textContent = e.target.value;
+      renderUnderlay();
+    });
+  }
+  if (dom.scaleRange) {
+    dom.scaleRange.addEventListener('input', (e) => {
+      state.underlay.scale = parseInt(e.target.value, 10) / 100;
+      if (dom.scaleVal) dom.scaleVal.textContent = e.target.value;
+      renderUnderlay();
+    });
+  }
+  if (dom.removeUnderlay) {
+    dom.removeUnderlay.addEventListener('click', () => {
+      state.underlay.src = null;
+      state.underlay.naturalWidth = 0;
+      state.underlay.naturalHeight = 0;
+      state.underlay.scale = 1.0;
+      state.underlay.opacity = 0.5;
+      if (dom.opacityRange) dom.opacityRange.value = 50;
+      if (dom.opacityVal) dom.opacityVal.textContent = 50;
+      if (dom.scaleRange) dom.scaleRange.value = 100;
+      if (dom.scaleVal) dom.scaleVal.textContent = 100;
+      renderUnderlay();
+    });
+  }
 
   // ============================================================
   //  Пресеты
@@ -318,35 +350,28 @@
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); }
     catch (err) { console.error('Не удалось сохранить пресеты:', err); }
   }
-
   function snapshotState() {
-    return {
-      heads: state.heads,
-      margin: state.margin,
-      head: { ...state.head },
-    };
+    return { heads: state.heads, margin: state.margin, head: { ...state.head } };
   }
-
   function applySnapshot(snap) {
     if (!snap) return;
     if (typeof snap.heads === 'number') {
       state.heads = snap.heads;
-      dom.headsRange.value = snap.heads;
+      if (dom.headsRange) dom.headsRange.value = snap.heads;
     }
     if (typeof snap.margin === 'number') {
       state.margin = snap.margin;
-      dom.marginRange.value = snap.margin;
+      if (dom.marginRange) dom.marginRange.value = snap.margin;
     }
     if (snap.head && window.Head) {
       state.head = window.Head.clampShape(snap.head);
       window.Head.params = state.head;
     }
-    // Пересинхронизация всех ползунков головы
     for (const s of headSyncers) s();
     applyState();
   }
-
   function renderPresets() {
+    if (!dom.presetList) return;
     const presets = loadPresets();
     const names = Object.keys(presets).sort((a, b) => a.localeCompare(b, 'ru'));
     dom.presetList.innerHTML = '';
@@ -385,16 +410,17 @@
       dom.presetList.appendChild(li);
     }
   }
-
-  dom.savePreset.addEventListener('click', () => {
-    const name = (dom.presetName.value || '').trim();
-    if (!name) { alert('Введите название пресета'); return; }
-    const all = loadPresets();
-    all[name] = snapshotState();
-    savePresets(all);
-    dom.presetName.value = '';
-    renderPresets();
-  });
+  if (dom.savePreset) {
+    dom.savePreset.addEventListener('click', () => {
+      const name = (dom.presetName.value || '').trim();
+      if (!name) { alert('Введите название пресета'); return; }
+      const all = loadPresets();
+      all[name] = snapshotState();
+      savePresets(all);
+      dom.presetName.value = '';
+      renderPresets();
+    });
+  }
 
   // ============================================================
   //  Экспорт
@@ -420,42 +446,57 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  dom.exportSvg.addEventListener('click', () => {
-    const xml = serializeSvg(buildExportSvg());
-    downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
-  });
-  dom.exportPng.addEventListener('click', () => {
-    const xml = serializeSvg(buildExportSvg());
-    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    const svgUrl = URL.createObjectURL(svgBlob);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = CANVAS; canvas.height = CANVAS;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
-      ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
-      URL.revokeObjectURL(svgUrl);
-      canvas.toBlob((blob) => { if (blob) downloadBlob(blob, 'figure.png'); }, 'image/png');
-    };
-    img.onerror = () => { URL.revokeObjectURL(svgUrl); alert('Не удалось экспортировать PNG'); };
-    img.src = svgUrl;
-  });
+  if (dom.exportSvg) {
+    dom.exportSvg.addEventListener('click', () => {
+      const xml = serializeSvg(buildExportSvg());
+      downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
+    });
+  }
+  if (dom.exportPng) {
+    dom.exportPng.addEventListener('click', () => {
+      const xml = serializeSvg(buildExportSvg());
+      const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = CANVAS; canvas.height = CANVAS;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
+        ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+        URL.revokeObjectURL(svgUrl);
+        canvas.toBlob((blob) => { if (blob) downloadBlob(blob, 'figure.png'); }, 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(svgUrl); alert('Не удалось экспортировать PNG'); };
+      img.src = svgUrl;
+    });
+  }
 
   // ============================================================
   //  Инициализация
   // ============================================================
   function init() {
-    dom.headsRange.value = state.heads;
-    dom.marginRange.value = state.margin;
-    dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
-    dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
-    dom.scaleRange.value = Math.round(state.underlay.scale * 100);
-    dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+    const missing = checkDom();
+    if (missing.length) {
+      console.error('[main.js] Инициализация с ошибками:', missing);
+    }
 
-    if (window.Head) {
+    if (dom.headsRange) dom.headsRange.value = state.heads;
+    if (dom.marginRange) dom.marginRange.value = state.margin;
+    if (dom.opacityRange) dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
+    if (dom.opacityVal) dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
+    if (dom.scaleRange) dom.scaleRange.value = Math.round(state.underlay.scale * 100);
+    if (dom.scaleVal) dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+
+    // Инициализация модуля головы
+    if (window.Head && dom.headGroup) {
       window.Head.params = state.head;
       window.Head.init(dom.headGroup);
+    } else {
+      console.warn('[main.js] Head не инициализирован:', {
+        Head: !!window.Head,
+        headGroup: !!dom.headGroup,
+      });
     }
 
     buildHeadSliders();
@@ -463,5 +504,9 @@
     applyState();
   }
 
-  init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
