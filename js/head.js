@@ -116,25 +116,20 @@ export function renderHead(g, layout, state) {
     const chinLeftX = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
 
-    // 4. Шея
+    // 4. Шея (математически обрезаем по кругу, без заливок)
     const yL5 = headLines[0] + headH;
     const neckHalfW = (headState.neckWidth * headH) / 2;
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
 
-    // Функция пересечения вертикальной линии X с НИЖНЕЙ половиной эллипса
     function getNeckStartY(x) {
         const dx = x - cx;
-        // Если линия шеи шире, чем круг, начинаем с L3
         if (Math.abs(dx) >= rx) return yL3; 
-        
-        // Ищем Y на эллипсе (нижняя половина)
         const ratio = dx / rx;
         const dy = finalRy * Math.sqrt(1 - ratio * ratio);
-        return cy + dy; // Нижняя точка пересечения
+        return cy + dy; 
     }
 
-    // Берем самую нижнюю точку из двух (чтобы обе линии шеи начинались под кругом)
     const neckTopY = Math.max(getNeckStartY(neckLeftX), getNeckStartY(neckRightX));
 
     g.innerHTML = '';
@@ -182,7 +177,7 @@ export function renderHead(g, layout, state) {
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Шея (левая) - начинается от нижней точки пересечения с кругом
+    // Шея (левая)
     g.appendChild(el('line', {
         x1: neckLeftX, y1: neckTopY,
         x2: neckLeftX, y2: yL5,
