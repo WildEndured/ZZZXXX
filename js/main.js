@@ -59,10 +59,32 @@
     const usableBottom = CANVAS - marginPx;
     const usableHeight = usableBottom - usableTop;
     const headHeight = usableHeight / state.heads;
+
+    // Ячейка первой головы сверху
+    const headTop = usableTop;
+    const headBottom = usableTop + headHeight;
+
     return {
-      canvas: CANVAS, dpi: DPI, marginPx,
-      usableTop, usableBottom, usableHeight, headHeight, heads: state.heads,
-      centerX: CANVAS / 2, topY: usableTop,
+      canvas: CANVAS, dpi: DPI,
+      marginPx, usableTop, usableBottom, usableHeight,
+      headHeight, heads: state.heads,
+      centerX: CANVAS / 2,
+
+      // Ячейка головы
+      headTop,
+      headBottom,
+
+      // Производные (для торса/рук/ног)
+      topY: usableTop,
+      torsoHeight: headHeight * 1.8,
+      torsoWidth: headHeight * 1.4,
+      shoulderY: headBottom,
+      hipY: headBottom + headHeight * 1.8,
+      armLength: headHeight * 2.2,
+      armWidth: headHeight * 0.35,
+      legLength: headHeight * 2.5,
+      legWidth: headHeight * 0.45,
+      legOffsetX: headHeight * 0.4,
     };
   }
 
@@ -73,8 +95,10 @@
       const y = geo.usableTop + i * geo.headHeight;
       if (y > geo.usableBottom + 0.5) break;
       const line = document.createElementNS(ns, 'line');
-      line.setAttribute('x1', 0); line.setAttribute('x2', CANVAS);
-      line.setAttribute('y1', y); line.setAttribute('y2', y);
+      line.setAttribute('x1', 0);
+      line.setAttribute('x2', CANVAS);
+      line.setAttribute('y1', y);
+      line.setAttribute('y2', y);
       line.setAttribute('stroke', '#9aa0a6');
       line.setAttribute('stroke-width', '2');
       line.setAttribute('stroke-dasharray', '16 12');
@@ -91,33 +115,39 @@
       window.Head.setLine(state.line);
     }
     renderUnderlay();
-    dom.headsVal.textContent = state.heads;
-    dom.marginVal.textContent = state.margin;
+    if (dom.headsVal) dom.headsVal.textContent = state.heads;
+    if (dom.marginVal) dom.marginVal.textContent = state.margin;
   }
 
   // ---------- Подложка ----------
   function renderUnderlay() {
+    if (!dom.underlayImage) return;
     const u = state.underlay;
     if (!u.src) {
       dom.underlayImage.style.display = 'none';
-      dom.removeUnderlay.disabled = true;
+      if (dom.removeUnderlay) dom.removeUnderlay.disabled = true;
       return;
     }
     dom.underlayImage.style.display = 'block';
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
-    const box = CANVAS, iw = u.naturalWidth || box, ih = u.naturalHeight || box;
-    const fit = Math.min(box / iw, box / ih), k = fit * u.scale;
-    const w = iw * k, h = ih * k;
+
+    const box = CANVAS;
+    const iw = u.naturalWidth || box;
+    const ih = u.naturalHeight || box;
+    const fit = Math.min(box / iw, box / ih);
+    const k = fit * u.scale;
+    const w = iw * k;
+    const h = ih * k;
     dom.underlayImage.setAttribute('x', (box - w) / 2);
     dom.underlayImage.setAttribute('y', (box - h) / 2);
     dom.underlayImage.setAttribute('width', w);
     dom.underlayImage.setAttribute('height', h);
     dom.underlayImage.setAttribute('preserveAspectRatio', 'none');
-    dom.removeUnderlay.disabled = false;
+    if (dom.removeUnderlay) dom.removeUnderlay.disabled = false;
   }
 
-  // ---------- makeSlider (как в референсе) ----------
+  // ---------- Фабрика ползунков ----------
   function makeSlider(host, p, idPrefix, get, set, fmt) {
     const row = document.createElement('div');
     row.className = 'slider';
@@ -132,9 +162,11 @@
 
     const sync = () => { const v = get(); input.value = v; out.textContent = fmt(v); };
 
-    let dragging = false;
-    input.addEventListener('input', () => { dragging = true; const v = Number(input.value); set(v); out.textContent = fmt(v); });
-    input.addEventListener('change', () => { dragging = false; });
+    input.addEventListener('input', () => {
+      const v = Number(input.value);
+      set(v);
+      out.textContent = fmt(v);
+    });
 
     const reset = () => { set(p.def); sync(); };
     row.addEventListener('dblclick', reset);
@@ -159,9 +191,10 @@
   const syncers = [];
 
   function buildHeadSliders() {
+    if (!window.Head || !dom.headSliders) return;
     dom.headSliders.innerHTML = '';
     syncers.length = 0;
-    if (!window.Head) return;
+
     let currentGroup = null;
     for (const p of window.Head.PARAMS) {
       if (p.group && p.group !== currentGroup) {
@@ -187,151 +220,238 @@
   }
 
   function buildLineSliders() {
+    if (!window.Head || !dom.lineSliders) return;
     dom.lineSliders.innerHTML = '';
-    if (!window.Head) return;
     const p = window.Head.LINE_PARAM;
     syncers.push(makeSlider(
       dom.lineSliders, p, 'line',
       () => state.line,
-      (v) => { state.line = v; if (window.Head) window.Head.setLine(v); },
+      (v) => {
+        state.line = v;
+        if (window.Head) window.Head.setLine(v);
+      },
       lineFmt
     ));
   }
 
-  // ---------- Общее / подложка ----------
-  dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); applyState(); });
-  dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); applyState(); });
+  // ---------- Общее ----------
+  if (dom.headsRange) {
+    dom.headsRange.addEventListener('input', (e) => {
+      state.heads = parseFloat(e.target.value);
+      applyState();
+    });
+  }
+  if (dom.marginRange) {
+    dom.marginRange.addEventListener('input', (e) => {
+      state.margin = parseInt(e.target.value, 10);
+      applyState();
+    });
+  }
 
-  dom.underlayFile.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const img = new Image();
-      img.onload = () => {
-        state.underlay.src = dataUrl;
-        state.underlay.naturalWidth = img.naturalWidth;
-        state.underlay.naturalHeight = img.naturalHeight;
-        state.underlay.scale = 1.0;
-        dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
-        applyState();
+  // ---------- Подложка ----------
+  if (dom.underlayFile) {
+    dom.underlayFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          state.underlay.src = dataUrl;
+          state.underlay.naturalWidth = img.naturalWidth;
+          state.underlay.naturalHeight = img.naturalHeight;
+          state.underlay.scale = 1.0;
+          if (dom.scaleRange) dom.scaleRange.value = 100;
+          if (dom.scaleVal) dom.scaleVal.textContent = 100;
+          applyState();
+        };
+        img.src = dataUrl;
       };
-      img.src = dataUrl;
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  });
-  dom.opacityRange.addEventListener('input', (e) => {
-    state.underlay.opacity = parseInt(e.target.value, 10) / 100;
-    dom.opacityVal.textContent = e.target.value;
-    renderUnderlay();
-  });
-  dom.scaleRange.addEventListener('input', (e) => {
-    state.underlay.scale = parseInt(e.target.value, 10) / 100;
-    dom.scaleVal.textContent = e.target.value;
-    renderUnderlay();
-  });
-  dom.removeUnderlay.addEventListener('click', () => {
-    state.underlay = { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 };
-    dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
-    dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
-    renderUnderlay();
-  });
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    });
+  }
+  if (dom.opacityRange) {
+    dom.opacityRange.addEventListener('input', (e) => {
+      state.underlay.opacity = parseInt(e.target.value, 10) / 100;
+      if (dom.opacityVal) dom.opacityVal.textContent = e.target.value;
+      renderUnderlay();
+    });
+  }
+  if (dom.scaleRange) {
+    dom.scaleRange.addEventListener('input', (e) => {
+      state.underlay.scale = parseInt(e.target.value, 10) / 100;
+      if (dom.scaleVal) dom.scaleVal.textContent = e.target.value;
+      renderUnderlay();
+    });
+  }
+  if (dom.removeUnderlay) {
+    dom.removeUnderlay.addEventListener('click', () => {
+      state.underlay = { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 };
+      if (dom.opacityRange) dom.opacityRange.value = 50;
+      if (dom.opacityVal) dom.opacityVal.textContent = 50;
+      if (dom.scaleRange) dom.scaleRange.value = 100;
+      if (dom.scaleVal) dom.scaleVal.textContent = 100;
+      renderUnderlay();
+    });
+  }
 
   // ---------- Пресеты ----------
   function loadPresets() {
-    try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return {}; const o = JSON.parse(raw); return o && typeof o === 'object' ? o : {}; }
-    catch { return {}; }
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const obj = JSON.parse(raw);
+      return obj && typeof obj === 'object' ? obj : {};
+    } catch { return {}; }
   }
-  function savePresets(p) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch (e) { console.error(e); } }
-  function snapshot() { return { heads: state.heads, margin: state.margin, shape: { ...state.shape }, line: state.line }; }
-  function applySnapshot(s) {
-    if (!s) return;
-    if (typeof s.heads === 'number') { state.heads = s.heads; dom.headsRange.value = s.heads; }
-    if (typeof s.margin === 'number') { state.margin = s.margin; dom.marginRange.value = s.margin; }
-    if (s.shape && window.Head) state.shape = window.Head.clampShape(s.shape);
-    if (typeof s.line === 'number' && window.Head) {
-      const lp = window.Head.LINE_PARAM;
-      state.line = Math.min(lp.max, Math.max(lp.min, s.line));
+  function savePresets(p) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); }
+    catch (err) { console.error('Не удалось сохранить пресеты:', err); }
+  }
+  function snapshotState() {
+    return {
+      heads: state.heads,
+      margin: state.margin,
+      shape: { ...state.shape },
+      line: state.line,
+    };
+  }
+  function applySnapshot(snap) {
+    if (!snap) return;
+    if (typeof snap.heads === 'number') {
+      state.heads = snap.heads;
+      if (dom.headsRange) dom.headsRange.value = snap.heads;
     }
-    for (const sy of syncers) sy();
+    if (typeof snap.margin === 'number') {
+      state.margin = snap.margin;
+      if (dom.marginRange) dom.marginRange.value = snap.margin;
+    }
+    if (snap.shape && window.Head) {
+      state.shape = window.Head.clampShape(snap.shape);
+      window.Head.shape = state.shape;
+    }
+    if (typeof snap.line === 'number' && window.Head) {
+      const lp = window.Head.LINE_PARAM;
+      state.line = Math.min(lp.max, Math.max(lp.min, snap.line));
+    }
+    for (const s of syncers) s();
     applyState();
   }
   function renderPresets() {
+    if (!dom.presetList) return;
     const presets = loadPresets();
     const names = Object.keys(presets).sort((a, b) => a.localeCompare(b, 'ru'));
     dom.presetList.innerHTML = '';
-    if (!names.length) {
+    if (names.length === 0) {
       const li = document.createElement('li');
-      li.className = 'preset-empty'; li.textContent = 'Пресетов нет';
-      dom.presetList.appendChild(li); return;
+      li.className = 'preset-empty';
+      li.textContent = 'Пресетов нет';
+      dom.presetList.appendChild(li);
+      return;
     }
     for (const name of names) {
       const li = document.createElement('li');
       const span = document.createElement('span');
-      span.className = 'preset-name'; span.textContent = name; span.title = name;
+      span.className = 'preset-name';
+      span.textContent = name;
+      span.title = name;
+
       const applyBtn = document.createElement('button');
-      applyBtn.className = 'preset-btn'; applyBtn.textContent = 'Применить';
+      applyBtn.className = 'preset-btn';
+      applyBtn.textContent = 'Применить';
       applyBtn.addEventListener('click', () => applySnapshot(presets[name]));
+
       const delBtn = document.createElement('button');
-      delBtn.className = 'preset-btn remove'; delBtn.textContent = 'Удалить';
+      delBtn.className = 'preset-btn remove';
+      delBtn.textContent = 'Удалить';
       delBtn.addEventListener('click', () => {
-        const all = loadPresets(); delete all[name]; savePresets(all); renderPresets();
+        const all = loadPresets();
+        delete all[name];
+        savePresets(all);
+        renderPresets();
       });
-      li.appendChild(span); li.appendChild(applyBtn); li.appendChild(delBtn);
+
+      li.appendChild(span);
+      li.appendChild(applyBtn);
+      li.appendChild(delBtn);
       dom.presetList.appendChild(li);
     }
   }
-  dom.savePreset.addEventListener('click', () => {
-    const name = (dom.presetName.value || '').trim();
-    if (!name) { alert('Введите название пресета'); return; }
-    const all = loadPresets(); all[name] = snapshot(); savePresets(all);
-    dom.presetName.value = ''; renderPresets();
-  });
+  if (dom.savePreset) {
+    dom.savePreset.addEventListener('click', () => {
+      const name = (dom.presetName.value || '').trim();
+      if (!name) { alert('Введите название пресета'); return; }
+      const all = loadPresets();
+      all[name] = snapshotState();
+      savePresets(all);
+      dom.presetName.value = '';
+      renderPresets();
+    });
+  }
 
   // ---------- Экспорт ----------
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
+    const g = clone.querySelector('#gridRect'); if (g) g.remove();
+    const h = clone.querySelector('#headsLayer'); if (h) h.remove();
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width', String(CANVAS));
     clone.setAttribute('height', String(CANVAS));
     clone.setAttribute('viewBox', `0 0 ${CANVAS} ${CANVAS}`);
     return clone;
   }
-  function serializeSvg(el) { return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(el); }
+  function serializeSvg(el) {
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(el);
+  }
   function download(blob, name) {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = name;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  dom.exportSvg.addEventListener('click', () => {
-    download(new Blob([serializeSvg(buildExportSvg())], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
-  });
-  dom.exportPng.addEventListener('click', () => {
-    const svgBlob = new Blob([serializeSvg(buildExportSvg())], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas'); c.width = CANVAS; c.height = CANVAS;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
-      ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
-      URL.revokeObjectURL(url);
-      c.toBlob((b) => { if (b) download(b, 'figure.png'); }, 'image/png');
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); alert('PNG error'); };
-    img.src = url;
-  });
+  if (dom.exportSvg) {
+    dom.exportSvg.addEventListener('click', () => {
+      const xml = serializeSvg(buildExportSvg());
+      download(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
+    });
+  }
+  if (dom.exportPng) {
+    dom.exportPng.addEventListener('click', () => {
+      const xml = serializeSvg(buildExportSvg());
+      const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = CANVAS;
+        c.height = CANVAS;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, CANVAS, CANVAS);
+        ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+        URL.revokeObjectURL(url);
+        c.toBlob((b) => { if (b) download(b, 'figure.png'); }, 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); alert('Не удалось экспортировать PNG'); };
+      img.src = url;
+    });
+  }
 
-  // ---------- Init ----------
+  // ---------- Инициализация ----------
   function init() {
-    dom.headsRange.value = state.heads;
-    dom.marginRange.value = state.margin;
-    dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
-    dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
+    if (dom.headsRange) dom.headsRange.value = state.heads;
+    if (dom.marginRange) dom.marginRange.value = state.margin;
+    if (dom.opacityRange) dom.opacityRange.value = 50;
+    if (dom.opacityVal) dom.opacityVal.textContent = 50;
+    if (dom.scaleRange) dom.scaleRange.value = 100;
+    if (dom.scaleVal) dom.scaleVal.textContent = 100;
 
     if (window.Head && dom.headGroup) {
       window.Head.shape = state.shape;
@@ -345,6 +465,9 @@
     applyState();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
