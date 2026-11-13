@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// head.js — модуль головы (финальный контур)
+// head.js — модуль головы (круг + подбородок + челюсть, без заливки)
 // ════════════════════════════════════════════════════════════
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -96,11 +96,8 @@ export function renderHead(g, layout, state) {
     const yL0 = headLines[0];
     const yL3 = headLines[0] + headH * 0.6;
     
-    const shiftTop = state.headState ? state.headState.top * headH : 0; // fallback
-    const shiftBottom = headState.bottom * headH;
-    
     const yTop = yL0 + (headState.top * headH);
-    const yBottom = yL3 + shiftBottom;
+    const yBottom = yL3 + (headState.bottom * headH);
 
     const cy = (yTop + yBottom) / 2;
     const ry = Math.abs(yBottom - yTop) / 2;
@@ -110,12 +107,10 @@ export function renderHead(g, layout, state) {
     const finalRy = ry * headState.radius;
 
     // ── 2. ГЕОМЕТРИЯ ЧЕЛЮСТИ ─────────────────────
-    // Широчайшие края круга (X = cx ± rx, Y = cy)
-    // Ползунок jawAttach поднимает точки крепления вверх.
+    // Поднимаем точки крепления от экватора (cy) на величину jawAttach
     const attachY = cy - (headState.jawAttach * headH);
     
-    // Пересчитываем X на эллипсе для новой высоты, 
-    // чтобы линии всегда начинались строго на контуре круга.
+    // Пересчитываем X на эллипсе для новой высоты (чтобы линии начинались строго на контуре)
     const yOffset = Math.max(-0.99, Math.min(0.99, (attachY - cy) / finalRy));
     const xScale = Math.sqrt(1 - yOffset * yOffset);
     const currentRx = rx * xScale;
@@ -123,7 +118,7 @@ export function renderHead(g, layout, state) {
     const leftAttachX = cx - currentRx;
     const rightAttachX = cx + currentRx;
 
-    // Вертикальный сброс вниз
+    // Конец вертикалей (длина челюсти)
     const cornerY = attachY + (headState.jawLength * headH);
 
     // ── 3. ГЕОМЕТРИЯ ПОДБОРОДКА ──────────────────
@@ -137,31 +132,29 @@ export function renderHead(g, layout, state) {
 
     // ── РИСОВАНИЕ ────────────────────────────────
 
-    // 1. Замкнутый контур челюсти и подбородка (заливка)
-    // Идем: от левого крепления вниз -> к левому краю подбородка -> 
-    // к правому краю подбородка -> вверх к правому креплению -> замыкаем.
-    // Используем дугу круга для верхней части челюсти, чтобы не было острых углов.
-    const jawPath = `M ${leftAttachX} ${attachY} ` +
-                    `L ${leftAttachX} ${cornerY} ` + // Вниз по вертикали
-                    `L ${chinLeftX} ${chinY} ` +      // Диагональ к подбородку
-                    `L ${chinRightX} ${chinY} ` +     // Линия подбородка
-                    `L ${rightAttachX} ${cornerY} ` + // Диагональ вверх
-                    `L ${rightAttachX} ${attachY} `;  // Вверх по вертикали
+    // 1. Контур головы: верхняя часть круга, затем вниз по челюсти, подбородок, вверх и замыкаем.
+    // Начинаем с левого крепления. Идем по дуге круга вверх до правого крепления.
+    
+    // Вычисляем углы для дуги (от левого крепления до правого через верх)
+    // Так как мы используем эллипс, для точной дуги лучше применить SVG Arc (A).
+    const arcD = `M ${leftAttachX} ${attachY} ` +
+                 `A ${rx} ${finalRy} 0 0 1 ${rightAttachX} ${attachY} ` + // Дуга через верх
+                 `L ${rightAttachX} ${cornerY} ` + // Вниз по правой вертикали
+                 `L ${chinRightX} ${chinY} ` +     // Диагональ к правому подбородку
+                 `L ${chinLeftX} ${chinY} ` +      // Линия подбородка
+                 `L ${leftAttachX} ${cornerY} ` +  // Диагональ к левой вертикали
+                 `Z`;                              // Замыкаем (линия вверх к началу)
 
+    // Основной контур (без заливки)
     g.appendChild(el('path', {
-        d: jawPath,
-        fill: '#e8e8e8',
+        d: arcD,
+        fill: 'none',
         stroke: '#1e1f22',
         'stroke-width': 6,
         'stroke-linejoin': 'round'
     }));
 
-    // 2. Круг головы
-    // Рисуем поверх челюсти. Заливка перекроет стык, а обводка даст контур.
-    g.appendChild(el('ellipse', {
-        cx, cy, rx, ry: finalRy,
-        fill: '#e8e8e8',
-        stroke: '#1e1f22',
-        'stroke-width': 6
-    }));
+    // 2. Вспомогательные вертикальные линии челюсти (если нужно)
+    // Поскольку мы только что нарисовали контур по кругу, 
+    // старые отдельные линии челюсти больше не нужны, всё в одном path.
 }
