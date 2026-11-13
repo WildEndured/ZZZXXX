@@ -6,10 +6,10 @@ export const headState = {
     width:  1,
     radius: 1,
     chinHeight:   0,
-    chinWidth:    0.4,
+    chinWidth:    0.1,   // <--- Обновлено
     jawAttach: 0,
-    jawLength: 0.15,
-    jawAngle:  1
+    jawLength: 0.4,      // <--- Обновлено
+    jawAngle:  0.5       // <--- Обновлено
 };
 
 let els = null;
