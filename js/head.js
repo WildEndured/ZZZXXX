@@ -15,10 +15,10 @@ export const headState = {
     chinWidth:    0.4,
     chinRounding: 0,
     // челюсть
-    jawAttach: 0,
-    jawLength: 0.1,
-    jawAngle:  0.5,
-    jawWidth:  0.4
+    jawAttach: 0,    // Насколько высоко крепим челюсть к кругу (0 = по центру круга, 0.3 = выше)
+    jawLength: 0.2,  // Насколько длинные вертикальные линии вниз (в долях headH)
+    jawAngle:  1,    // Ширина низа челюсти относительно краев круга (1 = ровно от краев, 0.5 = уже)
+    jawWidth:  1     // Задел на будущее (пока не используется)
 };
 
 let els = null;
@@ -112,7 +112,7 @@ export function renderHead(g, layout, state) {
     const { cx, cy, rx, ry } = computeEllipse(layout, headState);
     const { headLines, headH, canvasSize } = layout;
 
-    // ── ПОДБОРОДОК (линия на L4) ─────────────────
+    // ── ПОДБОРОДОК ───────────────────────────────
     const yL4 = headLines[0] + headH * 0.8;
     const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
@@ -120,22 +120,24 @@ export function renderHead(g, layout, state) {
     const chinRightX = cx + chinHalfW;
 
     // ── ЧЕЛЮСТЬ ──────────────────────────────────
-    // Верхняя точка (крепление к голове). 
-    // По Y: от низа круга (L3) поднимаем вверх на jawAttach.
-    const jawTopY = (headLines[0] + headH * 0.6) - (headState.jawAttach * headH);
     
-    // По X: берем ширину головы (rx) и расширяем/сужаем ползунком jawWidth.
-    // jawLength расширяет челюсть (сдвигает в стороны).
-    // jawAngle наклоняет её.
-    const jawTopHalfW = (rx * headState.jawWidth) + (headState.jawLength * headH);
-    const jawTopLeftX = cx - jawTopHalfW;
-    const jawTopRightX = cx + jawTopHalfW;
+    // 1. Точки на широчайших краях круга (экватор).
+    // По умолчанию берем экватор (cy), но ползунок jawAttach поднимает их вверх.
+    const attachY = cy - (headState.jawAttach * headH); 
+    const attachLeftX = cx - rx;
+    const attachRightX = cx + rx;
 
-    // Применяем угол (насколько сильно верхняя точка смещается в сторону от подбородка)
-    const angleShift = (jawTopHalfW - chinHalfW) * headState.jawAngle;
+    // 2. Длина вертикальных линий вниз.
+    const verticalDrop = headState.jawLength * headH;
     
-    const finalJawLeftX = chinLeftX - angleShift;
-    const finalJawRightX = chinRightX + angleShift;
+    // Точки, от которых пойдут диагонали к подбородку.
+    const cornerLeftY = attachY + verticalDrop;
+    const cornerRightY = attachY + verticalDrop;
+    
+    // Их X-координаты. Ползунок jawAngle сужает/расширяет их относительно экватора круга.
+    // При jawAngle = 1 они ровно под краями круга.
+    const cornerLeftX = cx - rx * headState.jawAngle;
+    const cornerRightX = cx + rx * headState.jawAngle;
 
     g.innerHTML = '';
 
@@ -147,10 +149,32 @@ export function renderHead(g, layout, state) {
         'stroke-width': 6
     }));
 
-    // 2. Левая линия челюсти
+    // 2. Левая вертикаль (от края круга вниз)
     g.appendChild(el('line', {
-        x1: finalJawLeftX,
-        y1: jawTopY,
+        x1: attachLeftX,
+        y1: attachY,
+        x2: cornerLeftX,
+        y2: cornerLeftY,
+        stroke:          '#1e1f22',
+        'stroke-width':  6,
+        'stroke-linecap':'round'
+    }));
+
+    // 3. Правая вертикаль (от края круга вниз)
+    g.appendChild(el('line', {
+        x1: attachRightX,
+        y1: attachY,
+        x2: cornerRightX,
+        y2: cornerRightY,
+        stroke:          '#1e1f22',
+        'stroke-width':  6,
+        'stroke-linecap':'round'
+    }));
+
+    // 4. Левая диагональ (от низа вертикали к подбородку)
+    g.appendChild(el('line', {
+        x1: cornerLeftX,
+        y1: cornerLeftY,
         x2: chinLeftX,
         y2: chinY,
         stroke:          '#1e1f22',
@@ -158,10 +182,10 @@ export function renderHead(g, layout, state) {
         'stroke-linecap':'round'
     }));
 
-    // 3. Правая линия челюсти
+    // 5. Правая диагональ (от низа вертикали к подбородку)
     g.appendChild(el('line', {
-        x1: finalJawRightX,
-        y1: jawTopY,
+        x1: cornerRightX,
+        y1: cornerRightY,
         x2: chinRightX,
         y2: chinY,
         stroke:          '#1e1f22',
@@ -169,7 +193,7 @@ export function renderHead(g, layout, state) {
         'stroke-linecap':'round'
     }));
 
-    // 4. Линия подбородка
+    // 6. Линия подбородка
     g.appendChild(el('line', {
         x1: chinLeftX,
         y1: chinY,
