@@ -1,7 +1,3 @@
-/* ══════════════════════════════════════════════════
-   БАЗА
-   ══════════════════════════════════════════════════ */
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -31,43 +27,42 @@ html, body {
     -webkit-tap-highlight-color: transparent;
 }
 
-.app { 
-    display: flex; 
-    height: 100vh; height: 100dvh; 
-    overflow: hidden; 
-    position: relative; 
-}
-
 /* ══════════════════════════════════════════════════
-   ПАНЕЛЬ УПРАВЛЕНИЯ (DESKTOP)
+   ДЕСКТОП: панель слева, холст справа
    ══════════════════════════════════════════════════ */
 
+.app {
+    display: flex;
+    flex-direction: row; /* Панель и холст в ряд */
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+/* Панель (слева) */
 .panel {
-    flex: 0 0 var(--panel-w); width: var(--panel-w); height: 100%;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    order: 1;
+    flex: 0 0 var(--panel-w); 
+    width: var(--panel-w); 
+    height: 100%;
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch;
     padding: 20px 16px;
     padding-left: calc(16px + var(--safe-left));
     padding-top: calc(20px + var(--safe-top));
     padding-bottom: calc(20px + var(--safe-bottom));
     background: var(--bg-panel);
     border-right: 1px solid var(--border);
-    z-index: 10;
-    transition: transform 0.28s ease;
 }
 
-.panel__head, .panel__handle { display: none; }
-
-/* ══════════════════════════════════════════════════
-   ХОЛСТ И СЦЕНА
-   ══════════════════════════════════════════════════ */
-
-.stage { 
+/* Холст (справа) */
+.stage {
+    order: 2;
     flex: 1 1 auto; 
     display: flex; 
     flex-direction: column; 
     min-width: 0; 
-    min-height: 0; 
-    transition: margin-bottom 0.28s ease, height 0.28s ease;
+    min-height: 0;
 }
 
 .stage-toolbar {
@@ -89,6 +84,9 @@ html, body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
     border-radius: 2px;
 }
+
+/* Заголовки панели скрыты на десктопе */
+.panel__head { display: none; }
 
 /* ══════════════════════════════════════════════════
    ЭЛЕМЕНТЫ УПРАВЛЕНИЯ
@@ -161,82 +159,57 @@ input[type="file"] { display: none; }
 }
 .preset-list li button:hover { color: var(--danger); background: rgba(224, 87, 91, 0.1); }
 
-.panel-toggle, .panel-backdrop { display: none; }
-
 /* ══════════════════════════════════════════════════
-   ПЛАНШЕТ И ТЕЛЕФОН (≤ 1024px)
+   МОБИЛЬНЫЙ РЕЖИМ (≤ 1024px): холст сверху, панель снизу
    ══════════════════════════════════════════════════ */
 
 @media (max-width: 1024px) {
-    .panel-toggle {
-        display: inline-flex; align-items: center; gap: 8px;
-        position: fixed; left: calc(16px + var(--safe-left)); bottom: calc(16px + var(--safe-bottom));
-        z-index: 30; padding: 10px 16px; font-size: 14px; font-weight: 500;
-        color: #fff; background: var(--accent); border: none; border-radius: 999px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45); cursor: pointer;
+    
+    .app {
+        flex-direction: column; /* Столбиком: сверху холст, снизу настройки */
     }
-    .panel-toggle__icon { font-size: 16px; line-height: 1; }
-    .panel-toggle[aria-expanded="true"] { display: none; }
 
-    .panel-backdrop {
-        display: block; position: fixed; inset: 0; z-index: 40;
-        background: rgba(0, 0, 0, 0.55); opacity: 0; pointer-events: none;
-        transition: opacity 0.25s ease;
-    }
-    .panel-backdrop.is-visible { opacity: 1; pointer-events: auto; }
-
-    /* Панель выезжает снизу */
-    .panel {
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-        width: 100%; flex: none; max-height: 50dvh; /* Панель занимает только половину экрана */
+    /* Холст (теперь сверху) */
+    .stage {
+        order: 1;
+        flex: 1 1 auto; /* Занимает всё доступное место */
         height: auto;
-        padding: 0 20px calc(24px + var(--safe-bottom));
-        padding-left: calc(20px + var(--safe-left));
-        padding-right: calc(20px + var(--safe-right));
-        background: var(--bg-panel); border-right: none;
-        border-top: 1px solid var(--border); border-radius: 20px 20px 0 0;
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.55);
-        transform: translateY(100%);
-        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-        overflow-y: auto; overscroll-behavior: contain;
-    }
-    .panel.is-open { transform: translateY(0); }
-
-    /* СДВИГ ХОЛСТА ВВЕРХ ПРИ ОТКРЫТОЙ ПАНЕЛИ */
-    .panel.is-open ~ .stage {
-        /* Сдвигаем холст вверх ровно на высоту панели, чтобы он не перекрывался */
-        margin-bottom: 50dvh; 
-    }
-    .panel.is-open ~ .stage .canvas-wrap {
-        padding-bottom: 24px;
     }
 
-    .panel__handle {
-        display: block; width: 40px; height: 4px;
-        margin: 8px auto 0; background: #4a4d52; border-radius: 999px;
-    }
-    .panel__head {
-        display: flex; align-items: center; justify-content: space-between;
-        position: sticky; top: 0; z-index: 1;
-        padding: 12px 0; margin-bottom: 8px;
-        background: var(--bg-panel); border-bottom: 1px solid var(--border);
-    }
-    .panel__title { font-size: 18px; font-weight: 700; letter-spacing: 0.02em; }
-    .panel__close {
-        width: 36px; height: 36px; font-size: 16px;
-        color: var(--text-dim); background: transparent;
-        border: none; border-radius: 999px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .panel__close:hover { background: var(--bg-hover); color: var(--text); }
-
-    .stage { width: 100%; height: 100%; transition: margin-bottom 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
     .stage-toolbar {
-        position: sticky; top: 0; z-index: 10;
         padding-top: calc(10px + var(--safe-top));
-        background: var(--bg-panel);
     }
-    .canvas-wrap { padding: 12px; padding-bottom: calc(12px + var(--safe-bottom) + 72px); }
+
+    .canvas-wrap {
+        padding: 12px;
+    }
+
+    /* Панель (теперь снизу) */
+    .panel {
+        order: 2;
+        flex: 0 0 40dvh; /* Фиксированная высота 40% экрана */
+        width: 100%;
+        height: 40dvh;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        padding: 12px 16px;
+        padding-bottom: calc(12px + var(--safe-bottom));
+    }
+
+    .panel__head {
+        display: block;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .panel__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
 
     .row { flex-wrap: wrap; }
     .row__label { flex: 1 1 100%; margin-bottom: 2px; }
@@ -246,13 +219,9 @@ input[type="file"] { display: none; }
 
 @media (max-width: 480px) {
     .panel {
-        max-height: 50dvh; /* На маленьких экранах тоже половина */
-        padding: 0 16px calc(20px + var(--safe-bottom));
-        padding-left: calc(16px + var(--safe-left));
-        padding-right: calc(16px + var(--safe-right));
-        border-radius: 16px 16px 0 0;
+        flex: 0 0 45dvh; /* На мелких экранах чуть больше места для настроек */
+        height: 45dvh;
     }
     .stage-toolbar .btn { flex: 1 1 0; }
     .btn, .file-btn { min-height: 44px; }
-    .panel-toggle { padding: 12px 20px; font-size: 15px; }
-   }
+}
