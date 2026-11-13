@@ -1,24 +1,32 @@
 // ════════════════════════════════════════════════════════════
-// head.js — модуль головы (этап 2: круг + линия подбородка на L4)
+// head.js — модуль головы (круг + подбородок + челюсть)
 // ════════════════════════════════════════════════════════════
 
 const NS = 'http://www.w3.org/2000/svg';
 
 export const headState = {
+    // круг
     top:    0,
     bottom: 0,
     width:  1,
     radius: 1,
-    chinHeight:   0,     // сдвиг линии по Y относительно L4
-    chinWidth:    0.4,   // ширина линии (в долях headH)
-    chinRounding: 0      // пока не используем (для будущего скругления углов)
+    // подбородок
+    chinHeight:   0,
+    chinWidth:    0.4,
+    chinRounding: 0,
+    // челюсть
+    jawAttach: 0,
+    jawLength: 0.1,
+    jawAngle:  0.5,
+    jawWidth:  0.4
 };
 
 let els = null;
 
 const INPUT_KEYS = [
     'top', 'bottom', 'width', 'radius',
-    'chinHeight', 'chinWidth', 'chinRounding'
+    'chinHeight', 'chinWidth', 'chinRounding',
+    'jawAttach', 'jawLength', 'jawAngle', 'jawWidth'
 ];
 
 function initHeadUI() {
@@ -31,7 +39,11 @@ function initHeadUI() {
         radius:       { input: document.getElementById('headRadius'),    output: document.getElementById('headRadiusOut') },
         chinHeight:   { input: document.getElementById('chinHeight'),    output: document.getElementById('chinHeightOut') },
         chinWidth:    { input: document.getElementById('chinWidth'),     output: document.getElementById('chinWidthOut') },
-        chinRounding: { input: document.getElementById('chinRounding'),  output: document.getElementById('chinRoundingOut') }
+        chinRounding: { input: document.getElementById('chinRounding'),  output: document.getElementById('chinRoundingOut') },
+        jawAttach:    { input: document.getElementById('jawAttach'),     output: document.getElementById('jawAttachOut') },
+        jawLength:    { input: document.getElementById('jawLength'),     output: document.getElementById('jawLengthOut') },
+        jawAngle:     { input: document.getElementById('jawAngle'),      output: document.getElementById('jawAngleOut') },
+        jawWidth:     { input: document.getElementById('jawWidth'),      output: document.getElementById('jawWidthOut') }
     };
 
     if (!els.top.input) return;
@@ -100,10 +112,20 @@ export function renderHead(g, layout, state) {
     const { cx, cy, rx, ry } = computeEllipse(layout, headState);
     const { headLines, headH, canvasSize } = layout;
 
-    // Координаты линии подбородка
+    // Подбородок — горизонтальная линия на L4
     const yL4 = headLines[0] + headH * 0.8;
-    const chinY = yL4 + (headState.chinHeight * headH);
+    const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
+    const chinLeftX  = cx - chinHalfW;
+    const chinRightX = cx + chinHalfW;
+
+    // Челюсть — линии от подбородка к точкам крепления на круге
+    const jawHalfW = (headState.jawWidth * headH) / 2;
+    const jawTopY  = chinY - headState.jawLength * headH;
+    const angleFactor = 0.5 + headState.jawAngle;
+    const jawLeftTopX  = chinLeftX  - jawHalfW * angleFactor + jawHalfW;
+    const jawRightTopX = chinRightX + jawHalfW * angleFactor - jawHalfW;
+    const attachY = jawTopY + headState.jawAttach * headH;
 
     g.innerHTML = '';
 
@@ -115,14 +137,36 @@ export function renderHead(g, layout, state) {
         'stroke-width': 6
     }));
 
-    // 2. Линия подбородка на L4 (горизонтальная)
+    // 2. Линия подбородка
     g.appendChild(el('line', {
-        x1: cx - chinHalfW,
+        x1: chinLeftX,
         y1: chinY,
-        x2: cx + chinHalfW,
+        x2: chinRightX,
         y2: chinY,
-        stroke:         '#1e1f22',
-        'stroke-width': 6,
+        stroke:          '#1e1f22',
+        'stroke-width':  6,
+        'stroke-linecap':'round'
+    }));
+
+    // 3. Левая линия челюсти
+    g.appendChild(el('line', {
+        x1: jawLeftTopX,
+        y1: attachY,
+        x2: chinLeftX,
+        y2: chinY,
+        stroke:          '#1e1f22',
+        'stroke-width':  6,
+        'stroke-linecap':'round'
+    }));
+
+    // 4. Правая линия челюсти
+    g.appendChild(el('line', {
+        x1: jawRightTopX,
+        y1: attachY,
+        x2: chinRightX,
+        y2: chinY,
+        stroke:          '#1e1f22',
+        'stroke-width':  6,
         'stroke-linecap':'round'
     }));
 }
