@@ -1,173 +1,130 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#26282c" />
-    <title>Анекорды — конструктор фигуры</title>
-    <!-- Добавлен ?v=2 для сброса кэша браузера -->
-    <link rel="stylesheet" href="style.css?v=2" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Анекорды — конструктор пропорций</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<div class="app" id="app">
+  <div class="app">
 
     <!-- ХОЛСТ -->
-    <main class="stage">
-        <div class="stage-toolbar">
-            <button id="exportSvg" class="btn">SVG</button>
-            <button id="exportPng" class="btn btn--primary">PNG</button>
-        </div>
+    <main class="canvas-area" id="canvasArea">
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg
+          id="stage"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 4096 4096"
+          preserveAspectRatio="xMidYMid meet"
+          width="100%" height="100%"
+        >
+          <defs>
+            <!-- клип подложки (чтобы не выходила за холст) -->
+            <clipPath id="canvasClip">
+              <rect x="0" y="0" width="4096" height="4096" />
+            </clipPath>
+          </defs>
 
-        <div class="canvas-wrap">
-            <svg id="canvas"
-                 xmlns="http://www.w3.org/2000/svg"
-                 width="4096"
-                 height="4096"
-                 viewBox="0 0 4096 4096"
-                 preserveAspectRatio="xMidYMid meet">
-                <defs id="defs"></defs>
-                <g id="layerBg"></g>
-                <g id="layerGrid"></g>
-                <g id="layerFigure">
-                    <g id="figureHead"></g>
-                    <g id="figureTorso"></g>
-                    <g id="figureArms"></g>
-                    <g id="figureLegs"></g>
-                </g>
-            </svg>
-        </div>
+          <!-- слой подложки (не экспортируется) -->
+          <g id="layer-underlay" clip-path="url(#canvasClip)"></g>
+
+          <!-- слой сетки голов (не экспортируется) -->
+          <g id="layer-grid"></g>
+
+          <!-- слой фигуры (экспортируется) -->
+          <g id="layer-figure"></g>
+        </svg>
+      </div>
     </main>
 
-    <!-- ПАНЕЛЬ -->
-    <aside class="panel" id="panel" aria-label="Панель управления">
+    <!-- ПАНЕЛЬ УПРАВЛЕНИЯ -->
+    <aside class="panel" id="panel">
+      <div class="panel-inner">
 
-        <div class="panel__head">
-            <h1 class="panel__title">Настройки</h1>
-        </div>
+        <h1 class="panel-title">Анекорды</h1>
 
-        <section class="group">
-            <h2>Общее</h2>
+        <!-- ОБЩЕЕ -->
+        <section class="block">
+          <h2 class="block-title">Общее</h2>
 
-            <label class="row">
-                <span class="row__label">Рост в головах</span>
-                <input type="range" id="growth" min="1" max="12" step="0.5" value="5" />
-                <output id="growthOut">5</output>
-            </label>
+          <label class="row">
+            <span class="row-label">Рост в головах</span>
+            <span class="row-value" id="valHeads">5</span>
+          </label>
+          <input type="range" id="inpHeads" min="1" max="10" step="0.5" value="5" />
 
-            <label class="row">
-                <span class="row__label">Отступы сверху/снизу, %</span>
-                <input type="range" id="padding" min="0" max="10" step="0.1" value="0" />
-                <output id="paddingOut">0</output>
-            </label>
+          <label class="row">
+            <span class="row-label">Отступ сверху/снизу</span>
+            <span class="row-value" id="valMargin">0%</span>
+          </label>
+          <input type="range" id="inpMargin" min="0" max="10" step="0.5" value="0" />
+
+          <label class="row">
+            <span class="row-label">Толщина линий</span>
+            <span class="row-value" id="valStroke">6</span>
+          </label>
+          <input type="range" id="inpStroke" min="1" max="40" step="1" value="6" />
+
+          <label class="row">
+            <span class="row-label">Цвет линий</span>
+            <input type="color" id="inpColor" value="#000000" />
+          </label>
         </section>
 
-        <section class="group">
-            <h2>Голова</h2>
+        <!-- ПОДЛОЖКА -->
+        <section class="block">
+          <h2 class="block-title">Подложка</h2>
 
-            <label class="row">
-                <span class="row__label">Верх головы</span>
-                <input type="range" id="headTop" min="-0.5" max="0.5" step="0.01" value="0" />
-                <output id="headTopOut">0.00</output>
-            </label>
+          <div class="file-btn-wrap">
+            <input type="file" id="inpUnderlay" accept="image/*" hidden />
+            <button type="button" class="btn" id="btnUnderlay">Загрузить изображение</button>
+          </div>
 
-            <label class="row">
-                <span class="row__label">Низ головы</span>
-                <input type="range" id="headBottom" min="-0.5" max="0.5" step="0.01" value="0" />
-                <output id="headBottomOut">0.00</output>
-            </label>
+          <label class="row">
+            <span class="row-label">Прозрачность</span>
+            <span class="row-value" id="valUnderlayOpacity">50%</span>
+          </label>
+          <input type="range" id="inpUnderlayOpacity" min="0" max="100" step="1" value="50" />
 
-            <label class="row">
-                <span class="row__label">Ширина головы</span>
-                <input type="range" id="headWidth" min="0.5" max="1.5" step="0.01" value="1" />
-                <output id="headWidthOut">1.00</output>
-            </label>
+          <label class="row">
+            <span class="row-label">Масштаб</span>
+            <span class="row-value" id="valUnderlayScale">100%</span>
+          </label>
+          <input type="range" id="inpUnderlayScale" min="10" max="300" step="1" value="100" />
 
-            <label class="row">
-                <span class="row__label">Радиус головы</span>
-                <input type="range" id="headRadius" min="0.7" max="1.3" step="0.01" value="1" />
-                <output id="headRadiusOut">1.00</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Высота подбородка</span>
-                <input type="range" id="chinHeight" min="-0.2" max="0.3" step="0.01" value="0" />
-                <output id="chinHeightOut">0.00</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Ширина подбородка</span>
-                <input type="range" id="chinWidth" min="0.1" max="0.6" step="0.01" value="0.10" />
-                <output id="chinWidthOut">0.10</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Высота крепления челюсти</span>
-                <input type="range" id="jawAttach" min="0" max="0.3" step="0.01" value="0" />
-                <output id="jawAttachOut">0.00</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Длина челюсти</span>
-                <input type="range" id="jawLength" min="0" max="0.4" step="0.01" value="0.40" />
-                <output id="jawLengthOut">0.40</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Угол челюсти</span>
-                <input type="range" id="jawAngle" min="0" max="1" step="0.01" value="0.50" />
-                <output id="jawAngleOut">0.50</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Ширина шеи</span>
-                <input type="range" id="neckWidth" min="0.05" max="0.4" step="0.01" value="0.15" />
-                <output id="neckWidthOut">0.15</output>
-            </label>
+          <button type="button" class="btn btn-danger" id="btnUnderlayRemove">Удалить подложку</button>
         </section>
 
-        <section class="group">
-            <h2>Подложка</h2>
+        <!-- ПРЕСЕТЫ -->
+        <section class="block">
+          <h2 class="block-title">Пресеты</h2>
 
-            <div class="row row--file">
-                <label class="file-btn">
-                    <input type="file" id="bgFile" accept="image/*" />
-                    <span>Выбрать изображение</span>
-                </label>
-            </div>
+          <div class="preset-save">
+            <input type="text" id="inpPresetName" placeholder="Название пресета" />
+            <button type="button" class="btn" id="btnPresetSave">Сохранить</button>
+          </div>
 
-            <label class="row">
-                <span class="row__label">Прозрачность</span>
-                <input type="range" id="bgOpacity" min="0" max="1" step="0.01" value="1" disabled />
-                <output id="bgOpacityOut">1</output>
-            </label>
-
-            <label class="row">
-                <span class="row__label">Масштаб</span>
-                <input type="range" id="bgScale" min="0.1" max="3" step="0.01" value="1" disabled />
-                <output id="bgScaleOut">1</output>
-            </label>
-
-            <div class="row row--buttons">
-                <button id="bgRemove" class="btn btn--danger" disabled>Удалить подложку</button>
-            </div>
+          <ul class="preset-list" id="presetList">
+            <li class="preset-empty">Пресетов пока нет</li>
+          </ul>
         </section>
 
-        <section class="group">
-            <h2>Пресеты</h2>
-
-            <div class="row row--stack">
-                <input type="text" id="presetName" placeholder="Имя пресета" />
-                <button id="presetSave" class="btn btn--primary">Сохранить</button>
-            </div>
-
-            <ul id="presetList" class="preset-list"></ul>
+        <!-- ЭКСПОРТ -->
+        <section class="block">
+          <h2 class="block-title">Экспорт</h2>
+          <div class="export-btns">
+            <button type="button" class="btn" id="btnExportSvg">Скачать SVG</button>
+            <button type="button" class="btn" id="btnExportPng">Скачать PNG</button>
+          </div>
         </section>
+
+      </div>
     </aside>
 
-</div>
+  </div>
 
-<!-- Добавлен ?v=2 для сброса кэша браузера -->
-<script src="js/main.js?v=2" type="module"></script>
+  <!-- модули подключаются как ES-модули -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
