@@ -59,7 +59,7 @@
   };
 
   // ============================================================
-  //  Форматтеры (как shapeFmt / LINE.fmt в референсе)
+  //  Форматтеры
   // ============================================================
   const shapeFmt = (p) => (v) => {
     if (p.unit === '%' && p.pct) return `${Math.round(v * 100)}%`;
@@ -148,7 +148,7 @@
   }
 
   // ============================================================
-  //  Фабрика ползунков — 1-в-1 как в референсе
+  //  Фабрика ползунков
   // ============================================================
   function makeSlider(host, p, idPrefix, get, set, fmt) {
     const row = document.createElement('div');
@@ -177,14 +177,12 @@
     });
     input.addEventListener('change', () => { dragging = false; });
 
-    // Двойной клик по строке — сброс
     const reset = () => {
       set(p.def);
       sync();
     };
     row.addEventListener('dblclick', reset);
 
-    // Долгое нажатие (touch) — сброс
     let timer = 0, start = null;
     input.addEventListener('pointerdown', (e) => {
       if (e.pointerType !== 'touch') return;
@@ -202,7 +200,7 @@
   }
 
   // ============================================================
-  //  Построение ползунков из SHAPE_PARAMS и LINE_PARAM
+  //  Построение ползунков
   // ============================================================
   const syncers = [];
 
