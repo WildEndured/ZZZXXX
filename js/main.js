@@ -11,7 +11,10 @@
   const state = {
     heads: 5,
     margin: 0,
-    head: (window.Head && window.Head.defaultShape) ? window.Head.defaultShape() : {},
+    shape: (window.Head && window.Head.defaultShape) ? window.Head.defaultShape() : {},
+    display: {
+      line: (window.Head && window.Head.LINE_PARAM) ? window.Head.LINE_PARAM.def : 0.012,
+    },
     underlay: {
       src: null,
       opacity: 0.5,
@@ -37,7 +40,8 @@
     marginVal: $('marginVal'),
 
     headGroup: $('headGroup'),
-    headSliders: $('headSliders'),
+    shapeSliders: $('shapeSliders'),
+    displaySliders: $('displaySliders'),
 
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
@@ -54,16 +58,15 @@
     exportPng: $('exportPng'),
   };
 
-  // Диагностика: сообщим, чего не хватает
-  function checkDom() {
-    const missing = [];
-    for (const [k, v] of Object.entries(dom)) if (!v) missing.push(k);
-    if (!window.Head) missing.push('window.Head (head.js не загрузился)');
-    if (missing.length) {
-      console.warn('[main.js] Отсутствуют элементы/модули:', missing);
-    }
-    return missing;
-  }
+  // ============================================================
+  //  Форматтеры (как shapeFmt / LINE.fmt в референсе)
+  // ============================================================
+  const shapeFmt = (p) => (v) => {
+    if (p.unit === '%' && p.pct) return `${Math.round(v * 100)}%`;
+    if (p.unit) return `${Math.round(v)}${p.unit}`;
+    return Number(v).toFixed(2);
+  };
+  const lineFmt = (v) => Number(v).toFixed(3);
 
   // ============================================================
   //  Геометрия холста
@@ -81,21 +84,9 @@
       headHeight, heads: state.heads,
       centerX: CANVAS / 2,
       topY: usableTop,
-      torsoHeight: headHeight * 1.8,
-      torsoWidth: headHeight * 1.4,
-      shoulderY: usableTop + headHeight,
-      hipY: usableTop + headHeight + headHeight * 1.8,
-      armLength: headHeight * 2.2,
-      armWidth: headHeight * 0.35,
-      legLength: headHeight * 2.5,
-      legWidth: headHeight * 0.45,
-      legOffsetX: headHeight * 0.4,
     };
   }
 
-  // ============================================================
-  //  Сетка голов
-  // ============================================================
   function renderHeadsGrid(geo) {
     if (!dom.headsLayer) return;
     const ns = 'http://www.w3.org/2000/svg';
@@ -113,23 +104,13 @@
     }
   }
 
-  // ============================================================
-  //  Синхронизация модулей
-  // ============================================================
-  function syncFigureModules(geo) {
-    if (window.Head) window.Head.update(geo);
-    if (window.Torso) window.Torso.update(geo);
-    if (window.Arm) window.Arm.update(geo);
-    if (window.Leg) window.Leg.update(geo);
-  }
-
-  // ============================================================
-  //  Применение состояния
-  // ============================================================
   function applyState() {
     const geo = computeGeometry();
     renderHeadsGrid(geo);
-    syncFigureModules(geo);
+    if (window.Head) {
+      window.Head.update(geo);
+      window.Head.setLine(state.display.line);
+    }
     renderUnderlay();
     if (dom.headsVal) dom.headsVal.textContent = state.heads;
     if (dom.marginVal) dom.marginVal.textContent = state.margin;
@@ -141,13 +122,11 @@
   function renderUnderlay() {
     if (!dom.underlayImage) return;
     const u = state.underlay;
-
     if (!u.src) {
       dom.underlayImage.style.display = 'none';
       if (dom.removeUnderlay) dom.removeUnderlay.disabled = true;
       return;
     }
-
     dom.underlayImage.style.display = 'block';
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
@@ -169,51 +148,48 @@
   }
 
   // ============================================================
-  //  Фабрика ползунков
+  //  Фабрика ползунков — 1-в-1 как в референсе
   // ============================================================
-  function makeSlider(host, p, get, set, after) {
-    if (!host) return () => {};
+  function makeSlider(host, p, idPrefix, get, set, fmt) {
     const row = document.createElement('div');
     row.className = 'slider';
-    const id = `head-${p.key}`;
+    const id = `${idPrefix}-${p.key}`;
     row.innerHTML =
       `<label for="${id}">${p.label}</label>` +
-      `<output for="${id}"></output>` +
-      `<input type="range" id="${id}">`;
-    const [label, out, input] = row.children;
+      `<input type="range" id="${id}">` +
+      `<output for="${id}"></output>`;
+    const [label, input, out] = row.children;
     Object.assign(input, { min: p.min, max: p.max, step: p.step });
     host.appendChild(row);
 
-    const fmt = p.fmt || ((v) => String(v));
     const sync = () => {
       const v = get();
       input.value = v;
       out.textContent = fmt(v);
     };
 
+    let dragging = false;
     input.addEventListener('input', () => {
+      if (!dragging) dragging = true;
       const v = Number(input.value);
       set(v);
       out.textContent = fmt(v);
-      if (after) after();
     });
+    input.addEventListener('change', () => { dragging = false; });
 
-    row.addEventListener('dblclick', () => {
+    // Двойной клик по строке — сброс
+    const reset = () => {
       set(p.def);
       sync();
-      if (after) after();
-    });
+    };
+    row.addEventListener('dblclick', reset);
 
+    // Долгое нажатие (touch) — сброс
     let timer = 0, start = null;
     input.addEventListener('pointerdown', (e) => {
       if (e.pointerType !== 'touch') return;
       start = { x: e.clientX, y: e.clientY };
-      timer = setTimeout(() => {
-        set(p.def);
-        sync();
-        if (after) after();
-        navigator.vibrate?.(15);
-      }, 600);
+      timer = setTimeout(() => { reset(); navigator.vibrate?.(15); }, 600);
     });
     input.addEventListener('pointermove', (e) => {
       if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > 8) clearTimeout(timer);
@@ -226,24 +202,14 @@
   }
 
   // ============================================================
-  //  Ползунки головы
+  //  Построение ползунков из SHAPE_PARAMS и LINE_PARAM
   // ============================================================
-  const headSyncers = [];
+  const syncers = [];
 
-  function buildHeadSliders() {
-    if (!window.Head || !window.Head.SHAPE_PARAMS || !dom.headSliders) {
-      console.warn('[main.js] buildHeadSliders: Head или контейнер недоступны');
-      return;
-    }
-    dom.headSliders.innerHTML = '';
-    headSyncers.length = 0;
-
-    const rebuild = () => {
-      if (window.Head) {
-        window.Head.params = state.head;
-        window.Head.build();
-      }
-    };
+  function buildShapeSliders() {
+    if (!window.Head || !dom.shapeSliders) return;
+    dom.shapeSliders.innerHTML = '';
+    syncers.length = 0;
 
     let currentGroup = null;
     for (const p of window.Head.SHAPE_PARAMS) {
@@ -252,15 +218,36 @@
         const h = document.createElement('h3');
         h.className = 'group-h';
         h.textContent = p.group;
-        dom.headSliders.appendChild(h);
+        dom.shapeSliders.appendChild(h);
       }
-      headSyncers.push(makeSlider(
-        dom.headSliders, p,
-        () => state.head[p.key],
-        (v) => { state.head[p.key] = v; },
-        rebuild
+      syncers.push(makeSlider(
+        dom.shapeSliders, p, 'shape',
+        () => state.shape[p.key],
+        (v) => {
+          state.shape[p.key] = v;
+          if (window.Head) {
+            window.Head.params = state.shape;
+            window.Head.build();
+          }
+        },
+        shapeFmt(p)
       ));
     }
+  }
+
+  function buildDisplaySliders() {
+    if (!window.Head || !dom.displaySliders) return;
+    dom.displaySliders.innerHTML = '';
+    const p = window.Head.LINE_PARAM;
+    syncers.push(makeSlider(
+      dom.displaySliders, p, 'display',
+      () => state.display.line,
+      (v) => {
+        state.display.line = v;
+        if (window.Head) window.Head.setLine(v);
+      },
+      lineFmt
+    ));
   }
 
   // ============================================================
@@ -305,7 +292,6 @@
       e.target.value = '';
     });
   }
-
   if (dom.opacityRange) {
     dom.opacityRange.addEventListener('input', (e) => {
       state.underlay.opacity = parseInt(e.target.value, 10) / 100;
@@ -351,7 +337,12 @@
     catch (err) { console.error('Не удалось сохранить пресеты:', err); }
   }
   function snapshotState() {
-    return { heads: state.heads, margin: state.margin, head: { ...state.head } };
+    return {
+      heads: state.heads,
+      margin: state.margin,
+      shape: { ...state.shape },
+      display: { line: state.display.line },
+    };
   }
   function applySnapshot(snap) {
     if (!snap) return;
@@ -363,11 +354,18 @@
       state.margin = snap.margin;
       if (dom.marginRange) dom.marginRange.value = snap.margin;
     }
-    if (snap.head && window.Head) {
-      state.head = window.Head.clampShape(snap.head);
-      window.Head.params = state.head;
+    if (snap.shape && window.Head) {
+      state.shape = window.Head.clampShape(snap.shape);
+      window.Head.params = state.shape;
     }
-    for (const s of headSyncers) s();
+    if (snap.display && window.Head) {
+      const lp = window.Head.LINE_PARAM;
+      const v = Number(snap.display.line);
+      state.display.line = Number.isFinite(v)
+        ? Math.min(lp.max, Math.max(lp.min, v))
+        : lp.def;
+    }
+    for (const s of syncers) s();
     applyState();
   }
   function renderPresets() {
@@ -476,11 +474,6 @@
   //  Инициализация
   // ============================================================
   function init() {
-    const missing = checkDom();
-    if (missing.length) {
-      console.error('[main.js] Инициализация с ошибками:', missing);
-    }
-
     if (dom.headsRange) dom.headsRange.value = state.heads;
     if (dom.marginRange) dom.marginRange.value = state.margin;
     if (dom.opacityRange) dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
@@ -488,18 +481,14 @@
     if (dom.scaleRange) dom.scaleRange.value = Math.round(state.underlay.scale * 100);
     if (dom.scaleVal) dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
 
-    // Инициализация модуля головы
     if (window.Head && dom.headGroup) {
-      window.Head.params = state.head;
+      window.Head.params = state.shape;
+      window.Head.line = state.display.line;
       window.Head.init(dom.headGroup);
-    } else {
-      console.warn('[main.js] Head не инициализирован:', {
-        Head: !!window.Head,
-        headGroup: !!dom.headGroup,
-      });
     }
 
-    buildHeadSliders();
+    buildShapeSliders();
+    buildDisplaySliders();
     renderPresets();
     applyState();
   }
