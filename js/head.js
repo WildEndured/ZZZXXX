@@ -2,21 +2,32 @@
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
+
+  // ============================================================
+  //  Каталог параметров головы
+  //  Модель: сетка L0..L5 (5 равных сегментов headH)
+  // ============================================================
   const HEAD_PARAMS = [
+    // --- Круг ---
     { group: 'Круг',
-      key: 'top',         label: 'Высота макушки',         min: 0.8,  max: 1.4,  step: 0.01, def: 1,    fmt: (v) => v.toFixed(2) },
-    { key: 'r0',          label: '③ Размер круга',         min: 0.3,  max: 0.95, step: 0.01, def: 0.68, fmt: (v) => v.toFixed(2) },
+      key: 'topOffset',     label: 'Верх головы (L0)',       min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'bottomOffset',  label: 'Низ головы (L3)',         min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'widthMul',      label: 'Ширина головы',           min: 0.5,  max: 2.0, step: 0.01, def: 1.0, unit: '%' },
+    { key: 'radiusMul',     label: 'Радиус головы',           min: 0.5,  max: 2.0, step: 0.01, def: 1.0, unit: '%' },
 
-    { group: 'Челюсть',
-      key: 'jaw_start',   label: 'Ⓐ Начало челюсти',       min: -60,  max: 60,   step: 1,    def: 0,    unit: '°' },
-    { key: 'jaw_len',     label: '⑦ Длина челюсти',        min: 0,    max: 1.2,  step: 0.01, def: 0.4,  fmt: (v) => v.toFixed(2) },
-    { key: 'jaw_x',       label: 'Ⓑ Ширина скулы',         min: 0.2,  max: 0.95, step: 0.01, def: 0.62, fmt: (v) => v.toFixed(2) },
-
+    // --- Подбородок ---
     { group: 'Подбородок',
-      key: 'chin_len',    label: 'Ⓒ Высота подбородка',    min: 0.5,  max: 1.5,  step: 0.01, def: 1,    fmt: (v) => v.toFixed(2) },
-    { key: 'chin_w',      label: 'Ⓒ Ширина подбородка',    min: 0.03, max: 0.6,  step: 0.01, def: 0.22, fmt: (v) => v.toFixed(2) },
-    { key: 'chin_round',  label: 'Ⓒ Скругление подбородка', min: 0,   max: 1,    step: 0.01, def: 0.5,  fmt: (v) => v.toFixed(2) },
+      key: 'chinYOffset',   label: 'Высота подбородка (L4)',  min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'chinWidth',     label: 'Ширина подбородка',       min: 0.05, max: 1.5, step: 0.01, def: 0.55, unit: '%' },
+
+    // --- Челюсть ---
+    { group: 'Челюсть',
+      key: 'jawAttachY',    label: 'Высота крепления к голове', min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'jawLength',     label: 'Длина челюсти',           min: 0,    max: 1.2, step: 0.01, def: 0.4 },
+    { key: 'jawCorner',     label: 'Ширина углов челюсти',    min: 0,    max: 0.5, step: 0.01, def: 0.15 },
   ];
+
+  // Толщина линии — отдельный параметр
   const LINE_PARAM = { key: 'line', label: 'Толщина линии', min: 0.001, max: 0.05, step: 0.001, def: 0.012 };
 
   function defaultShape() {
@@ -24,6 +35,7 @@
     for (const p of HEAD_PARAMS) s[p.key] = p.def;
     return s;
   }
+
   function clampShape(input) {
     const s = defaultShape();
     if (!input || typeof input !== 'object') return s;
@@ -34,6 +46,9 @@
     return s;
   }
 
+  // ============================================================
+  //  Модуль головы
+  // ============================================================
   const Head = {
     name: 'head',
     PARAMS: HEAD_PARAMS,
@@ -45,13 +60,24 @@
     line: LINE_PARAM.def,
     geom: { centerX: 2048, topY: 0, headH: 0 },
 
-    groups: { outline: null },
+    groups: { skull: null, chin: null, jaw: null },
 
     init(container) {
       container.innerHTML = '';
-      this.groups.outline = document.createElementNS(NS, 'g');
-      this.groups.outline.setAttribute('data-part', 'head-outline');
-      container.appendChild(this.groups.outline);
+
+      this.groups.skull = document.createElementNS(NS, 'g');
+      this.groups.skull.setAttribute('data-part', 'skull');
+
+      this.groups.jaw = document.createElementNS(NS, 'g');
+      this.groups.jaw.setAttribute('data-part', 'jaw');
+
+      this.groups.chin = document.createElementNS(NS, 'g');
+      this.groups.chin.setAttribute('data-part', 'chin');
+
+      container.appendChild(this.groups.skull);
+      container.appendChild(this.groups.jaw);
+      container.appendChild(this.groups.chin);
+
       this.build();
     },
 
@@ -73,139 +99,137 @@
       this.build();
     },
 
-    // ---- Опорные точки (фронтальная проекция) ----
-    compute() {
-      const { centerX: cx, topY, headH } = this.geom;
+    // ---- Уровни L0..L5 (базовая система координат) ----
+    levels() {
+      const { topY, headH } = this.geom;
       const p = this.shape;
       const H = headH;
 
-      // Круг-череп (эллипс)
-      const rx = p.r0 * H;
-      const ry = p.r0 * H;
-      const cy = topY + ry;               // центр по Y: верх эллипса = topY (при top=1)
-      const topYellipse = cy - ry * p.top;
-      const botYellipse = cy + ry;
+      // Базовые уровни (без смещений)
+      const L0 = topY + 0 * (H / 5);
+      const L1 = topY + 1 * (H / 5);
+      const L2 = topY + 2 * (H / 5);
+      const L3 = topY + 3 * (H / 5);
+      const L4 = topY + 4 * (H / 5);
+      const L5 = topY + 5 * (H / 5);
 
-      // Ⓐ — точка крепления челюсти на боковой границе круга
-      //    jaw_start = 0 → экватор (cx ± rx, cy).
-      //    jaw_start > 0 → ниже экватора, < 0 → выше.
-      const jawAng = p.jaw_start * Math.PI / 180;
-      const ax_off = rx * Math.cos(jawAng);
-      const ay_off = ry * Math.sin(jawAng);
-      const A_left  = { x: cx - ax_off, y: cy + ay_off };
-      const A_right = { x: cx + ax_off, y: cy + ay_off };
-
-      // Ⓑ — ширина скулы (смещение вниз от Ⓐ)
-      const By = cy + ry + p.jaw_len * p.r0 * H * 0.5;
-      const Bx_off = p.jaw_x * rx;
-      const B_left  = { x: cx - Bx_off, y: By };
-      const B_right = { x: cx + Bx_off, y: By };
-
-      // Ⓒ — подбородок: уровень и ширина
-      const chinY = cy + ry + p.chin_len * p.r0 * H * 0.5;
-      const chinHalfW = p.chin_w * rx;
-      const C_left  = { x: cx - chinHalfW, y: chinY };
-      const C_right = { x: cx + chinHalfW, y: chinY };
-      const chinBottom = { x: cx, y: chinY + p.chin_len * p.r0 * H * 0.3 };
-
+      // Со смещениями от ползунков
       return {
-        circle: { cx, cy, rx, ry, topY: topYellipse, botY: botYellipse },
-        A_left, A_right,
-        B_left, B_right,
-        C_left, C_right,
-        chinBottom,
-        chinRound: p.chin_round,
+        L0: L0 + p.topOffset * H,
+        L1,
+        L2,
+        L3: L3 + p.bottomOffset * H,
+        L4: L4 + p.chinYOffset * H,
+        L5,
+        base: { L0, L1, L2, L3, L4, L5 },
+        H,
       };
     },
 
-    // ---- Хелпер: скруглённый путь через точки ----
-    roundedPath(points, radius) {
-      if (points.length < 2) return '';
-      if (radius <= 0.01) {
-        return points.map((p, i) => (i ? 'L' : 'M') + ` ${p.x} ${p.y}`).join(' ');
-      }
-      const d = [];
-      for (let i = 0; i < points.length; i++) {
-        const prev = points[i - 1];
-        const curr = points[i];
-        const next = points[i + 1];
-        if (!prev || !next) {
-          d.push(`${i === 0 ? 'M' : 'L'} ${curr.x} ${curr.y}`);
-          continue;
-        }
-        const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y);
-        const d2 = Math.hypot(next.x - curr.x, next.y - curr.y);
-        const r = Math.min(radius, d1 / 2, d2 / 2);
-        const t1 = { x: curr.x + (prev.x - curr.x) * (r / d1), y: curr.y + (prev.y - curr.y) * (r / d1) };
-        const t2 = { x: curr.x + (next.x - curr.x) * (r / d2), y: curr.y + (next.y - curr.y) * (r / d2) };
-        d.push(i === 0 ? `M ${t1.x} ${t1.y}` : `L ${t1.x} ${t1.y}`);
-        d.push(`Q ${curr.x} ${curr.y} ${t2.x} ${t2.y}`);
-      }
-      const last = points[points.length - 1];
-      d.push(`L ${last.x} ${last.y}`);
-      return d.join(' ');
+    // ---- Опорные точки ----
+    compute() {
+      const { centerX: cx } = this.geom;
+      const p = this.shape;
+      const lv = this.levels();
+      const H = lv.H;
+
+      // --- Круг (эллипс) ---
+      // По умолчанию занимает от L0 до L3: диаметр 3/5 H, радиус 3/10 H.
+      // Центр по Y = (L0 + L3)/2, радиусы:
+      //   ry = |L3 - L0| / 2
+      //   rx = ry * widthMul
+      // Общий множитель radiusMul применяем к обоим.
+      const circleTop = lv.L0;
+      const circleBottom = lv.L3;
+      const cy = (circleTop + circleBottom) / 2;
+      const ry = (Math.abs(circleBottom - circleTop) / 2) * p.radiusMul;
+      const rx = (Math.abs(circleBottom - circleTop) / 2) * p.widthMul * p.radiusMul;
+      const circle = { cx, cy, rx, ry, top: cy - ry, bottom: cy + ry };
+
+      // --- «Широчайшие» точки круга с учётом высоты крепления ---
+      // Идея: точки крепления челюсти находятся на боковой границе эллипса.
+      // По умолчанию — на экваторе (y = cy). Ползунок jawAttachY сдвигает их
+      // по Y в долях H; X пересчитывается так, чтобы точка оставалась на эллипсе.
+      const attachY = cy + p.jawAttachY * H;
+      // нормированное смещение по Y относительно ry
+      const t = Math.max(-0.999, Math.min(0.999, (attachY - cy) / (ry || 1)));
+      const attachDx = rx * Math.sqrt(1 - t * t);
+      const attachLeft  = { x: cx - attachDx, y: attachY };
+      const attachRight = { x: cx + attachDx, y: attachY };
+
+      // --- Спуск челюсти (длина) ---
+      const dropLen = p.jawLength * H;
+      const dropLeft  = { x: attachLeft.x,  y: attachLeft.y  + dropLen };
+      const dropRight = { x: attachRight.x, y: attachRight.y + dropLen };
+
+      // --- Углы челюсти (отвод по X) ---
+      const cornerDx = p.jawCorner * H;
+      const cornerLeft  = { x: dropLeft.x  - cornerDx, y: dropLeft.y  };
+      const cornerRight = { x: dropRight.x + cornerDx, y: dropRight.y };
+
+      // --- Подбородок: горизонтальная линия на L4 ---
+      const chinY = lv.L4;
+      const chinHalf = p.chinWidth * rx;
+      const chinLeft  = { x: cx - chinHalf, y: chinY };
+      const chinRight = { x: cx + chinHalf, y: chinY };
+
+      return {
+        levels: lv,
+        circle,
+        attachLeft, attachRight,
+        dropLeft, dropRight,
+        cornerLeft, cornerRight,
+        chinLeft, chinRight, chinY,
+      };
     },
 
     // ---- Отрисовка ----
     build() {
-      if (!this.groups.outline) return;
+      if (!this.groups.skull) return;
       const g = this.compute();
       const strokePx = Math.max(0.5, this.line * this.geom.headH);
 
-      const outline = this.groups.outline;
-      outline.innerHTML = '';
-      outline.setAttribute('fill', 'none');
-      outline.setAttribute('stroke', 'currentColor');
-      outline.setAttribute('stroke-width', String(strokePx));
-      outline.setAttribute('stroke-linecap', 'round');
-      outline.setAttribute('stroke-linejoin', 'round');
+      // Круг
+      this.groups.skull.innerHTML = '';
+      const circle = document.createElementNS(NS, 'ellipse');
+      circle.setAttribute('cx', g.circle.cx);
+      circle.setAttribute('cy', g.circle.cy);
+      circle.setAttribute('rx', g.circle.rx);
+      circle.setAttribute('ry', g.circle.ry);
+      this.groups.skull.appendChild(circle);
 
-      // 1. Круг черепа (эллипс)
-      const skull = document.createElementNS(NS, 'ellipse');
-      skull.setAttribute('cx', g.circle.cx);
-      skull.setAttribute('cy', g.circle.cy);
-      skull.setAttribute('rx', g.circle.rx);
-      skull.setAttribute('ry', g.circle.ry);
-      // Учёт "top": верхняя точка через вертикальный масштаб не выразить в ellipse,
-      // поэтому рисуем как эллипс с ry_effective и верхним сдвигом через path.
-      // Проще: path верхней полуэллипса + нижней.
-      outline.appendChild(this.buildSkullPath(g));
-
-      // 2. Челюсть (скруглённая)
-      const jawRadiusPx = g.chinRound * this.geom.headH * 0.08;
-      const jaw = document.createElementNS(NS, 'path');
-      const jawPts = [
-        g.A_left,
-        g.B_left,
-        g.C_left,
-        g.chinBottom,
-        g.C_right,
-        g.B_right,
-        g.A_right,
-      ];
-      jaw.setAttribute('d', this.roundedPath(jawPts, jawRadiusPx));
-      jaw.setAttribute('fill', 'none');
-      outline.appendChild(jaw);
-    },
-
-    buildSkullPath(g) {
-      const { cx, cy, rx, ry, topY, botY } = g.circle;
-      // Верхняя половина с учётом top (растягиваем только по Y для верхней половины)
-      const ryTop = cy - topY;
-      const ryBot = botY - cy;
-      const path = document.createElementNS(NS, 'path');
-      // Старт: левый экватор
-      // A-rx,cy → верх через ryTop → правый экватор cx+rx,cy
-      // → низ через ryBot → возврат
+      // Челюсть: A_left → drop_left → corner_left → chin_left
+      //          A_right → drop_right → corner_right → chin_right
+      this.groups.jaw.innerHTML = '';
+      const jawPath = document.createElementNS(NS, 'path');
       const d = [
-        `M ${cx - rx} ${cy}`,
-        `A ${rx} ${ryTop} 0 0 1 ${cx + rx} ${cy}`,
-        `A ${rx} ${ryBot} 0 0 1 ${cx - rx} ${cy}`,
-        'Z',
+        `M ${g.attachLeft.x} ${g.attachLeft.y}`,
+        `L ${g.dropLeft.x} ${g.dropLeft.y}`,
+        `L ${g.cornerLeft.x} ${g.cornerLeft.y}`,
+        `L ${g.chinLeft.x} ${g.chinLeft.y}`,
+        `M ${g.attachRight.x} ${g.attachRight.y}`,
+        `L ${g.dropRight.x} ${g.dropRight.y}`,
+        `L ${g.cornerRight.x} ${g.cornerRight.y}`,
+        `L ${g.chinRight.x} ${g.chinRight.y}`,
       ].join(' ');
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      return path;
+      jawPath.setAttribute('d', d);
+      jawPath.setAttribute('fill', 'none');
+      this.groups.jaw.appendChild(jawPath);
+
+      // Подбородок: горизонтальная линия на L4
+      this.groups.chin.innerHTML = '';
+      const chin = document.createElementNS(NS, 'line');
+      chin.setAttribute('x1', g.chinLeft.x);
+      chin.setAttribute('y1', g.chinLeft.y);
+      chin.setAttribute('x2', g.chinRight.x);
+      chin.setAttribute('y2', g.chinRight.y);
+      this.groups.chin.appendChild(chin);
+
+      // Толщина / заливка
+      for (const grp of [this.groups.skull, this.groups.jaw, this.groups.chin]) {
+        grp.setAttribute('stroke-width', String(strokePx));
+        grp.setAttribute('fill', 'none');
+      }
     },
   };
 
