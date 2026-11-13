@@ -20,19 +20,24 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  /* Жестко запрещаем скролл всей страницы */
+  overflow: hidden; 
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text);
   background: var(--bg);
+  /* Отключаем pull-to-refresh и прочие свайпы страницы */
+  overscroll-behavior: none; 
 }
 
 .app {
   display: flex;
   height: 100vh;
   height: 100dvh;
+  width: 100vw;
   overflow: hidden;
 }
 
-/* ===== Панель управления ===== */
+/* ===== Панель управления (Десктоп) ===== */
 .panel {
   width: var(--panel-width);
   flex: 0 0 var(--panel-width);
@@ -40,235 +45,10 @@ html, body {
   border-right: 1px solid var(--border);
   overflow-y: auto;
   padding: 16px;
+  height: 100%;
 }
 
-.panel__title {
-  font-size: 18px;
-  margin: 0 0 16px;
-}
-
-.section {
-  border-top: 1px solid var(--border);
-  padding: 14px 0;
-}
-
-.section:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-
-.section__title {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-  margin: 0 0 12px;
-}
-
-.field {
-  display: block;
-  margin-bottom: 14px;
-}
-
-.field__label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  margin-bottom: 6px;
-}
-
-.field__value {
-  font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
-input[type="range"]:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-input[type="color"] {
-  width: 100%;
-  height: 34px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: #fff;
-  cursor: pointer;
-}
-
-input[type="text"] {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-input[type="text"]:focus {
-  border-color: var(--accent);
-}
-
-/* ===== Кнопки ===== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 14px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
-  background: var(--accent);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.15s;
-  width: 100%;
-}
-
-.btn:hover { background: var(--accent-hover); }
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn--danger {
-  background: var(--danger);
-}
-.btn--danger:hover { background: var(--danger-hover); }
-
-.btn--ghost {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  padding: 4px 8px;
-  font-size: 12px;
-  width: auto;
-}
-.btn--ghost:hover {
-  background: var(--danger);
-  color: #fff;
-}
-
-.export-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-/* ===== Файловая кнопка ===== */
-.file-btn-wrap {
-  margin-bottom: 12px;
-}
-
-.file-btn__input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.file-btn {
-  display: block;
-  width: 100%;
-  padding: 9px 14px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 500;
-  background: #eef1f6;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.file-btn:hover { background: #e2e7f0; }
-
-/* ===== Пресеты ===== */
-.preset-save {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.preset-save input { flex: 1; }
-
-.preset-save .btn {
-  width: auto;
-  flex-shrink: 0;
-}
-
-.preset-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.preset-list__empty {
-  font-size: 12px;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 8px 0;
-}
-
-.preset-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  background: #f7f8fa;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.preset-item__name {
-  flex: 1;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.preset-item__actions {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.preset-item__btn {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: var(--accent);
-  transition: background 0.15s;
-}
-
-.preset-item__btn:hover { background: #e5edfd; }
-
-.preset-item__btn--del { color: var(--danger); }
-.preset-item__btn--del:hover { background: #fbe6e5; }
-
-/* ===== Холст ===== */
+/* ===== Холст (Десктоп) ===== */
 .canvas-area {
   flex: 1;
   min-width: 0;
@@ -277,16 +57,16 @@ input[type="text"]:focus {
   justify-content: center;
   padding: 24px;
   overflow: hidden;
-  background:
-    repeating-conic-gradient(#e9ebef 0% 25%, #f4f5f7 0% 50%) 50% / 24px 24px;
+  background: repeating-conic-gradient(#e9ebef 0% 25%, #f4f5f7 0% 50%) 50% / 24px 24px;
+  height: 100%;
 }
 
 .canvas-wrap {
   max-width: 100%;
   max-height: 100%;
   aspect-ratio: 1 / 1;
-  width: min(100%, 100vh);
-  height: auto;
+  width: auto;
+  height: 100%;
 }
 
 #svg {
@@ -302,35 +82,80 @@ input[type="text"]:focus {
   pointer-events: none;
 }
 
-/* ===== Адаптив ===== */
+/* ... (Остальные стили для кнопок, инпутов, пресетов оставляем без изменений) ... */
+.panel__title { font-size: 18px; margin: 0 0 16px; }
+.section { border-top: 1px solid var(--border); padding: 14px 0; }
+.section:first-of-type { border-top: none; padding-top: 0; }
+.section__title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin: 0 0 12px; }
+.field { display: block; margin-bottom: 14px; }
+.field__label { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px; }
+.field__value { font-variant-numeric: tabular-nums; color: var(--text-muted); font-size: 12px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+input[type="range"]:disabled { cursor: not-allowed; opacity: 0.5; }
+input[type="color"] { width: 100%; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; cursor: pointer; }
+input[type="text"] { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); outline: none; transition: border-color 0.15s; }
+input[type="text"]:focus { border-color: var(--accent); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 14px; font-size: 13px; font-weight: 500; color: #fff; background: var(--accent); border: none; border-radius: var(--radius); cursor: pointer; transition: background 0.15s; width: 100%; }
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--danger { background: var(--danger); }
+.btn--danger:hover { background: var(--danger-hover); }
+.btn--ghost { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 4px 8px; font-size: 12px; width: auto; }
+.btn--ghost:hover { background: var(--danger); color: #fff; }
+.export-buttons { display: flex; gap: 8px; }
+.file-btn-wrap { margin-bottom: 12px; }
+.file-btn__input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.file-btn { display: block; width: 100%; padding: 9px 14px; text-align: center; font-size: 13px; font-weight: 500; background: #eef1f6; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; transition: background 0.15s; }
+.file-btn:hover { background: #e2e7f0; }
+.preset-save { display: flex; gap: 8px; margin-bottom: 12px; }
+.preset-save input { flex: 1; }
+.preset-save .btn { width: auto; flex-shrink: 0; }
+.preset-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.preset-list__empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 8px 0; }
+.preset-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f7f8fa; border: 1px solid var(--border); border-radius: var(--radius); }
+.preset-item__name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preset-item__actions { display: flex; gap: 4px; flex-shrink: 0; }
+.preset-item__btn { border: none; background: transparent; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); transition: background 0.15s; }
+.preset-item__btn:hover { background: #e5edfd; }
+.preset-item__btn--del { color: var(--danger); }
+.preset-item__btn--del:hover { background: #fbe6e5; }
+
+
+/* ===== МОБИЛЬНАЯ ВЕРСИЯ (Планшеты и Смартфоны) ===== */
 @media (max-width: 1024px) {
   .app {
-    flex-direction: column;
+    flex-direction: column; /* Выстраиваем в колонку */
   }
 
+  /* ХОЛСТ - СТРОГО СВЕРХУ */
   .app > .canvas-area {
-    order: 1;
-    flex: 1 1 auto;
+    order: -1; /* -1 гарантированно ставит элемент первым */
+    flex: 1 1 auto; /* Занимает всё свободное место */
+    height: auto;
+    min-height: 0; /* Важно, чтобы flex-контейнер мог сжиматься */
     padding: 12px;
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .app > .panel {
-    order: 2;
     width: 100%;
-    flex: 0 0 auto;
-    height: 45dvh;
-    max-height: 45dvh;
-    border-right: none;
-    border-top: 1px solid var(--border);
-    overflow-y: auto;
   }
 
   .canvas-wrap {
     width: 100%;
     height: 100%;
     max-height: 100%;
-    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    /* Квадрат вписывается в оставшееся пространство */
+    aspect-ratio: 1 / 1; 
+  }
+
+  /* ПАНЕЛЬ - СТРОГО СНИЗУ */
+  .app > .panel {
+    order: 1;
+    flex: 0 0 auto; /* Не растягивается, занимает свою высоту */
+    width: 100%;
+    height: 45dvh; /* Фиксированная высота панели */
+    max-height: 45dvh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    overflow-y: auto; /* Внутренний скролл панели */
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
   }
 }
