@@ -11,8 +11,8 @@ export const headState = {
     width:  1,
     radius: 1,
     // подбородок
-    chinHeight:   0,
-    chinWidth:    0.3,
+    chinHeight:   0.1,
+    chinWidth:    0.4,
     chinRounding: 0.05
 };
 
@@ -133,26 +133,26 @@ export function renderHead(g, layout, state) {
 
     g.innerHTML = '';
 
-    // 1. Круг головы
+    // 1. Подбородок (снизу)
+    // Квадратичная кривая Q: контрольная точка ровно по центру внизу.
+    const d = `M ${chin.leftX} ${chin.leftY} ` +
+              `Q ${cx} ${chin.bottomY} ` +
+              `  ${chin.rightX} ${chin.rightY}`;
+
+    g.appendChild(el('path', {
+        d,
+        fill:             '#e8e8e8',
+        stroke:           '#1e1f22',
+        'stroke-width':   6,
+        'stroke-linecap': 'round',
+        'stroke-linejoin':'round'
+    }));
+
+    // 2. Круг головы (сверху)
     g.appendChild(el('ellipse', {
         cx, cy, rx, ry,
         fill:           '#e8e8e8',
         stroke:         '#1e1f22',
         'stroke-width': 6
-    }));
-
-    // 2. Подбородок — кубическая кривая Безье
-    const d = `M ${chin.leftX} ${chin.leftY} ` +
-              `C ${chin.leftX} ${chin.bottomY} ` +
-              `  ${chin.rightX} ${chin.bottomY} ` +
-              `  ${chin.rightX} ${chin.rightY}`;
-
-    g.appendChild(el('path', {
-        d,
-        fill:             'none',
-        stroke:           '#1e1f22',
-        'stroke-width':   6,
-        'stroke-linecap': 'round',
-        'stroke-linejoin':'round'
     }));
 }
