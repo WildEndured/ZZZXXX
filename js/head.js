@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// head.js — модуль головы (круг + подбородок + челюсть)
+// head.js — модуль головы (финальный контур)
 // ════════════════════════════════════════════════════════════
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -79,23 +79,6 @@ function dispatchRender() {
     document.dispatchEvent(new CustomEvent('head:changed'));
 }
 
-function computeEllipse(layout, s) {
-    const { headLines, headH, canvasSize } = layout;
-    const yL0 = headLines[0];
-    const yL3 = headLines[0] + headH * 0.6;
-    const shiftTop    = s.top    * headH;
-    const shiftBottom = s.bottom * headH;
-    const yTop    = yL0 + shiftTop;
-    const yBottom = yL3 + shiftBottom;
-    const cy     = (yTop + yBottom) / 2;
-    const ryBase = Math.abs(yBottom - yTop) / 2;
-    const cx    = canvasSize / 2;
-    const baseR = headH * 0.3;
-    const rx = baseR * s.width * s.radius;
-    const ry = ryBase * s.radius;
-    return { cx, cy, rx, ry };
-}
-
 function el(name, attrs) {
     const node = document.createElementNS(NS, name);
     for (const k in attrs) node.setAttribute(k, attrs[k]);
@@ -106,95 +89,79 @@ export function renderHead(g, layout, state) {
     initHeadUI();
     if (!g) return;
 
-    const { cx, cy, rx, ry } = computeEllipse(layout, headState);
     const { headLines, headH, canvasSize } = layout;
+    const cx = canvasSize / 2;
 
-    // ПОДБОРОДОК (L4)
+    // ── 1. ГЕОМЕТРИЯ КРУГА ───────────────────────
+    const yL0 = headLines[0];
+    const yL3 = headLines[0] + headH * 0.6;
+    
+    const shiftTop = state.headState ? state.headState.top * headH : 0; // fallback
+    const shiftBottom = headState.bottom * headH;
+    
+    const yTop = yL0 + (headState.top * headH);
+    const yBottom = yL3 + shiftBottom;
+
+    const cy = (yTop + yBottom) / 2;
+    const ry = Math.abs(yBottom - yTop) / 2;
+    
+    const baseR = headH * 0.3;
+    const rx = baseR * headState.width * headState.radius;
+    const finalRy = ry * headState.radius;
+
+    // ── 2. ГЕОМЕТРИЯ ЧЕЛЮСТИ ─────────────────────
+    // Широчайшие края круга (X = cx ± rx, Y = cy)
+    // Ползунок jawAttach поднимает точки крепления вверх.
+    const attachY = cy - (headState.jawAttach * headH);
+    
+    // Пересчитываем X на эллипсе для новой высоты, 
+    // чтобы линии всегда начинались строго на контуре круга.
+    const yOffset = Math.max(-0.99, Math.min(0.99, (attachY - cy) / finalRy));
+    const xScale = Math.sqrt(1 - yOffset * yOffset);
+    const currentRx = rx * xScale;
+
+    const leftAttachX = cx - currentRx;
+    const rightAttachX = cx + currentRx;
+
+    // Вертикальный сброс вниз
+    const cornerY = attachY + (headState.jawLength * headH);
+
+    // ── 3. ГЕОМЕТРИЯ ПОДБОРОДКА ──────────────────
     const yL4 = headLines[0] + headH * 0.8;
     const chinY = yL4 + headState.chinHeight * headH;
     const chinHalfW = (headState.chinWidth * headH) / 2;
-    const chinLeftX  = cx - chinHalfW;
+    const chinLeftX = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
-
-    // ЧЕЛЮСТЬ
-    // 1. Точки крепления строго на экваторе круга (cx ± rx, cy)
-    // jawAttach сдвигает их вверх (0 - на экваторе, 0.3 - выше к макушке)
-    const attachY = cy - (headState.jawAttach * headH);
-    const attachLeftX = cx - rx;
-    const attachRightX = cx + rx;
-
-    // 2. Вертикальные линии вниз на фиксированную длину (jawLength)
-    // Никакого jawAngle тут нет, линии строго вертикальны.
-    const cornerY = attachY + (headState.jawLength * headH);
-    const cornerLeftX = attachLeftX;
-    const cornerRightX = attachRightX;
-
-    // 3. Диагонали к подбородку (от низа вертикалей к краям подбородка)
-    // Их можно регулировать через jawAngle (сдвигает в стороны от вертикали), 
-    // но пока просто соединяем напрямую.
 
     g.innerHTML = '';
 
-    // Рисуем круг головы
+    // ── РИСОВАНИЕ ────────────────────────────────
+
+    // 1. Замкнутый контур челюсти и подбородка (заливка)
+    // Идем: от левого крепления вниз -> к левому краю подбородка -> 
+    // к правому краю подбородка -> вверх к правому креплению -> замыкаем.
+    // Используем дугу круга для верхней части челюсти, чтобы не было острых углов.
+    const jawPath = `M ${leftAttachX} ${attachY} ` +
+                    `L ${leftAttachX} ${cornerY} ` + // Вниз по вертикали
+                    `L ${chinLeftX} ${chinY} ` +      // Диагональ к подбородку
+                    `L ${chinRightX} ${chinY} ` +     // Линия подбородка
+                    `L ${rightAttachX} ${cornerY} ` + // Диагональ вверх
+                    `L ${rightAttachX} ${attachY} `;  // Вверх по вертикали
+
+    g.appendChild(el('path', {
+        d: jawPath,
+        fill: '#e8e8e8',
+        stroke: '#1e1f22',
+        'stroke-width': 6,
+        'stroke-linejoin': 'round'
+    }));
+
+    // 2. Круг головы
+    // Рисуем поверх челюсти. Заливка перекроет стык, а обводка даст контур.
     g.appendChild(el('ellipse', {
-        cx, cy, rx, ry,
-        fill:           '#e8e8e8',
-        stroke:         '#1e1f22',
+        cx, cy, rx, ry: finalRy,
+        fill: '#e8e8e8',
+        stroke: '#1e1f22',
         'stroke-width': 6
-    }));
-
-    // Левая вертикаль челюсти
-    g.appendChild(el('line', {
-        x1: attachLeftX,
-        y1: attachY,
-        x2: cornerLeftX,
-        y2: cornerY,
-        stroke:          '#1e1f22',
-        'stroke-width':  6,
-        'stroke-linecap':'round'
-    }));
-
-    // Правая вертикаль челюсти
-    g.appendChild(el('line', {
-        x1: attachRightX,
-        y1: attachY,
-        x2: cornerRightX,
-        y2: cornerY,
-        stroke:          '#1e1f22',
-        'stroke-width':  6,
-        'stroke-linecap':'round'
-    }));
-
-    // Левая диагональ к подбородку
-    g.appendChild(el('line', {
-        x1: cornerLeftX,
-        y1: cornerY,
-        x2: chinLeftX,
-        y2: chinY,
-        stroke:          '#1e1f22',
-        'stroke-width':  6,
-        'stroke-linecap':'round'
-    }));
-
-    // Правая диагональ к подбородку
-    g.appendChild(el('line', {
-        x1: cornerRightX,
-        y1: cornerY,
-        x2: chinRightX,
-        y2: chinY,
-        stroke:          '#1e1f22',
-        'stroke-width':  6,
-        'stroke-linecap':'round'
-    }));
-
-    // Линия подбородка
-    g.appendChild(el('line', {
-        x1: chinLeftX,
-        y1: chinY,
-        x2: chinRightX,
-        y2: chinY,
-        stroke:          '#1e1f22',
-        'stroke-width':  6,
-        'stroke-linecap':'round'
     }));
 }
