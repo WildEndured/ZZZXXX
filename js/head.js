@@ -116,26 +116,26 @@ export function renderHead(g, layout, state) {
     const chinLeftX = cx - chinHalfW;
     const chinRightX = cx + chinHalfW;
 
-    // 4. Шея (без заливки, обрезаем по кругу)
+    // 4. Шея
     const yL5 = headLines[0] + headH;
     const neckHalfW = (headState.neckWidth * headH) / 2;
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
 
-    // Функция для нахождения Y-пересечения вертикальной линии X с эллипсом
-    function getEllipseY(x) {
+    // Функция пересечения вертикальной линии X с НИЖНЕЙ половиной эллипса
+    function getNeckStartY(x) {
         const dx = x - cx;
-        if (Math.abs(dx) >= rx) return cy; // Если линия снаружи круга
-        // Уравнение эллипса: (dx/rx)^2 + (dy/ry)^2 = 1
-        // Нас интересует нижняя половина (dy > 0)
+        // Если линия шеи шире, чем круг, начинаем с L3
+        if (Math.abs(dx) >= rx) return yL3; 
+        
+        // Ищем Y на эллипсе (нижняя половина)
         const ratio = dx / rx;
         const dy = finalRy * Math.sqrt(1 - ratio * ratio);
-        return cy + dy; // Нижняя точка на эллипсе
+        return cy + dy; // Нижняя точка пересечения
     }
 
-    // Вычисляем, где начинать линии шеи (на границе круга, либо на уровне L3, если снаружи)
-    const neckLeftStartY = Math.max(getEllipseY(neckLeftX), yL3);
-    const neckRightStartY = Math.max(getEllipseY(neckRightX), yL3);
+    // Берем самую нижнюю точку из двух (чтобы обе линии шеи начинались под кругом)
+    const neckTopY = Math.max(getNeckStartY(neckLeftX), getNeckStartY(neckRightX));
 
     g.innerHTML = '';
 
@@ -147,14 +147,14 @@ export function renderHead(g, layout, state) {
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6
     }));
 
-    // Челюсть (левая вертикаль)
+    // Челюсть (левая)
     g.appendChild(el('line', {
         x1: leftAttachX, y1: attachY,
         x2: cornerLeftX, y2: cornerY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Челюсть (правая вертикаль)
+    // Челюсть (правая)
     g.appendChild(el('line', {
         x1: rightAttachX, y1: attachY,
         x2: cornerRightX, y2: cornerY,
@@ -182,16 +182,16 @@ export function renderHead(g, layout, state) {
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Шея (левая)
+    // Шея (левая) - начинается от нижней точки пересечения с кругом
     g.appendChild(el('line', {
-        x1: neckLeftX, y1: neckLeftStartY,
+        x1: neckLeftX, y1: neckTopY,
         x2: neckLeftX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
     // Шея (правая)
     g.appendChild(el('line', {
-        x1: neckRightX, y1: neckRightStartY,
+        x1: neckRightX, y1: neckTopY,
         x2: neckRightX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
