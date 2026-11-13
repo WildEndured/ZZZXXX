@@ -122,7 +122,6 @@ export function renderHead(g, layout, state) {
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
     
-    // Шея начинается от уровня подбородка
     const neckTopY = chinY; 
 
     g.innerHTML = '';
@@ -135,14 +134,14 @@ export function renderHead(g, layout, state) {
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6
     }));
 
-    // Челюсть (левая вертикаль)
+    // Челюсть (левая)
     g.appendChild(el('line', {
         x1: leftAttachX, y1: attachY,
         x2: cornerLeftX, y2: cornerY,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Челюсть (правая вертикаль)
+    // Челюсть (правая)
     g.appendChild(el('line', {
         x1: rightAttachX, y1: attachY,
         x2: cornerRightX, y2: cornerY,
@@ -170,14 +169,14 @@ export function renderHead(g, layout, state) {
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Шея (левая линия)
+    // Шея (левая)
     g.appendChild(el('line', {
         x1: neckLeftX, y1: neckTopY,
         x2: neckLeftX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
-    // Шея (правая линия)
+    // Шея (правая)
     g.appendChild(el('line', {
         x1: neckRightX, y1: neckTopY,
         x2: neckRightX, y2: yL5,
