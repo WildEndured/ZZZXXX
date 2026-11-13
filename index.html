@@ -8,7 +8,6 @@
 </head>
 <body>
   <div class="app">
-    <!-- Холст -->
     <main class="stage" id="stage">
       <div class="canvas-wrap" id="canvasWrap">
         <svg id="svg" xmlns="http://www.w3.org/2000/svg"
@@ -23,7 +22,6 @@
             </pattern>
           </defs>
 
-          <!-- Подложка (в экспорт не попадает) -->
           <g id="underlayLayer" class="no-export">
             <image id="underlayImage" href="" x="0" y="0"
                    width="4096" height="4096"
@@ -31,16 +29,13 @@
                    opacity="0.5" style="display:none;" />
           </g>
 
-          <!-- Сетка (в экспорт не попадает) -->
           <g id="gridLayer" class="no-export">
             <rect id="gridRect" x="0" y="0" width="4096" height="4096"
                   fill="url(#gridPattern)" opacity="0.6" />
           </g>
 
-          <!-- Линии деления на головы -->
           <g id="headsLayer" class="no-export"></g>
 
-          <!-- Слой фигуры -->
           <g id="figureLayer" stroke="#000000" stroke-width="6"
              fill="none" stroke-linecap="round" stroke-linejoin="round">
             <g id="headGroup"></g>
@@ -54,18 +49,15 @@
       </div>
     </main>
 
-    <!-- Панель управления -->
     <aside class="panel" id="panel">
       <div class="panel-inner">
 
         <section class="block">
           <h2>Общее</h2>
-
           <label class="row">
             <span>Рост в головах: <b id="headsVal">5</b></span>
             <input type="range" id="headsRange" min="1" max="10" step="0.5" value="5" />
           </label>
-
           <label class="row">
             <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
             <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
@@ -74,77 +66,33 @@
 
         <section class="block">
           <h2>Голова</h2>
-
-          <label class="row">
-            <span>Верх головы: <b id="headTopVal">0</b></span>
-            <input type="range" id="headTop" min="-50" max="50" step="1" value="0" />
-          </label>
-
-          <label class="row">
-            <span>Низ головы: <b id="headBottomVal">0</b></span>
-            <input type="range" id="headBottom" min="-50" max="50" step="1" value="0" />
-          </label>
-
-          <label class="row">
-            <span>Ширина головы: <b id="headWidthVal">100</b>%</span>
-            <input type="range" id="headWidth" min="50" max="200" step="1" value="100" />
-          </label>
-
-          <label class="row">
-            <span>Радиус головы: <b id="headRadiusVal">100</b>%</span>
-            <input type="range" id="headRadius" min="50" max="200" step="1" value="100" />
-          </label>
-
-          <label class="row">
-            <span>Высота подбородка: <b id="chinYVal">0</b></span>
-            <input type="range" id="chinY" min="-50" max="50" step="1" value="0" />
-          </label>
-
-          <label class="row">
-            <span>Ширина подбородка: <b id="chinWVal">55</b>%</span>
-            <input type="range" id="chinW" min="10" max="100" step="1" value="55" />
-          </label>
-
-          <label class="row">
-            <span>Длина линии челюсти: <b id="jawDropVal">15</b>%</span>
-            <input type="range" id="jawDrop" min="0" max="100" step="1" value="15" />
-          </label>
-
-          <label class="row">
-            <span>Ширина углов челюсти: <b id="jawCornerVal">15</b>%</span>
-            <input type="range" id="jawCorner" min="0" max="50" step="1" value="15" />
-          </label>
+          <p class="note">Двойной клик по строке или долгое нажатие на ползунке — сброс к значению по умолчанию.</p>
+          <div class="sliders" id="headSliders"></div>
         </section>
 
         <section class="block">
           <h2>Подложка</h2>
-
           <label class="file-btn">
             <input type="file" id="underlayFile" accept="image/*" hidden />
             Загрузить изображение
           </label>
-
           <label class="row">
             <span>Прозрачность: <b id="opacityVal">50</b>%</span>
             <input type="range" id="opacityRange" min="0" max="100" step="1" value="50" />
           </label>
-
           <label class="row">
             <span>Масштаб: <b id="scaleVal">100</b>%</span>
             <input type="range" id="scaleRange" min="10" max="300" step="1" value="100" />
           </label>
-
           <button id="removeUnderlay" class="btn-danger" disabled>Удалить подложку</button>
         </section>
 
         <section class="block">
           <h2>Пресеты</h2>
-
           <div class="row-inline">
             <input type="text" id="presetName" placeholder="Название пресета" />
             <button id="savePreset">Сохранить</button>
           </div>
-
           <ul id="presetList" class="preset-list"></ul>
         </section>
 
