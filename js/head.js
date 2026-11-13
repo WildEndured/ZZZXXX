@@ -122,7 +122,7 @@ export function renderHead(g, layout, state) {
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
 
-    // Функция для вычисления Y на границе эллипса
+    // Функция для нахождения Y-пересечения с эллипсом
     function getEllipseY(x) {
         const dx = x - cx;
         if (Math.abs(dx) >= rx) return yL3;
@@ -131,12 +131,31 @@ export function renderHead(g, layout, state) {
         return cy + dy;
     }
 
-    // Вычисляем нижнюю точку для левой и правой границы шеи (либо круг, либо челюсть)
-    const leftJawBottomY = Math.max(getEllipseY(neckLeftX), cornerY);
-    const rightJawBottomY = Math.max(getEllipseY(neckRightX), cornerY);
+    // Функция для нахождения Y на линии челюсти (интерполяция между углом и подбородком)
+    function getJawY(x) {
+        // Левая сторона
+        if (x <= cx) {
+            if (x >= cornerLeftX) {
+                // Внутри челюсти, интерполируем от cornerLeftX к chinLeftX
+                if (cornerLeftX === chinLeftX) return chinY;
+                const t = (x - cornerLeftX) / (chinLeftX - cornerLeftX);
+                return cornerY + t * (chinY - cornerY);
+            }
+        } 
+        // Правая сторона
+        else {
+            if (x <= cornerRightX) {
+                if (cornerRightX === chinRightX) return chinY;
+                const t = (x - cornerRightX) / (chinRightX - cornerRightX);
+                return cornerY + t * (chinY - cornerY);
+            }
+        }
+        return cornerY; // Если ширина шеи больше челюсти
+    }
 
-    // Берем самую нижнюю точку, чтобы обе линии шеи начинались под всеми фигурами
-    const neckTopY = Math.max(leftJawBottomY, rightJawBottomY);
+    // Берем максимальную точку из круга, челюсти и подбородка
+    const leftStartY = Math.max(getEllipseY(neckLeftX), getJawY(neckLeftX));
+    const rightStartY = Math.max(getEllipseY(neckRightX), getJawY(neckRightX));
 
     g.innerHTML = '';
 
@@ -185,14 +204,14 @@ export function renderHead(g, layout, state) {
 
     // Шея (левая)
     g.appendChild(el('line', {
-        x1: neckLeftX, y1: neckTopY,
+        x1: neckLeftX, y1: leftStartY,
         x2: neckLeftX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
 
     // Шея (правая)
     g.appendChild(el('line', {
-        x1: neckRightX, y1: neckTopY,
+        x1: neckRightX, y1: rightStartY,
         x2: neckRightX, y2: yL5,
         fill: 'none', stroke: '#1e1f22', 'stroke-width': 6, 'stroke-linecap': 'round'
     }));
