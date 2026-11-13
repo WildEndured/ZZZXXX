@@ -24,9 +24,8 @@
       radiusMul: 1.0,    // общий множитель радиуса
       chinYOffset: 0,    // сдвиг L4
       chinWidth: 0.55,   // ширина подбородка (доля от ширины круга)
-      jawAttach: 0.5,    // высота крепления к кругу (0..1)
-      jawLength: 0.4,    // длина спуска (доля headH)
-      jawCorner: 0.15,   // ширина углов (доля headH)
+      jawDrop: 0.15,     // ДЛИНА вертикального спуска челюсти (доля headH)
+      jawCorner: 0.15,   // ширина углов челюсти (доля headH)
     },
 
     // Подложка
@@ -70,10 +69,8 @@
     chinYVal: $('chinYVal'),
     chinW: $('chinW'),
     chinWVal: $('chinWVal'),
-    jawAttach: $('jawAttach'),
-    jawAttachVal: $('jawAttachVal'),
-    jawLen: $('jawLen'),
-    jawLenVal: $('jawLenVal'),
+    jawDrop: $('jawDrop'),
+    jawDropVal: $('jawDropVal'),
     jawCorner: $('jawCorner'),
     jawCornerVal: $('jawCornerVal'),
 
@@ -257,8 +254,7 @@
   bindHeadSlider(dom.headRadius, dom.headRadiusVal, 'radiusMul',    (v) => v / 100, (v) => v);
   bindHeadSlider(dom.chinY,      dom.chinYVal,      'chinYOffset',  (v) => v / 100, (v) => v);
   bindHeadSlider(dom.chinW,      dom.chinWVal,      'chinWidth',    (v) => v / 100, (v) => v);
-  bindHeadSlider(dom.jawAttach,  dom.jawAttachVal,  'jawAttach',    (v) => v / 100, (v) => v);
-  bindHeadSlider(dom.jawLen,     dom.jawLenVal,     'jawLength',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.jawDrop,    dom.jawDropVal,    'jawDrop',      (v) => v / 100, (v) => v);
   bindHeadSlider(dom.jawCorner,  dom.jawCornerVal,  'jawCorner',    (v) => v / 100, (v) => v);
 
   // ============================================================
@@ -374,10 +370,8 @@
       dom.chinYVal.textContent = Math.round(state.head.chinYOffset * 100);
       dom.chinW.value      = Math.round(state.head.chinWidth * 100);
       dom.chinWVal.textContent = Math.round(state.head.chinWidth * 100);
-      dom.jawAttach.value  = Math.round(state.head.jawAttach * 100);
-      dom.jawAttachVal.textContent = Math.round(state.head.jawAttach * 100);
-      dom.jawLen.value     = Math.round(state.head.jawLength * 100);
-      dom.jawLenVal.textContent = Math.round(state.head.jawLength * 100);
+      dom.jawDrop.value    = Math.round(state.head.jawDrop * 100);
+      dom.jawDropVal.textContent = Math.round(state.head.jawDrop * 100);
       dom.jawCorner.value  = Math.round(state.head.jawCorner * 100);
       dom.jawCornerVal.textContent = Math.round(state.head.jawCorner * 100);
     }
@@ -543,10 +537,8 @@
     dom.chinYVal.textContent = Math.round(state.head.chinYOffset * 100);
     dom.chinW.value = Math.round(state.head.chinWidth * 100);
     dom.chinWVal.textContent = Math.round(state.head.chinWidth * 100);
-    dom.jawAttach.value = Math.round(state.head.jawAttach * 100);
-    dom.jawAttachVal.textContent = Math.round(state.head.jawAttach * 100);
-    dom.jawLen.value = Math.round(state.head.jawLength * 100);
-    dom.jawLenVal.textContent = Math.round(state.head.jawLength * 100);
+    dom.jawDrop.value = Math.round(state.head.jawDrop * 100);
+    dom.jawDropVal.textContent = Math.round(state.head.jawDrop * 100);
     dom.jawCorner.value = Math.round(state.head.jawCorner * 100);
     dom.jawCornerVal.textContent = Math.round(state.head.jawCorner * 100);
 
