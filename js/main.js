@@ -1,362 +1,336 @@
-import './head.js';
-import './torso.js';
-import './arm.js';
-import './leg.js';
+(() => {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const CANVAS = 4096;
 
-/* ================== Константы / состояние ================== */
-const CANVAS_SIZE = 4096;
-const STORAGE_KEY = 'figure-presets-v1';
+  // ---------- DOM ----------
+  const $ = (id) => document.getElementById(id);
 
-const state = {
-  heads: 5,
-  padding: 0,
-  strokeColor: '#222222',
-  strokeWidth: 3,
-  bg: { src: null, img: null, opacity: 0.5, scale: 1 },
-};
+  const figureG    = $('figure');
+  const headGridG  = $('headGrid');
+  const bgImage    = $('bgImage');
 
-/* ================== DOM ================== */
-const $ = (id) => document.getElementById(id);
+  const headsEl        = $('heads');
+  const headsVal       = $('headsVal');
+  const marginEl       = $('margin');
+  const marginVal      = $('marginVal');
+  const strokeColorEl  = $('strokeColor');
+  const strokeWidthEl  = $('strokeWidth');
+  const strokeWidthVal = $('strokeWidthVal');
 
-const svg            = $('svg');
-const gridLayer      = $('gridLayer');
-const figureLayer    = $('figureLayer');
-const bgImageEl      = $('bgImage');
+  const bgFileEl     = $('bgFile');
+  const bgOpacityEl  = $('bgOpacity');
+  const bgOpacityVal = $('bgOpacityVal');
+  const bgScaleEl    = $('bgScale');
+  const bgScaleVal   = $('bgScaleVal');
+  const bgRemoveEl   = $('bgRemove');
 
-const headsRange     = $('headsRange');
-const headsOut       = $('headsOut');
-const paddingRange   = $('paddingRange');
-const paddingOut     = $('paddingOut');
-const strokeColorIn  = $('strokeColor');
-const strokeWidthIn  = $('strokeWidthRange');
-const strokeWidthOut = $('strokeWidthOut');
+  const presetNameEl = $('presetName');
+  const presetSaveEl = $('presetSave');
+  const presetListEl = $('presetList');
 
-const bgInput        = $('bgInput');
-const bgOpacityRange = $('bgOpacityRange');
-const bgOpacityOut   = $('bgOpacityOut');
-const bgScaleRange   = $('bgScaleRange');
-const bgScaleOut     = $('bgScaleOut');
-const bgRemoveBtn    = $('bgRemoveBtn');
+  const exportSvgEl = $('exportSvg');
+  const exportPngEl = $('exportPng');
 
-const presetNameIn   = $('presetName');
-const presetSaveBtn  = $('presetSaveBtn');
-const presetList     = $('presetList');
+  const STORAGE_KEY = 'figure-presets-v1';
 
-const exportSvgBtn   = $('exportSvgBtn');
-const exportPngBtn   = $('exportPngBtn');
-
-/* ================== Утилиты SVG ================== */
-function makeEl(name, attrs = {}) {
-  const el = document.createElementNS('http://www.w3.org/2000/svg', name);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  return el;
-}
-
-/* ================== Расчёт сетки ================== */
-function computeLayout() {
-  const padPx = (state.padding / 100) * CANVAS_SIZE;
-  const usable = CANVAS_SIZE - padPx * 2;
-  const headH = usable / state.heads;
-  return {
-    padPx,
-    usable,
-    headH,
-    headTop: padPx,
-    headBottom: padPx + usable,
+  // ---------- Состояние ----------
+  const state = {
+    heads: 5,
+    margin: 0,          // %
+    strokeColor: '#222222',
+    strokeWidth: 4,
+    bg: {
+      src: null,        // dataURL (не сохраняется в пресеты и не идёт в экспорт)
+      opacity: 0.5,
+      scale: 1.0
+    }
   };
-}
 
-/* ================== Сетка ================== */
-function drawGrid() {
-  gridLayer.innerHTML = '';
-  const { padPx, headH, headTop, headBottom } = computeLayout();
+  // ---------- Layout / сетка ----------
+  function computeLayout() {
+    const marginPx = (CANVAS * state.margin) / 100;
+    const topY = marginPx;
+    const usableH = CANVAS - marginPx * 2;
+    const headUnit = usableH / state.heads;
+    return { cx: CANVAS / 2, topY, headUnit, totalHeight: usableH };
+  }
 
-  if (state.padding > 0) {
-    [padPx, CANVAS_SIZE - padPx].forEach((y) => {
-      gridLayer.appendChild(makeEl('line', {
-        x1: 0, y1: y, x2: CANVAS_SIZE, y2: y,
-        stroke: '#b8bcc4', 'stroke-dasharray': '16 12',
-      }));
+  function renderHeadGrid(ctx) {
+    headGridG.innerHTML = '';
+    for (let i = 0; i <= state.heads; i++) {
+      const y = ctx.topY + i * ctx.headUnit;
+      const line = document.createElementNS(SVG_NS, 'line');
+      line.setAttribute('x1', 0);
+      line.setAttribute('y1', y);
+      line.setAttribute('x2', CANVAS);
+      line.setAttribute('y2', y);
+      headGridG.appendChild(line);
+    }
+  }
+
+  // ---------- Фигура (пустая на Этапе-1) ----------
+  function renderFigure(ctx) {
+    figureG.innerHTML = '';
+
+    // Модули на Этапе-1 — заглушки, возвращают []
+    const parts = [
+      window.FigureParts.legs(SVG_NS),
+      window.FigureParts.torso(SVG_NS),
+      window.FigureParts.arms(SVG_NS),
+      window.FigureParts.head(SVG_NS)
+    ];
+    parts.forEach((part) => {
+      part.build(ctx).forEach((el) => figureG.appendChild(el));
+    });
+
+    // Стиль контура применяем к группе (даже если она пуста)
+    figureG.setAttribute('stroke', state.strokeColor);
+    figureG.setAttribute('stroke-width', state.strokeWidth);
+    figureG.setAttribute('fill', 'none');
+  }
+
+  // ---------- Подложка ----------
+  function renderBg() {
+    if (!state.bg.src) {
+      bgImage.style.display = 'none';
+      bgImage.removeAttribute('href');
+      return;
+    }
+    bgImage.setAttribute('href', state.bg.src);
+    bgImage.setAttribute('opacity', state.bg.opacity);
+
+    const size = CANVAS * state.bg.scale;
+    bgImage.setAttribute('x', (CANVAS - size) / 2);
+    bgImage.setAttribute('y', (CANVAS - size) / 2);
+    bgImage.setAttribute('width', size);
+    bgImage.setAttribute('height', size);
+    bgImage.style.display = 'inline';
+  }
+
+  // ---------- Полный рендер ----------
+  function render() {
+    const ctx = computeLayout();
+    renderHeadGrid(ctx);
+    renderFigure(ctx);
+    renderBg();
+
+    headsVal.textContent = state.heads;
+    marginVal.textContent = state.margin;
+    strokeWidthVal.textContent = state.strokeWidth;
+    bgOpacityVal.textContent = Math.round(state.bg.opacity * 100);
+    bgScaleVal.textContent = Math.round(state.bg.scale * 100);
+  }
+
+  // ---------- Общие настройки ----------
+  headsEl.addEventListener('input', () => {
+    state.heads = parseFloat(headsEl.value);
+    render();
+  });
+  marginEl.addEventListener('input', () => {
+    state.margin = parseFloat(marginEl.value);
+    render();
+  });
+  strokeColorEl.addEventListener('input', () => {
+    state.strokeColor = strokeColorEl.value;
+    render();
+  });
+  strokeWidthEl.addEventListener('input', () => {
+    state.strokeWidth = parseInt(strokeWidthEl.value, 10);
+    render();
+  });
+
+  // ---------- Подложка ----------
+  bgFileEl.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.bg.src = reader.result;
+      render();
+    };
+    reader.readAsDataURL(file);
+  });
+  bgOpacityEl.addEventListener('input', () => {
+    state.bg.opacity = parseInt(bgOpacityEl.value, 10) / 100;
+    render();
+  });
+  bgScaleEl.addEventListener('input', () => {
+    state.bg.scale = parseInt(bgScaleEl.value, 10) / 100;
+    render();
+  });
+  bgRemoveEl.addEventListener('click', () => {
+    state.bg.src = null;
+    bgFileEl.value = '';
+    render();
+  });
+
+  // ---------- Пресеты ----------
+  function loadPresets() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+  function savePresets(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  function renderPresets() {
+    const list = loadPresets();
+    presetListEl.innerHTML = '';
+
+    if (list.length === 0) {
+      const li = document.createElement('li');
+      li.className = 'preset-empty';
+      li.textContent = 'Пресетов пока нет';
+      li.style.border = 'none';
+      li.style.background = 'transparent';
+      presetListEl.appendChild(li);
+      return;
+    }
+
+    list.forEach((preset, idx) => {
+      const li = document.createElement('li');
+
+      const name = document.createElement('span');
+      name.className = 'preset-name';
+      name.textContent = preset.name;
+      name.title = preset.name;
+
+      const applyBtn = document.createElement('button');
+      applyBtn.textContent = 'Применить';
+      applyBtn.addEventListener('click', () => applyPreset(preset));
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'del';
+      delBtn.textContent = '×';
+      delBtn.title = 'Удалить';
+      delBtn.addEventListener('click', () => {
+        const arr = loadPresets();
+        arr.splice(idx, 1);
+        savePresets(arr);
+        renderPresets();
+      });
+
+      li.append(name, applyBtn, delBtn);
+      presetListEl.appendChild(li);
     });
   }
 
-  const count = Math.round(state.heads);
-  for (let i = 0; i <= count; i++) {
-    const y = headTop + i * headH;
-    if (y > headBottom + 0.5) break;
-    const isEdge = i === 0 || i === count;
-    gridLayer.appendChild(makeEl('line', {
-      x1: 0, y1: y, x2: CANVAS_SIZE, y2: y,
-      stroke: isEdge ? '#9aa0a8' : '#c7ccd4',
-      'stroke-dasharray': isEdge ? '' : '20 14',
-      'stroke-width': isEdge ? 3 : 2,
-    }));
+  function applyPreset(preset) {
+    const p = preset.data || {};
+    if (typeof p.heads === 'number')       state.heads = p.heads;
+    if (typeof p.margin === 'number')      state.margin = p.margin;
+    if (typeof p.strokeColor === 'string') state.strokeColor = p.strokeColor;
+    if (typeof p.strokeWidth === 'number') state.strokeWidth = p.strokeWidth;
+
+    headsEl.value = state.heads;
+    marginEl.value = state.margin;
+    strokeColorEl.value = state.strokeColor;
+    strokeWidthEl.value = state.strokeWidth;
+
+    render();
   }
-}
 
-/* ================== Подложка ================== */
-function updateBgImage() {
-  if (!state.bg.img) {
-    bgImageEl.style.display = 'none';
-    return;
+  presetSaveEl.addEventListener('click', () => {
+    const name = (presetNameEl.value || '').trim();
+    if (!name) { alert('Введите название пресета'); return; }
+    const arr = loadPresets();
+    arr.push({
+      name,
+      data: {
+        heads: state.heads,
+        margin: state.margin,
+        strokeColor: state.strokeColor,
+        strokeWidth: state.strokeWidth
+      },
+      createdAt: Date.now()
+    });
+    savePresets(arr);
+    presetNameEl.value = '';
+    renderPresets();
+  });
+
+  // ---------- Экспорт ----------
+  function buildExportSvg({ whiteBg = false } = {}) {
+    // Чистый SVG 4096x4096. Без сетки, без подложки.
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('xmlns', SVG_NS);
+    svg.setAttribute('width', CANVAS);
+    svg.setAttribute('height', CANVAS);
+    svg.setAttribute('viewBox', `0 0 ${CANVAS} ${CANVAS}`);
+
+    if (whiteBg) {
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', '0');
+      rect.setAttribute('y', '0');
+      rect.setAttribute('width', CANVAS);
+      rect.setAttribute('height', CANVAS);
+      rect.setAttribute('fill', '#ffffff');
+      svg.appendChild(rect);
+    }
+
+    // Копия фигуры (на Этапе-1 — пустая группа со стилем контура)
+    const fig = figureG.cloneNode(true);
+    svg.appendChild(fig);
+
+    return svg;
   }
-  const img = state.bg.img;
-  const imgW = img.naturalWidth;
-  const imgH = img.naturalHeight;
-  const base = Math.min(CANVAS_SIZE / imgW, CANVAS_SIZE / imgH);
-  const w = imgW * base * state.bg.scale;
-  const h = imgH * base * state.bg.scale;
 
-  bgImageEl.setAttribute('x', (CANVAS_SIZE - w) / 2);
-  bgImageEl.setAttribute('y', (CANVAS_SIZE - h) / 2);
-  bgImageEl.setAttribute('width', w);
-  bgImageEl.setAttribute('height', h);
-  bgImageEl.setAttribute('href', state.bg.src);
-  bgImageEl.setAttribute('opacity', state.bg.opacity);
-  bgImageEl.style.display = '';
-}
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
 
-/* ================== Отрисовка ================== */
-function render() {
-  drawGrid();
-  updateBgImage();
-  // figureLayer остаётся пустым — фигура будет в следующих этапах
-}
+  exportSvgEl.addEventListener('click', () => {
+    const svg = buildExportSvg({ whiteBg: false });
+    const xml = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob(
+      ['<?xml version="1.0" encoding="UTF-8"?>\n', xml],
+      { type: 'image/svg+xml;charset=utf-8' }
+    );
+    downloadBlob(blob, 'figure.svg');
+  });
 
-/* ================== Общие параметры ================== */
-headsRange.addEventListener('input', () => {
-  state.heads = parseFloat(headsRange.value);
-  headsOut.value = state.heads;
-  render();
-});
+  exportPngEl.addEventListener('click', () => {
+    const svg = buildExportSvg({ whiteBg: true });
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
 
-paddingRange.addEventListener('input', () => {
-  state.padding = parseFloat(paddingRange.value);
-  paddingOut.value = state.padding + '%';
-  render();
-});
-
-strokeColorIn.addEventListener('input', () => {
-  state.strokeColor = strokeColorIn.value;
-});
-
-strokeWidthIn.addEventListener('input', () => {
-  state.strokeWidth = parseFloat(strokeWidthIn.value);
-  strokeWidthOut.value = state.strokeWidth;
-});
-
-/* ================== Подложка ================== */
-bgInput.addEventListener('change', () => {
-  const file = bgInput.files && bgInput.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
     const img = new Image();
     img.onload = () => {
-      state.bg.img = img;
-      state.bg.src = reader.result;
-      state.bg.scale = 1;
-      state.bg.opacity = 0.5;
+      const canvas = document.createElement('canvas');
+      canvas.width = CANVAS;
+      canvas.height = CANVAS;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, CANVAS, CANVAS);
+      ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+      URL.revokeObjectURL(url);
 
-      bgScaleRange.value = 100;
-      bgScaleOut.value = '100%';
-      bgOpacityRange.value = 50;
-      bgOpacityOut.value = '50%';
-      bgScaleRange.disabled = false;
-      bgOpacityRange.disabled = false;
-      bgRemoveBtn.disabled = false;
-
-      updateBgImage();
+      canvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, 'figure.png');
+      }, 'image/png');
     };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-  bgInput.value = '';
-});
-
-bgScaleRange.addEventListener('input', () => {
-  state.bg.scale = parseInt(bgScaleRange.value, 10) / 100;
-  bgScaleOut.value = bgScaleRange.value + '%';
-  updateBgImage();
-});
-
-bgOpacityRange.addEventListener('input', () => {
-  state.bg.opacity = parseInt(bgOpacityRange.value, 10) / 100;
-  bgOpacityOut.value = bgOpacityRange.value + '%';
-  updateBgImage();
-});
-
-bgRemoveBtn.addEventListener('click', () => {
-  state.bg.img = null;
-  state.bg.src = null;
-  bgImageEl.style.display = 'none';
-  bgScaleRange.disabled = true;
-  bgOpacityRange.disabled = true;
-  bgRemoveBtn.disabled = true;
-  bgScaleRange.value = 100;
-  bgOpacityRange.value = 50;
-  bgScaleOut.value = '100%';
-  bgOpacityOut.value = '50%';
-});
-
-/* ================== Пресеты ================== */
-function loadPresets() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-  catch { return []; }
-}
-function savePresets(p) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-}
-
-function renderPresets() {
-  const presets = loadPresets();
-  presetList.innerHTML = '';
-
-  if (presets.length === 0) {
-    const li = document.createElement('li');
-    li.className = 'preset-list__empty';
-    li.textContent = 'Пресетов пока нет';
-    presetList.appendChild(li);
-    return;
-  }
-
-  presets.forEach((preset) => {
-    const li = document.createElement('li');
-    li.className = 'preset-item';
-
-    const name = document.createElement('span');
-    name.className = 'preset-item__name';
-    name.textContent = preset.name;
-    name.title = preset.name;
-
-    const actions = document.createElement('div');
-    actions.className = 'preset-item__actions';
-
-    const applyBtn = document.createElement('button');
-    applyBtn.className = 'preset-item__btn';
-    applyBtn.type = 'button';
-    applyBtn.textContent = 'Применить';
-    applyBtn.addEventListener('click', () => applyPreset(preset));
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'preset-item__btn preset-item__btn--del';
-    delBtn.type = 'button';
-    delBtn.textContent = '✕';
-    delBtn.title = 'Удалить';
-    delBtn.addEventListener('click', () => {
-      savePresets(loadPresets().filter((p) => p.id !== preset.id));
-      renderPresets();
-    });
-
-    actions.appendChild(applyBtn);
-    actions.appendChild(delBtn);
-    li.appendChild(name);
-    li.appendChild(actions);
-    presetList.appendChild(li);
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      alert('Не удалось экспортировать PNG');
+    };
+    img.src = url;
   });
-}
 
-presetSaveBtn.addEventListener('click', () => {
-  const name = presetNameIn.value.trim();
-  if (!name) { presetNameIn.focus(); return; }
-
-  const preset = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name,
-    data: {
-      heads: state.heads,
-      padding: state.padding,
-      strokeColor: state.strokeColor,
-      strokeWidth: state.strokeWidth,
-    },
-  };
-
-  const presets = loadPresets();
-  presets.push(preset);
-  savePresets(presets);
-  presetNameIn.value = '';
+  // ---------- Старт ----------
   renderPresets();
-});
-
-function applyPreset(preset) {
-  const d = preset.data || {};
-  state.heads       = d.heads ?? 5;
-  state.padding     = d.padding ?? 0;
-  state.strokeColor = d.strokeColor ?? '#222222';
-  state.strokeWidth = d.strokeWidth ?? 3;
-
-  headsRange.value = state.heads;
-  headsOut.value = state.heads;
-
-  paddingRange.value = state.padding;
-  paddingOut.value = state.padding + '%';
-
-  strokeColorIn.value = state.strokeColor;
-
-  strokeWidthIn.value = state.strokeWidth;
-  strokeWidthOut.value = state.strokeWidth;
-
   render();
-}
-
-/* ================== Экспорт ================== */
-function buildExportSvg() {
-  const clone = svg.cloneNode(true);
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  clone.setAttribute('width', CANVAS_SIZE);
-  clone.setAttribute('height', CANVAS_SIZE);
-
-  clone.querySelector('#gridLayer')?.remove();
-  clone.querySelector('#bgImage')?.remove();
-  return new XMLSerializer().serializeToString(clone);
-}
-
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-exportSvgBtn.addEventListener('click', () => {
-  const blob = new Blob([buildExportSvg()], { type: 'image/svg+xml;charset=utf-8' });
-  downloadBlob(blob, 'figure.svg');
-});
-
-exportPngBtn.addEventListener('click', () => {
-  const svgStr = buildExportSvg();
-  const img = new Image();
-  const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(svgBlob);
-
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = CANVAS_SIZE;
-    canvas.height = CANVAS_SIZE;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    URL.revokeObjectURL(url);
-
-    canvas.toBlob((blob) => {
-      if (blob) downloadBlob(blob, 'figure.png');
-    }, 'image/png');
-  };
-
-  img.onerror = () => {
-    URL.revokeObjectURL(url);
-    alert('Не удалось экспортировать PNG');
-  };
-
-  img.src = url;
-});
-
-/* ================== Старт ================== */
-renderPresets();
-render();
+})();
