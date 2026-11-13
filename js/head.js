@@ -1,32 +1,35 @@
 (function () {
   'use strict';
 
-  // ============================================================
-  //  Голова — параметры, геометрия, отрисовка
-  // ============================================================
-
   const NS = 'http://www.w3.org/2000/svg';
 
-  // ------------------------------------------------------------
-  //  Каталог параметров головы.
-  //  Единый источник истины: из него строятся ползунки,
-  //  дефолты, форматтеры и клампинг.
-  // ------------------------------------------------------------
+  // ============================================================
+  //  Каталог параметров головы (аналог SHAPE_PARAMS из референса)
+  // ============================================================
   const SHAPE_PARAMS = [
+    // --- Круг ---
     { group: 'Круг',
-      key: 'topOffset',    label: 'Верх головы (L0)',   min: -0.5, max: 0.5, step: 0.01, def: 0,    fmt: (v) => v.toFixed(2) },
-    { key: 'bottomOffset', label: 'Низ головы (L3)',    min: -0.5, max: 0.5, step: 0.01, def: 0,    fmt: (v) => v.toFixed(2) },
-    { key: 'widthMul',     label: 'Ширина головы',      min: 0.5,  max: 2.0, step: 0.01, def: 1,    fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'radiusMul',    label: 'Радиус головы',      min: 0.5,  max: 2.0, step: 0.01, def: 1,    fmt: (v) => `${Math.round(v * 100)}%` },
+      key: 'topOffset',    label: 'Верх головы (L0)',    min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'bottomOffset', label: 'Низ головы (L3)',     min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'widthMul',     label: 'Ширина головы',       min: 0.5,  max: 2.0, step: 0.01, def: 1, unit: '%', pct: true },
+    { key: 'radiusMul',    label: 'Радиус головы',       min: 0.5,  max: 2.0, step: 0.01, def: 1, unit: '%', pct: true },
 
+    // --- Подбородок ---
     { group: 'Подбородок',
-      key: 'chinYOffset',  label: 'Высота подбородка',  min: -0.5, max: 0.5, step: 0.01, def: 0,    fmt: (v) => v.toFixed(2) },
-    { key: 'chinWidth',    label: 'Ширина подбородка',  min: 0.1,  max: 1.0, step: 0.01, def: 0.55, fmt: (v) => `${Math.round(v * 100)}%` },
+      key: 'chinYOffset',  label: 'Высота подбородка',   min: -0.5, max: 0.5, step: 0.01, def: 0 },
+    { key: 'chinWidth',    label: 'Ширина подбородка',   min: 0.1,  max: 1.0, step: 0.01, def: 0.55, unit: '%', pct: true },
 
+    // --- Челюсть ---
     { group: 'Челюсть',
-      key: 'jawDrop',      label: 'Длина линии челюсти', min: 0,    max: 1.0, step: 0.01, def: 0.15, fmt: (v) => `${Math.round(v * 100)}%` },
-    { key: 'jawCorner',    label: 'Ширина углов',        min: 0,    max: 0.5, step: 0.01, def: 0.15, fmt: (v) => `${Math.round(v * 100)}%` },
+      key: 'jawDrop',      label: 'Длина линии челюсти', min: 0,    max: 1.0, step: 0.01, def: 0.15, unit: '%', pct: true },
+    { key: 'jawCorner',    label: 'Ширина углов',        min: 0,    max: 0.5, step: 0.01, def: 0.15, unit: '%', pct: true },
   ];
+
+  // Толщина линии — отдельный параметр (как LINE_PARAM в референсе)
+  const LINE_PARAM = {
+    key: 'line', label: 'Толщина линии',
+    min: 0.002, max: 0.05, step: 0.001, def: 0.012,
+  };
 
   function defaultShape() {
     const s = {};
@@ -39,27 +42,27 @@
     if (!input || typeof input !== 'object') return s;
     for (const p of SHAPE_PARAMS) {
       const v = Number(input[p.key]);
-      s[p.key] = Number.isFinite(v)
-        ? Math.min(p.max, Math.max(p.min, v))
-        : p.def;
+      s[p.key] = Number.isFinite(v) ? Math.min(p.max, Math.max(p.min, v)) : p.def;
     }
     return s;
   }
 
-  // ------------------------------------------------------------
-  //  Модуль
-  // ------------------------------------------------------------
+  // ============================================================
+  //  Модуль головы
+  // ============================================================
   const Head = {
     name: 'head',
     SHAPE_PARAMS,
+    LINE_PARAM,
     defaultShape,
     clampShape,
 
     params: defaultShape(),
+    line: LINE_PARAM.def,
 
     geom: { centerX: 2048, topY: 0, headH: 0 },
 
-    groups: { skull: null, chin: null, jaw: null },
+    groups: { skull: null, chin: null, jaw: null, line: null },
 
     init(container) {
       container.innerHTML = '';
@@ -87,7 +90,12 @@
       this.build();
     },
 
-    // Опорные точки
+    setLine(v) {
+      this.line = Math.min(this.LINE_PARAM.max, Math.max(this.LINE_PARAM.min, Number(v) || this.LINE_PARAM.def));
+      this.build();
+    },
+
+    // ----- Опорные точки -----
     compute() {
       const { centerX, topY, headH } = this.geom;
       const p = this.params;
@@ -108,7 +116,6 @@
       const rx = ry * p.widthMul;
       const cx = centerX;
 
-      // Экватор эллипса — «широчайшие» точки
       const attachY = cyBase;
       const attachLeft  = { x: cx - rx, y: attachY };
       const attachRight = { x: cx + rx, y: attachY };
@@ -136,9 +143,13 @@
       };
     },
 
+    // ----- Отрисовка -----
     build() {
       if (!this.groups.skull) return;
       const g = this.compute();
+
+      // Толщина линии в пикселях холста (референс: доля от headH)
+      const strokePx = Math.max(0.5, this.line * this.geom.headH);
 
       // Круг
       this.groups.skull.innerHTML = '';
@@ -174,6 +185,12 @@
       chin.setAttribute('x2', g.chinRight.x);
       chin.setAttribute('y2', g.chinRight.y);
       this.groups.chin.appendChild(chin);
+
+      // Общая толщина линии у всех групп
+      for (const grp of [this.groups.skull, this.groups.jaw, this.groups.chin]) {
+        grp.setAttribute('stroke-width', String(strokePx));
+        grp.setAttribute('fill', 'none');
+      }
     },
   };
 
