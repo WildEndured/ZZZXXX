@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Фигура — Этап 1</title>
+  <title>Фигура — Этап 2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -69,6 +69,55 @@
           <label class="row">
             <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
             <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
+          </label>
+        </section>
+
+        <section class="block">
+          <h2>Голова</h2>
+
+          <label class="row">
+            <span>Верх головы: <b id="headTopVal">0</b></span>
+            <input type="range" id="headTop" min="-50" max="50" step="1" value="0" />
+          </label>
+
+          <label class="row">
+            <span>Низ головы: <b id="headBottomVal">0</b></span>
+            <input type="range" id="headBottom" min="-50" max="50" step="1" value="0" />
+          </label>
+
+          <label class="row">
+            <span>Ширина головы: <b id="headWidthVal">100</b>%</span>
+            <input type="range" id="headWidth" min="50" max="200" step="1" value="100" />
+          </label>
+
+          <label class="row">
+            <span>Радиус головы: <b id="headRadiusVal">100</b>%</span>
+            <input type="range" id="headRadius" min="50" max="200" step="1" value="100" />
+          </label>
+
+          <label class="row">
+            <span>Высота подбородка: <b id="chinYVal">0</b></span>
+            <input type="range" id="chinY" min="-50" max="50" step="1" value="0" />
+          </label>
+
+          <label class="row">
+            <span>Ширина подбородка: <b id="chinWVal">55</b>%</span>
+            <input type="range" id="chinW" min="10" max="100" step="1" value="55" />
+          </label>
+
+          <label class="row">
+            <span>Высота крепления челюсти: <b id="jawAttachVal">50</b>%</span>
+            <input type="range" id="jawAttach" min="0" max="100" step="1" value="50" />
+          </label>
+
+          <label class="row">
+            <span>Длина челюсти: <b id="jawLenVal">40</b>%</span>
+            <input type="range" id="jawLen" min="0" max="100" step="1" value="40" />
+          </label>
+
+          <label class="row">
+            <span>Ширина углов челюсти: <b id="jawCornerVal">15</b>%</span>
+            <input type="range" id="jawCorner" min="0" max="50" step="1" value="15" />
           </label>
         </section>
 
