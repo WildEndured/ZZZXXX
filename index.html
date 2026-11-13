@@ -11,7 +11,6 @@
 
 <div class="app" id="app">
 
-    <!-- ХОЛСТ (сверху на мобильных, справа на десктопе) -->
     <main class="stage">
         <div class="stage-toolbar">
             <button id="exportSvg" class="btn">SVG</button>
@@ -38,7 +37,6 @@
         </div>
     </main>
 
-    <!-- ПАНЕЛЬ УПРАВЛЕНИЯ (снизу на мобильных, слева на десктопе) -->
     <aside class="panel" id="panel" aria-label="Панель управления">
 
         <div class="panel__head">
@@ -90,32 +88,32 @@
 
             <label class="row">
                 <span class="row__label">Высота подбородка</span>
-                <input type="range" id="chinHeight" min="-0.2" max="0.3" step="0.01" value="0" />
+                <input type="range" id="chinHeight" min="-0.2" max="0.3" step="0.01" value="0.00" />
                 <output id="chinHeightOut">0.00</output>
             </label>
 
             <label class="row">
                 <span class="row__label">Ширина подбородка</span>
-                <input type="range" id="chinWidth" min="0.1" max="0.6" step="0.01" value="0.4" />
-                <output id="chinWidthOut">0.40</output>
+                <input type="range" id="chinWidth" min="0.1" max="0.6" step="0.01" value="0.10" />
+                <output id="chinWidthOut">0.10</output>
             </label>
 
             <label class="row">
                 <span class="row__label">Высота крепления челюсти</span>
-                <input type="range" id="jawAttach" min="0" max="0.3" step="0.01" value="0" />
+                <input type="range" id="jawAttach" min="0" max="0.3" step="0.01" value="0.00" />
                 <output id="jawAttachOut">0.00</output>
             </label>
 
             <label class="row">
                 <span class="row__label">Длина челюсти</span>
-                <input type="range" id="jawLength" min="0" max="0.4" step="0.01" value="0.15" />
-                <output id="jawLengthOut">0.15</output>
+                <input type="range" id="jawLength" min="0" max="0.4" step="0.01" value="0.40" />
+                <output id="jawLengthOut">0.40</output>
             </label>
 
             <label class="row">
                 <span class="row__label">Угол челюсти</span>
-                <input type="range" id="jawAngle" min="0" max="1" step="0.01" value="1" />
-                <output id="jawAngleOut">1.00</output>
+                <input type="range" id="jawAngle" min="0" max="1" step="0.01" value="0.50" />
+                <output id="jawAngleOut">0.50</output>
             </label>
         </section>
 
