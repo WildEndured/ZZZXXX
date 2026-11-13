@@ -16,6 +16,19 @@
     heads: 5,          // рост в головах (шаг 0.5)
     margin: 0,         // отступ сверху/снизу, %
 
+    // Параметры головы (единый источник правды для Head.params)
+    head: {
+      topOffset: 0,      // сдвиг L0 (в долях headH)
+      bottomOffset: 0,   // сдвиг L3
+      widthMul: 1.0,     // множитель ширины по X
+      radiusMul: 1.0,    // общий множитель радиуса
+      chinYOffset: 0,    // сдвиг L4
+      chinWidth: 0.55,   // ширина подбородка (доля от ширины круга)
+      jawAttach: 0.5,    // высота крепления к кругу (0..1)
+      jawLength: 0.4,    // длина спуска (доля headH)
+      jawCorner: 0.15,   // ширина углов (доля headH)
+    },
+
     // Подложка
     underlay: {
       src: null,       // dataURL
@@ -43,6 +56,28 @@
     marginRange: $('marginRange'),
     marginVal: $('marginVal'),
 
+    // Голова
+    headGroup: $('headGroup'),
+    headTop: $('headTop'),
+    headTopVal: $('headTopVal'),
+    headBottom: $('headBottom'),
+    headBottomVal: $('headBottomVal'),
+    headWidth: $('headWidth'),
+    headWidthVal: $('headWidthVal'),
+    headRadius: $('headRadius'),
+    headRadiusVal: $('headRadiusVal'),
+    chinY: $('chinY'),
+    chinYVal: $('chinYVal'),
+    chinW: $('chinW'),
+    chinWVal: $('chinWVal'),
+    jawAttach: $('jawAttach'),
+    jawAttachVal: $('jawAttachVal'),
+    jawLen: $('jawLen'),
+    jawLenVal: $('jawLenVal'),
+    jawCorner: $('jawCorner'),
+    jawCornerVal: $('jawCornerVal'),
+
+    // Подложка
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
     opacityVal: $('opacityVal'),
@@ -50,6 +85,7 @@
     scaleVal: $('scaleVal'),
     removeUnderlay: $('removeUnderlay'),
 
+    // Пресеты и экспорт
     presetName: $('presetName'),
     savePreset: $('savePreset'),
     presetList: $('presetList'),
@@ -60,8 +96,6 @@
 
   // ============================================================
   //  Геометрия холста
-  //  Возвращает объект с расчётными параметрами,
-  //  который передаётся в модули Head/Torso/Arm/Leg.
   // ============================================================
   function computeGeometry() {
     const marginPx = Math.round((state.margin / 100) * CANVAS);
@@ -168,13 +202,10 @@
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
 
-    // Масштаб подложки: подгонка под высоту или ширину холста
-    // с учётом пользовательского масштаба.
     const box = CANVAS;
     const iw = u.naturalWidth || box;
     const ih = u.naturalHeight || box;
 
-    // Базовый коэффициент — вписываем в квадрат холста (contain)
     const fit = Math.min(box / iw, box / ih);
     const k = fit * u.scale;
 
@@ -206,6 +237,31 @@
   });
 
   // ============================================================
+  //  Обработчики: голова
+  // ============================================================
+  function bindHeadSlider(el, valEl, key, toState, toDisplay) {
+    el.addEventListener('input', (e) => {
+      const raw = parseFloat(e.target.value);
+      state.head[key] = toState(raw);
+      valEl.textContent = toDisplay(raw);
+      if (window.Head) {
+        window.Head.params = state.head;
+        window.Head.build();
+      }
+    });
+  }
+
+  bindHeadSlider(dom.headTop,    dom.headTopVal,    'topOffset',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.headBottom, dom.headBottomVal, 'bottomOffset', (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.headWidth,  dom.headWidthVal,  'widthMul',     (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.headRadius, dom.headRadiusVal, 'radiusMul',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.chinY,      dom.chinYVal,      'chinYOffset',  (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.chinW,      dom.chinWVal,      'chinWidth',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.jawAttach,  dom.jawAttachVal,  'jawAttach',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.jawLen,     dom.jawLenVal,     'jawLength',    (v) => v / 100, (v) => v);
+  bindHeadSlider(dom.jawCorner,  dom.jawCornerVal,  'jawCorner',    (v) => v / 100, (v) => v);
+
+  // ============================================================
   //  Обработчики: подложка
   // ============================================================
   dom.underlayFile.addEventListener('change', (e) => {
@@ -216,13 +272,11 @@
     reader.onload = () => {
       const dataUrl = reader.result;
 
-      // Узнаём натуральные размеры изображения
       const img = new Image();
       img.onload = () => {
         state.underlay.src = dataUrl;
         state.underlay.naturalWidth = img.naturalWidth;
         state.underlay.naturalHeight = img.naturalHeight;
-        // Сбрасываем масштаб к 100% при загрузке новой подложки
         state.underlay.scale = 1.0;
         dom.scaleRange.value = 100;
         dom.scaleVal.textContent = 100;
@@ -232,7 +286,6 @@
     };
     reader.readAsDataURL(file);
 
-    // Сбрасываем input, чтобы можно было загрузить тот же файл повторно
     e.target.value = '';
   });
 
@@ -289,12 +342,13 @@
     return {
       heads: state.heads,
       margin: state.margin,
-      // Подложка намеренно не сохраняется
+      head: { ...state.head },
     };
   }
 
   function applySnapshot(snap) {
     if (!snap) return;
+
     if (typeof snap.heads === 'number') {
       state.heads = snap.heads;
       dom.headsRange.value = snap.heads;
@@ -303,6 +357,31 @@
       state.margin = snap.margin;
       dom.marginRange.value = snap.margin;
     }
+    if (snap.head && typeof snap.head === 'object') {
+      Object.assign(state.head, snap.head);
+      if (window.Head) window.Head.params = state.head;
+
+      // Ползунки головы
+      dom.headTop.value    = Math.round(state.head.topOffset * 100);
+      dom.headTopVal.textContent = Math.round(state.head.topOffset * 100);
+      dom.headBottom.value = Math.round(state.head.bottomOffset * 100);
+      dom.headBottomVal.textContent = Math.round(state.head.bottomOffset * 100);
+      dom.headWidth.value  = Math.round(state.head.widthMul * 100);
+      dom.headWidthVal.textContent = Math.round(state.head.widthMul * 100);
+      dom.headRadius.value = Math.round(state.head.radiusMul * 100);
+      dom.headRadiusVal.textContent = Math.round(state.head.radiusMul * 100);
+      dom.chinY.value      = Math.round(state.head.chinYOffset * 100);
+      dom.chinYVal.textContent = Math.round(state.head.chinYOffset * 100);
+      dom.chinW.value      = Math.round(state.head.chinWidth * 100);
+      dom.chinWVal.textContent = Math.round(state.head.chinWidth * 100);
+      dom.jawAttach.value  = Math.round(state.head.jawAttach * 100);
+      dom.jawAttachVal.textContent = Math.round(state.head.jawAttach * 100);
+      dom.jawLen.value     = Math.round(state.head.jawLength * 100);
+      dom.jawLenVal.textContent = Math.round(state.head.jawLength * 100);
+      dom.jawCorner.value  = Math.round(state.head.jawCorner * 100);
+      dom.jawCornerVal.textContent = Math.round(state.head.jawCorner * 100);
+    }
+
     applyState();
   }
 
@@ -320,7 +399,6 @@
       return;
     }
 
-    // Сортируем по имени
     names.sort((a, b) => a.localeCompare(b, 'ru'));
 
     for (const name of names) {
@@ -372,23 +450,17 @@
   // ============================================================
   //  Экспорт
   // ============================================================
-
-  // Клонирует SVG и убирает всё, что не должно попадать в экспорт.
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
 
-    // Удаляем служебные слои
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
 
-    // Убираем gridRect на случай, если он не в .no-export
     const g = clone.querySelector('#gridRect');
     if (g) g.remove();
 
-    // Убираем слои голов
     const h = clone.querySelector('#headsLayer');
     if (h) h.remove();
 
-    // Фиксируем размеры холста
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width', String(CANVAS));
     clone.setAttribute('height', String(CANVAS));
@@ -433,11 +505,8 @@
       canvas.height = CANVAS;
       const ctx = canvas.getContext('2d');
 
-      // Белый фон
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, CANVAS, CANVAS);
-
-      // Фигура
       ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
 
       URL.revokeObjectURL(svgUrl);
@@ -457,13 +526,41 @@
   //  Инициализация
   // ============================================================
   function init() {
-    // Устанавливаем начальные значения контролов из state
+    // Общие
     dom.headsRange.value = state.heads;
     dom.marginRange.value = state.margin;
+
+    // Голова — стартовые значения ползунков
+    dom.headTop.value = Math.round(state.head.topOffset * 100);
+    dom.headTopVal.textContent = Math.round(state.head.topOffset * 100);
+    dom.headBottom.value = Math.round(state.head.bottomOffset * 100);
+    dom.headBottomVal.textContent = Math.round(state.head.bottomOffset * 100);
+    dom.headWidth.value = Math.round(state.head.widthMul * 100);
+    dom.headWidthVal.textContent = Math.round(state.head.widthMul * 100);
+    dom.headRadius.value = Math.round(state.head.radiusMul * 100);
+    dom.headRadiusVal.textContent = Math.round(state.head.radiusMul * 100);
+    dom.chinY.value = Math.round(state.head.chinYOffset * 100);
+    dom.chinYVal.textContent = Math.round(state.head.chinYOffset * 100);
+    dom.chinW.value = Math.round(state.head.chinWidth * 100);
+    dom.chinWVal.textContent = Math.round(state.head.chinWidth * 100);
+    dom.jawAttach.value = Math.round(state.head.jawAttach * 100);
+    dom.jawAttachVal.textContent = Math.round(state.head.jawAttach * 100);
+    dom.jawLen.value = Math.round(state.head.jawLength * 100);
+    dom.jawLenVal.textContent = Math.round(state.head.jawLength * 100);
+    dom.jawCorner.value = Math.round(state.head.jawCorner * 100);
+    dom.jawCornerVal.textContent = Math.round(state.head.jawCorner * 100);
+
+    // Подложка
     dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
     dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
     dom.scaleRange.value = Math.round(state.underlay.scale * 100);
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+
+    // Инициализация модуля головы
+    if (window.Head) {
+      window.Head.params = state.head;
+      window.Head.init(dom.headGroup);
+    }
 
     renderPresets();
     applyState();
