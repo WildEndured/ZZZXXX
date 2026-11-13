@@ -4,31 +4,32 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   // ============================================================
-  //  Каталог параметров головы (аналог SHAPE_PARAMS из референса)
+  //  Каталог параметров головы
+  //  Диапазоны расширены в +/- — можно уводить далеко за дефолт.
   // ============================================================
   const SHAPE_PARAMS = [
     // --- Круг ---
     { group: 'Круг',
-      key: 'topOffset',    label: 'Верх головы (L0)',    min: -0.5, max: 0.5, step: 0.01, def: 0 },
-    { key: 'bottomOffset', label: 'Низ головы (L3)',     min: -0.5, max: 0.5, step: 0.01, def: 0 },
-    { key: 'widthMul',     label: 'Ширина головы',       min: 0.5,  max: 2.0, step: 0.01, def: 1, unit: '%', pct: true },
-    { key: 'radiusMul',    label: 'Радиус головы',       min: 0.5,  max: 2.0, step: 0.01, def: 1, unit: '%', pct: true },
+      key: 'topOffset',    label: 'Верх головы (L0)',    min: -2.0, max: 2.0, step: 0.01, def: 0 },
+    { key: 'bottomOffset', label: 'Низ головы (L3)',     min: -2.0, max: 2.0, step: 0.01, def: 0 },
+    { key: 'widthMul',     label: 'Ширина головы',       min: 0.1,  max: 5.0, step: 0.01, def: 1, unit: '%', pct: true },
+    { key: 'radiusMul',    label: 'Радиус головы',       min: 0.1,  max: 5.0, step: 0.01, def: 1, unit: '%', pct: true },
 
     // --- Подбородок ---
     { group: 'Подбородок',
-      key: 'chinYOffset',  label: 'Высота подбородка',   min: -0.5, max: 0.5, step: 0.01, def: 0 },
-    { key: 'chinWidth',    label: 'Ширина подбородка',   min: 0.1,  max: 1.0, step: 0.01, def: 0.55, unit: '%', pct: true },
+      key: 'chinYOffset',  label: 'Высота подбородка',   min: -2.0, max: 2.0, step: 0.01, def: 0 },
+    { key: 'chinWidth',    label: 'Ширина подбородка',   min: 0.0,  max: 3.0, step: 0.01, def: 0.55, unit: '%', pct: true },
 
     // --- Челюсть ---
     { group: 'Челюсть',
-      key: 'jawDrop',      label: 'Длина линии челюсти', min: 0,    max: 1.0, step: 0.01, def: 0.15, unit: '%', pct: true },
-    { key: 'jawCorner',    label: 'Ширина углов',        min: 0,    max: 0.5, step: 0.01, def: 0.15, unit: '%', pct: true },
+      key: 'jawDrop',      label: 'Длина линии челюсти', min: -1.0, max: 3.0, step: 0.01, def: 0.15, unit: '%', pct: true },
+    { key: 'jawCorner',    label: 'Ширина углов',        min: -1.0, max: 2.0, step: 0.01, def: 0.15, unit: '%', pct: true },
   ];
 
-  // Толщина линии — отдельный параметр (как LINE_PARAM в референсе)
+  // Толщина линии
   const LINE_PARAM = {
     key: 'line', label: 'Толщина линии',
-    min: 0.002, max: 0.05, step: 0.001, def: 0.012,
+    min: 0.0005, max: 0.2, step: 0.0005, def: 0.012,
   };
 
   function defaultShape() {
@@ -62,7 +63,7 @@
 
     geom: { centerX: 2048, topY: 0, headH: 0 },
 
-    groups: { skull: null, chin: null, jaw: null, line: null },
+    groups: { skull: null, chin: null, jaw: null },
 
     init(container) {
       container.innerHTML = '';
@@ -91,11 +92,11 @@
     },
 
     setLine(v) {
-      this.line = Math.min(this.LINE_PARAM.max, Math.max(this.LINE_PARAM.min, Number(v) || this.LINE_PARAM.def));
+      const lp = this.LINE_PARAM;
+      this.line = Math.min(lp.max, Math.max(lp.min, Number(v) || lp.def));
       this.build();
     },
 
-    // ----- Опорные точки -----
     compute() {
       const { centerX, topY, headH } = this.geom;
       const p = this.params;
@@ -143,12 +144,9 @@
       };
     },
 
-    // ----- Отрисовка -----
     build() {
       if (!this.groups.skull) return;
       const g = this.compute();
-
-      // Толщина линии в пикселях холста (референс: доля от headH)
       const strokePx = Math.max(0.5, this.line * this.geom.headH);
 
       // Круг
@@ -186,7 +184,7 @@
       chin.setAttribute('y2', g.chinRight.y);
       this.groups.chin.appendChild(chin);
 
-      // Общая толщина линии у всех групп
+      // Толщина линии
       for (const grp of [this.groups.skull, this.groups.jaw, this.groups.chin]) {
         grp.setAttribute('stroke-width', String(strokePx));
         grp.setAttribute('fill', 'none');
