@@ -3,30 +3,8 @@
 
   const CANVAS = 4096;
   const DPI = 300;
-  const STORAGE_KEY = 'figure-presets-v1';
+  const STORAGE_KEY = 'figure-presets-v2';
 
-  // ============================================================
-  //  Состояние
-  // ============================================================
-  const state = {
-    heads: 5,
-    margin: 0,
-    shape: (window.Head && window.Head.defaultShape) ? window.Head.defaultShape() : {},
-    display: {
-      line: (window.Head && window.Head.LINE_PARAM) ? window.Head.LINE_PARAM.def : 0.012,
-    },
-    underlay: {
-      src: null,
-      opacity: 0.5,
-      scale: 1.0,
-      naturalWidth: 0,
-      naturalHeight: 0,
-    },
-  };
-
-  // ============================================================
-  //  DOM
-  // ============================================================
   const $ = (id) => document.getElementById(id);
 
   const dom = {
@@ -40,8 +18,8 @@
     marginVal: $('marginVal'),
 
     headGroup: $('headGroup'),
-    shapeSliders: $('shapeSliders'),
-    displaySliders: $('displaySliders'),
+    headSliders: $('headSliders'),
+    lineSliders: $('lineSliders'),
 
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
@@ -58,37 +36,37 @@
     exportPng: $('exportPng'),
   };
 
-  // ============================================================
-  //  Форматтеры
-  // ============================================================
+  const state = {
+    heads: 5,
+    margin: 0,
+    shape: (window.Head ? window.Head.defaultShape() : {}),
+    line: (window.Head ? window.Head.LINE_PARAM.def : 0.012),
+    underlay: { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 },
+  };
+
+  // ---------- Форматтеры ----------
   const shapeFmt = (p) => (v) => {
-    if (p.unit === '%' && p.pct) return `${Math.round(v * 100)}%`;
-    if (p.unit) return `${Math.round(v)}${p.unit}`;
+    if (p.unit === '°') return `${Math.round(v)}°`;
+    if (p.unit === '%') return `${Math.round(v * 100)}%`;
     return Number(v).toFixed(2);
   };
   const lineFmt = (v) => Number(v).toFixed(3);
 
-  // ============================================================
-  //  Геометрия холста
-  // ============================================================
+  // ---------- Геометрия холста ----------
   function computeGeometry() {
     const marginPx = Math.round((state.margin / 100) * CANVAS);
     const usableTop = marginPx;
     const usableBottom = CANVAS - marginPx;
     const usableHeight = usableBottom - usableTop;
     const headHeight = usableHeight / state.heads;
-
     return {
-      canvas: CANVAS, dpi: DPI,
-      marginPx, usableTop, usableBottom, usableHeight,
-      headHeight, heads: state.heads,
-      centerX: CANVAS / 2,
-      topY: usableTop,
+      canvas: CANVAS, dpi: DPI, marginPx,
+      usableTop, usableBottom, usableHeight, headHeight, heads: state.heads,
+      centerX: CANVAS / 2, topY: usableTop,
     };
   }
 
   function renderHeadsGrid(geo) {
-    if (!dom.headsLayer) return;
     const ns = 'http://www.w3.org/2000/svg';
     dom.headsLayer.innerHTML = '';
     for (let i = 0; i <= Math.ceil(geo.heads); i++) {
@@ -108,48 +86,38 @@
     const geo = computeGeometry();
     renderHeadsGrid(geo);
     if (window.Head) {
+      window.Head.shape = state.shape;
       window.Head.update(geo);
-      window.Head.setLine(state.display.line);
+      window.Head.setLine(state.line);
     }
     renderUnderlay();
-    if (dom.headsVal) dom.headsVal.textContent = state.heads;
-    if (dom.marginVal) dom.marginVal.textContent = state.margin;
+    dom.headsVal.textContent = state.heads;
+    dom.marginVal.textContent = state.margin;
   }
 
-  // ============================================================
-  //  Подложка
-  // ============================================================
+  // ---------- Подложка ----------
   function renderUnderlay() {
-    if (!dom.underlayImage) return;
     const u = state.underlay;
     if (!u.src) {
       dom.underlayImage.style.display = 'none';
-      if (dom.removeUnderlay) dom.removeUnderlay.disabled = true;
+      dom.removeUnderlay.disabled = true;
       return;
     }
     dom.underlayImage.style.display = 'block';
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
-
-    const box = CANVAS;
-    const iw = u.naturalWidth || box;
-    const ih = u.naturalHeight || box;
-    const fit = Math.min(box / iw, box / ih);
-    const k = fit * u.scale;
-    const drawW = iw * k, drawH = ih * k;
-    const x = (box - drawW) / 2, y = (box - drawH) / 2;
-
-    dom.underlayImage.setAttribute('x', x);
-    dom.underlayImage.setAttribute('y', y);
-    dom.underlayImage.setAttribute('width', drawW);
-    dom.underlayImage.setAttribute('height', drawH);
+    const box = CANVAS, iw = u.naturalWidth || box, ih = u.naturalHeight || box;
+    const fit = Math.min(box / iw, box / ih), k = fit * u.scale;
+    const w = iw * k, h = ih * k;
+    dom.underlayImage.setAttribute('x', (box - w) / 2);
+    dom.underlayImage.setAttribute('y', (box - h) / 2);
+    dom.underlayImage.setAttribute('width', w);
+    dom.underlayImage.setAttribute('height', h);
     dom.underlayImage.setAttribute('preserveAspectRatio', 'none');
-    if (dom.removeUnderlay) dom.removeUnderlay.disabled = false;
+    dom.removeUnderlay.disabled = false;
   }
 
-  // ============================================================
-  //  Фабрика ползунков
-  // ============================================================
+  // ---------- makeSlider (как в референсе) ----------
   function makeSlider(host, p, idPrefix, get, set, fmt) {
     const row = document.createElement('div');
     row.className = 'slider';
@@ -162,25 +130,13 @@
     Object.assign(input, { min: p.min, max: p.max, step: p.step });
     host.appendChild(row);
 
-    const sync = () => {
-      const v = get();
-      input.value = v;
-      out.textContent = fmt(v);
-    };
+    const sync = () => { const v = get(); input.value = v; out.textContent = fmt(v); };
 
     let dragging = false;
-    input.addEventListener('input', () => {
-      if (!dragging) dragging = true;
-      const v = Number(input.value);
-      set(v);
-      out.textContent = fmt(v);
-    });
+    input.addEventListener('input', () => { dragging = true; const v = Number(input.value); set(v); out.textContent = fmt(v); });
     input.addEventListener('change', () => { dragging = false; });
 
-    const reset = () => {
-      set(p.def);
-      sync();
-    };
+    const reset = () => { set(p.def); sync(); };
     row.addEventListener('dblclick', reset);
 
     let timer = 0, start = null;
@@ -199,32 +155,29 @@
     return sync;
   }
 
-  // ============================================================
-  //  Построение ползунков
-  // ============================================================
+  // ---------- Ползунки ----------
   const syncers = [];
 
-  function buildShapeSliders() {
-    if (!window.Head || !dom.shapeSliders) return;
-    dom.shapeSliders.innerHTML = '';
+  function buildHeadSliders() {
+    dom.headSliders.innerHTML = '';
     syncers.length = 0;
-
+    if (!window.Head) return;
     let currentGroup = null;
-    for (const p of window.Head.SHAPE_PARAMS) {
+    for (const p of window.Head.PARAMS) {
       if (p.group && p.group !== currentGroup) {
         currentGroup = p.group;
         const h = document.createElement('h3');
         h.className = 'group-h';
         h.textContent = p.group;
-        dom.shapeSliders.appendChild(h);
+        dom.headSliders.appendChild(h);
       }
       syncers.push(makeSlider(
-        dom.shapeSliders, p, 'shape',
+        dom.headSliders, p, 'head',
         () => state.shape[p.key],
         (v) => {
           state.shape[p.key] = v;
           if (window.Head) {
-            window.Head.params = state.shape;
+            window.Head.shape = state.shape;
             window.Head.build();
           }
         },
@@ -233,267 +186,165 @@
     }
   }
 
-  function buildDisplaySliders() {
-    if (!window.Head || !dom.displaySliders) return;
-    dom.displaySliders.innerHTML = '';
+  function buildLineSliders() {
+    dom.lineSliders.innerHTML = '';
+    if (!window.Head) return;
     const p = window.Head.LINE_PARAM;
     syncers.push(makeSlider(
-      dom.displaySliders, p, 'display',
-      () => state.display.line,
-      (v) => {
-        state.display.line = v;
-        if (window.Head) window.Head.setLine(v);
-      },
+      dom.lineSliders, p, 'line',
+      () => state.line,
+      (v) => { state.line = v; if (window.Head) window.Head.setLine(v); },
       lineFmt
     ));
   }
 
-  // ============================================================
-  //  Общие обработчики
-  // ============================================================
-  if (dom.headsRange) {
-    dom.headsRange.addEventListener('input', (e) => {
-      state.heads = parseFloat(e.target.value);
-      applyState();
-    });
-  }
-  if (dom.marginRange) {
-    dom.marginRange.addEventListener('input', (e) => {
-      state.margin = parseInt(e.target.value, 10);
-      applyState();
-    });
-  }
+  // ---------- Общее / подложка ----------
+  dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); applyState(); });
+  dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); applyState(); });
 
-  // ============================================================
-  //  Подложка
-  // ============================================================
-  if (dom.underlayFile) {
-    dom.underlayFile.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result;
-        const img = new Image();
-        img.onload = () => {
-          state.underlay.src = dataUrl;
-          state.underlay.naturalWidth = img.naturalWidth;
-          state.underlay.naturalHeight = img.naturalHeight;
-          state.underlay.scale = 1.0;
-          if (dom.scaleRange) dom.scaleRange.value = 100;
-          if (dom.scaleVal) dom.scaleVal.textContent = 100;
-          applyState();
-        };
-        img.src = dataUrl;
+  dom.underlayFile.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const img = new Image();
+      img.onload = () => {
+        state.underlay.src = dataUrl;
+        state.underlay.naturalWidth = img.naturalWidth;
+        state.underlay.naturalHeight = img.naturalHeight;
+        state.underlay.scale = 1.0;
+        dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
+        applyState();
       };
-      reader.readAsDataURL(file);
-      e.target.value = '';
-    });
-  }
-  if (dom.opacityRange) {
-    dom.opacityRange.addEventListener('input', (e) => {
-      state.underlay.opacity = parseInt(e.target.value, 10) / 100;
-      if (dom.opacityVal) dom.opacityVal.textContent = e.target.value;
-      renderUnderlay();
-    });
-  }
-  if (dom.scaleRange) {
-    dom.scaleRange.addEventListener('input', (e) => {
-      state.underlay.scale = parseInt(e.target.value, 10) / 100;
-      if (dom.scaleVal) dom.scaleVal.textContent = e.target.value;
-      renderUnderlay();
-    });
-  }
-  if (dom.removeUnderlay) {
-    dom.removeUnderlay.addEventListener('click', () => {
-      state.underlay.src = null;
-      state.underlay.naturalWidth = 0;
-      state.underlay.naturalHeight = 0;
-      state.underlay.scale = 1.0;
-      state.underlay.opacity = 0.5;
-      if (dom.opacityRange) dom.opacityRange.value = 50;
-      if (dom.opacityVal) dom.opacityVal.textContent = 50;
-      if (dom.scaleRange) dom.scaleRange.value = 100;
-      if (dom.scaleVal) dom.scaleVal.textContent = 100;
-      renderUnderlay();
-    });
-  }
-
-  // ============================================================
-  //  Пресеты
-  // ============================================================
-  function loadPresets() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      const obj = JSON.parse(raw);
-      return obj && typeof obj === 'object' ? obj : {};
-    } catch { return {}; }
-  }
-  function savePresets(presets) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); }
-    catch (err) { console.error('Не удалось сохранить пресеты:', err); }
-  }
-  function snapshotState() {
-    return {
-      heads: state.heads,
-      margin: state.margin,
-      shape: { ...state.shape },
-      display: { line: state.display.line },
+      img.src = dataUrl;
     };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+  dom.opacityRange.addEventListener('input', (e) => {
+    state.underlay.opacity = parseInt(e.target.value, 10) / 100;
+    dom.opacityVal.textContent = e.target.value;
+    renderUnderlay();
+  });
+  dom.scaleRange.addEventListener('input', (e) => {
+    state.underlay.scale = parseInt(e.target.value, 10) / 100;
+    dom.scaleVal.textContent = e.target.value;
+    renderUnderlay();
+  });
+  dom.removeUnderlay.addEventListener('click', () => {
+    state.underlay = { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 };
+    dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
+    dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
+    renderUnderlay();
+  });
+
+  // ---------- Пресеты ----------
+  function loadPresets() {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return {}; const o = JSON.parse(raw); return o && typeof o === 'object' ? o : {}; }
+    catch { return {}; }
   }
-  function applySnapshot(snap) {
-    if (!snap) return;
-    if (typeof snap.heads === 'number') {
-      state.heads = snap.heads;
-      if (dom.headsRange) dom.headsRange.value = snap.heads;
-    }
-    if (typeof snap.margin === 'number') {
-      state.margin = snap.margin;
-      if (dom.marginRange) dom.marginRange.value = snap.margin;
-    }
-    if (snap.shape && window.Head) {
-      state.shape = window.Head.clampShape(snap.shape);
-      window.Head.params = state.shape;
-    }
-    if (snap.display && window.Head) {
+  function savePresets(p) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch (e) { console.error(e); } }
+  function snapshot() { return { heads: state.heads, margin: state.margin, shape: { ...state.shape }, line: state.line }; }
+  function applySnapshot(s) {
+    if (!s) return;
+    if (typeof s.heads === 'number') { state.heads = s.heads; dom.headsRange.value = s.heads; }
+    if (typeof s.margin === 'number') { state.margin = s.margin; dom.marginRange.value = s.margin; }
+    if (s.shape && window.Head) state.shape = window.Head.clampShape(s.shape);
+    if (typeof s.line === 'number' && window.Head) {
       const lp = window.Head.LINE_PARAM;
-      const v = Number(snap.display.line);
-      state.display.line = Number.isFinite(v)
-        ? Math.min(lp.max, Math.max(lp.min, v))
-        : lp.def;
+      state.line = Math.min(lp.max, Math.max(lp.min, s.line));
     }
-    for (const s of syncers) s();
+    for (const sy of syncers) sy();
     applyState();
   }
   function renderPresets() {
-    if (!dom.presetList) return;
     const presets = loadPresets();
     const names = Object.keys(presets).sort((a, b) => a.localeCompare(b, 'ru'));
     dom.presetList.innerHTML = '';
-    if (names.length === 0) {
+    if (!names.length) {
       const li = document.createElement('li');
-      li.className = 'preset-empty';
-      li.textContent = 'Пресетов нет';
-      dom.presetList.appendChild(li);
-      return;
+      li.className = 'preset-empty'; li.textContent = 'Пресетов нет';
+      dom.presetList.appendChild(li); return;
     }
     for (const name of names) {
       const li = document.createElement('li');
       const span = document.createElement('span');
-      span.className = 'preset-name';
-      span.textContent = name;
-      span.title = name;
-
+      span.className = 'preset-name'; span.textContent = name; span.title = name;
       const applyBtn = document.createElement('button');
-      applyBtn.className = 'preset-btn';
-      applyBtn.textContent = 'Применить';
+      applyBtn.className = 'preset-btn'; applyBtn.textContent = 'Применить';
       applyBtn.addEventListener('click', () => applySnapshot(presets[name]));
-
       const delBtn = document.createElement('button');
-      delBtn.className = 'preset-btn remove';
-      delBtn.textContent = 'Удалить';
+      delBtn.className = 'preset-btn remove'; delBtn.textContent = 'Удалить';
       delBtn.addEventListener('click', () => {
-        const all = loadPresets();
-        delete all[name];
-        savePresets(all);
-        renderPresets();
+        const all = loadPresets(); delete all[name]; savePresets(all); renderPresets();
       });
-
-      li.appendChild(span);
-      li.appendChild(applyBtn);
-      li.appendChild(delBtn);
+      li.appendChild(span); li.appendChild(applyBtn); li.appendChild(delBtn);
       dom.presetList.appendChild(li);
     }
   }
-  if (dom.savePreset) {
-    dom.savePreset.addEventListener('click', () => {
-      const name = (dom.presetName.value || '').trim();
-      if (!name) { alert('Введите название пресета'); return; }
-      const all = loadPresets();
-      all[name] = snapshotState();
-      savePresets(all);
-      dom.presetName.value = '';
-      renderPresets();
-    });
-  }
+  dom.savePreset.addEventListener('click', () => {
+    const name = (dom.presetName.value || '').trim();
+    if (!name) { alert('Введите название пресета'); return; }
+    const all = loadPresets(); all[name] = snapshot(); savePresets(all);
+    dom.presetName.value = ''; renderPresets();
+  });
 
-  // ============================================================
-  //  Экспорт
-  // ============================================================
+  // ---------- Экспорт ----------
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
-    const g = clone.querySelector('#gridRect'); if (g) g.remove();
-    const h = clone.querySelector('#headsLayer'); if (h) h.remove();
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     clone.setAttribute('width', String(CANVAS));
     clone.setAttribute('height', String(CANVAS));
     clone.setAttribute('viewBox', `0 0 ${CANVAS} ${CANVAS}`);
     return clone;
   }
-  function serializeSvg(el) {
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(el);
-  }
-  function downloadBlob(blob, filename) {
+  function serializeSvg(el) { return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(el); }
+  function download(blob, name) {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
+    const a = document.createElement('a'); a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  if (dom.exportSvg) {
-    dom.exportSvg.addEventListener('click', () => {
-      const xml = serializeSvg(buildExportSvg());
-      downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
-    });
-  }
-  if (dom.exportPng) {
-    dom.exportPng.addEventListener('click', () => {
-      const xml = serializeSvg(buildExportSvg());
-      const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-      const svgUrl = URL.createObjectURL(svgBlob);
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = CANVAS; canvas.height = CANVAS;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
-        ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
-        URL.revokeObjectURL(svgUrl);
-        canvas.toBlob((blob) => { if (blob) downloadBlob(blob, 'figure.png'); }, 'image/png');
-      };
-      img.onerror = () => { URL.revokeObjectURL(svgUrl); alert('Не удалось экспортировать PNG'); };
-      img.src = svgUrl;
-    });
-  }
+  dom.exportSvg.addEventListener('click', () => {
+    download(new Blob([serializeSvg(buildExportSvg())], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
+  });
+  dom.exportPng.addEventListener('click', () => {
+    const svgBlob = new Blob([serializeSvg(buildExportSvg())], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = CANVAS; c.height = CANVAS;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
+      ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+      URL.revokeObjectURL(url);
+      c.toBlob((b) => { if (b) download(b, 'figure.png'); }, 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); alert('PNG error'); };
+    img.src = url;
+  });
 
-  // ============================================================
-  //  Инициализация
-  // ============================================================
+  // ---------- Init ----------
   function init() {
-    if (dom.headsRange) dom.headsRange.value = state.heads;
-    if (dom.marginRange) dom.marginRange.value = state.margin;
-    if (dom.opacityRange) dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
-    if (dom.opacityVal) dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
-    if (dom.scaleRange) dom.scaleRange.value = Math.round(state.underlay.scale * 100);
-    if (dom.scaleVal) dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+    dom.headsRange.value = state.heads;
+    dom.marginRange.value = state.margin;
+    dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
+    dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
 
     if (window.Head && dom.headGroup) {
-      window.Head.params = state.shape;
-      window.Head.line = state.display.line;
+      window.Head.shape = state.shape;
+      window.Head.line = state.line;
       window.Head.init(dom.headGroup);
     }
 
-    buildShapeSliders();
-    buildDisplaySliders();
+    buildHeadSliders();
+    buildLineSliders();
     renderPresets();
     applyState();
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
