@@ -1,29 +1,17 @@
-// ════════════════════════════════════════════════════════════
-// main.js — точка входа
-// ════════════════════════════════════════════════════════════
-
-import { renderHead, headState }  from './head.js';
+import { renderHead, headState } from './head.js';
 import { renderTorso } from './torso.js';
 import { renderArms }  from './arm.js';
 import { renderLegs }  from './leg.js';
 
 const CANVAS_SIZE = 4096;
-const DPI         = 300;
 
 const state = {
     growth:  5,
     padding: 0,
-    bg: {
-        src:     null,
-        image:   null,
-        opacity: 1,
-        scale:   1,
-        fitMode: 'height'
-    },
+    bg: { src: null, image: null, opacity: 1, scale: 1, fitMode: 'height' },
     figure: {}
 };
 
-// ── DOM ──────────────────────────────────────────
 const svg       = document.getElementById('canvas');
 const layerBg   = document.getElementById('layerBg');
 const layerGrid = document.getElementById('layerGrid');
@@ -47,13 +35,6 @@ const presetList = document.getElementById('presetList');
 const exportSvgBtn = document.getElementById('exportSvg');
 const exportPngBtn = document.getElementById('exportPng');
 
-const app           = document.getElementById('app');
-const panelEl       = document.getElementById('panel');
-const panelToggle   = document.getElementById('panelToggle');
-const panelClose    = document.getElementById('panelClose');
-const panelBackdrop = document.getElementById('panelBackdrop');
-
-// ── Геометрия ────────────────────────────────────
 function computeLayout() {
     const padPx  = (state.padding / 100) * CANVAS_SIZE;
     const top    = padPx;
@@ -66,23 +47,15 @@ function computeLayout() {
         headLines.push(top + i * headH);
     }
 
-    return {
-        top, bottom, height, headH,
-        growth: state.growth,
-        headLines,
-        canvasSize: CANVAS_SIZE
-    };
+    return { top, bottom, height, headH, growth: state.growth, headLines, canvasSize: CANVAS_SIZE };
 }
 
-// ── Рендер ───────────────────────────────────────
 function renderAll() {
     const L = computeLayout();
-
     renderHead (document.getElementById('figureHead'),  L, state);
     renderTorso(document.getElementById('figureTorso'), L, state);
     renderArms (document.getElementById('figureArms'),  L, state);
     renderLegs (document.getElementById('figureLegs'),  L, state);
-
     renderGuides(L);
     renderBackground();
 }
@@ -90,7 +63,6 @@ function renderAll() {
 function renderGuides(L) {
     layerGrid.innerHTML = '';
     const NS = 'http://www.w3.org/2000/svg';
-
     for (let i = 0; i <= state.growth; i++) {
         const y = L.headLines[i];
         const line = document.createElementNS(NS, 'line');
@@ -106,20 +78,15 @@ function renderGuides(L) {
     }
 }
 
-// ── Подложка ─────────────────────────────────────
 function renderBackground() {
     layerBg.innerHTML = '';
     if (!state.bg.image) return;
 
     const NS = 'http://www.w3.org/2000/svg';
     const img = state.bg.image;
-
-    const fit = state.bg.fitMode === 'height'
-        ? CANVAS_SIZE / img.height
-        : CANVAS_SIZE / img.width;
-
+    const fit = state.bg.fitMode === 'height' ? CANVAS_SIZE / img.height : CANVAS_SIZE / img.width;
     const k = fit * state.bg.scale;
-    const w = img.width  * k;
+    const w = img.width * k;
     const h = img.height * k;
     const x = (CANVAS_SIZE - w) / 2;
     const y = (CANVAS_SIZE - h) / 2;
@@ -133,25 +100,23 @@ function renderBackground() {
     node.setAttribute('opacity', state.bg.opacity);
     node.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     node.setAttribute('data-bg', 'true');
-
     layerBg.appendChild(node);
 }
 
 function setBackgroundEnabled(enabled) {
     bgOpacity.disabled = !enabled;
-    bgScale.disabled   = !enabled;
-    bgRemove.disabled  = !enabled;
+    bgScale.disabled = !enabled;
+    bgRemove.disabled = !enabled;
 }
 
 bgFile.addEventListener('change', e => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
         const img = new Image();
         img.onload = () => {
-            state.bg.src   = reader.result;
+            state.bg.src = reader.result;
             state.bg.image = img;
             setBackgroundEnabled(true);
             renderBackground();
@@ -174,18 +139,17 @@ bgScale.addEventListener('input', () => {
 });
 
 bgRemove.addEventListener('click', () => {
-    state.bg.src   = null;
+    state.bg.src = null;
     state.bg.image = null;
-    bgFile.value   = '';
+    bgFile.value = '';
     bgOpacity.value = 1;
-    bgScale.value   = 1;
+    bgScale.value = 1;
     bgOpacityO.value = '1.00';
-    bgScaleO.value   = '1.00';
+    bgScaleO.value = '1.00';
     setBackgroundEnabled(false);
     renderBackground();
 });
 
-// ── Общие ползунки ───────────────────────────────
 growthIn.addEventListener('input', () => {
     state.growth = parseFloat(growthIn.value);
     growthOut.value = state.growth.toFixed(1);
@@ -198,15 +162,11 @@ paddingIn.addEventListener('input', () => {
     renderAll();
 });
 
-// ── Пресеты ──────────────────────────────────────
 const PRESET_KEY = 'anacords.presets.v1';
 
 function loadPresets() {
-    try {
-        return JSON.parse(localStorage.getItem(PRESET_KEY)) || [];
-    } catch {
-        return [];
-    }
+    try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || []; }
+    catch { return []; }
 }
 
 function savePresets(list) {
@@ -216,7 +176,6 @@ function savePresets(list) {
 function renderPresetList() {
     const list = loadPresets();
     presetList.innerHTML = '';
-
     if (list.length === 0) {
         const li = document.createElement('li');
         li.textContent = 'Нет пресетов';
@@ -225,113 +184,89 @@ function renderPresetList() {
         presetList.appendChild(li);
         return;
     }
-
     list.forEach((preset, index) => {
         const li = document.createElement('li');
-
         const name = document.createElement('span');
         name.className = 'preset-name';
         name.textContent = preset.name;
-        name.title = 'Применить пресет';
         name.addEventListener('click', () => applyPreset(preset));
-
         const del = document.createElement('button');
         del.textContent = '✕';
-        del.title = 'Удалить пресет';
         del.addEventListener('click', () => {
             const arr = loadPresets();
             arr.splice(index, 1);
             savePresets(arr);
             renderPresetList();
         });
-
         li.append(name, del);
         presetList.appendChild(li);
     });
 }
 
 function applyPreset(preset) {
-    state.growth  = preset.growth;
+    state.growth = preset.growth;
     state.padding = preset.padding;
-
-    growthIn.value   = preset.growth;
-    growthOut.value  = preset.growth.toFixed(1);
-    paddingIn.value  = preset.padding;
+    growthIn.value = preset.growth;
+    growthOut.value = preset.growth.toFixed(1);
+    paddingIn.value = preset.padding;
     paddingOut.value = preset.padding.toFixed(1);
 
     if (preset.figure) {
         Object.assign(state.figure, preset.figure);
-        // Применяем параметры головы, если есть
         if (preset.figure.head) {
             Object.assign(headState, preset.figure.head);
-            // Обновляем ползунки головы (сгенерирует head:changed → renderAll)
             document.dispatchEvent(new CustomEvent('head:applyState'));
         }
     }
-
     renderAll();
 }
 
 presetSave.addEventListener('click', () => {
     const name = presetName.value.trim();
-    if (!name) {
-        presetName.focus();
-        return;
-    }
-
+    if (!name) { presetName.focus(); return; }
     const list = loadPresets();
     list.push({
         name,
-        growth:  state.growth,
+        growth: state.growth,
         padding: state.padding,
-        figure: {
-            head: { ...headState }
-        }
+        figure: { head: { ...headState } }
     });
     savePresets(list);
     presetName.value = '';
     renderPresetList();
 });
 
-// ── Экспорт ──────────────────────────────────────
 function makeExportSvg() {
     const clone = svg.cloneNode(true);
-
     const grid = clone.querySelector('#layerGrid');
     if (grid) grid.remove();
-
     const bg = clone.querySelector('#layerBg');
     if (bg) bg.remove();
-
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width',  CANVAS_SIZE);
+    clone.setAttribute('width', CANVAS_SIZE);
     clone.setAttribute('height', CANVAS_SIZE);
-
     return new XMLSerializer().serializeToString(clone);
 }
 
 exportSvgBtn.addEventListener('click', () => {
-    const xml  = makeExportSvg();
+    const xml = makeExportSvg();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     downloadBlob(blob, 'figure.svg');
 });
 
 exportPngBtn.addEventListener('click', async () => {
-    const xml  = makeExportSvg();
+    const xml = makeExportSvg();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-
+    const url = URL.createObjectURL(blob);
     try {
         const img = await loadImage(url);
-        const c   = document.createElement('canvas');
-        c.width   = CANVAS_SIZE;
-        c.height  = CANVAS_SIZE;
+        const c = document.createElement('canvas');
+        c.width = CANVAS_SIZE;
+        c.height = CANVAS_SIZE;
         const ctx = c.getContext('2d');
-
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-
         const pngBlob = await new Promise(res => c.toBlob(res, 'image/png'));
         downloadBlob(pngBlob, 'figure.png');
     } finally {
@@ -339,11 +274,10 @@ exportPngBtn.addEventListener('click', async () => {
     }
 });
 
-// ── Утилиты ──────────────────────────────────────
 function loadImage(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload  = () => resolve(img);
+        img.onload = () => resolve(img);
         img.onerror = reject;
         img.src = src;
     });
@@ -360,75 +294,8 @@ function downloadBlob(blob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// ── Мобильное меню ───────────────────────────────
-function openPanel() {
-    panelEl.classList.add('is-open');
-    panelBackdrop.hidden = false;
-    requestAnimationFrame(() => panelBackdrop.classList.add('is-visible'));
-    panelToggle.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
-}
-
-function closePanel() {
-    panelEl.classList.remove('is-open');
-    panelBackdrop.classList.remove('is-visible');
-    panelToggle.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
-    setTimeout(() => { panelBackdrop.hidden = true; }, 250);
-}
-
-panelToggle.addEventListener('click', openPanel);
-panelClose.addEventListener('click', closePanel);
-panelBackdrop.addEventListener('click', closePanel);
-
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && panelEl.classList.contains('is-open')) {
-        closePanel();
-    }
-});
-
-const mql = window.matchMedia('(min-width: 1025px)');
-mql.addEventListener('change', e => {
-    if (e.matches && panelEl.classList.contains('is-open')) {
-        closePanel();
-    }
-});
-
-// Свайп вниз для закрытия (bottom sheet)
-(() => {
-    let startY = 0, currentY = 0, dragging = false;
-
-    panelEl.addEventListener('touchstart', e => {
-        if (!panelEl.classList.contains('is-open')) return;
-        if (panelEl.scrollTop > 0) return;
-        if (e.touches.length !== 1) return;
-        startY = e.touches[0].clientY;
-        currentY = startY;
-        dragging = true;
-        panelEl.style.transition = 'none';
-    }, { passive: true });
-
-    panelEl.addEventListener('touchmove', e => {
-        if (!dragging) return;
-        currentY = e.touches[0].clientY;
-        const dy = Math.max(0, currentY - startY);
-        panelEl.style.transform = `translateY(${dy}px)`;
-    }, { passive: true });
-
-    panelEl.addEventListener('touchend', () => {
-        if (!dragging) return;
-        dragging = false;
-        const dy = Math.max(0, currentY - startY);
-        panelEl.style.transition = '';
-        panelEl.style.transform  = '';
-        if (dy > 120) closePanel();
-    });
-})();
-
-// ── Старт ────────────────────────────────────────
 setBackgroundEnabled(false);
 renderPresetList();
 renderAll();
 
-// Перерисовка при изменении головы
 document.addEventListener('head:changed', renderAll);
