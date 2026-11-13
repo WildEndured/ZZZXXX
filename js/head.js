@@ -1,3 +1,7 @@
+// ════════════════════════════════════════════════════════════
+// head.js — модуль головы (этап 2: круг + линия подбородка на L4)
+// ════════════════════════════════════════════════════════════
+
 const NS = 'http://www.w3.org/2000/svg';
 
 export const headState = {
@@ -5,9 +9,9 @@ export const headState = {
     bottom: 0,
     width:  1,
     radius: 1,
-    chinHeight:   0.1,
-    chinWidth:    0.4,
-    chinRounding: 0.05
+    chinHeight:   0,     // сдвиг линии по Y относительно L4
+    chinWidth:    0.4,   // ширина линии (в долях headH)
+    chinRounding: 0      // пока не используем (для будущего скругления углов)
 };
 
 let els = null;
@@ -30,10 +34,7 @@ function initHeadUI() {
         chinRounding: { input: document.getElementById('chinRounding'),  output: document.getElementById('chinRoundingOut') }
     };
 
-    if (!els.top.input) {
-        console.warn('head.js: не найдены элементы headTop — проверь index.html');
-        return;
-    }
+    if (!els.top.input) return;
 
     for (const k of INPUT_KEYS) bind(k);
     document.addEventListener('head:applyState', syncUIFromState);
@@ -41,10 +42,7 @@ function initHeadUI() {
 
 function bind(key) {
     const { input, output } = els[key];
-    if (!input || !output) {
-        console.warn(`head.js: не найден input/output для "${key}"`);
-        return;
-    }
+    if (!input || !output) return;
 
     input.addEventListener('input', () => {
         const v = parseFloat(input.value);
@@ -89,27 +87,6 @@ function computeEllipse(layout, s) {
     return { cx, cy, rx, ry };
 }
 
-function computeChin(layout, s) {
-    const { headLines, headH, canvasSize } = layout;
-    const cx  = canvasSize / 2;
-    const yL4 = headLines[0] + headH * 0.8;
-
-    const width    = s.chinWidth    * headH;
-    const height   = s.chinHeight   * headH;
-    const rounding = s.chinRounding * headH;
-
-    const halfW = width / 2;
-    const baseY = yL4 + height;
-
-    return {
-        leftX:   cx - halfW,
-        rightX:  cx + halfW,
-        leftY:   baseY,
-        rightY:  baseY,
-        bottomY: baseY + rounding
-    };
-}
-
 function el(name, attrs) {
     const node = document.createElementNS(NS, name);
     for (const k in attrs) node.setAttribute(k, attrs[k]);
@@ -121,30 +98,31 @@ export function renderHead(g, layout, state) {
     if (!g) return;
 
     const { cx, cy, rx, ry } = computeEllipse(layout, headState);
-    const chin = computeChin(layout, headState);
+    const { headLines, headH, canvasSize } = layout;
 
-    console.log('head.js renderHead:', { cx, cy, rx, ry, chin });
+    // Координаты линии подбородка
+    const yL4 = headLines[0] + headH * 0.8;
+    const chinY = yL4 + (headState.chinHeight * headH);
+    const chinHalfW = (headState.chinWidth * headH) / 2;
 
     g.innerHTML = '';
 
-    // 1. Подбородок (КРАСНЫЙ, чтобы был виден на отладке)
-    const d = `M ${chin.leftX} ${chin.leftY} ` +
-              `Q ${cx} ${chin.bottomY} ` +
-              `  ${chin.rightX} ${chin.rightY}`;
-
-    g.appendChild(el('path', {
-        d,
-        fill:             'none',
-        stroke:           'red',
-        'stroke-width':   12,
-        'stroke-linecap': 'round'
-    }));
-
-    // 2. Круг головы
+    // 1. Круг головы
     g.appendChild(el('ellipse', {
         cx, cy, rx, ry,
-        fill:           'none',
+        fill:           '#e8e8e8',
         stroke:         '#1e1f22',
         'stroke-width': 6
+    }));
+
+    // 2. Линия подбородка на L4 (горизонтальная)
+    g.appendChild(el('line', {
+        x1: cx - chinHalfW,
+        y1: chinY,
+        x2: cx + chinHalfW,
+        y2: chinY,
+        stroke:         '#1e1f22',
+        'stroke-width': 6,
+        'stroke-linecap':'round'
     }));
 }
