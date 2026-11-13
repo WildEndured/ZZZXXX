@@ -121,7 +121,7 @@ export function renderHead(g, layout, state) {
     const neckHalfW = (headState.neckWidth * headH) / 2;
     const neckLeftX = cx - neckHalfW;
     const neckRightX = cx + neckHalfW;
-    const neckTopY = chinY; // шея начинается от подбородка
+    const neckTopY = chinY;
 
     g.innerHTML = '';
 
