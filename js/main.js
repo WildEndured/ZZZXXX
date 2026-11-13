@@ -1,301 +1,429 @@
-import { renderHead, headState } from './head.js';
+// js/main.js
+// Ядро приложения: состояние, сетка голов, подложка, пресеты, экспорт, UI.
+
+import { renderHead } from './head.js';
 import { renderTorso } from './torso.js';
-import { renderArms }  from './arm.js';
-import { renderLegs }  from './leg.js';
+import { renderArm } from './arm.js';
+import { renderLeg } from './leg.js';
 
-const CANVAS_SIZE = 4096;
+/* ============================================================
+   КОНСТАНТЫ ХОЛСТА
+   ============================================================ */
+export const CANVAS = 4096;
+export const DPI = 300;
+const STORAGE_KEY = 'anecords.presets.v1';
 
-const state = {
-    growth:  5,
-    padding: 0,
-    bg: { src: null, image: null, opacity: 1, scale: 1, fitMode: 'height' },
-    figure: {}
+/* ============================================================
+   СОСТОЯНИЕ ПО УМОЛЧАНИЮ
+   ============================================================ */
+function defaultState() {
+  return {
+    // общие
+    common: {
+      heads: 5,          // рост в головах (шаг 0.5)
+      margin: 0,         // % отступа сверху/снизу
+      stroke: 6,         // толщина линий
+      color: '#000000',  // цвет линий
+    },
+    // подложка (НЕ сохраняется в пресеты)
+    underlay: {
+      src: null,         // dataURL
+      opacity: 0.5,
+      scale: 1.0,
+      naturalW: 0,
+      naturalH: 0,
+    },
+    // модуль головы — параметры по умолчанию
+    head: {
+      top: 0,        // сдвиг L0
+      bottom: 0,     // сдвиг L3
+      width: 1.0,    // множитель ширины
+      radius: 1.0,   // общий множитель радиуса
+      chinY: 0,      // высота подбородка (сдвиг Y)
+      chinW: 0.10,   // ширина подбородка
+      jawAttach: 0,  // высота крепления к голове
+      jawLen: 0.40,  // длина челюсти
+      jawAngle: 0.50,// угол челюсти (сужение)
+    },
+    // будущие модули (заглушки-параметры)
+    torso: {},
+    arm: {},
+    leg: {},
+  };
+}
+
+let state = defaultState();
+
+/* ============================================================
+   DOM
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const svg        = $('stage');
+const layerGrid  = $('layer-grid');
+const layerFigure= $('layer-figure');
+const layerUnder = $('layer-underlay');
+
+const UI = {
+  heads:          $('inpHeads'),
+  headsVal:       $('valHeads'),
+  margin:         $('inpMargin'),
+  marginVal:      $('valMargin'),
+  stroke:         $('inpStroke'),
+  strokeVal:      $('valStroke'),
+  color:          $('inpColor'),
+  underlay:       $('inpUnderlay'),
+  underlayBtn:    $('btnUnderlay'),
+  underlayOpacity:$('inpUnderlayOpacity'),
+  underlayOpacityVal:$('valUnderlayOpacity'),
+  underlayScale:  $('inpUnderlayScale'),
+  underlayScaleVal:$('valUnderlayScale'),
+  underlayRemove: $('btnUnderlayRemove'),
+  presetName:     $('inpPresetName'),
+  presetSave:     $('btnPresetSave'),
+  presetList:     $('presetList'),
+  exportSvg:      $('btnExportSvg'),
+  exportPng:      $('btnExportPng'),
 };
 
-const svg       = document.getElementById('canvas');
-const layerBg   = document.getElementById('layerBg');
-const layerGrid = document.getElementById('layerGrid');
+/* ============================================================
+   ГЕОМЕТРИЯ СЕТКИ ГОЛОВ
+   Возвращает объект с расчётами, используемый модулями.
+   ============================================================ */
+export function computeGeometry(s = state) {
+  const { heads, margin } = s.common;
+  const marginPx = (margin / 100) * CANVAS;
+  const usableH  = CANVAS - marginPx * 2;
+  const headH    = usableH / heads;      // высота одной головы
+  const cx       = CANVAS / 2;           // центральная ось
+  const topY     = marginPx;             // y верха фигуры
+  const baseR    = headH * 0.3;          // базовый радиус головы
 
-const growthIn   = document.getElementById('growth');
-const growthOut  = document.getElementById('growthOut');
-const paddingIn  = document.getElementById('padding');
-const paddingOut = document.getElementById('paddingOut');
+  // границы L0..L5 внутри пространства головы (сверху вниз)
+  const L = {};
+  for (let i = 0; i <= 5; i++) L[i] = topY + (headH * i) / 5;
 
-const bgFile     = document.getElementById('bgFile');
-const bgOpacity  = document.getElementById('bgOpacity');
-const bgOpacityO = document.getElementById('bgOpacityOut');
-const bgScale    = document.getElementById('bgScale');
-const bgScaleO   = document.getElementById('bgScaleOut');
-const bgRemove   = document.getElementById('bgRemove');
+  return { heads, marginPx, usableH, headH, cx, topY, baseR, L };
+}
 
-const presetName = document.getElementById('presetName');
-const presetSave = document.getElementById('presetSave');
-const presetList = document.getElementById('presetList');
+/* ============================================================
+   РЕНДЕР
+   ============================================================ */
+export function render() {
+  const geo = computeGeometry();
+  const style = {
+    stroke: state.common.stroke,
+    color: state.common.color,
+  };
 
-const exportSvgBtn = document.getElementById('exportSvg');
-const exportPngBtn = document.getElementById('exportPng');
+  // --- сетка голов (не экспортируется) ---
+  renderGrid(geo);
 
-function computeLayout() {
-    const padPx  = (state.padding / 100) * CANVAS_SIZE;
-    const top    = padPx;
-    const bottom = CANVAS_SIZE - padPx;
-    const height = bottom - top;
-    const headH  = height / state.growth;
+  // --- фигура (экспортируется) ---
+  layerFigure.innerHTML = '';
+  const ctx = { svg, layer: layerFigure, state, geo, style };
+  renderHead(ctx);
+  renderTorso(ctx);
+  renderArm(ctx);
+  renderLeg(ctx);
 
-    const headLines = [];
-    for (let i = 0; i <= state.growth; i++) {
-        headLines.push(top + i * headH);
+  // --- подложка ---
+  renderUnderlay(geo);
+
+  // обновить значения в UI
+  UI.headsVal.textContent = String(state.common.heads);
+  UI.marginVal.textContent = `${state.common.margin}%`;
+  UI.strokeVal.textContent = String(state.common.stroke);
+  UI.underlayOpacityVal.textContent = `${Math.round(state.underlay.opacity * 100)}%`;
+  UI.underlayScaleVal.textContent = `${Math.round(state.underlay.scale * 100)}%`;
+}
+
+/* ---------- Сетка голов ---------- */
+function renderGrid(geo) {
+  const { cx, topY, headH, L } = geo;
+  let s = '';
+  const gridColor = 'rgba(47,111,237,0.35)';
+  const gridStroke = 2;
+
+  // гориз. линии L0..L5 на всю высоту сетки
+  for (let i = 0; i <= 5; i++) {
+    const y = L[i];
+    s += `<line x1="0" y1="${y}" x2="${CANVAS}" y2="${y}"
+              stroke="${gridColor}" stroke-width="${gridStroke}" />`;
+  }
+  // при повторении голов (heads > 1) — тонкие линии между головами
+  if (state.common.heads > 1) {
+    for (let h = 1; h < state.common.heads; h++) {
+      const y = topY + headH * h;
+      s += `<line x1="0" y1="${y}" x2="${CANVAS}" y2="${y}"
+                stroke="rgba(47,111,237,0.18)" stroke-width="${gridStroke}" stroke-dasharray="12 12" />`;
     }
+  }
+  // центральная ось
+  s += `<line x1="${cx}" y1="0" x2="${cx}" y2="${CANVAS}"
+            stroke="rgba(214,69,69,0.45)" stroke-width="${gridStroke}" stroke-dasharray="16 12" />`;
 
-    return { top, bottom, height, headH, growth: state.growth, headLines, canvasSize: CANVAS_SIZE };
+  layerGrid.innerHTML = s;
 }
 
-function renderAll() {
-    const L = computeLayout();
-    renderHead (document.getElementById('figureHead'),  L, state);
-    renderTorso(document.getElementById('figureTorso'), L, state);
-    renderArms (document.getElementById('figureArms'),  L, state);
-    renderLegs (document.getElementById('figureLegs'),  L, state);
-    renderGuides(L);
-    renderBackground();
+/* ---------- Подложка ---------- */
+function renderUnderlay(geo) {
+  const u = state.underlay;
+  layerUnder.innerHTML = '';
+  if (!u.src || !u.naturalW || !u.naturalH) return;
+
+  // масштаб: подгоняем под высоту/ширину холста
+  const fitScale = Math.min(CANVAS / u.naturalW, CANVAS / u.naturalH);
+  const scale = fitScale * u.scale;
+  const w = u.naturalW * scale;
+  const h = u.naturalH * scale;
+  const x = (CANVAS - w) / 2;
+  const y = (CANVAS - h) / 2;
+
+  layerUnder.innerHTML = `
+    <image href="${u.src}" x="${x}" y="${y}" width="${w}" height="${h}"
+           opacity="${u.opacity}" preserveAspectRatio="xMidYMid meet" />
+  `;
 }
 
-function renderGuides(L) {
-    layerGrid.innerHTML = '';
-    const NS = 'http://www.w3.org/2000/svg';
-    for (let i = 0; i <= state.growth; i++) {
-        const y = L.headLines[i];
-        const line = document.createElementNS(NS, 'line');
-        line.setAttribute('x1', 0);
-        line.setAttribute('y1', y);
-        line.setAttribute('x2', CANVAS_SIZE);
-        line.setAttribute('y2', y);
-        line.setAttribute('stroke', (i === 0 || i === state.growth) ? '#4c8dff' : '#c8c8c8');
-        line.setAttribute('stroke-width', (i === 0 || i === state.growth) ? 6 : 3);
-        line.setAttribute('stroke-dasharray', (i === 0 || i === state.growth) ? '' : '16 16');
-        line.setAttribute('data-guide', 'true');
-        layerGrid.appendChild(line);
-    }
-}
+/* ============================================================
+   ОБРАБОТЧИКИ UI
+   ============================================================ */
 
-function renderBackground() {
-    layerBg.innerHTML = '';
-    if (!state.bg.image) return;
+// --- общие ---
+UI.heads.addEventListener('input', (e) => {
+  state.common.heads = parseFloat(e.target.value);
+  render();
+});
+UI.margin.addEventListener('input', (e) => {
+  state.common.margin = parseFloat(e.target.value);
+  render();
+});
+UI.stroke.addEventListener('input', (e) => {
+  state.common.stroke = parseFloat(e.target.value);
+  render();
+});
+UI.color.addEventListener('input', (e) => {
+  state.common.color = e.target.value;
+  render();
+});
 
-    const NS = 'http://www.w3.org/2000/svg';
-    const img = state.bg.image;
-    const fit = state.bg.fitMode === 'height' ? CANVAS_SIZE / img.height : CANVAS_SIZE / img.width;
-    const k = fit * state.bg.scale;
-    const w = img.width * k;
-    const h = img.height * k;
-    const x = (CANVAS_SIZE - w) / 2;
-    const y = (CANVAS_SIZE - h) / 2;
-
-    const node = document.createElementNS(NS, 'image');
-    node.setAttribute('href', state.bg.src);
-    node.setAttribute('x', x);
-    node.setAttribute('y', y);
-    node.setAttribute('width', w);
-    node.setAttribute('height', h);
-    node.setAttribute('opacity', state.bg.opacity);
-    node.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-    node.setAttribute('data-bg', 'true');
-    layerBg.appendChild(node);
-}
-
-function setBackgroundEnabled(enabled) {
-    bgOpacity.disabled = !enabled;
-    bgScale.disabled = !enabled;
-    bgRemove.disabled = !enabled;
-}
-
-bgFile.addEventListener('change', e => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-            state.bg.src = reader.result;
-            state.bg.image = img;
-            setBackgroundEnabled(true);
-            renderBackground();
-        };
-        img.src = reader.result;
+// --- подложка: загрузка ---
+UI.underlayBtn.addEventListener('click', () => UI.underlay.click());
+UI.underlay.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      state.underlay.src = reader.result;
+      state.underlay.naturalW = img.naturalWidth;
+      state.underlay.naturalH = img.naturalHeight;
+      render();
     };
-    reader.readAsDataURL(file);
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = ''; // позволяет повторно выбрать тот же файл
+});
+UI.underlayOpacity.addEventListener('input', (e) => {
+  state.underlay.opacity = parseFloat(e.target.value) / 100;
+  render();
+});
+UI.underlayScale.addEventListener('input', (e) => {
+  state.underlay.scale = parseFloat(e.target.value) / 100;
+  render();
+});
+UI.underlayRemove.addEventListener('click', () => {
+  state.underlay = { src: null, opacity: 0.5, scale: 1.0, naturalW: 0, naturalH: 0 };
+  UI.underlayOpacity.value = 50;
+  UI.underlayScale.value = 100;
+  render();
 });
 
-bgOpacity.addEventListener('input', () => {
-    state.bg.opacity = parseFloat(bgOpacity.value);
-    bgOpacityO.value = state.bg.opacity.toFixed(2);
-    renderBackground();
-});
-
-bgScale.addEventListener('input', () => {
-    state.bg.scale = parseFloat(bgScale.value);
-    bgScaleO.value = state.bg.scale.toFixed(2);
-    renderBackground();
-});
-
-bgRemove.addEventListener('click', () => {
-    state.bg.src = null;
-    state.bg.image = null;
-    bgFile.value = '';
-    bgOpacity.value = 1;
-    bgScale.value = 1;
-    bgOpacityO.value = '1.00';
-    bgScaleO.value = '1.00';
-    setBackgroundEnabled(false);
-    renderBackground();
-});
-
-growthIn.addEventListener('input', () => {
-    state.growth = parseFloat(growthIn.value);
-    growthOut.value = state.growth.toFixed(1);
-    renderAll();
-});
-
-paddingIn.addEventListener('input', () => {
-    state.padding = parseFloat(paddingIn.value);
-    paddingOut.value = state.padding.toFixed(1);
-    renderAll();
-});
-
-const PRESET_KEY = 'anacords.presets.v1';
-
+// ============================================================
+// ПРЕСЕТЫ (localStorage)
+// ============================================================
 function loadPresets() {
-    try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || []; }
-    catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch { return {}; }
+}
+function savePresets(presets) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
 }
 
-function savePresets(list) {
-    localStorage.setItem(PRESET_KEY, JSON.stringify(list));
+function readPresetList() {
+  const presets = loadPresets();
+  const names = Object.keys(presets).sort();
+  if (!names.length) {
+    UI.presetList.innerHTML = `<li class="preset-empty">Пресетов пока нет</li>`;
+    return;
+  }
+  UI.presetList.innerHTML = names.map((name) => `
+    <li class="preset-item" data-name="${encodeURIComponent(name)}">
+      <span class="preset-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+      <button class="preset-apply" data-action="apply" title="Применить">Применить</button>
+      <button class="preset-del" data-action="del" title="Удалить">✕</button>
+    </li>
+  `).join('');
 }
 
-function renderPresetList() {
-    const list = loadPresets();
-    presetList.innerHTML = '';
-    if (list.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'Нет пресетов';
-        li.style.opacity = '0.6';
-        li.style.cursor = 'default';
-        presetList.appendChild(li);
-        return;
-    }
-    list.forEach((preset, index) => {
-        const li = document.createElement('li');
-        const name = document.createElement('span');
-        name.className = 'preset-name';
-        name.textContent = preset.name;
-        name.addEventListener('click', () => applyPreset(preset));
-        const del = document.createElement('button');
-        del.textContent = '✕';
-        del.addEventListener('click', () => {
-            const arr = loadPresets();
-            arr.splice(index, 1);
-            savePresets(arr);
-            renderPresetList();
-        });
-        li.append(name, del);
-        presetList.appendChild(li);
-    });
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 }
+
+UI.presetSave.addEventListener('click', () => {
+  const name = UI.presetName.value.trim();
+  if (!name) return;
+  const presets = loadPresets();
+  // сохраняем общие и параметры фигуры, БЕЗ подложки
+  presets[name] = {
+    common: { ...state.common },
+    head: { ...state.head },
+    torso: { ...state.torso },
+    arm: { ...state.arm },
+    leg: { ...state.leg },
+  };
+  savePresets(presets);
+  UI.presetName.value = '';
+  readPresetList();
+});
+
+UI.presetList.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  const item = e.target.closest('.preset-item');
+  if (!item) return;
+  const name = decodeURIComponent(item.dataset.name);
+  const presets = loadPresets();
+  const preset = presets[name];
+  if (!preset) return;
+
+  const action = btn?.dataset.action;
+  if (action === 'del') {
+    delete presets[name];
+    savePresets(presets);
+    readPresetList();
+    return;
+  }
+  // apply: по клику на кнопку «Применить» или на имя
+  if (action === 'apply' || e.target.classList.contains('preset-name')) {
+    applyPreset(preset);
+  }
+});
 
 function applyPreset(preset) {
-    state.growth = preset.growth;
-    state.padding = preset.padding;
-    growthIn.value = preset.growth;
-    growthOut.value = preset.growth.toFixed(1);
-    paddingIn.value = preset.padding;
-    paddingOut.value = preset.padding.toFixed(1);
+  // подложку не трогаем
+  state.common = { ...defaultState().common, ...preset.common };
+  state.head   = { ...defaultState().head,   ...preset.head };
+  state.torso  = { ...defaultState().torso,  ...preset.torso };
+  state.arm    = { ...defaultState().arm,    ...preset.arm };
+  state.leg    = { ...defaultState().leg,    ...preset.leg };
 
-    if (preset.figure) {
-        Object.assign(state.figure, preset.figure);
-        if (preset.figure.head) {
-            Object.assign(headState, preset.figure.head);
-            document.dispatchEvent(new CustomEvent('head:applyState'));
-        }
-    }
-    renderAll();
+  // синхронизировать UI
+  UI.heads.value  = state.common.heads;
+  UI.margin.value = state.common.margin;
+  UI.stroke.value = state.common.stroke;
+  UI.color.value  = state.common.color;
+  render();
 }
 
-presetSave.addEventListener('click', () => {
-    const name = presetName.value.trim();
-    if (!name) { presetName.focus(); return; }
-    const list = loadPresets();
-    list.push({
-        name,
-        growth: state.growth,
-        padding: state.padding,
-        figure: { head: { ...headState } }
-    });
-    savePresets(list);
-    presetName.value = '';
-    renderPresetList();
-});
+// ============================================================
+// ЭКСПОРТ
+// ============================================================
 
-function makeExportSvg() {
-    const clone = svg.cloneNode(true);
-    const grid = clone.querySelector('#layerGrid');
-    if (grid) grid.remove();
-    const bg = clone.querySelector('#layerBg');
-    if (bg) bg.remove();
-    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width', CANVAS_SIZE);
-    clone.setAttribute('height', CANVAS_SIZE);
-    return new XMLSerializer().serializeToString(clone);
-}
-
-exportSvgBtn.addEventListener('click', () => {
-    const xml = makeExportSvg();
-    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    downloadBlob(blob, 'figure.svg');
-});
-
-exportPngBtn.addEventListener('click', async () => {
-    const xml = makeExportSvg();
-    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    try {
-        const img = await loadImage(url);
-        const c = document.createElement('canvas');
-        c.width = CANVAS_SIZE;
-        c.height = CANVAS_SIZE;
-        const ctx = c.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-        ctx.drawImage(img, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
-        const pngBlob = await new Promise(res => c.toBlob(res, 'image/png'));
-        downloadBlob(pngBlob, 'figure.png');
-    } finally {
-        URL.revokeObjectURL(url);
+// SVG: только слой фигуры + параметры обводки
+function buildExportSvg() {
+  const { stroke, color } = state.common;
+  // клонируем фигуру, проставляем обводку на каждом элементе
+  const clone = layerFigure.cloneNode(true);
+  clone.querySelectorAll('*').forEach((el) => {
+    // не трогаем контейнеры без геометрии
+    const tag = el.tagName.toLowerCase();
+    if (['line','path','circle','rect','ellipse','polyline','polygon'].includes(tag)) {
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke', color);
+      el.setAttribute('stroke-width', String(stroke));
+      el.setAttribute('stroke-linecap', 'round');
+      el.setAttribute('stroke-linejoin', 'round');
     }
-});
+  });
+  // если обводка задаётся через style/transform на g — всё равно проставим у детей
 
-function loadImage(src) {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = src;
-    });
+  const svgString = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="${CANVAS}" height="${CANVAS}"
+     viewBox="0 0 ${CANVAS} ${CANVAS}">
+  <g fill="none" stroke="${color}" stroke-width="${stroke}"
+     stroke-linecap="round" stroke-linejoin="round">
+    ${clone.innerHTML}
+  </g>
+</svg>`;
+  return svgString;
 }
 
 function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-setBackgroundEnabled(false);
-renderPresetList();
-renderAll();
+UI.exportSvg.addEventListener('click', () => {
+  const svgString = buildExportSvg();
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  downloadBlob(blob, 'anecords-figure.svg');
+});
 
-document.addEventListener('head:changed', renderAll);
+// PNG: белый фон, без сетки и подложки
+UI.exportPng.addEventListener('click', async () => {
+  const svgString = buildExportSvg();
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = CANVAS;
+    canvas.height = CANVAS;
+    const ctx = canvas.getContext('2d');
+    // белый фон
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, CANVAS, CANVAS);
+    ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
+
+    canvas.toBlob((blob) => {
+      if (blob) downloadBlob(blob, 'anecords-figure.png');
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+  img.onerror = () => {
+    console.error('Не удалось отрисовать SVG для PNG');
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+function init() {
+  // синхронизировать контролы с состоянием
+  UI.heads.value  = state.common.heads;
+  UI.margin.value = state.common.margin;
+  UI.stroke.value = state.common.stroke;
+  UI.color.value  = state.common.color;
+  UI.underlayOpacity.value = Math.round(state.underlay.opacity * 100);
+  UI.underlayScale.value   = Math.round(state.underlay.scale * 100);
+
+  readPresetList();
+  render();
+}
+
+init();
