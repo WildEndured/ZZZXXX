@@ -2,20 +2,41 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Построение фигуры — Этап 1</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
-    <!-- Панель управления -->
+    
+    <!-- Холст (теперь идет первым в разметке для мобилок) -->
+    <main class="canvas-area" id="canvasArea">
+      <div class="canvas-wrap" id="canvasWrap">
+        <svg id="svg"
+             xmlns="http://www.w3.org/2000/svg"
+             viewBox="0 0 4096 4096"
+             preserveAspectRatio="xMidYMid meet">
+          <!-- подложка -->
+          <image id="bgImage" x="0" y="0" width="4096" height="4096"
+                 preserveAspectRatio="xMidYMid meet" style="display:none"></image>
+
+          <!-- группа сетки -->
+          <g id="gridLayer" fill="none" stroke="#d0d0d0" stroke-width="2"></g>
+
+          <!-- группа фигуры -->
+          <g id="figureLayer" fill="none"></g>
+        </svg>
+      </div>
+    </main>
+
+    <!-- Панель управления (теперь идет второй в разметке) -->
     <aside class="panel" id="panel">
       <h1 class="panel__title">Построение фигуры</h1>
 
       <!-- 1. Общее -->
       <section class="section">
         <h2 class="section__title">Общее</h2>
-
+        <!-- ... остальной код панели без изменений ... -->
         <label class="field">
           <span class="field__label">
             Рост в головах
@@ -51,12 +72,10 @@
       <!-- 2. Подложка -->
       <section class="section">
         <h2 class="section__title">Подложка</h2>
-
         <div class="file-btn-wrap">
           <input type="file" id="bgInput" accept="image/*" class="file-btn__input">
           <label for="bgInput" class="file-btn">Загрузить изображение</label>
         </div>
-
         <label class="field">
           <span class="field__label">
             Прозрачность
@@ -64,7 +83,6 @@
           </span>
           <input type="range" id="bgOpacityRange" min="0" max="100" step="1" value="50" disabled>
         </label>
-
         <label class="field">
           <span class="field__label">
             Масштаб
@@ -72,19 +90,16 @@
           </span>
           <input type="range" id="bgScaleRange" min="10" max="300" step="1" value="100" disabled>
         </label>
-
         <button type="button" class="btn btn--danger" id="bgRemoveBtn" disabled>Удалить подложку</button>
       </section>
 
       <!-- 3. Пресеты -->
       <section class="section">
         <h2 class="section__title">Пресеты</h2>
-
         <div class="preset-save">
           <input type="text" id="presetName" placeholder="Название пресета" maxlength="40">
           <button type="button" class="btn" id="presetSaveBtn">Сохранить</button>
         </div>
-
         <ul class="preset-list" id="presetList">
           <li class="preset-list__empty">Пресетов пока нет</li>
         </ul>
@@ -100,27 +115,7 @@
       </section>
     </aside>
 
-    <!-- Холст -->
-    <main class="canvas-area" id="canvasArea">
-      <div class="canvas-wrap" id="canvasWrap">
-        <svg id="svg"
-             xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 4096 4096"
-             preserveAspectRatio="xMidYMid meet">
-          <!-- подложка -->
-          <image id="bgImage" x="0" y="0" width="4096" height="4096"
-                 preserveAspectRatio="xMidYMid meet" style="display:none"></image>
-
-          <!-- группа сетки -->
-          <g id="gridLayer" fill="none" stroke="#d0d0d0" stroke-width="2"></g>
-
-          <!-- группа фигуры -->
-          <g id="figureLayer" fill="none"></g>
-        </svg>
-      </div>
-    </main>
   </div>
-
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
