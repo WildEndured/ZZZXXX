@@ -1,194 +1,22 @@
 (function () {
   'use strict';
 
-  const NS = 'http://www.w3.org/2000/svg';
-
-  // ============================================================
-  //  Каталог параметров головы
-  //  Диапазоны расширены в +/- — можно уводить далеко за дефолт.
-  // ============================================================
-  const SHAPE_PARAMS = [
-    // --- Круг ---
-    { group: 'Круг',
-      key: 'topOffset',    label: 'Верх головы (L0)',    min: -2.0, max: 2.0, step: 0.01, def: 0 },
-    { key: 'bottomOffset', label: 'Низ головы (L3)',     min: -2.0, max: 2.0, step: 0.01, def: 0 },
-    { key: 'widthMul',     label: 'Ширина головы',       min: 0.1,  max: 5.0, step: 0.01, def: 1, unit: '%', pct: true },
-    { key: 'radiusMul',    label: 'Радиус головы',       min: 0.1,  max: 5.0, step: 0.01, def: 1, unit: '%', pct: true },
-
-    // --- Подбородок ---
-    { group: 'Подбородок',
-      key: 'chinYOffset',  label: 'Высота подбородка',   min: -2.0, max: 2.0, step: 0.01, def: 0 },
-    { key: 'chinWidth',    label: 'Ширина подбородка',   min: 0.0,  max: 3.0, step: 0.01, def: 0.55, unit: '%', pct: true },
-
-    // --- Челюсть ---
-    { group: 'Челюсть',
-      key: 'jawDrop',      label: 'Длина линии челюсти', min: -1.0, max: 3.0, step: 0.01, def: 0.15, unit: '%', pct: true },
-    { key: 'jawCorner',    label: 'Ширина углов',        min: -1.0, max: 2.0, step: 0.01, def: 0.15, unit: '%', pct: true },
-  ];
-
-  // Толщина линии
-  const LINE_PARAM = {
-    key: 'line', label: 'Толщина линии',
-    min: 0.0005, max: 0.2, step: 0.0005, def: 0.012,
-  };
-
-  function defaultShape() {
-    const s = {};
-    for (const p of SHAPE_PARAMS) s[p.key] = p.def;
-    return s;
-  }
-
-  function clampShape(input) {
-    const s = defaultShape();
-    if (!input || typeof input !== 'object') return s;
-    for (const p of SHAPE_PARAMS) {
-      const v = Number(input[p.key]);
-      s[p.key] = Number.isFinite(v) ? Math.min(p.max, Math.max(p.min, v)) : p.def;
-    }
-    return s;
-  }
-
-  // ============================================================
-  //  Модуль головы
-  // ============================================================
   const Head = {
     name: 'head',
-    SHAPE_PARAMS,
-    LINE_PARAM,
-    defaultShape,
-    clampShape,
-
-    params: defaultShape(),
-    line: LINE_PARAM.def,
-
-    geom: { centerX: 2048, topY: 0, headH: 0 },
-
-    groups: { skull: null, chin: null, jaw: null },
-
-    init(container) {
-      container.innerHTML = '';
-
-      this.groups.skull = document.createElementNS(NS, 'g');
-      this.groups.skull.setAttribute('data-part', 'skull');
-
-      this.groups.jaw = document.createElementNS(NS, 'g');
-      this.groups.jaw.setAttribute('data-part', 'jaw');
-
-      this.groups.chin = document.createElementNS(NS, 'g');
-      this.groups.chin.setAttribute('data-part', 'chin');
-
-      container.appendChild(this.groups.skull);
-      container.appendChild(this.groups.jaw);
-      container.appendChild(this.groups.chin);
-
-      this.build();
+    config: {
+      centerX: 2048,
+      topY: 0,
+      headHeight: 0,
     },
 
     update(geometry) {
-      this.geom.centerX = geometry.centerX;
-      this.geom.topY = geometry.topY;
-      this.geom.headH = geometry.headHeight;
-      this.build();
-    },
-
-    setLine(v) {
-      const lp = this.LINE_PARAM;
-      this.line = Math.min(lp.max, Math.max(lp.min, Number(v) || lp.def));
-      this.build();
-    },
-
-    compute() {
-      const { centerX, topY, headH } = this.geom;
-      const p = this.params;
-      const H = headH;
-
-      const L0 = topY + H * 0 + p.topOffset * H;
-      const L1 = topY + H * (1 / 5);
-      const L2 = topY + H * (2 / 5);
-      const L3 = topY + H * (3 / 5) + p.bottomOffset * H;
-      const L4 = topY + H * (4 / 5) + p.chinYOffset * H;
-      const L5 = topY + H * (5 / 5);
-
-      const circleTop = L0;
-      const circleBottom = L3;
-      const cyBase = (circleTop + circleBottom) / 2;
-      let ry = Math.abs(circleBottom - circleTop) / 2;
-      ry *= p.radiusMul;
-      const rx = ry * p.widthMul;
-      const cx = centerX;
-
-      const attachY = cyBase;
-      const attachLeft  = { x: cx - rx, y: attachY };
-      const attachRight = { x: cx + rx, y: attachY };
-
-      const dropLen = p.jawDrop * H;
-      const dropLeft  = { x: attachLeft.x,  y: attachLeft.y  + dropLen };
-      const dropRight = { x: attachRight.x, y: attachRight.y + dropLen };
-
-      const jawCorner = p.jawCorner * H;
-      const cornerLeft  = { x: dropLeft.x  - jawCorner, y: dropLeft.y  };
-      const cornerRight = { x: dropRight.x + jawCorner, y: dropRight.y };
-
-      const chinHalf = rx * p.chinWidth;
-      const chinY = L4;
-      const chinLeft  = { x: cx - chinHalf, y: chinY };
-      const chinRight = { x: cx + chinHalf, y: chinY };
-
-      return {
-        levels: { L0, L1, L2, L3, L4, L5 },
-        circle: { cx, cy: cyBase, rx, ry },
-        attachLeft, attachRight,
-        dropLeft, dropRight,
-        cornerLeft, cornerRight,
-        chinLeft, chinRight, chinY,
-      };
+      this.config.centerX = geometry.centerX;
+      this.config.topY = geometry.topY;
+      this.config.headHeight = geometry.headHeight;
     },
 
     build() {
-      if (!this.groups.skull) return;
-      const g = this.compute();
-      const strokePx = Math.max(0.5, this.line * this.geom.headH);
-
-      // Круг
-      this.groups.skull.innerHTML = '';
-      const circle = document.createElementNS(NS, 'ellipse');
-      circle.setAttribute('cx', g.circle.cx);
-      circle.setAttribute('cy', g.circle.cy);
-      circle.setAttribute('rx', g.circle.rx);
-      circle.setAttribute('ry', g.circle.ry);
-      this.groups.skull.appendChild(circle);
-
-      // Челюсть
-      this.groups.jaw.innerHTML = '';
-      const jawPath = document.createElementNS(NS, 'path');
-      const d = [
-        `M ${g.attachLeft.x} ${g.attachLeft.y}`,
-        `L ${g.dropLeft.x} ${g.dropLeft.y}`,
-        `L ${g.cornerLeft.x} ${g.cornerLeft.y}`,
-        `L ${g.chinLeft.x} ${g.chinLeft.y}`,
-        `M ${g.attachRight.x} ${g.attachRight.y}`,
-        `L ${g.dropRight.x} ${g.dropRight.y}`,
-        `L ${g.cornerRight.x} ${g.cornerRight.y}`,
-        `L ${g.chinRight.x} ${g.chinRight.y}`,
-      ].join(' ');
-      jawPath.setAttribute('d', d);
-      jawPath.setAttribute('fill', 'none');
-      this.groups.jaw.appendChild(jawPath);
-
-      // Подбородок
-      this.groups.chin.innerHTML = '';
-      const chin = document.createElementNS(NS, 'line');
-      chin.setAttribute('x1', g.chinLeft.x);
-      chin.setAttribute('y1', g.chinLeft.y);
-      chin.setAttribute('x2', g.chinRight.x);
-      chin.setAttribute('y2', g.chinRight.y);
-      this.groups.chin.appendChild(chin);
-
-      // Толщина линии
-      for (const grp of [this.groups.skull, this.groups.jaw, this.groups.chin]) {
-        grp.setAttribute('stroke-width', String(strokePx));
-        grp.setAttribute('fill', 'none');
-      }
+      return null;
     },
   };
 
