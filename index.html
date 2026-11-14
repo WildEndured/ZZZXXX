@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Фигура — Этап 1</title>
+  <title>Фигура — Этап 2.1</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -15,10 +15,8 @@
              viewBox="0 0 4096 4096"
              preserveAspectRatio="xMidYMid meet">
           <defs>
-            <pattern id="gridPattern" width="256" height="256"
-                     patternUnits="userSpaceOnUse">
-              <path d="M 256 0 L 0 0 0 256" fill="none"
-                    stroke="#d0d0d0" stroke-width="2" />
+            <pattern id="gridPattern" width="256" height="256" patternUnits="userSpaceOnUse">
+              <path d="M 256 0 L 0 0 0 256" fill="none" stroke="#d0d0d0" stroke-width="2" />
             </pattern>
           </defs>
 
@@ -51,7 +49,6 @@
 
     <aside class="panel" id="panel">
       <div class="panel-inner">
-
         <section class="block">
           <h2>Общее</h2>
           <label class="row">
@@ -62,6 +59,17 @@
             <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
             <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
           </label>
+        </section>
+
+        <section class="block">
+          <h2>Форма</h2>
+          <p class="note">Двойной клик по строке или долгое нажатие на ползунке — сброс.</p>
+          <div class="sliders" id="headSliders"></div>
+        </section>
+
+        <section class="block">
+          <h2>Отображение</h2>
+          <div class="sliders" id="lineSliders"></div>
         </section>
 
         <section class="block">
@@ -97,7 +105,6 @@
             <button id="exportPng">Экспорт PNG</button>
           </div>
         </section>
-
       </div>
     </aside>
   </div>
