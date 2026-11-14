@@ -3,12 +3,11 @@
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Параметры
   const params = {
-    chestWidth: 1.0,        // Базовая ширина
+    chestWidth: 1.0,        // Общая ширина
     chestHeight: 1.0,       // Высота
-    chestTopTaper: 0.4,     // Сужение верха: 0 - широкий, 0.9 - узкий
-    chestBottomExpand: 1.0, // Расширение низа: 0.8 - узкий, 1.5 - широкий
+    chestTopTaper: 0.3,     // Сдвиг центра вниз (сужение верха)
+    chestBottomExpand: 1.0, // Общее расширение (ширина)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -40,52 +39,27 @@
 
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.topY + headH; // L5
-    const torsoH = headH * params.chestHeight;
-    const bottomY = topY + torsoH;
-
-    // Базовая ширина 35% от головы
-    const baseHalfWidth = (headH * 0.35) * params.chestWidth;
-
-    // Верхняя ширина: зависит от сужения. 
-    // 0.4 означает, что верх в 2.5 раза уже базы. (1 - 0.4 = 0.6)
-    const topHalfWidth = baseHalfWidth * (1 - params.chestTopTaper);
-
-    // Нижняя ширина: зависит от расширения.
-    const bottomHalfWidth = baseHalfWidth * params.chestBottomExpand;
-
-    // Точки:
-    // Верхняя левая / правая (без скругления, просто для начала)
-    const topLeft = { x: cx - topHalfWidth, y: topY };
-    const topRight = { x: cx + topHalfWidth, y: topY };
     
-    // Нижняя левая / правая
-    const botLeft = { x: cx - bottomHalfWidth, y: bottomY };
-    const botRight = { x: cx + bottomHalfWidth, y: bottomY };
-
-    // Чтобы это выглядело как яйцо, а не как трапеция, 
-    // мы используем кривые, но контролируем их строго по ширине.
+    // Границы секции (от L5 до L10)
+    const topY = geo.topY + headH; 
+    const bottomY = topY + (headH * params.chestHeight);
     
-    // Коэффициент кривизны для боков (чтобы были выпуклыми)
-    const curve = torsoH * 0.2;
+    // Радиусы эллипса
+    const rx = (headH * 0.35) * params.chestWidth * params.chestBottomExpand;
+    const ry = (bottomY - topY) / 2;
+    
+    // Сдвигаем центр вниз. 
+    // Если chestTopTaper = 0, центр ровно посередине (обычный эллипс).
+    // Если chestTopTaper = 0.5, центр смещен вниз на половину радиуса.
+    const offsetY = ry * params.chestTopTaper;
+    const cy = topY + ry + offsetY;
 
-    const d = `
-      M ${topLeft.x} ${topLeft.y}
-      C ${topLeft.x - curve * 0.5} ${topLeft.y + torsoH * 0.2}, 
-        ${botLeft.x - curve * 0.5} ${botLeft.y - torsoH * 0.2}, 
-        ${botLeft.x} ${botLeft.y}
-      
-      L ${botRight.x} ${botRight.y}
-      
-      C ${botRight.x + curve * 0.5} ${botRight.y - torsoH * 0.2}, 
-        ${topRight.x + curve * 0.5} ${topRight.y + torsoH * 0.2}, 
-        ${topRight.x} ${topRight.y}
-      
-      Z
-    `;
-
-    torsoGroup.appendChild(svgEl('path', {
-      d: d,
+    // Рисуем честный эллипс
+    torsoGroup.appendChild(svgEl('ellipse', {
+      cx: cx,
+      cy: cy,
+      rx: rx,
+      ry: ry,
       fill: 'none',
     }));
   }
@@ -96,19 +70,13 @@
   }
 
   function getParams() { return { ...params }; }
-
   function setParams(patch) {
     if (!patch) return;
     for (const k in params) {
-      if (typeof patch[k] === 'number' && isFinite(patch[k])) {
-        params[k] = patch[k];
-      }
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k];
     }
   }
-
-  function resetParams() {
-    Object.assign(params, DEFAULT_PARAMS);
-  }
+  function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
   window.Torso = {
     update,
