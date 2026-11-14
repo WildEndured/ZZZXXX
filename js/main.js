@@ -194,14 +194,14 @@
     dom.headChinShift.value = p.chinHeightShift;
     dom.headChinShiftVal.textContent = fmtSignedPercent(p.chinHeightShift);
 
-    dom.headChinWidth.value = p.chinWidthShift;
-    dom.headChinWidthVal.textContent = fmtSignedPercent(p.chinWidthShift);
+    dom.headChinWidth.value = p.chinWidth;
+    dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
 
-    dom.headJawAttach.value = p.jawAttachShift;
-    dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttachShift);
+    dom.headJawAttach.value = p.jawAttach;
+    dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttach);
 
-    dom.headJawLength.value = p.jawLengthShift;
-    dom.headJawLengthVal.textContent = fmtSignedPercent(p.jawLengthShift);
+    dom.headJawLength.value = p.jawLength;
+    dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
 
     dom.headJawAngleWidth.value = p.jawAngleWidth;
     dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
@@ -223,9 +223,9 @@
   bindHeadInput(dom.headWidthMul, dom.headWidthMulVal, 'widthMul', (v) => Math.round(v * 100));
   bindHeadInput(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100));
   bindHeadInput(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmtSignedPercent);
-  bindHeadInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidthShift', fmtSignedPercent);
-  bindHeadInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttachShift', fmtSignedPercent);
-  bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLengthShift', fmtSignedPercent);
+  bindHeadInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100));
+  bindHeadInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmtSignedPercent);
+  bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
   bindHeadInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent);
 
   dom.underlayFile.addEventListener('change', (e) => {
