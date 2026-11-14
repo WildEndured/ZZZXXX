@@ -21,10 +21,8 @@
     bottomShift: 0,
     widthMul: 1.0,
     radiusMul: 1.0,
-
     chinHeightShift: 0,
     chinWidth: 0.30,
-
     jawAttach: 0,
     jawLength: 0.15,
     jawAngleWidth: 0,
