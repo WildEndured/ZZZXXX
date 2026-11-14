@@ -10,20 +10,34 @@
   <div class="app">
     <main class="stage" id="stage">
       <div class="canvas-wrap" id="canvasWrap">
-        <svg id="svg" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 4096 4096" preserveAspectRatio="xMidYMid meet">
+        <svg id="svg" xmlns="http://www.w3.org/2000/svg"
+             width="100%" height="100%"
+             viewBox="0 0 4096 4096"
+             preserveAspectRatio="xMidYMid meet">
           <defs>
-            <pattern id="gridPattern" width="256" height="256" patternUnits="userSpaceOnUse">
-              <path d="M 256 0 L 0 0 0 256" fill="none" stroke="#d0d0d0" stroke-width="2" />
+            <pattern id="gridPattern" width="256" height="256"
+                     patternUnits="userSpaceOnUse">
+              <path d="M 256 0 L 0 0 0 256" fill="none"
+                    stroke="#d0d0d0" stroke-width="2" />
             </pattern>
           </defs>
+
           <g id="underlayLayer" class="no-export">
-            <image id="underlayImage" href="" x="0" y="0" width="4096" height="4096" preserveAspectRatio="xMidYMid meet" opacity="0.5" style="display:none;" />
+            <image id="underlayImage" href="" x="0" y="0"
+                   width="4096" height="4096"
+                   preserveAspectRatio="xMidYMid meet"
+                   opacity="0.5" style="display:none;" />
           </g>
+
           <g id="gridLayer" class="no-export">
-            <rect id="gridRect" x="0" y="0" width="4096" height="4096" fill="url(#gridPattern)" opacity="0.6" />
+            <rect id="gridRect" x="0" y="0" width="4096" height="4096"
+                  fill="url(#gridPattern)" opacity="0.6" />
           </g>
+
           <g id="headsLayer" class="no-export"></g>
-          <g id="figureLayer" stroke="#000000" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+          <g id="figureLayer" stroke="#000000" stroke-width="6"
+             fill="none" stroke-linecap="round" stroke-linejoin="round">
             <g id="headGroup"></g>
             <g id="torsoGroup"></g>
             <g id="armLeftGroup"></g>
@@ -37,286 +51,103 @@
 
     <aside class="panel" id="panel">
       <div class="panel-inner">
+
         <section class="block">
           <h2>Общее</h2>
-          <label class="row"><span>Рост в головах: <b id="headsVal">5</b></span><input type="range" id="headsRange" min="1" max="10" step="0.5" value="5" /></label>
-          <label class="row"><span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span><input type="range" id="marginRange" min="0" max="10" step="1" value="0" /></label>
+          <label class="row">
+            <span>Рост в головах: <b id="headsVal">5</b></span>
+            <input type="range" id="headsRange" min="1" max="10" step="0.5" value="5" />
+          </label>
+          <label class="row">
+            <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
+            <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
+          </label>
         </section>
 
         <section class="block">
           <h2>Голова</h2>
-          <label class="row"><span>Верх головы: <b id="headTopShiftVal">0</b>%</span><input type="range" id="headTopShift" min="0" max="0.20" step="0.01" value="0" /></label>
-          <label class="row"><span>Низ головы: <b id="headBottomShiftVal">0</b>%</span><input type="range" id="headBottomShift" min="-0.20" max="0.20" step="0.01" value="0" /></label>
-          <label class="row"><span>Ширина головы: <b id="headWidthMulVal">100</b>%</span><input type="range" id="headWidthMul" min="0.50" max="1.50" step="0.01" value="1" /></label>
-          <label class="row"><span>Радиус головы: <b id="headRadiusMulVal">100</b>%</span><input type="range" id="headRadiusMul" min="0.50" max="1.50" step="0.01" value="1" /></label>
-          <label class="row"><span>Высота подбородка: <b id="headChinShiftVal">0</b>%</span><input type="range" id="headChinShift" min="-0.15" max="0.15" step="0.005" value="0" /></label>
-          <label class="row"><span>Ширина подбородка: <b id="headChinWidthVal">10</b>%</span><input type="range" id="headChinWidth" min="0.10" max="0.60" step="0.01" value="0.10" /></label>
-          <label class="row"><span>Высота крепления к голове: <b id="headJawAttachVal">+50</b>%</span><input type="range" id="headJawAttach" min="-0.5" max="0.5" step="0.01" value="0.5" /></label>
-          <label class="row"><span>Длина челюсти: <b id="headJawLengthVal">35</b>%</span><input type="range" id="headJawLength" min="0.05" max="0.35" step="0.01" value="0.35" /></label>
-          <label class="row"><span>Ширина углов челюсти: <b id="headJawAngleWidthVal">-8</b>%</span><input type="range" id="headJawAngleWidth" min="-0.5" max="0.5" step="0.01" value="-0.08" /></label>
+          <label class="row">
+            <span>Верх головы: <b id="headTopShiftVal">0</b>%</span>
+            <input type="range" id="headTopShift" min="0" max="0.20" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Низ головы: <b id="headBottomShiftVal">0</b>%</span>
+            <input type="range" id="headBottomShift" min="-0.20" max="0.20" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Ширина головы: <b id="headWidthMulVal">100</b>%</span>
+            <input type="range" id="headWidthMul" min="0.50" max="1.50" step="0.01" value="1" />
+          </label>
+          <label class="row">
+            <span>Радиус головы: <b id="headRadiusMulVal">100</b>%</span>
+            <input type="range" id="headRadiusMul" min="0.50" max="1.50" step="0.01" value="1" />
+          </label>
+          
+          <!-- ОБНОВЛЕННЫЕ ДЕФОЛТЫ НИЖЕ -->
+          <label class="row">
+            <span>Высота подбородка: <b id="headChinShiftVal">0</b>%</span>
+            <input type="range" id="headChinShift" min="-0.15" max="0.15" step="0.005" value="0" />
+          </label>
+          <label class="row">
+            <span>Ширина подбородка: <b id="headChinWidthVal">10</b>%</span>
+            <input type="range" id="headChinWidth" min="0.10" max="0.60" step="0.01" value="0.10" />
+          </label>
+          <label class="row">
+            <span>Высота крепления к голове: <b id="headJawAttachVal">+50</b>%</span>
+            <input type="range" id="headJawAttach" min="-0.5" max="0.5" step="0.01" value="0.5" />
+          </label>
+          <label class="row">
+            <span>Длина челюсти: <b id="headJawLengthVal">35</b>%</span>
+            <input type="range" id="headJawLength" min="0.05" max="0.35" step="0.01" value="0.35" />
+          </label>
+          <label class="row">
+            <span>Ширина углов челюсти: <b id="headJawAngleWidthVal">-8</b>%</span>
+            <input type="range" id="headJawAngleWidth" min="-0.5" max="0.5" step="0.01" value="-0.08" />
+          </label>
         </section>
 
         <section class="block">
           <h2>Подложка</h2>
-          <label class="file-btn"><input type="file" id="underlayFile" accept="image/*" hidden />Загрузить изображение</label>
-          <label class="row"><span>Прозрачность: <b id="opacityVal">50</b>%</span><input type="range" id="opacityRange" min="0" max="100" step="1" value="50" /></label>
-          <label class="row"><span>Масштаб: <b id="scaleVal">100</b>%</span><input type="range" id="scaleRange" min="10" max="300" step="1" value="100" /></label>
+          <label class="file-btn">
+            <input type="file" id="underlayFile" accept="image/*" hidden />
+            Загрузить изображение
+          </label>
+          <label class="row">
+            <span>Прозрачность: <b id="opacityVal">50</b>%</span>
+            <input type="range" id="opacityRange" min="0" max="100" step="1" value="50" />
+          </label>
+          <label class="row">
+            <span>Масштаб: <b id="scaleVal">100</b>%</span>
+            <input type="range" id="scaleRange" min="10" max="300" step="1" value="100" />
+          </label>
           <button id="removeUnderlay" class="btn-danger" disabled>Удалить подложку</button>
         </section>
 
         <section class="block">
           <h2>Пресеты</h2>
-          <div class="row-inline"><input type="text" id="presetName" placeholder="Название пресета" /><button id="savePreset">Сохранить</button></div>
+          <div class="row-inline">
+            <input type="text" id="presetName" placeholder="Название пресета" />
+            <button id="savePreset">Сохранить</button>
+          </div>
           <ul id="presetList" class="preset-list"></ul>
         </section>
 
         <section class="block">
           <h2>Экспорт</h2>
-          <div class="row-inline"><button id="exportSvg">Экспорт SVG</button><button id="exportPng">Экспорт PNG</button></div>
+          <div class="row-inline">
+            <button id="exportSvg">Экспорт SVG</button>
+            <button id="exportPng">Экспорт PNG</button>
+          </div>
         </section>
+
       </div>
     </aside>
   </div>
 
-  <script>
-  /* ===== HEAD.JS ===== */
-  (function () {
-    'use strict';
-    const NS = 'http://www.w3.org/2000/svg';
-    const L0_BASE = 0 / 5, L3_BASE = 3 / 5, L4_BASE = 4 / 5, L5_BASE = 5 / 5;
-    const MIN_GAP_L0_L3 = 0.5, MIN_GAP_L3_L4 = 0.05, MIN_GAP_L4_L5 = 0.05;
-
-    const params = {
-      topShift: 0, bottomShift: 0, widthMul: 1.0, radiusMul: 1.0,
-      chinHeightShift: 0, chinWidth: 0.10,
-      jawAttach: 0.5, jawLength: 0.35, jawAngleWidth: -0.08,
-    };
-    const DEFAULT_PARAMS = Object.freeze({ ...params });
-    let els = null;
-
-    function ensureDom() {
-      if (els) return els;
-      const headGroup = document.getElementById('headGroup');
-      const headsLayer = document.getElementById('headsLayer');
-      if (!headGroup || !headsLayer) return null;
-      let grid = document.getElementById('headGridLayer');
-      if (!grid) {
-        grid = document.createElementNS(NS, 'g');
-        grid.setAttribute('id', 'headGridLayer');
-        grid.setAttribute('class', 'no-export');
-        headsLayer.appendChild(grid);
-      }
-      els = { headGroup, headsLayer, grid };
-      return els;
-    }
-
-    function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-    function svgEl(name, attrs) {
-      const node = document.createElementNS(NS, name);
-      if (attrs) for (const k in attrs) node.setAttribute(k, attrs[k]);
-      return node;
-    }
-    function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
-
-    function computeHead(geo) {
-      const headH = geo.headHeight, topY = geo.topY, cx = geo.centerX, bottomY = topY + headH;
-      let l0 = topY + L0_BASE * headH + params.topShift * headH;
-      let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
-      if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
-        const mid = (l0 + l3) / 2;
-        l0 = mid - (MIN_GAP_L0_L3 * headH) / 2;
-        l3 = mid + (MIN_GAP_L0_L3 * headH) / 2;
-      }
-      const cy = (l0 + l3) / 2;
-      const ry = ((l3 - l0) / 2) * params.radiusMul;
-      const rx = ry * params.widthMul;
-
-      let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
-      const l4Min = l3 + MIN_GAP_L3_L4 * headH, l4Max = bottomY - MIN_GAP_L4_L5 * headH;
-      if (l4 < l4Min) l4 = l4Min;
-      if (l4 > l4Max) l4 = l4Max;
-      if (l4Min > l4Max) l4 = (l3 + bottomY) / 2;
-
-      let chinHalf = (params.chinWidth * headH) / 2;
-      const chinHalfMax = Math.max(rx * 1.5, headH * 0.05);
-      if (chinHalf > chinHalfMax) chinHalf = chinHalfMax;
-      const chinLeftX = cx - chinHalf, chinRightX = cx + chinHalf;
-
-      const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
-      const baseTheta = Math.asin(attachRatio);
-      const angleDX = params.jawAngleWidth * rx;
-      const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
-      const jawLen = Math.min(params.jawLength, maxJawLen);
-      const jawDY = jawLen * headH;
-
-      function getJawSide(sign) {
-        const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
-        const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
-        const attachY = cy + ry * Math.sin(theta);
-        const angleX = clamp(attachX + sign * angleDX, cx - rx * 1.2, cx + rx * 1.2);
-        const angleY = attachY + jawDY;
-        return {
-          attach: { x: attachX, y: attachY },
-          angle: { x: angleX, y: angleY },
-          chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 }
-        };
-      }
-      const right = getJawSide(1), left = getJawSide(-1);
-
-      return {
-        headH, topY, bottomY, cx, l0, l3, l4, cy, rx, ry, chinY: l4, chinLeftX, chinRightX,
-        jaw: {
-          attachRight: right.attach, attachLeft: left.attach,
-          angleRight: right.angle, angleLeft: left.angle,
-          chinRight: right.chin, chinLeft: left.chin,
-        },
-      };
-    }
-
-    function drawGrid(h) {
-      const { grid } = els;
-      clear(grid);
-      const lineX1 = h.cx - h.headH * 0.75, lineX2 = h.cx + h.headH * 0.75;
-      const lines = [
-        { y: h.l0, label: 'L0' }, { y: h.l0 + (h.l3 - h.l0) / 3, label: 'L1' },
-        { y: h.l0 + (2 * (h.l3 - h.l0)) / 3, label: 'L2' }, { y: h.l3, label: 'L3' },
-        { y: h.l4, label: 'L4' }, { y: h.topY + L5_BASE * h.headH, label: 'L5' },
-      ];
-      for (const { y, label } of lines) {
-        grid.appendChild(svgEl('line', { x1: lineX1, x2: lineX2, y1: y, y2: y, stroke: '#9aa0a6', 'stroke-width': 2, 'stroke-dasharray': '16 12' }));
-        const t = svgEl('text', { x: lineX1 - 12, y: y + 8, 'text-anchor': 'end', 'font-size': 28, 'font-family': 'system-ui, sans-serif', fill: '#9aa0a6' });
-        t.textContent = label;
-        grid.appendChild(t);
-      }
-      grid.appendChild(svgEl('line', { x1: h.cx, x2: h.cx, y1: h.topY, y2: h.bottomY, stroke: '#c0c4c9', 'stroke-width': 2, 'stroke-dasharray': '8 12' }));
-      const mR = h.headH * 0.012;
-      const points = [
-        { p: h.jaw.attachRight, color: '#2563eb' }, { p: h.jaw.attachLeft, color: '#2563eb' },
-        { p: h.jaw.angleRight, color: '#dc2626' }, { p: h.jaw.angleLeft, color: '#dc2626' },
-      ];
-      for (const { p, color } of points) grid.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: mR, fill: color, opacity: 0.85 }));
-    }
-
-    function drawHead(h) {
-      const { headGroup } = els;
-      clear(headGroup);
-      headGroup.appendChild(svgEl('ellipse', { cx: h.cx, cy: h.cy, rx: h.rx, ry: h.ry, fill: 'none' }));
-      headGroup.appendChild(svgEl('line', { x1: h.chinLeftX, y1: h.chinY, x2: h.chinRightX, y2: h.chinY, fill: 'none' }));
-      const r = h.jaw;
-      headGroup.appendChild(svgEl('polyline', { points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`, fill: 'none' }));
-      headGroup.appendChild(svgEl('polyline', { points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`, fill: 'none' }));
-    }
-
-    function update(geo) { if (!ensureDom()) return; const h = computeHead(geo); drawGrid(h); drawHead(h); }
-    function getParams() { return { ...params }; }
-    function setParams(patch) { for (const k in params) if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k]; }
-    function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
-
-    window.Head = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
-  })();
-
-  /* ===== MAIN.JS ===== */
-  (function () {
-    'use strict';
-    const CANVAS = 4096, DPI = 300, STORAGE_KEY = 'figure-presets-v1';
-    const state = { heads: 5, margin: 0, underlay: { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 }, head: null };
-    const $ = (id) => document.getElementById(id);
-    const dom = {
-      svg: $('svg'), headsLayer: $('headsLayer'), underlayImage: $('underlayImage'),
-      headsRange: $('headsRange'), headsVal: $('headsVal'), marginRange: $('marginRange'), marginVal: $('marginVal'),
-      headTopShift: $('headTopShift'), headTopShiftVal: $('headTopShiftVal'),
-      headBottomShift: $('headBottomShift'), headBottomShiftVal: $('headBottomShiftVal'),
-      headWidthMul: $('headWidthMul'), headWidthMulVal: $('headWidthMulVal'),
-      headRadiusMul: $('headRadiusMul'), headRadiusMulVal: $('headRadiusMulVal'),
-      headChinShift: $('headChinShift'), headChinShiftVal: $('headChinShiftVal'),
-      headChinWidth: $('headChinWidth'), headChinWidthVal: $('headChinWidthVal'),
-      headJawAttach: $('headJawAttach'), headJawAttachVal: $('headJawAttachVal'),
-      headJawLength: $('headJawLength'), headJawLengthVal: $('headJawLengthVal'),
-      headJawAngleWidth: $('headJawAngleWidth'), headJawAngleWidthVal: $('headJawAngleWidthVal'),
-      underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
-      scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
-      presetName: $('presetName'), savePreset: $('savePreset'), presetList: $('presetList'),
-      exportSvg: $('exportSvg'), exportPng: $('exportPng'),
-    };
-
-    function computeGeometry() {
-      const marginPx = Math.round((state.margin / 100) * CANVAS);
-      const usableTop = marginPx, usableBottom = CANVAS - marginPx;
-      const usableHeight = usableBottom - usableTop;
-      const headHeight = usableHeight / state.heads;
-      return { canvas: CANVAS, dpi: DPI, marginPx, usableTop, usableBottom, usableHeight, headHeight, heads: state.heads, centerX: CANVAS / 2, topY: usableTop };
-    }
-
-    function renderHeadsGrid(geo) {
-      const ns = 'http://www.w3.org/2000/svg';
-      dom.headsLayer.innerHTML = '';
-      const maxHeads = Math.ceil(geo.heads);
-      for (let i = 0; i <= maxHeads; i++) {
-        const y = geo.usableTop + i * geo.headHeight;
-        if (y > geo.usableBottom + 0.5) break;
-        const line = document.createElementNS(ns, 'line');
-        line.setAttribute('x1', 0); line.setAttribute('x2', CANVAS);
-        line.setAttribute('y1', y); line.setAttribute('y2', y);
-        line.setAttribute('stroke', '#9aa0a6'); line.setAttribute('stroke-width', '2');
-        line.setAttribute('stroke-dasharray', '16 12');
-        dom.headsLayer.appendChild(line);
-      }
-    }
-
-    function applyState() {
-      const geo = computeGeometry();
-      renderHeadsGrid(geo);
-      if (window.Head) window.Head.update(geo);
-      dom.headsVal.textContent = state.heads;
-      dom.marginVal.textContent = state.margin;
-    }
-
-    dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); applyState(); });
-    dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); applyState(); });
-
-    function fmt(v) { const p = Math.round(v * 100); return p > 0 ? `+${p}` : String(p); }
-    function syncHeadUIFromParams() {
-      if (!window.Head) return;
-      const p = window.Head.getParams();
-      dom.headTopShift.value = p.topShift; dom.headTopShiftVal.textContent = fmt(p.topShift);
-      dom.headBottomShift.value = p.bottomShift; dom.headBottomShiftVal.textContent = fmt(p.bottomShift);
-      dom.headWidthMul.value = p.widthMul; dom.headWidthMulVal.textContent = Math.round(p.widthMul * 100);
-      dom.headRadiusMul.value = p.radiusMul; dom.headRadiusMulVal.textContent = Math.round(p.radiusMul * 100);
-      dom.headChinShift.value = p.chinHeightShift; dom.headChinShiftVal.textContent = fmt(p.chinHeightShift);
-      dom.headChinWidth.value = p.chinWidth; dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
-      dom.headJawAttach.value = p.jawAttach; dom.headJawAttachVal.textContent = fmt(p.jawAttach);
-      dom.headJawLength.value = p.jawLength; dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
-      dom.headJawAngleWidth.value = p.jawAngleWidth; dom.headJawAngleWidthVal.textContent = fmt(p.jawAngleWidth);
-    }
-
-    function bind(input, valEl, key, format) {
-      if (!input || !valEl) return;
-      input.addEventListener('input', (e) => {
-        if (!window.Head) return;
-        const v = parseFloat(e.target.value);
-        window.Head.setParams({ [key]: v });
-        valEl.textContent = format(v);
-        applyState();
-      });
-    }
-    bind(dom.headTopShift, dom.headTopShiftVal, 'topShift', fmt);
-    bind(dom.headBottomShift, dom.headBottomShiftVal, 'bottomShift', fmt);
-    bind(dom.headWidthMul, dom.headWidthMulVal, 'widthMul', (v) => Math.round(v * 100));
-    bind(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100));
-    bind(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmt);
-    bind(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100));
-    bind(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmt);
-    bind(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
-    bind(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmt);
-
-    function init() {
-      dom.headsRange.value = state.heads;
-      dom.marginRange.value = state.margin;
-      syncHeadUIFromParams();
-      applyState();
-    }
-    init();
-  })();
-  </script>
+  <script src="js/head.js"></script>
+  <script src="js/torso.js"></script>
+  <script src="js/arm.js"></script>
+  <script src="js/leg.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>
