@@ -1,18 +1,12 @@
-/* ============================================================
-   База
-   ============================================================ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --panel-bg: #ffffff;
   --panel-border: #e2e2e2;
   --text: #1f1f1f;
-  --text-dim: #666666;
   --accent: #2563eb;
-  --accent-ink: #1d4ed8;
   --danger: #dc2626;
   --canvas-bg: #f5f5f7;
-  --track: #e6ecf5;
 }
 
 html, body {
@@ -29,9 +23,6 @@ html, body {
   width: 100vw;
 }
 
-/* ============================================================
-   Холст
-   ============================================================ */
 .stage {
   flex: 1 1 auto;
   display: flex;
@@ -63,9 +54,6 @@ html, body {
   aspect-ratio: 1 / 1;
 }
 
-/* ============================================================
-   Панель управления
-   ============================================================ */
 .panel {
   flex: 0 0 340px;
   background: var(--panel-bg);
@@ -81,22 +69,13 @@ html, body {
   gap: 20px;
 }
 
-/* ---------- Блоки ---------- */
 .block h2 {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-dim);
+  color: #666;
   margin-bottom: 10px;
 }
-
-.note {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: var(--text-dim);
-  line-height: 1.6;
-}
-.note:empty { display: none; }
 
 .row {
   display: flex;
@@ -124,9 +103,6 @@ html, body {
   min-width: 0;
 }
 
-/* ============================================================
-   Кнопки
-   ============================================================ */
 button,
 .file-btn {
   display: inline-flex;
@@ -141,7 +117,6 @@ button,
   cursor: pointer;
   transition: opacity 0.15s;
   user-select: none;
-  font-family: inherit;
 }
 
 button:hover:not(:disabled),
@@ -163,102 +138,6 @@ button:disabled {
   margin-bottom: 12px;
 }
 
-/* ============================================================
-   Ползунки (логика из «Головы Лумиса»)
-   ============================================================ */
-.sliders {
-  display: grid;
-  gap: 4px;
-}
-
-.group-h {
-  margin: 12px 0 2px;
-  padding-bottom: 3px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--accent-ink);
-  border-bottom: 2px dotted var(--track);
-}
-.group-h:first-child { margin-top: 2px; }
-
-.slider {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "label value"
-    "range range";
-  column-gap: 8px;
-  font-size: 13px;
-}
-
-.slider label {
-  grid-area: label;
-  font-weight: 700;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.slider output {
-  grid-area: value;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--accent-ink);
-  line-height: 1.4;
-}
-
-.slider input { grid-area: range; }
-
-/* Кастомный вид range */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 24px;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-input[type="range"]::-webkit-slider-runnable-track {
-  height: 6px;
-  background: var(--track);
-  border-radius: 999px;
-}
-
-input[type="range"]::-moz-range-track {
-  height: 6px;
-  background: var(--track);
-  border-radius: 999px;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  margin-top: -6px;
-  background: var(--accent);
-  border: 3px solid #ffffff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1.5px var(--accent);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: var(--accent);
-  border: 3px solid #ffffff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1.5px var(--accent);
-}
-
-/* ============================================================
-   Пресеты
-   ============================================================ */
 .preset-list {
   list-style: none;
   display: flex;
@@ -301,13 +180,8 @@ input[type="range"]::-moz-range-thumb {
   border-style: dashed;
 }
 
-/* ============================================================
-   Адаптив: ≤1024px — холст сверху, панель снизу
-   ============================================================ */
 @media (max-width: 1024px) {
-  .app {
-    flex-direction: column;
-  }
+  .app { flex-direction: column; }
 
   .stage {
     flex: 1 1 auto;
