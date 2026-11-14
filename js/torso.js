@@ -52,33 +52,32 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // Начало торса
+    const topY = geo.shoulderY; // Начало торса (шея)
 
-    // 1. Грудная клетка (Эллипс)
-    // Высота = 1 голова (ry = 0.5 * headH)
-    const baseRy = headH * 0.5; 
-    // Радиус 1/Х. Делаем ширину больше высоты, чтобы это был именно эллипс, а не круг.
-    const baseRx = headH * 0.65; 
+    // 1. Грудная клетка
+    // Занимает 2/Х пространства (высота = 2 * headH), радиус = 1/Х (1 * headH)
+    const baseRy = headH * 1.0; // Радиус по Y (половина высоты торса)
+    const baseRx = headH * 1.0; // Радиус по X (1 голова)
 
     const ry = baseRy * params.chestHeightMul;
     const rx = baseRx * params.chestWidthMul;
 
-    // Центр эллипса
+    // Центр эллипса ровно посередине торса
     const cy = topY + ry; 
 
+    // Радиусы для верха и низа (для кривых Безье)
     const rxTop = rx * (1 + params.chestTopExpand);
     const rxBottom = rx * (1 + params.chestBottomExpand);
 
     // 2. Таз (Прямоугольник)
-    // Ширина = высоте эллипса (2*ry)
-    // Высота = ширине эллипса (2*rx)
+    // Правило: ширина = высоте эллипса (2*ry), высота = ширине эллипса (2*rx)
     const pelvisWBase = ry * 2; 
     const pelvisHBase = rx * 2; 
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
     const pelvisH = pelvisHBase * params.pelvisHeightMul;
 
-    // Таз под эллипсом
+    // Таз рисуется ровно под нижней точкой эллипса
     const pelvisY = cy + ry;
     const pelvisX = cx - pelvisW / 2;
 
