@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -105,6 +105,26 @@
         </section>
 
         <section class="block">
+          <h2>Торс</h2>
+          <label class="row">
+            <span>Ширина грудной клетки: <b id="torsoChestWidthVal">100</b>%</span>
+            <input type="range" id="torsoChestWidth" min="0.50" max="1.50" step="0.01" value="1.0" />
+          </label>
+          <label class="row">
+            <span>Высота грудной клетки: <b id="torsoChestHeightVal">100</b>%</span>
+            <input type="range" id="torsoChestHeight" min="0.50" max="1.50" step="0.01" value="1.0" />
+          </label>
+          <label class="row">
+            <span>Сужение верха: <b id="torsoChestTopTaperVal">60</b>%</span>
+            <input type="range" id="torsoChestTopTaper" min="0.10" max="0.90" step="0.01" value="0.6" />
+          </label>
+          <label class="row">
+            <span>Расширение низа: <b id="torsoChestBottomExpandVal">100</b>%</span>
+            <input type="range" id="torsoChestBottomExpand" min="0.80" max="1.50" step="0.01" value="1.0" />
+          </label>
+        </section>
+
+        <section class="block">
           <h2>Подложка</h2>
           <label class="file-btn">
             <input type="file" id="underlayFile" accept="image/*" hidden />
@@ -142,10 +162,10 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=5"></script>
-  <script src="js/torso.js?v=5"></script>
-  <script src="js/arm.js?v=5"></script>
-  <script src="js/leg.js?v=5"></script>
-  <script src="js/main.js?v=5"></script>
+  <script src="js/head.js?v=6"></script>
+  <script src="js/torso.js?v=6"></script>
+  <script src="js/arm.js?v=6"></script>
+  <script src="js/leg.js?v=6"></script>
+  <script src="js/main.js?v=6"></script>
 </body>
 </html>
