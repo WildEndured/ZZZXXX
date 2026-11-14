@@ -1,4 +1,4 @@
-/* js/head.js — Этап 2: круг + подбородок + челюсть */
+/* js/head.js — Этап 2: круг + подбородок + челюсть (с новыми дефолтными значениями) */
 
 (function () {
   'use strict';
@@ -14,7 +14,7 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
-  // ОБНОВЛЕННЫЕ ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ
+  // ВШИТЫЕ ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ
   const params = {
     topShift: 0,
     bottomShift: 0,
@@ -73,7 +73,7 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // L0 / L3
+    // --- L0 / L3 ---
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -86,7 +86,7 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // L4
+    // --- L4 (подбородок) ---
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -101,7 +101,7 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // ЧЕЛЮСТЬ
+    // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
     const baseTheta = Math.asin(attachRatio); 
     const angleDX = params.jawAngleWidth * rx; 
@@ -205,10 +205,12 @@
     const { headGroup } = els;
     clear(headGroup);
 
+    // Круг
     headGroup.appendChild(svgEl('ellipse', {
       cx: h.cx, cy: h.cy, rx: h.rx, ry: h.ry, fill: 'none',
     }));
 
+    // Подбородок
     headGroup.appendChild(svgEl('line', {
       x1: h.chinLeftX, y1: h.chinY,
       x2: h.chinRightX, y2: h.chinY,
@@ -217,11 +219,13 @@
 
     const r = h.jaw;
 
+    // Правая челюсть
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`,
       fill: 'none',
     }));
 
+    // Левая челюсть
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`,
       fill: 'none',
