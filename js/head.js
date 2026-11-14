@@ -144,7 +144,7 @@
       const tRaw = ry > 0 ? (attachY - cy) / ry : 0;
       const t = Math.max(-1, Math.min(1, tRaw));
       const attachDx = rx * Math.sqrt(Math.max(0, 1 - t * t));
-      
+
       const attachLeft  = { x: cx - attachDx, y: attachY };
       const attachRight = { x: cx + attachDx, y: attachY };
 
@@ -168,7 +168,7 @@
       const g = this.compute();
       const strokePx = Math.max(0.5, this.line * this.cell.h);
 
-      // Сетка
+      // Сетка L0..L5
       this.groups.grid.innerHTML = '';
       this.groups.grid.setAttribute('stroke', '#b8bfcc');
       this.groups.grid.setAttribute('stroke-width', '2');
@@ -176,8 +176,10 @@
       for (const key of ['L0', 'L1', 'L2', 'L3', 'L4', 'L5']) {
         const y = g.levels[key];
         const line = document.createElementNS(NS, 'line');
-        line.setAttribute('x1', 0); line.setAttribute('x2', 4096);
-        line.setAttribute('y1', y); line.setAttribute('y2', y);
+        line.setAttribute('x1', 0);
+        line.setAttribute('x2', 4096);
+        line.setAttribute('y1', y);
+        line.setAttribute('y2', y);
         this.groups.grid.appendChild(line);
       }
 
@@ -189,7 +191,7 @@
       circle.setAttribute('rx', g.circle.rx);
       circle.setAttribute('ry', g.circle.ry);
       this.groups.skull.appendChild(circle);
-      this.groups.skull.setAttribute('stroke-width', strokePx);
+      this.groups.skull.setAttribute('stroke-width', String(strokePx));
       this.groups.skull.setAttribute('fill', 'none');
 
       // Челюсть
@@ -207,7 +209,7 @@
       jawPath.setAttribute('d', d);
       jawPath.setAttribute('fill', 'none');
       this.groups.jaw.appendChild(jawPath);
-      this.groups.jaw.setAttribute('stroke-width', strokePx);
+      this.groups.jaw.setAttribute('stroke-width', String(strokePx));
       this.groups.jaw.setAttribute('fill', 'none');
 
       // Подбородок
@@ -218,7 +220,7 @@
       chin.setAttribute('x2', g.chin.chinRight.x);
       chin.setAttribute('y2', g.chin.chinRight.y);
       this.groups.chin.appendChild(chin);
-      this.groups.chin.setAttribute('stroke-width', strokePx);
+      this.groups.chin.setAttribute('stroke-width', String(strokePx));
       this.groups.chin.setAttribute('fill', 'none');
     },
   };
