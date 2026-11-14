@@ -15,8 +15,6 @@
       naturalWidth: 0,
       naturalHeight: 0,
     },
-    // Параметры головы хранит сам модуль Head; здесь — только зеркало
-    // для снапшотов и восстановления слайдеров.
     head: null,
   };
 
@@ -34,7 +32,6 @@
     marginRange: $('marginRange'),
     marginVal: $('marginVal'),
 
-    // Голова
     headTopShift: $('headTopShift'),
     headTopShiftVal: $('headTopShiftVal'),
     headBottomShift: $('headBottomShift'),
@@ -47,6 +44,12 @@
     headChinShiftVal: $('headChinShiftVal'),
     headChinWidth: $('headChinWidth'),
     headChinWidthVal: $('headChinWidthVal'),
+    headJawAttach: $('headJawAttach'),
+    headJawAttachVal: $('headJawAttachVal'),
+    headJawLength: $('headJawLength'),
+    headJawLengthVal: $('headJawLengthVal'),
+    headJawAngleWidth: $('headJawAngleWidth'),
+    headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
@@ -157,8 +160,6 @@
     dom.removeUnderlay.disabled = false;
   }
 
-  // ---------- Общие ----------
-
   dom.headsRange.addEventListener('input', (e) => {
     state.heads = parseFloat(e.target.value);
     applyState();
@@ -168,8 +169,6 @@
     state.margin = parseInt(e.target.value, 10);
     applyState();
   });
-
-  // ---------- Голова ----------
 
   function fmtSignedPercent(v) {
     const p = Math.round(v * 100);
@@ -197,6 +196,15 @@
 
     dom.headChinWidth.value = p.chinWidth;
     dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
+
+    dom.headJawAttach.value = p.jawAttach;
+    dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttach);
+
+    dom.headJawLength.value = p.jawLength;
+    dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
+
+    dom.headJawAngleWidth.value = p.jawAngleWidth;
+    dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
   }
 
   function bindHeadInput(input, valEl, key, format) {
@@ -215,8 +223,9 @@
   bindHeadInput(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100));
   bindHeadInput(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmtSignedPercent);
   bindHeadInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100));
-
-  // ---------- Подложка ----------
+  bindHeadInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmtSignedPercent);
+  bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
+  bindHeadInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent);
 
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
@@ -265,8 +274,6 @@
     applyState();
   });
 
-  // ---------- Пресеты ----------
-
   function loadPresets() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -306,8 +313,6 @@
       dom.marginRange.value = snap.margin;
     }
 
-    // Голова: если снапшот старый (без head) — сбрасываем на дефолт,
-    // чтобы пресет полностью описывал состояние.
     if (window.Head) {
       if (snap.head && typeof snap.head === 'object') {
         window.Head.resetParams();
@@ -372,8 +377,6 @@
     renderPresets();
   });
 
-  // ---------- Экспорт ----------
-
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
@@ -426,8 +429,6 @@
     img.src = svgUrl;
   });
 
-  // ---------- Инициализация ----------
-
   function init() {
     dom.headsRange.value = state.heads;
     dom.marginRange.value = state.margin;
@@ -436,8 +437,6 @@
     dom.scaleRange.value = Math.round(state.underlay.scale * 100);
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
 
-    // Синхронизируем UI головы с параметрами модуля (дефолты или
-    // значения, которые модуль мог установить до init).
     syncHeadUIFromParams();
 
     renderPresets();
