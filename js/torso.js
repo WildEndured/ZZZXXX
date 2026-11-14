@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: грудная клетка + таз (вертикальный овал) */
+/* js/torso.js — Этап 2: грудная клетка + таз */
 
 (function () {
   'use strict';
@@ -52,30 +52,26 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // Начало торса (шея)
+    const topY = geo.shoulderY; // Это L5 головы. Начало торса.
 
-    // 1. Грудная клетка (вертикальный овал)
-    // По ТЗ: "Во 2/Х пространстве" -> высота 2*headH, ширина 1*headH
-    const baseRx = headH * 0.5; // Базовая ширина (радиус)
-    const baseRy = headH * 1.0; // Базовая высота (радиус) = 2*headH / 2
+    // 1. Грудная клетка (по высоте как 1 голова)
+    // Базовая высота = headH, базовый радиус X = 0.5 * headH (узкий овал)
+    const baseRy = headH * 0.5; 
+    const baseRx = headH * 0.5; 
 
-    const rx = baseRx * params.chestWidthMul;
     const ry = baseRy * params.chestHeightMul;
+    const rx = baseRx * params.chestWidthMul;
 
-    // Центр эллипса по Y (опускаем вниз от шеи на высоту радиуса)
+    // Центр эллипса ровно на половине headH от начала
     const cy = topY + ry; 
 
-    // Радиусы для верха и низа с учетом расширения (через Path)
     const rxTop = rx * (1 + params.chestTopExpand);
     const rxBottom = rx * (1 + params.chestBottomExpand);
 
     // 2. Таз (Прямоугольник)
-    // По ТЗ: ширина = высоте эллипса (2*ry), высота = ширине эллипса (2*rx)
-    // Ограничиваем ширину таза, чтобы он не был шире плеч (максимум 1.5*rx)
-    let pelvisWBase = ry * 2; 
-    if (pelvisWBase > rx * 2 * 1.5) pelvisWBase = rx * 2 * 1.5; 
-    
-    const pelvisHBase = rx * 2;
+    // По ТЗ: ширина = полной высоте эллипса (2*ry), высота = полной ширине эллипса (2*rx)
+    const pelvisWBase = ry * 2; 
+    const pelvisHBase = rx * 2; 
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
     const pelvisH = pelvisHBase * params.pelvisHeightMul;
@@ -106,7 +102,7 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Габариты грудной клетки
+    // Габариты грудной клетки (пунктирный прямоугольник)
     grid.appendChild(svgEl('rect', {
       x: t.chest.cx - t.chest.rx,
       y: t.chest.cy - t.chest.ry,
@@ -133,9 +129,8 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // 1. Грудная клетка (Path с кривыми Безье для управления верхом/низом)
+    // 1. Грудная клетка
     const c = t.chest;
-    // Рисуем по часовой стрелке, начиная с верхней точки
     const d = `
       M ${c.cx},${c.cy - c.ry}
       C ${c.cx + c.rxTop * 0.552},${c.cy - c.ry} ${c.cx + c.rxTop},${c.cy - c.ry * 0.552} ${c.cx + c.rxTop},${c.cy}
@@ -149,7 +144,7 @@
       fill: 'none',
     }));
 
-    // 2. Таз (Прямоугольник)
+    // 2. Таз
     const p = t.pelvis;
     torsoGroup.appendChild(svgEl('rect', {
       x: p.x,
