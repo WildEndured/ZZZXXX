@@ -52,31 +52,33 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // Это L5 головы. Начало торса.
+    const topY = geo.shoulderY; // Начало торса
 
-    // 1. Грудная клетка (по высоте как 1 голова)
-    // Базовая высота = headH, базовый радиус X = 0.5 * headH (узкий овал)
+    // 1. Грудная клетка (Эллипс)
+    // Высота = 1 голова (ry = 0.5 * headH)
     const baseRy = headH * 0.5; 
-    const baseRx = headH * 0.5; 
+    // Радиус 1/Х. Делаем ширину больше высоты, чтобы это был именно эллипс, а не круг.
+    const baseRx = headH * 0.65; 
 
     const ry = baseRy * params.chestHeightMul;
     const rx = baseRx * params.chestWidthMul;
 
-    // Центр эллипса ровно на половине headH от начала
+    // Центр эллипса
     const cy = topY + ry; 
 
     const rxTop = rx * (1 + params.chestTopExpand);
     const rxBottom = rx * (1 + params.chestBottomExpand);
 
     // 2. Таз (Прямоугольник)
-    // По ТЗ: ширина = полной высоте эллипса (2*ry), высота = полной ширине эллипса (2*rx)
+    // Ширина = высоте эллипса (2*ry)
+    // Высота = ширине эллипса (2*rx)
     const pelvisWBase = ry * 2; 
     const pelvisHBase = rx * 2; 
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
     const pelvisH = pelvisHBase * params.pelvisHeightMul;
 
-    // Таз рисуется ровно под нижней точкой эллипса
+    // Таз под эллипсом
     const pelvisY = cy + ry;
     const pelvisX = cx - pelvisW / 2;
 
@@ -102,7 +104,7 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Габариты грудной клетки (пунктирный прямоугольник)
+    // Габариты грудной клетки
     grid.appendChild(svgEl('rect', {
       x: t.chest.cx - t.chest.rx,
       y: t.chest.cy - t.chest.ry,
