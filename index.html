@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Фигура — Этап 1</title>
+  <title>Фигура — Этап 2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -61,6 +61,34 @@
           <label class="row">
             <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
             <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
+          </label>
+        </section>
+
+        <section class="block">
+          <h2>Голова</h2>
+          <label class="row">
+            <span>Верх головы: <b id="headTopShiftVal">0</b>%</span>
+            <input type="range" id="headTopShift" min="0" max="0.20" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Низ головы: <b id="headBottomShiftVal">0</b>%</span>
+            <input type="range" id="headBottomShift" min="-0.20" max="0.20" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Ширина головы: <b id="headWidthMulVal">100</b>%</span>
+            <input type="range" id="headWidthMul" min="0.50" max="1.50" step="0.01" value="1" />
+          </label>
+          <label class="row">
+            <span>Радиус головы: <b id="headRadiusMulVal">100</b>%</span>
+            <input type="range" id="headRadiusMul" min="0.50" max="1.50" step="0.01" value="1" />
+          </label>
+          <label class="row">
+            <span>Высота подбородка: <b id="headChinShiftVal">0</b>%</span>
+            <input type="range" id="headChinShift" min="-0.15" max="0.15" step="0.005" value="0" />
+          </label>
+          <label class="row">
+            <span>Ширина подбородка: <b id="headChinWidthVal">30</b>%</span>
+            <input type="range" id="headChinWidth" min="0.10" max="0.60" step="0.01" value="0.30" />
           </label>
         </section>
 
