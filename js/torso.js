@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: грудная клетка + таз (по референсу) */
+/* js/torso.js — Этап 2: грудная клетка + таз (строгое правило) */
 
 (function () {
   'use strict';
@@ -13,7 +13,7 @@
 
     pelvisWidthMul: 1.0,    // Корректировка ширины таза
     pelvisHeightMul: 1.0,   // Корректировка высоты таза
-    pelvisRadius: 0.3,      // Скругление углов (по умолчанию 30%)
+    pelvisRadius: 0.3,      // Скругление углов
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -50,25 +50,22 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // Начало торса (L5)
+    const topY = geo.shoulderY;
 
     // 1. Грудная клетка
-    // Высота = 1 голова (ry = 0.5 * headH)
     const ry = (headH * 0.5) * params.chestHeightMul;
-    // Базовая ширина = 0.35 * headH (чтобы был вертикальный овал)
-    const baseRx = headH * 0.35;
+    // Делаем базовую ширину больше (0.5), чтобы это был не узкий овал, а нормальный
+    const baseRx = headH * 0.5; 
     const rx = baseRx * params.chestWidthMul;
 
     const cy = topY + ry;
 
-    // Радиусы верха и низа (симметричные)
     const rxTop = Math.max(1, rx * (1 + params.chestTopExpand));
     const rxBottom = Math.max(1, rx * (1 + params.chestBottomExpand));
 
     // 2. Таз
-    // Ширина = высоте эллипса (2*ry) * коэффициент (чтобы был шире, как на референсе)
-    // Высота = ширине эллипса (2*rx)
-    const pelvisWBase = (ry * 2) * 1.4; // 1.4 - чтобы таз выглядел массивнее
+    // СТРОГО ПО ПРАВИЛУ: Ширина = высоте эллипса (2*ry), Высота = ширине эллипса (2*rx)
+    const pelvisWBase = ry * 2; 
     const pelvisHBase = rx * 2; 
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
@@ -91,7 +88,6 @@
     const { grid } = els;
     clear(grid);
 
-    // Осевая
     grid.appendChild(svgEl('line', {
       x1: t.cx, x2: t.cx,
       y1: t.topY, y2: t.pelvis.y + t.pelvis.h,
@@ -99,7 +95,6 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Габариты грудной клетки
     grid.appendChild(svgEl('rect', {
       x: t.chest.cx - t.chest.rx,
       y: t.chest.cy - t.chest.ry,
@@ -110,7 +105,6 @@
       'stroke-dasharray': '16 12',
     }));
 
-    // Габариты таза
     grid.appendChild(svgEl('rect', {
       x: t.pelvis.x,
       y: t.pelvis.y,
@@ -128,7 +122,7 @@
 
     const c = t.chest;
     
-    // Строго симметричный путь
+    // Симметричный путь
     const d = `
       M ${c.cx},${c.cy - c.ry}
       C ${c.cx + c.rxTop * 0.552},${c.cy - c.ry} ${c.cx + c.rxTop},${c.cy - c.ry * 0.552} ${c.cx + c.rxTop},${c.cy}
