@@ -14,6 +14,7 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
+  // ОБНОВЛЕННЫЕ ЗНАЧЕНИЯ ПО УМОЛЧАНИЮ
   const params = {
     topShift: 0,
     bottomShift: 0,
@@ -21,11 +22,11 @@
     radiusMul: 1.0,
 
     chinHeightShift: 0,
-    chinWidth: 0.10, // Обновил дефолт под ваш скриншот
+    chinWidth: 0.10,
 
-    jawAttach: 0.5,   // Обновил дефолт под ваш скриншот
-    jawLength: 0.35,  // Обновил дефолт под ваш скриншот
-    jawAngleWidth: -0.08, // Обновил дефолт под ваш скриншот
+    jawAttach: 0.5,
+    jawLength: 0.35,
+    jawAngleWidth: -0.08,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -72,7 +73,7 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // --- L0 / L3 (Голова) ---
+    // L0 / L3
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -85,7 +86,7 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // --- L4 (Подбородок) ---
+    // L4
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -94,53 +95,34 @@
     if (l4Min > l4Max) l4 = (l3 + bottomY) / 2;
 
     let chinHalf = (params.chinWidth * headH) / 2;
+    const chinHalfMax = Math.max(rx * 1.5, headH * 0.05);
+    if (chinHalf > chinHalfMax) chinHalf = chinHalfMax;
+
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // --- ЧЕЛЮСТЬ ---
-    // 1. Точка крепления (строго на эллипсе)
-    // jawAttach от -1 до 1. sin(theta) = jawAttach.
+    // ЧЕЛЮСТЬ
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
     const baseTheta = Math.asin(attachRatio); 
+    const angleDX = params.jawAngleWidth * rx; 
 
-    // 2. Длина челюсти
-    // Опускаем угол вниз от точки крепления
     const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
     const jawLen = Math.min(params.jawLength, maxJawLen);
     const jawDY = jawLen * headH;
 
-    // 3. Ширина углов челюсти
-    // Теперь jawAngleWidth сдвигает угол ОТНОСИТЕЛЬНО ПОДБОРОДКА.
-    // Если 0 — угол строго над краем подбородка (идеальная трапеция).
-    // Если > 0 — угол расширяется наружу (квадратная челюсть).
-    // Если < 0 — угол заужается внутрь (треугольная челюсть).
-    const angleShift = params.jawAngleWidth * headH;
-
     function getJawSide(sign) {
-      // sign = 1 (правая), -1 (левая)
       const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
       
-      // Точка крепления на эллипсе
       const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
       const attachY = cy + ry * Math.sin(theta);
 
-      // X-координата края подбородка для этой стороны
-      const chinX = sign === 1 ? chinRightX : chinLeftX;
-
-      // Угол челюсти: по X отталкивается от подбородка + сдвиг, по Y — опускается вниз
-      const angleX = chinX + sign * angleShift;
-      
-      // Ограничиваем, чтобы угол не заходил за центр подбородка (иначе линии пересекутся)
-      const clampedAngleX = sign === 1 
-        ? Math.max(angleX, cx + headH * 0.01) 
-        : Math.min(angleX, cx - headH * 0.01);
-
+      const angleX = clamp(attachX + sign * angleDX, cx - rx * 1.2, cx + rx * 1.2);
       const angleY = attachY + jawDY;
 
       return {
         attach: { x: attachX, y: attachY },
-        angle: { x: clampedAngleX, y: angleY },
-        chin: { x: chinX, y: l4 }
+        angle: { x: angleX, y: angleY },
+        chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 }
       };
     }
 
@@ -223,12 +205,10 @@
     const { headGroup } = els;
     clear(headGroup);
 
-    // Круг
     headGroup.appendChild(svgEl('ellipse', {
       cx: h.cx, cy: h.cy, rx: h.rx, ry: h.ry, fill: 'none',
     }));
 
-    // Подбородок
     headGroup.appendChild(svgEl('line', {
       x1: h.chinLeftX, y1: h.chinY,
       x2: h.chinRightX, y2: h.chinY,
@@ -237,13 +217,11 @@
 
     const r = h.jaw;
 
-    // Правая челюсть
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`,
       fill: 'none',
     }));
 
-    // Левая челюсть
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`,
       fill: 'none',
