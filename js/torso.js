@@ -1,11 +1,10 @@
-/* js/torso.js — Этап 2: грудная клетка + таз */
+/* js/torso.js — Этап 2: грудная клетка + таз (вертикальный овал) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Параметры торса по умолчанию
   const params = {
     // Грудная клетка
     chestHeightMul: 1.0,    // Высота (множитель)
@@ -20,7 +19,6 @@
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
-
   let els = null;
 
   function ensureDom() {
@@ -47,45 +45,45 @@
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
-    if (attrs) {
-      for (const k in attrs) node.setAttribute(k, attrs[k]);
-    }
+    if (attrs) for (const k in attrs) node.setAttribute(k, attrs[k]);
     return node;
   }
 
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // Верх торса (плечи)
+    const topY = geo.shoulderY; // Начало торса (шея)
 
-    // 1. Грудная клетка (Эллипс, но через Path для расширения)
-    // Базовая высота = 1 голова, базовый радиус X = 1 голова
-    const chestRyBase = headH * 0.5;
-    const chestRxBase = headH * 1.0;
+    // 1. Грудная клетка (вертикальный овал)
+    // По ТЗ: "Во 2/Х пространстве" -> высота 2*headH, ширина 1*headH
+    const baseRx = headH * 0.5; // Базовая ширина (радиус)
+    const baseRy = headH * 1.0; // Базовая высота (радиус) = 2*headH / 2
 
-    const ry = chestRyBase * params.chestHeightMul;
-    const rx = chestRxBase * params.chestWidthMul;
+    const rx = baseRx * params.chestWidthMul;
+    const ry = baseRy * params.chestHeightMul;
 
-    const cy = topY + ry; // Центр эллипса
+    // Центр эллипса по Y (опускаем вниз от шеи на высоту радиуса)
+    const cy = topY + ry; 
 
-    // Радиусы для верха и низа с учетом расширения
-    // (отрицательное значение сужает, положительное расширяет)
+    // Радиусы для верха и низа с учетом расширения (через Path)
     const rxTop = rx * (1 + params.chestTopExpand);
     const rxBottom = rx * (1 + params.chestBottomExpand);
 
     // 2. Таз (Прямоугольник)
     // По ТЗ: ширина = высоте эллипса (2*ry), высота = ширине эллипса (2*rx)
-    const pelvisWBase = ry * 2; // ширина = высота эллипса
-    const pelvisHBase = rx * 2; // высота = ширина эллипса
+    // Ограничиваем ширину таза, чтобы он не был шире плеч (максимум 1.5*rx)
+    let pelvisWBase = ry * 2; 
+    if (pelvisWBase > rx * 2 * 1.5) pelvisWBase = rx * 2 * 1.5; 
+    
+    const pelvisHBase = rx * 2;
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
     const pelvisH = pelvisHBase * params.pelvisHeightMul;
 
-    // Таз рисуется под грудной клеткой
+    // Таз рисуется ровно под нижней точкой эллипса
     const pelvisY = cy + ry;
     const pelvisX = cx - pelvisW / 2;
 
-    // Скругление углов (не больше половины меньшей стороны)
     const maxRad = Math.min(pelvisW, pelvisH) / 2;
     const rectRad = maxRad * params.pelvisRadius;
 
@@ -108,7 +106,7 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Габариты грудной клетки (пунктиром)
+    // Габариты грудной клетки
     grid.appendChild(svgEl('rect', {
       x: t.chest.cx - t.chest.rx,
       y: t.chest.cy - t.chest.ry,
@@ -119,7 +117,7 @@
       'stroke-dasharray': '16 12',
     }));
 
-    // Габариты таза (пунктиром)
+    // Габариты таза
     grid.appendChild(svgEl('rect', {
       x: t.pelvis.x,
       y: t.pelvis.y,
@@ -135,14 +133,9 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // 1. Грудная клетка (Path с кривыми Безье)
+    // 1. Грудная клетка (Path с кривыми Безье для управления верхом/низом)
     const c = t.chest;
-    // Начинаем с верхней точки, идем по часовой стрелке
-    // M cx, cy-ry
-    // C (cx + rxTop*0.55), (cy-ry)  (cx + rxTop), (cy-ry*0.55)  (cx + rxTop), cy
-    // C (cx + rxBottom), (cy+ry*0.55)  (cx + rxBottom*0.55), (cy+ry)  cx, cy+ry
-    // C (cx - rxBottom*0.55), (cy+ry)  (cx - rxBottom), (cy+ry*0.55)  (cx - rxBottom), cy
-    // C (cx - rxTop), (cy-ry*0.55)  (cx - rxTop*0.55), (cy-ry)  cx, cy-ry
+    // Рисуем по часовой стрелке, начиная с верхней точки
     const d = `
       M ${c.cx},${c.cy - c.ry}
       C ${c.cx + c.rxTop * 0.552},${c.cy - c.ry} ${c.cx + c.rxTop},${c.cy - c.ry * 0.552} ${c.cx + c.rxTop},${c.cy}
