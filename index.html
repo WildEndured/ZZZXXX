@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div class="app">
@@ -107,20 +107,35 @@
         <section class="block">
           <h2>Торс</h2>
           <label class="row">
-            <span>Ширина грудной клетки: <b id="torsoChestWidthVal">100</b>%</span>
-            <input type="range" id="torsoChestWidth" min="0.50" max="1.50" step="0.01" value="1.0" />
+            <span>Высота груди: <b id="torsoChestHeightVal">100</b>%</span>
+            <input type="range" id="torsoChestHeight" min="0.5" max="1.5" step="0.01" value="1" />
           </label>
           <label class="row">
-            <span>Высота грудной клетки: <b id="torsoChestHeightVal">100</b>%</span>
-            <input type="range" id="torsoChestHeight" min="0.50" max="1.50" step="0.01" value="1.0" />
+            <span>Ширина груди: <b id="torsoChestWidthVal">100</b>%</span>
+            <input type="range" id="torsoChestWidth" min="0.5" max="1.5" step="0.01" value="1" />
           </label>
           <label class="row">
-            <span>Сужение верха: <b id="torsoChestTopTaperVal">60</b>%</span>
-            <input type="range" id="torsoChestTopTaper" min="0.10" max="0.90" step="0.01" value="0.6" />
+            <span>Расширение верха: <b id="torsoChestTopVal">0</b>%</span>
+            <input type="range" id="torsoChestTop" min="-0.5" max="0.5" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Расширение низа: <b id="torsoChestBottomExpandVal">100</b>%</span>
-            <input type="range" id="torsoChestBottomExpand" min="0.80" max="1.50" step="0.01" value="1.0" />
+            <span>Расширение низа: <b id="torsoChestBottomVal">0</b>%</span>
+            <input type="range" id="torsoChestBottom" min="-0.5" max="0.5" step="0.01" value="0" />
+          </label>
+          
+          <hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e2e2;" />
+
+          <label class="row">
+            <span>Корр. ширины таза: <b id="torsoPelvisWidthVal">100</b>%</span>
+            <input type="range" id="torsoPelvisWidth" min="0.5" max="1.5" step="0.01" value="1" />
+          </label>
+          <label class="row">
+            <span>Корр. высоты таза: <b id="torsoPelvisHeightVal">100</b>%</span>
+            <input type="range" id="torsoPelvisHeight" min="0.5" max="1.5" step="0.01" value="1" />
+          </label>
+          <label class="row">
+            <span>Скругление таза: <b id="torsoPelvisRadiusVal">0</b>%</span>
+            <input type="range" id="torsoPelvisRadius" min="0" max="0.5" step="0.01" value="0" />
           </label>
         </section>
 
@@ -162,10 +177,10 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=7"></script>
-  <script src="js/torso.js?v=7"></script>
-  <script src="js/arm.js?v=7"></script>
-  <script src="js/leg.js?v=7"></script>
-  <script src="js/main.js?v=7"></script>
+  <script src="js/head.js?v=6"></script>
+  <script src="js/torso.js?v=6"></script>
+  <script src="js/arm.js?v=6"></script>
+  <script src="js/leg.js?v=6"></script>
+  <script src="js/main.js?v=6"></script>
 </body>
 </html>
