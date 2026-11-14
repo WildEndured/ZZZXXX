@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: грудная клетка + таз (строго по ТЗ) */
+/* js/torso.js — Этап 2: грудная клетка + таз (по референсу) */
 
 (function () {
   'use strict';
@@ -8,12 +8,12 @@
   const params = {
     chestHeightMul: 1.0,    // Высота
     chestWidthMul: 1.0,     // Ширина
-    chestTopExpand: 0.0,    // Расширение/сужение верха (-0.5 ... 0.5)
-    chestBottomExpand: 0.0, // Расширение/сужение низа (-0.5 ... 0.5)
+    chestTopExpand: 0.0,    // Расширение/сужение верха
+    chestBottomExpand: 0.0, // Расширение/сужение низа
 
     pelvisWidthMul: 1.0,    // Корректировка ширины таза
     pelvisHeightMul: 1.0,   // Корректировка высоты таза
-    pelvisRadius: 0.0,      // Скругление углов (0 ... 0.5)
+    pelvisRadius: 0.3,      // Скругление углов (по умолчанию 30%)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -50,25 +50,25 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.shoulderY; // L5
+    const topY = geo.shoulderY; // Начало торса (L5)
 
     // 1. Грудная клетка
-    // Высота = 1 голова. Значит полная высота = headH, радиус ry = headH / 2
+    // Высота = 1 голова (ry = 0.5 * headH)
     const ry = (headH * 0.5) * params.chestHeightMul;
-    // Ширина = радиус 1/Х. Берем базовый rx = 0.5 * headH (чтобы по умолчанию был ровный круг, как в клетке)
-    const baseRx = headH * 0.5;
+    // Базовая ширина = 0.35 * headH (чтобы был вертикальный овал)
+    const baseRx = headH * 0.35;
     const rx = baseRx * params.chestWidthMul;
 
     const cy = topY + ry;
 
-    // Верхний и нижний радиусы (строго симметричные)
-    // Если 0% - это rx. Если +50% - это rx * 1.5. Если -50% - это rx * 0.5.
-    const rxTop = rx * (1 + params.chestTopExpand);
-    const rxBottom = rx * (1 + params.chestBottomExpand);
+    // Радиусы верха и низа (симметричные)
+    const rxTop = Math.max(1, rx * (1 + params.chestTopExpand));
+    const rxBottom = Math.max(1, rx * (1 + params.chestBottomExpand));
 
     // 2. Таз
-    // По правилу: ширина = высоте эллипса (2*ry), высота = ширине эллипса (2*rx)
-    const pelvisWBase = ry * 2; 
+    // Ширина = высоте эллипса (2*ry) * коэффициент (чтобы был шире, как на референсе)
+    // Высота = ширине эллипса (2*rx)
+    const pelvisWBase = (ry * 2) * 1.4; // 1.4 - чтобы таз выглядел массивнее
     const pelvisHBase = rx * 2; 
 
     const pelvisW = pelvisWBase * params.pelvisWidthMul;
@@ -99,7 +99,7 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Габариты грудной клетки (базовые, без учета расширения)
+    // Габариты грудной клетки
     grid.appendChild(svgEl('rect', {
       x: t.chest.cx - t.chest.rx,
       y: t.chest.cy - t.chest.ry,
@@ -128,9 +128,7 @@
 
     const c = t.chest;
     
-    // Строим путь через кубические кривые Безье.
-    // Начинаем сверху, идем вправо, вниз, влево, вверх.
-    // Для абсолютной симметрии жестко задаем опорные точки.
+    // Строго симметричный путь
     const d = `
       M ${c.cx},${c.cy - c.ry}
       C ${c.cx + c.rxTop * 0.552},${c.cy - c.ry} ${c.cx + c.rxTop},${c.cy - c.ry * 0.552} ${c.cx + c.rxTop},${c.cy}
