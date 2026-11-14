@@ -14,6 +14,7 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
+  // Параметры головы по умолчанию
   const params = {
     topShift: 0,
     bottomShift: 0,
@@ -21,11 +22,11 @@
     radiusMul: 1.0,
 
     chinHeightShift: 0,
-    chinWidth: 0.30,
+    chinWidth: 0.10,
 
-    jawAttach: 0,
-    jawLength: 0.15,
-    jawAngleWidth: 0, // Диапазон в HTML теперь от -0.5 до 0.5
+    jawAttach: 0.20,
+    jawLength: 0.35,
+    jawAngleWidth: -0.30,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -94,7 +95,7 @@
     if (l4Min > l4Max) l4 = (l3 + bottomY) / 2;
 
     let chinHalf = (params.chinWidth * headH) / 2;
-    // Даем подбородку больше свободы, ограничивая только общей шириной головы
+    // Даем подбородку больше свободы
     const chinHalfMax = Math.max(rx * 1.5, headH * 0.05);
     if (chinHalf > chinHalfMax) chinHalf = chinHalfMax;
 
@@ -108,10 +109,7 @@
     const THETA_LIM = Math.asin(0.98);
 
     // 2. Угол челюсти
-    // Используем jawAngleWidth для горизонтального расширения угла.
-    // При 0 — угол строго под точкой крепления.
-    // При > 0 — угол уходит наружу (к краю круга).
-    // При < 0 — угол уходит внутрь (к центру).
+    // jawAngleWidth двигает угол относительно радиуса X
     const angleDX = params.jawAngleWidth * rx; 
 
     const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
