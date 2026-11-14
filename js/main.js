@@ -66,6 +66,25 @@
     exportPng: $('exportPng'),
   };
 
+  // ---- Диагностика: проверяем, что все элементы найдены ----
+  (function checkDom() {
+    const required = [
+      'headsRange','marginRange',
+      'headTopShift','headBottomShift','headWidthMul','headRadiusMul',
+      'headChinShift','headChinWidth',
+      'headJawAttach','headJawLength','headJawAngleWidth',
+      'headJawAttachVal','headJawLengthVal','headJawAngleWidthVal',
+      'underlayFile','opacityRange','scaleRange','removeUnderlay',
+      'presetName','savePreset','presetList',
+      'exportSvg','exportPng',
+    ];
+    for (const id of required) {
+      if (!document.getElementById(id)) {
+        console.error('[main.js] Не найден элемент с id =', id);
+      }
+    }
+  })();
+
   function computeGeometry() {
     const marginPx = Math.round((state.margin / 100) * CANVAS);
     const usableTop = marginPx;
@@ -208,9 +227,20 @@
   }
 
   function bindHeadInput(input, valEl, key, format) {
+    if (!input) {
+      console.error('[main.js] bindHeadInput: input is null для ключа', key);
+      return;
+    }
+    if (!valEl) {
+      console.error('[main.js] bindHeadInput: valEl is null для ключа', key);
+      return;
+    }
     input.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
-      if (!window.Head) return;
+      if (!window.Head) {
+        console.error('[main.js] window.Head не найден');
+        return;
+      }
       window.Head.setParams({ [key]: v });
       valEl.textContent = format(v);
       applyState();
