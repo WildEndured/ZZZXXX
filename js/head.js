@@ -1,10 +1,11 @@
-/* js/head.js — Этап 2: круг + подбородок + челюсть */
+/* js/head.js — Этап 2: круг + подбородок + челюсть (новая базовая математика) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
+  // Базовые доли от headH
   const L0_BASE = 0 / 5;
   const L3_BASE = 3 / 5;
   const L4_BASE = 4 / 5;
@@ -14,18 +15,25 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
+  // НОВЫЕ БАЗОВЫЕ ЗНАЧЕНИЯ (то, что было на скриншоте)
+  // Теперь это "0" для пользователя, но внутри модуля мы используем эти константы.
+  const BASE_CHIN_WIDTH = 0.10;
+  const BASE_JAW_ATTACH = 0.50;
+  const BASE_JAW_LENGTH = 0.35;
+
   const params = {
     topShift: 0,
     bottomShift: 0,
     widthMul: 1.0,
     radiusMul: 1.0,
 
-    chinHeightShift: 0,
-    chinWidth: 0.30,
-
-    jawAttach: 0,
-    jawLength: 0.15,
-    jawAngleWidth: 0, // Диапазон в HTML теперь от -0.5 до 0.5
+    // Ползунки теперь означают ОТКЛОНЕНИЕ от базы
+    chinHeightShift: 0, 
+    chinWidthShift: 0,   // 0 = базовая ширина 10%
+    
+    jawAttachShift: 0,   // 0 = базовое крепление 50%
+    jawLengthShift: 0,   // 0 = базовая длина 35%
+    jawAngleWidth: 0,    // 0 = углы строго вертикально
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -72,7 +80,7 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // --- L0 / L3 ---
+    // --- L0 / L3 (Круг) ---
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -85,7 +93,7 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // --- L4 (подбородок) ---
+    // --- L4 (Подбородок) ---
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -93,8 +101,9 @@
     if (l4 > l4Max) l4 = l4Max;
     if (l4Min > l4Max) l4 = (l3 + bottomY) / 2;
 
-    let chinHalf = (params.chinWidth * headH) / 2;
-    // Даем подбородку больше свободы, ограничивая только общей шириной головы
+    // Ширина подбородка: база 10% + отклонение
+    const actualChinWidth = clamp(BASE_CHIN_WIDTH + params.chinWidthShift, 0.05, 0.80);
+    let chinHalf = (actualChinWidth * headH) / 2;
     const chinHalfMax = Math.max(rx * 1.5, headH * 0.05);
     if (chinHalf > chinHalfMax) chinHalf = chinHalfMax;
 
@@ -102,24 +111,22 @@
     const chinRightX = cx + chinHalf;
 
     // --- ЧЕЛЮСТЬ ---
-    // 1. Точка крепления на эллипсе
-    const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
+    // Крепление: база 50% + отклонение
+    const actualAttach = clamp(BASE_JAW_ATTACH + params.jawAttachShift, 0.0, 0.98);
+    const attachRatio = actualAttach;
     const baseTheta = Math.asin(attachRatio); 
     const THETA_LIM = Math.asin(0.98);
 
-    // 2. Угол челюсти
-    // Используем jawAngleWidth для горизонтального расширения угла.
-    // При 0 — угол строго под точкой крепления.
-    // При > 0 — угол уходит наружу (к краю круга).
-    // При < 0 — угол уходит внутрь (к центру).
+    // Ширина углов: база 0 + отклонение
     const angleDX = params.jawAngleWidth * rx; 
 
+    // Длина: база 35% + отклонение
+    const actualJawLength = clamp(BASE_JAW_LENGTH + params.jawLengthShift, 0.05, 0.60);
     const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
-    const jawLen = Math.min(params.jawLength, maxJawLen);
+    const jawLen = Math.min(actualJawLength, maxJawLen);
     const jawDY = jawLen * headH;
 
     function getJawSide(sign) {
-      // sign = 1 для правой, -1 для левой
       const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
       
       // Точка крепления
