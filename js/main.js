@@ -16,6 +16,7 @@
       naturalHeight: 0,
     },
     head: null,
+    torso: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -51,6 +52,15 @@
     headJawAngleWidth: $('headJawAngleWidth'),
     headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
+    torsoChestWidth: $('torsoChestWidth'),
+    torsoChestWidthVal: $('torsoChestWidthVal'),
+    torsoChestHeight: $('torsoChestHeight'),
+    torsoChestHeightVal: $('torsoChestHeightVal'),
+    torsoChestTopTaper: $('torsoChestTopTaper'),
+    torsoChestTopTaperVal: $('torsoChestTopTaperVal'),
+    torsoChestBottomExpand: $('torsoChestBottomExpand'),
+    torsoChestBottomExpandVal: $('torsoChestBottomExpandVal'),
+
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
     opacityVal: $('opacityVal'),
@@ -84,7 +94,7 @@
       heads: state.heads,
       centerX: CANVAS / 2,
       topY: usableTop,
-      torsoHeight: headHeight * 1.8,
+      torsoHeight: headHeight * 1.8, // (Оставляем для обратной совместимости, если где-то используется)
       torsoWidth: headHeight * 1.4,
       shoulderY: usableTop + headHeight,
       hipY: usableTop + headHeight + headHeight * 1.8,
@@ -207,12 +217,40 @@
     dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
   }
 
+  function syncTorsoUIFromParams() {
+    if (!window.Torso) return;
+    const p = window.Torso.getParams();
+
+    dom.torsoChestWidth.value = p.chestWidth;
+    dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
+
+    dom.torsoChestHeight.value = p.chestHeight;
+    dom.torsoChestHeightVal.textContent = Math.round(p.chestHeight * 100);
+
+    dom.torsoChestTopTaper.value = p.chestTopTaper;
+    dom.torsoChestTopTaperVal.textContent = Math.round(p.chestTopTaper * 100);
+
+    dom.torsoChestBottomExpand.value = p.chestBottomExpand;
+    dom.torsoChestBottomExpandVal.textContent = Math.round(p.chestBottomExpand * 100);
+  }
+
   function bindHeadInput(input, valEl, key, format) {
     if (!input || !valEl) return;
     input.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
       if (!window.Head) return;
       window.Head.setParams({ [key]: v });
+      valEl.textContent = format(v);
+      applyState();
+    });
+  }
+
+  function bindTorsoInput(input, valEl, key, format) {
+    if (!input || !valEl) return;
+    input.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!window.Torso) return;
+      window.Torso.setParams({ [key]: v });
       valEl.textContent = format(v);
       applyState();
     });
@@ -227,6 +265,11 @@
   bindHeadInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmtSignedPercent);
   bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
   bindHeadInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent);
+
+  bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoChestHeight, dom.torsoChestHeightVal, 'chestHeight', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoChestTopTaper, dom.torsoChestTopTaperVal, 'chestTopTaper', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoChestBottomExpand, dom.torsoChestBottomExpandVal, 'chestBottomExpand', (v) => Math.round(v * 100));
 
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
@@ -299,6 +342,7 @@
       heads: state.heads,
       margin: state.margin,
       head: window.Head ? window.Head.getParams() : null,
+      torso: window.Torso ? window.Torso.getParams() : null,
     };
   }
 
@@ -322,6 +366,16 @@
         window.Head.resetParams();
       }
       syncHeadUIFromParams();
+    }
+
+    if (window.Torso) {
+      if (snap.torso && typeof snap.torso === 'object') {
+        window.Torso.resetParams();
+        window.Torso.setParams(snap.torso);
+      } else {
+        window.Torso.resetParams();
+      }
+      syncTorsoUIFromParams();
     }
 
     applyState();
@@ -439,6 +493,7 @@
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
 
     syncHeadUIFromParams();
+    syncTorsoUIFromParams();
 
     renderPresets();
     applyState();
