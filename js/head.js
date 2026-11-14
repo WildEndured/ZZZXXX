@@ -14,25 +14,20 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
-  // Коэффициент пересчёта jawAngleWidth → Δθ (рад/ед.)
-  // Подобран так, чтобы jawAngleWidth = 0.15 давало ~40° смещения по дуге.
   const JAW_ANGLE_TO_THETA = 4.6;
 
   const params = {
-    // Круг
     topShift: 0,
     bottomShift: 0,
     widthMul: 1.0,
     radiusMul: 1.0,
 
-    // Подбородок
     chinHeightShift: 0,
     chinWidth: 0.30,
 
-    // Челюсть
-    jawAttach: 0,        // −0.5 … +0.5 (доля ry)
-    jawLength: 0.15,     // 0.05 … 0.35 (доля headH)
-    jawAngleWidth: 0,    // −0.15 … +0.15 (доля headH)
+    jawAttach: 0,
+    jawLength: 0.15,
+    jawAngleWidth: 0,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -79,7 +74,6 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // --- L0 / L3 ---
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -92,7 +86,6 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // --- L4 (подбородок) ---
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -107,39 +100,20 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // --- Челюсть ---
-    // Базовый θ на эллипсе от jawAttach.
-    // θ = 0 — правая боковая точка, θ = π — левая. sin(θ) = jawAttach.
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
-
-    // Δθ от jawAngleWidth: сдвигает точку крепления по дуге.
-    // Знак: + уводит точку вниз по правой дуге (и вниз по левой).
     const dTheta = params.jawAngleWidth * JAW_ANGLE_TO_THETA;
-
-    // Правый угол крепления: θ_right = asin(attachRatio) + dTheta
-    // Левый: θ_left = π - (asin(attachRatio) + dTheta)
     const baseTheta = Math.asin(attachRatio);
-    let thetaR = baseTheta + dTheta;
-    let thetaL = Math.PI - (baseTheta + dTheta);
 
-    // Клип θ, чтобы точка не улетела в полюс
-    const THETA_LIM = Math.asin(0.98); // ±~78°
-    // Для правой дуги θ в диапазоне [-π/2 + eps, π/2 - eps] в первой половине
-    // (реально используем диапазон около 0)
+    const THETA_LIM = Math.asin(0.98);
+    let thetaR = baseTheta + dTheta;
     thetaR = clamp(thetaR, -THETA_LIM, THETA_LIM);
-    // Для левой: приводим к диапазону [π - THETA_LIM, π + THETA_LIM]? 
-    // θ_left = π - (baseTheta + dTheta), значит sin тот же, cos меняет знак.
-    // Достаточно клипнуть baseTheta+dTheta, уже сделано через thetaR.
-    thetaL = Math.PI - thetaR;
+    const thetaL = Math.PI - thetaR;
 
     const attachRightX = cx + rx * Math.cos(thetaR);
     const attachRightY = cy + ry * Math.sin(thetaR);
     const attachLeftX = cx + rx * Math.cos(thetaL);
     const attachLeftY = cy + ry * Math.sin(thetaL);
 
-    // Угол челюсти: смещение по X на jawAngleWidth * headH от точки крепления,
-    // плюс спуск на jawLength * headH по Y.
-    // Длину клипуем так, чтобы угол не оказался ниже подбородка.
     const maxJawLen = Math.max(0, (l4 - attachRightY) / headH - 0.02);
     const jawLen = Math.min(params.jawLength, maxJawLen);
 
@@ -147,7 +121,6 @@
 
     let angleRightX = attachRightX + angleDX;
     let angleLeftX = attachLeftX - angleDX;
-    // Клип по силуэту головы
     const angleLimit = rx * 1.05;
     angleRightX = clamp(angleRightX, cx - angleLimit, cx + angleLimit);
     angleLeftX = clamp(angleLeftX, cx - angleLimit, cx + angleLimit);
@@ -155,24 +128,19 @@
     const angleRightY = attachRightY + jawLen * headH;
     const angleLeftY = attachLeftY + jawLen * headH;
 
-    // Точки подбородка для диагонали
-    const chinRightPoint = { x: chinRightX, y: l4 };
-    const chinLeftPoint = { x: chinLeftX, y: l4 };
-
     return {
       headH, topY, bottomY, cx,
       l0, l3, l4,
       cy, rx, ry,
       chinY: l4,
       chinLeftX, chinRightX,
-
       jaw: {
         attachRight: { x: attachRightX, y: attachRightY },
         attachLeft: { x: attachLeftX, y: attachLeftY },
         angleRight: { x: angleRightX, y: angleRightY },
         angleLeft: { x: angleLeftX, y: angleLeftY },
-        chinRight: chinRightPoint,
-        chinLeft: chinLeftPoint,
+        chinRight: { x: chinRightX, y: l4 },
+        chinLeft: { x: chinLeftX, y: l4 },
       },
     };
   }
@@ -210,7 +178,6 @@
       grid.appendChild(t);
     }
 
-    // Осевая
     grid.appendChild(svgEl('line', {
       x1: h.cx, x2: h.cx,
       y1: h.topY, y2: h.bottomY,
@@ -218,7 +185,6 @@
       'stroke-dasharray': '8 12',
     }));
 
-    // Маркеры точек крепления и углов челюсти
     const mR = h.headH * 0.012;
     const points = [
       { p: h.jaw.attachRight, color: '#2563eb' },
@@ -238,26 +204,23 @@
     const { headGroup } = els;
     clear(headGroup);
 
-    // Круг
     headGroup.appendChild(svgEl('ellipse', {
       cx: h.cx, cy: h.cy, rx: h.rx, ry: h.ry, fill: 'none',
     }));
 
-    // Подбородок
     headGroup.appendChild(svgEl('line', {
       x1: h.chinLeftX, y1: h.chinY,
       x2: h.chinRightX, y2: h.chinY,
       fill: 'none',
     }));
 
-    // Челюсть, правая половина
     const r = h.jaw;
+
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`,
       fill: 'none',
     }));
 
-    // Челюсть, левая половина
     headGroup.appendChild(svgEl('polyline', {
       points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`,
       fill: 'none',
