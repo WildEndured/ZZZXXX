@@ -1,16 +1,15 @@
-/* js/torso.js — Этап 2: торс (грудная клетка + таз) */
+/* js/torso.js — Этап 2: торс (грудная клетка) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Параметры по умолчанию (только для грудной клетки)
   const params = {
-    chestWidth: 1.0,        // 0.5 … 1.5
-    chestHeight: 1.0,       // 0.5 … 1.5
-    chestTopTaper: 0.6,     // 0.1 … 0.9
-    chestBottomExpand: 1.0, // 0.8 … 1.5
+    chestWidth: 1.0,        // 0.5 … 1.5 (общая ширина)
+    chestHeight: 1.0,       // 0.5 … 1.5 (высота)
+    chestTopTaper: 0.4,     // 0.1 … 0.9 (насколько узкий верх, 0.4 = умеренно)
+    chestBottomExpand: 1.0, // 0.8 … 1.5 (насколько широкий низ)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -52,24 +51,28 @@
     const cx = geo.centerX;
     
     // Область торса: от L5 до L10 (высота ровно одна голова)
-    const topY = geo.topY + headH; // L5
-    const torsoH = headH;          // от L5 до L10
+    const topY = geo.topY + headH; 
+    const baseTorsoH = headH;      
+    const torsoH = baseTorsoH * params.chestHeight;
     
-    // Базовая ширина яйца (в процентах от высоты головы)
+    // Базовая ширина (радиус по X)
     const baseRx = headH * 0.35;
     const rx = baseRx * params.chestWidth;
 
-    // Параметры формы яйца
-    const topHalfWidth = rx * (1 - params.chestTopTaper);
+    // Ширина в самой широкой части (чуть ниже середины)
     const bottomHalfWidth = rx * params.chestBottomExpand;
-    const actualH = torsoH * params.chestHeight;
     
-    const cy = topY + actualH / 2;
-    const bottomY = topY + actualH;
+    // Ширина верхней части (где шея)
+    const topHalfWidth = bottomHalfWidth * (1 - params.chestTopTaper);
+    
+    const bottomY = topY + torsoH;
+    
+    // Центр для кривых Безье (смещен вниз, чтобы яйцо было тяжелее к низу)
+    const cy = topY + torsoH * 0.6;
 
     return {
-      cx, topY, bottomY, actualH, cy,
-      topHalfWidth, bottomHalfWidth, rx,
+      cx, topY, bottomY, torsoH, cy,
+      topHalfWidth, bottomHalfWidth,
     };
   }
 
@@ -77,33 +80,43 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    const { cx, topY, bottomY, actualH, cy, topHalfWidth, bottomHalfWidth } = t;
+    const { cx, topY, bottomY, torsoH, topHalfWidth, bottomHalfWidth } = t;
 
-    // 1. Грудная клетка (яйцо)
-    // Управляющие точки для правой половины
-    const cp1x = cx + topHalfWidth * 0.8;
-    const cp1y = topY + actualH * 0.1;
-    const cp2x = cx + bottomHalfWidth;
-    const cp2y = cy - actualH * 0.05;
+    // Формируем идеальное "яйцо":
+    // 1. Верхняя дуга (полуэллипс от левого верха до правого верха)
+    // 2. Правая сторона (плавно расширяется к низу)
+    // 3. Нижняя дуга (плоская)
+    // 4. Левая сторона (плавно сужается к верху)
     
-    const cp3x = cx + bottomHalfWidth;
-    const cp3y = cy + actualH * 0.05;
-    const cp4x = cx + bottomHalfWidth * 0.5;
-    const cp4y = bottomY - actualH * 0.1;
-
-    const cp4Lx = cx - bottomHalfWidth * 0.5;
-    const cp3Lx = cx - bottomHalfWidth;
-    const cp2Lx = cx - bottomHalfWidth;
-    const cp1Lx = cx - topHalfWidth * 0.8;
-
-    const d = `
-      M ${cx},${topY}
-      C ${cp1x},${cp1y} ${cp2x},${cp2y} ${cx + bottomHalfWidth},${cy}
-      C ${cp3x},${cp3y} ${cp4x},${cp4y} ${cx},${bottomY}
-      C ${cp4Lx},${cp4y} ${cp3Lx},${cp3y} ${cx - bottomHalfWidth},${cy}
-      C ${cp2Lx},${cp2y} ${cp1Lx},${cp1y} ${cx},${topY}
-      Z
+    // Коэффициент для контрольных точек Безье
+    const k = 0.552; 
+    
+    // Верхняя дуга (эллипс)
+    const topRy = torsoH * 0.35; // Высота верхней скругленной части
+    const dTop = `
+      M ${cx - topHalfWidth}, ${topY + topRy}
+      C ${cx - topHalfWidth}, ${topY + topRy - topRy * k}, ${cx - topHalfWidth * k}, ${topY}, ${cx}, ${topY}
+      C ${cx + topHalfWidth * k}, ${topY}, ${cx + topHalfWidth}, ${topY + topRy - topRy * k}, ${cx + topHalfWidth}, ${topY + topRy}
     `;
+
+    // Правая сторона (от верхнего скругления вниз до самой широкой точки)
+    const midY = topY + torsoH * 0.75;
+    const dRight = `
+      C ${cx + topHalfWidth}, ${topY + topRy + (midY - topY - topRy) * 0.5}, ${cx + bottomHalfWidth}, ${midY - (midY - topY - topRy) * 0.5}, ${cx + bottomHalfWidth}, ${midY}
+    `;
+
+    // Нижняя дуга (плоская, соединяет правый и левый низ)
+    // Используем квадратичную кривую для более плоского низа
+    const dBottom = `
+      Q ${cx}, ${bottomY + torsoH * 0.05} ${cx - bottomHalfWidth}, ${midY}
+    `;
+
+    // Левая сторона (зеркально правой)
+    const dLeft = `
+      C ${cx - bottomHalfWidth}, ${midY - (midY - topY - topRy) * 0.5}, ${cx - topHalfWidth}, ${topY + topRy + (midY - topY - topRy) * 0.5}, ${cx - topHalfWidth}, ${topY + topRy}
+    `;
+
+    const d = dTop + dRight + dBottom + dLeft + ' Z';
 
     torsoGroup.appendChild(svgEl('path', {
       d: d,
