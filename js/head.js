@@ -19,6 +19,12 @@
     { group: 'Подбородок',
       key: 'chinYOffset',  label: 'Высота подбородка',  min: -0.4, max: 0.4, step: 0.01, def: 0 },
     { key: 'chinWidth',    label: 'Ширина подбородка',  min: 0,    max: 1.0, step: 0.01, def: 0.55 },
+
+    // --- Челюсть ---
+    { group: 'Челюсть',
+      key: 'jawAttachY',   label: 'Высота крепления',   min: 0,    max: 1.0, step: 0.01, def: 0 },
+    { key: 'jawLength',    label: 'Длина челюсти',      min: 0,    max: 1.2, step: 0.01, def: 0.4 },
+    { key: 'jawCorner',    label: 'Ширина углов',       min: 0,    max: 0.4, step: 0.01, def: 0.15 },
   ];
 
   const LINE_PARAM = { key: 'line', label: 'Толщина линии', min: 0.001, max: 0.05, step: 0.001, def: 0.012 };
@@ -51,7 +57,7 @@
 
     cell: { top: 0, bottom: 0, h: 0, cx: 2048 },
 
-    groups: { grid: null, skull: null, chin: null },
+    groups: { grid: null, skull: null, chin: null, jaw: null },
 
     init(container) {
       container.innerHTML = '';
@@ -65,8 +71,12 @@
       this.groups.chin = document.createElementNS(NS, 'g');
       this.groups.chin.setAttribute('data-part', 'head-chin');
 
+      this.groups.jaw = document.createElementNS(NS, 'g');
+      this.groups.jaw.setAttribute('data-part', 'head-jaw');
+
       container.appendChild(this.groups.grid);
       container.appendChild(this.groups.skull);
+      container.appendChild(this.groups.jaw);
       container.appendChild(this.groups.chin);
 
       this.build();
@@ -109,7 +119,7 @@
       };
     },
 
-    // ---- Круг + подбородок ----
+    // ---- Круг + подбородок + челюсть ----
     compute() {
       const { cx } = this.cell;
       const p = this.shape;
@@ -124,21 +134,48 @@
       const rx = ry0 * p.widthMul * p.radiusMul;
       const circle = { cx, cy, rx, ry };
 
-      // Подбородок: линия на уровне L4 + сдвиг.
-      // Ограничение: L3 < chinY < L5.
+      // ---- Подбородок: горизонтальная линия на L4 + сдвиг, L3 < chinY < L5 ----
       const eps = Math.max(1, this.cell.h * 0.002);
       const rawChinY = lv.L4 + p.chinYOffset * lv.step;
       const chinY = Math.min(lv.L5 - eps, Math.max(lv.L3 + eps, rawChinY));
 
-      // Ширина: chinWidth — доля от rx, максимум rx.
       const chinHalf = Math.max(0, Math.min(1, p.chinWidth)) * rx;
       const chinLeft  = { x: cx - chinHalf, y: chinY };
       const chinRight = { x: cx + chinHalf, y: chinY };
+
+      // ---- Челюсть ----
+      // 1) Точка крепления: на боковой границе эллипса.
+      //    jawAttachY ∈ [0, 1]: 0 → экватор (cy), 1 → низ круга (L3).
+      //    Ограничение: не выше cy (середина круга).
+      const attachT = Math.max(0, Math.min(1, p.jawAttachY));
+      const attachY = cy + attachT * ry;
+      const tNorm = Math.max(-0.999, Math.min(0.999, (attachY - cy) / (ry || 1)));
+      const attachDx = rx * Math.sqrt(1 - tNorm * tNorm);
+      const attachLeft  = { x: cx - attachDx, y: attachY };
+      const attachRight = { x: cx + attachDx, y: attachY };
+
+      // 2) Спуск вниз на jawLength * headH.
+      //    Ограничение: конец спуска не ниже chinY.
+      const rawDrop = p.jawLength * this.cell.h;
+      const maxDrop = Math.max(0, chinY - attachY);
+      const dropLen = Math.min(rawDrop, maxDrop);
+      const dropLeft  = { x: attachLeft.x,  y: attachLeft.y  + dropLen };
+      const dropRight = { x: attachRight.x, y: attachRight.y + dropLen };
+
+      // 3) Отвод по X на jawCorner * headH.
+      const cornerDx = Math.max(0, p.jawCorner) * this.cell.h;
+      const cornerLeft  = { x: dropLeft.x  - cornerDx, y: dropLeft.y  };
+      const cornerRight = { x: dropRight.x + cornerDx, y: dropRight.y };
 
       return {
         levels: lv,
         circle,
         chin: { chinY, chinHalf, chinLeft, chinRight },
+        jaw: {
+          attachLeft, attachRight,
+          dropLeft, dropRight,
+          cornerLeft, cornerRight,
+        },
       };
     },
 
@@ -174,6 +211,25 @@
       this.groups.skull.appendChild(circle);
       this.groups.skull.setAttribute('stroke-width', String(strokePx));
       this.groups.skull.setAttribute('fill', 'none');
+
+      // Челюсть
+      this.groups.jaw.innerHTML = '';
+      const jaw = document.createElementNS(NS, 'path');
+      const d = [
+        `M ${g.jaw.attachLeft.x} ${g.jaw.attachLeft.y}`,
+        `L ${g.jaw.dropLeft.x} ${g.jaw.dropLeft.y}`,
+        `L ${g.jaw.cornerLeft.x} ${g.jaw.cornerLeft.y}`,
+        `L ${g.chin.chinLeft.x} ${g.chin.chinLeft.y}`,
+        `M ${g.jaw.attachRight.x} ${g.jaw.attachRight.y}`,
+        `L ${g.jaw.dropRight.x} ${g.jaw.dropRight.y}`,
+        `L ${g.jaw.cornerRight.x} ${g.jaw.cornerRight.y}`,
+        `L ${g.chin.chinRight.x} ${g.chin.chinRight.y}`,
+      ].join(' ');
+      jaw.setAttribute('d', d);
+      jaw.setAttribute('fill', 'none');
+      this.groups.jaw.appendChild(jaw);
+      this.groups.jaw.setAttribute('stroke-width', String(strokePx));
+      this.groups.jaw.setAttribute('fill', 'none');
 
       // Подбородок
       this.groups.chin.innerHTML = '';
