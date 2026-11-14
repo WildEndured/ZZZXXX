@@ -3,30 +3,24 @@
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // ============================================================
-  //  Параметры головы
-  //  Круг + подбородок + челюсть (по референсу «Голова Лумиса»)
-  // ============================================================
   const HEAD_PARAMS = [
-    // --- Круг (сетка L0..L3) ---
+    // --- Круг ---
     { group: 'Круг',
       key: 'topOffset',    label: 'Верх головы (L0)',  min: -0.4, max: 0.4, step: 0.01, def: 0 },
     { key: 'bottomOffset', label: 'Низ головы (L3)',   min: -0.4, max: 0.4, step: 0.01, def: 0 },
     { key: 'widthMul',     label: 'Ширина головы',     min: 0.5,  max: 2.0, step: 0.01, def: 1.0 },
     { key: 'radiusMul',    label: 'Радиус головы',     min: 0.5,  max: 2.0, step: 0.01, def: 1.0 },
 
-    // --- Подбородок (L4) ---
+    // --- Подбородок ---
     { group: 'Подбородок',
       key: 'chinYOffset',  label: 'Высота подбородка',  min: -0.4, max: 0.4, step: 0.01, def: 0 },
-    { key: 'chinWidth',    label: 'Ширина подбородка',  min: 0,    max: 1.0, step: 0.01, def: 0.22 },
-    { key: 'chinRound',    label: 'Скругление подбородка', min: 0, max: 1.0, step: 0.01, def: 0.5 },
+    { key: 'chinWidth',    label: 'Ширина подбородка',  min: 0,    max: 1.0, step: 0.01, def: 0.55 },
 
-    // --- Челюсть (как в референсе) ---
+    // --- Челюсть ---
     { group: 'Челюсть',
-      key: 'jaw_start',    label: 'Ⓐ Начало челюсти',  min: -60, max: 60, step: 1, def: 0, unit: '°' },
-    { key: 'jaw_len',      label: '⑦ Длина челюсти',   min: 0,   max: 1.2, step: 0.01, def: 0.4 },
-    { key: 'jaw_tilt',     label: '⑦ Наклон челюсти',  min: -40, max: 70, step: 1, def: 10, unit: '°' },
-    { key: 'jaw_x',        label: 'Ⓑ Ширина скулы',    min: 0.2, max: 0.95, step: 0.01, def: 0.62 },
+      key: 'jawAttachY',   label: 'Высота крепления',   min: 0,    max: 1.0, step: 0.01, def: 0 },
+    { key: 'jawLength',    label: 'Длина челюсти',      min: 0,    max: 1.0, step: 0.01, def: 0.4 },
+    { key: 'jawCorner',    label: 'Ширина челюсти',     min: 0,    max: 1.0, step: 0.01, def: 0.15 },
   ];
 
   const LINE_PARAM = { key: 'line', label: 'Толщина линии', min: 0.001, max: 0.05, step: 0.001, def: 0.012 };
@@ -47,11 +41,6 @@
     return s;
   }
 
-  const rad = (d) => (d * Math.PI) / 180;
-
-  // ============================================================
-  //  Модуль головы
-  // ============================================================
   const Head = {
     name: 'head',
     PARAMS: HEAD_PARAMS,
@@ -72,14 +61,14 @@
       this.groups.grid = document.createElementNS(NS, 'g');
       this.groups.grid.setAttribute('data-part', 'head-grid');
 
+      this.groups.skull = document.createElementNS(NS, 'g');
+      this.groups.skull.setAttribute('data-part', 'head-skull');
+
       this.groups.jaw = document.createElementNS(NS, 'g');
       this.groups.jaw.setAttribute('data-part', 'head-jaw');
 
       this.groups.chin = document.createElementNS(NS, 'g');
       this.groups.chin.setAttribute('data-part', 'head-chin');
-
-      this.groups.skull = document.createElementNS(NS, 'g');
-      this.groups.skull.setAttribute('data-part', 'head-skull');
 
       container.appendChild(this.groups.grid);
       container.appendChild(this.groups.skull);
@@ -108,11 +97,11 @@
       this.build();
     },
 
-    // ---- Уровни L0..L5 ----
     levels() {
       const { top, h } = this.cell;
       const p = this.shape;
       const step = h / 5;
+
       return {
         L0: top + 0 * step + p.topOffset * step,
         L1: top + 1 * step,
@@ -125,13 +114,12 @@
       };
     },
 
-    // ---- Круг + подбородок + челюсть ----
     compute() {
       const { cx } = this.cell;
       const p = this.shape;
       const lv = this.levels();
 
-      // Круг: L0..L3
+      // --- Круг: L0..L3 ---
       const circleTop = lv.L0;
       const circleBottom = lv.L3;
       const cy = (circleTop + circleBottom) / 2;
@@ -140,7 +128,7 @@
       const rx = ry0 * p.widthMul * p.radiusMul;
       const circle = { cx, cy, rx, ry };
 
-      // Подбородок на L4 (с клампом в (L3, L5))
+      // --- Подбородок: на уровне L4 + сдвиг ---
       const eps = Math.max(1, this.cell.h * 0.002);
       const rawChinY = lv.L4 + p.chinYOffset * lv.step;
       const chinY = Math.min(lv.L5 - eps, Math.max(lv.L3 + eps, rawChinY));
@@ -148,101 +136,58 @@
       const chinLeft  = { x: cx - chinHalf, y: chinY };
       const chinRight = { x: cx + chinHalf, y: chinY };
 
-      // =====================================================
-      //  Челюсть — по логике референса
-      // =====================================================
-      // Ⓐ — точка на боковой границе круга.
-      //     jaw_start = 0 → экватор (cx ± rx, cy).
-      //     jaw_start > 0 → выше (ближе к макушке).
-      //     jaw_start < 0 → ниже (ближе к L3).
-      //     Поворот по эллипсу: (rx·cos θ, ry·sin θ), где θ = jaw_start°.
-      const jStart = rad(p.jaw_start);
-      const A_dx = rx * Math.cos(jStart);
-      const A_dy = ry * Math.sin(jStart);
-      const A_left  = { x: cx - A_dx, y: cy - A_dy }; // минус: экран Y растёт вниз
-      const A_right = { x: cx + A_dx, y: cy - A_dy };
+      // --- Челюсть ---
+      // 1) Точка на круге (Высота крепления: от середины cy до низа L3)
+      const attachMinY = cy;
+      const attachMaxY = lv.L3;
+      const attachY = attachMinY + Math.max(0, Math.min(1, p.jawAttachY)) * (attachMaxY - attachMinY);
 
-      // Ⓑ — от Ⓐ вниз на jaw_len·H с наклоном jaw_tilt
-      //     от вертикали вниз (положительный → к центру, отрицательный → наружу)
-      const jLen = p.jaw_len * this.cell.h;
-      const tilt = rad(p.jaw_tilt);
-      const B_dy = jLen * Math.cos(tilt);   // вертикальная составляющая
-      const B_dx = jLen * Math.sin(tilt);   // горизонтальная составляющая
+      // Находим X на эллипсе
+      const tRaw = ry > 0 ? (attachY - cy) / ry : 0;
+      const t = Math.max(-1, Math.min(1, tRaw));
+      const attachDx = rx * Math.sqrt(Math.max(0, 1 - t * t));
+      const attachLeft  = { x: cx - attachDx, y: attachY };
+      const attachRight = { x: cx + attachDx, y: attachY };
 
-      // Ⓑ приводим к jaw_x·rx по X — параметр «Ширина скулы».
-      // Если наклон отклоняет слишком далеко, клампим B в коридор по X.
-      const B_half = Math.max(0, Math.min(1, p.jaw_x)) * rx;
+      // 2) Линия вниз (Длина челюсти): от точки крепления до Y, но не ниже подбородка
+      const dropLen = Math.max(0, Math.min(1, p.jawLength)) * this.cell.h;
+      const dropY = Math.min(chinY, attachY + dropLen);
+      const dropLeft  = { x: attachLeft.x,  y: dropY };
+      const dropRight = { x: attachRight.x, y: dropY };
 
-      const B_left_base  = { x: A_left.x  + B_dx, y: A_left.y  + B_dy };
-      const B_right_base = { x: A_right.x - B_dx, y: A_right.y + B_dy };
+      // 3) Ширина углов (Ширина челюсти): насколько широко челюсть расходится вниз.
+      //    Отвод по X от линии спуска, не выходя за пределы круга (rx).
+      const cornerDelta = Math.max(0, Math.min(1, p.jawCorner)) * rx;
+      
+      // Точка излома (угол челюсти)
+      const cornerLeft = { 
+        x: Math.max(cx - rx, dropLeft.x - cornerDelta), 
+        y: dropY 
+      };
+      const cornerRight = { 
+        x: Math.min(cx + rx, dropRight.x + cornerDelta), 
+        y: dropY 
+      };
 
-      // Клампим B по X: не выходим за пределы jaw_x·rx от центра
-      const B_left  = { x: Math.min(cx - B_half, Math.max(cx - rx, B_left_base.x)),  y: B_left_base.y  };
-      const B_right = { x: Math.max(cx + B_half, Math.min(cx + rx, B_right_base.x)), y: B_right_base.y };
-
-      // Не ниже подбородка
-      const dropY = Math.min(chinY, B_left.y);
-      B_left.y  = dropY;
-      B_right.y = dropY;
-
+      // 4) Линии к подбородку (от углов к краям подбородка)
       return {
         levels: lv,
         circle,
         chin: { chinY, chinHalf, chinLeft, chinRight },
         jaw: {
-          A_left, A_right,
-          B_left, B_right,
-          chinLeft, chinRight,
-          round: p.chinRound,
+          attachLeft, attachRight,
+          cornerLeft, cornerRight, // углы
+          chinLeft, chinRight      // концы подбородка
         },
       };
     },
 
-    // ---- Скруглённая линия A → B → C ----
-    // (с упрощённым сглаживанием стыка B→C через round)
-    buildJawSidePath(side) {
-      // side = 1 (правая), -1 (левая)
-      const isRight = side > 0;
-      const A = isRight ? this._g.jaw.A_right : this._g.jaw.A_left;
-      const B = isRight ? this._g.jaw.B_right : this._g.jaw.B_left;
-      const C = isRight ? this._g.jaw.chinRight : this._g.jaw.chinLeft;
-
-      // Длины сегментов
-      const dAB = Math.hypot(B.x - A.x, B.y - A.y) || 1;
-      const dBC = Math.hypot(C.x - B.x, C.y - B.y) || 1;
-
-      // Радиус скругления в стыке B (зависит от chinRound)
-      const r = this._g.jaw.round * this.cell.h * 0.06;
-      const tB1 = Math.min(r / dAB, 0.45);
-      const tB2 = Math.min(r / dBC, 0.45);
-
-      // Точки «входа» и «выхода» скругления у B
-      const B_in = {
-        x: B.x + (A.x - B.x) * tB1,
-        y: B.y + (A.y - B.y) * tB1,
-      };
-      const B_out = {
-        x: B.x + (C.x - B.x) * tB2,
-        y: B.y + (C.y - B.y) * tB2,
-      };
-
-      // Сборка: A → B_in → Q(B) → B_out → C
-      return [
-        `M ${A.x} ${A.y}`,
-        `L ${B_in.x} ${B_in.y}`,
-        `Q ${B.x} ${B.y} ${B_out.x} ${B_out.y}`,
-        `L ${C.x} ${C.y}`,
-      ].join(' ');
-    },
-
-    // ---- Отрисовка ----
     build() {
       if (!this.groups.skull) return;
       const g = this.compute();
-      this._g = g;
       const strokePx = Math.max(0.5, this.line * this.cell.h);
 
-      // Сетка L0..L5 (служебная, в экспорт не идёт)
+      // Сетка L0..L5
       this.groups.grid.innerHTML = '';
       this.groups.grid.setAttribute('stroke', '#b8bfcc');
       this.groups.grid.setAttribute('stroke-width', '2');
@@ -269,17 +214,28 @@
       this.groups.skull.setAttribute('stroke-width', String(strokePx));
       this.groups.skull.setAttribute('fill', 'none');
 
-      // Челюсть: две симметричные половины A → B → C
+      // Челюсть
       this.groups.jaw.innerHTML = '';
+      const j = g.jaw;
       const jawPath = document.createElementNS(NS, 'path');
-      const d = this.buildJawSidePath(1) + ' ' + this.buildJawSidePath(-1);
+      
+      // Линия идет: от круга -> вниз -> расширение (угол) -> к подбородку
+      const d = [
+        `M ${j.attachLeft.x} ${j.attachLeft.y}`,
+        `L ${j.cornerLeft.x} ${j.cornerLeft.y}`,
+        `L ${j.chinLeft.x} ${j.chinLeft.y}`,
+        `M ${j.attachRight.x} ${j.attachRight.y}`,
+        `L ${j.cornerRight.x} ${j.cornerRight.y}`,
+        `L ${j.chinRight.x} ${j.chinRight.y}`,
+      ].join(' ');
+      
       jawPath.setAttribute('d', d);
       jawPath.setAttribute('fill', 'none');
       this.groups.jaw.appendChild(jawPath);
       this.groups.jaw.setAttribute('stroke-width', String(strokePx));
       this.groups.jaw.setAttribute('fill', 'none');
 
-      // Подбородок — горизонтальная линия на L4
+      // Подбородок
       this.groups.chin.innerHTML = '';
       const chin = document.createElementNS(NS, 'line');
       chin.setAttribute('x1', g.chin.chinLeft.x);
