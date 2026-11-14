@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Фигура — Этап 2</title>
+  <title>Фигура — Этап 1</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
-    <!-- Холст -->
     <main class="stage" id="stage">
       <div class="canvas-wrap" id="canvasWrap">
         <svg id="svg" xmlns="http://www.w3.org/2000/svg"
@@ -16,12 +15,13 @@
              viewBox="0 0 4096 4096"
              preserveAspectRatio="xMidYMid meet">
           <defs>
-            <pattern id="gridPattern" width="256" height="256" patternUnits="userSpaceOnUse">
-              <path d="M 256 0 L 0 0 0 256" fill="none" stroke="#d0d0d0" stroke-width="2" />
+            <pattern id="gridPattern" width="256" height="256"
+                     patternUnits="userSpaceOnUse">
+              <path d="M 256 0 L 0 0 0 256" fill="none"
+                    stroke="#d0d0d0" stroke-width="2" />
             </pattern>
           </defs>
 
-          <!-- Подложка (в экспорт не попадает) -->
           <g id="underlayLayer" class="no-export">
             <image id="underlayImage" href="" x="0" y="0"
                    width="4096" height="4096"
@@ -29,16 +29,13 @@
                    opacity="0.5" style="display:none;" />
           </g>
 
-          <!-- Сетка (в экспорт не попадает) -->
           <g id="gridLayer" class="no-export">
             <rect id="gridRect" x="0" y="0" width="4096" height="4096"
                   fill="url(#gridPattern)" opacity="0.6" />
           </g>
 
-          <!-- Линии деления на головы -->
           <g id="headsLayer" class="no-export"></g>
 
-          <!-- Слой фигуры -->
           <g id="figureLayer" stroke="#000000" stroke-width="6"
              fill="none" stroke-linecap="round" stroke-linejoin="round">
             <g id="headGroup"></g>
@@ -52,7 +49,6 @@
       </div>
     </main>
 
-    <!-- Панель управления -->
     <aside class="panel" id="panel">
       <div class="panel-inner">
 
@@ -66,17 +62,6 @@
             <span>Отступ сверху/снизу: <b id="marginVal">0</b>%</span>
             <input type="range" id="marginRange" min="0" max="10" step="1" value="0" />
           </label>
-        </section>
-
-        <section class="block">
-          <h2>Форма</h2>
-          <p class="note">Двойной клик по строке или долгое нажатие на ползунке — сброс.</p>
-          <div class="sliders" id="headSliders"></div>
-        </section>
-
-        <section class="block">
-          <h2>Отображение</h2>
-          <div class="sliders" id="lineSliders"></div>
         </section>
 
         <section class="block">
