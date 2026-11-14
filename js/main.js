@@ -15,6 +15,9 @@
       naturalWidth: 0,
       naturalHeight: 0,
     },
+    // Параметры головы хранит сам модуль Head; здесь — только зеркало
+    // для снапшотов и восстановления слайдеров.
+    head: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -30,6 +33,20 @@
     headsVal: $('headsVal'),
     marginRange: $('marginRange'),
     marginVal: $('marginVal'),
+
+    // Голова
+    headTopShift: $('headTopShift'),
+    headTopShiftVal: $('headTopShiftVal'),
+    headBottomShift: $('headBottomShift'),
+    headBottomShiftVal: $('headBottomShiftVal'),
+    headWidthMul: $('headWidthMul'),
+    headWidthMulVal: $('headWidthMulVal'),
+    headRadiusMul: $('headRadiusMul'),
+    headRadiusMulVal: $('headRadiusMulVal'),
+    headChinShift: $('headChinShift'),
+    headChinShiftVal: $('headChinShiftVal'),
+    headChinWidth: $('headChinWidth'),
+    headChinWidthVal: $('headChinWidthVal'),
 
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
@@ -140,6 +157,8 @@
     dom.removeUnderlay.disabled = false;
   }
 
+  // ---------- Общие ----------
+
   dom.headsRange.addEventListener('input', (e) => {
     state.heads = parseFloat(e.target.value);
     applyState();
@@ -149,6 +168,55 @@
     state.margin = parseInt(e.target.value, 10);
     applyState();
   });
+
+  // ---------- Голова ----------
+
+  function fmtSignedPercent(v) {
+    const p = Math.round(v * 100);
+    return p > 0 ? `+${p}` : String(p);
+  }
+
+  function syncHeadUIFromParams() {
+    if (!window.Head) return;
+    const p = window.Head.getParams();
+
+    dom.headTopShift.value = p.topShift;
+    dom.headTopShiftVal.textContent = fmtSignedPercent(p.topShift);
+
+    dom.headBottomShift.value = p.bottomShift;
+    dom.headBottomShiftVal.textContent = fmtSignedPercent(p.bottomShift);
+
+    dom.headWidthMul.value = p.widthMul;
+    dom.headWidthMulVal.textContent = Math.round(p.widthMul * 100);
+
+    dom.headRadiusMul.value = p.radiusMul;
+    dom.headRadiusMulVal.textContent = Math.round(p.radiusMul * 100);
+
+    dom.headChinShift.value = p.chinHeightShift;
+    dom.headChinShiftVal.textContent = fmtSignedPercent(p.chinHeightShift);
+
+    dom.headChinWidth.value = p.chinWidth;
+    dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
+  }
+
+  function bindHeadInput(input, valEl, key, format) {
+    input.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!window.Head) return;
+      window.Head.setParams({ [key]: v });
+      valEl.textContent = format(v);
+      applyState();
+    });
+  }
+
+  bindHeadInput(dom.headTopShift, dom.headTopShiftVal, 'topShift', fmtSignedPercent);
+  bindHeadInput(dom.headBottomShift, dom.headBottomShiftVal, 'bottomShift', fmtSignedPercent);
+  bindHeadInput(dom.headWidthMul, dom.headWidthMulVal, 'widthMul', (v) => Math.round(v * 100));
+  bindHeadInput(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100));
+  bindHeadInput(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmtSignedPercent);
+  bindHeadInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100));
+
+  // ---------- Подложка ----------
 
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
@@ -197,6 +265,8 @@
     applyState();
   });
 
+  // ---------- Пресеты ----------
+
   function loadPresets() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -220,11 +290,13 @@
     return {
       heads: state.heads,
       margin: state.margin,
+      head: window.Head ? window.Head.getParams() : null,
     };
   }
 
   function applySnapshot(snap) {
     if (!snap) return;
+
     if (typeof snap.heads === 'number') {
       state.heads = snap.heads;
       dom.headsRange.value = snap.heads;
@@ -233,6 +305,19 @@
       state.margin = snap.margin;
       dom.marginRange.value = snap.margin;
     }
+
+    // Голова: если снапшот старый (без head) — сбрасываем на дефолт,
+    // чтобы пресет полностью описывал состояние.
+    if (window.Head) {
+      if (snap.head && typeof snap.head === 'object') {
+        window.Head.resetParams();
+        window.Head.setParams(snap.head);
+      } else {
+        window.Head.resetParams();
+      }
+      syncHeadUIFromParams();
+    }
+
     applyState();
   }
 
@@ -287,6 +372,8 @@
     renderPresets();
   });
 
+  // ---------- Экспорт ----------
+
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
@@ -339,6 +426,8 @@
     img.src = svgUrl;
   });
 
+  // ---------- Инициализация ----------
+
   function init() {
     dom.headsRange.value = state.heads;
     dom.marginRange.value = state.margin;
@@ -346,6 +435,10 @@
     dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
     dom.scaleRange.value = Math.round(state.underlay.scale * 100);
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+
+    // Синхронизируем UI головы с параметрами модуля (дефолты или
+    // значения, которые модуль мог установить до init).
+    syncHeadUIFromParams();
 
     renderPresets();
     applyState();
