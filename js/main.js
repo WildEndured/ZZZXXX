@@ -383,7 +383,7 @@
     const g = clone.querySelector('#gridRect'); if (g) g.remove();
     const h = clone.querySelector('#headsLayer'); if (h) h.remove();
 
-    // Сетка L0..L5 — служебная, в экспорт не идёт
+    // Служебная сетка L0..L5 — в экспорт не идёт
     const headGroupEl = clone.querySelector('#headGroup');
     if (headGroupEl) {
       headGroupEl.querySelectorAll('[data-part="head-grid"]').forEach((el) => el.remove());
