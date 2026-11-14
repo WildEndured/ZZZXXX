@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Фигура — Этап 2.1</title>
+  <title>Фигура — Этап 2</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
+    <!-- Холст -->
     <main class="stage" id="stage">
       <div class="canvas-wrap" id="canvasWrap">
         <svg id="svg" xmlns="http://www.w3.org/2000/svg"
@@ -20,6 +21,7 @@
             </pattern>
           </defs>
 
+          <!-- Подложка (в экспорт не попадает) -->
           <g id="underlayLayer" class="no-export">
             <image id="underlayImage" href="" x="0" y="0"
                    width="4096" height="4096"
@@ -27,13 +29,16 @@
                    opacity="0.5" style="display:none;" />
           </g>
 
+          <!-- Сетка (в экспорт не попадает) -->
           <g id="gridLayer" class="no-export">
             <rect id="gridRect" x="0" y="0" width="4096" height="4096"
                   fill="url(#gridPattern)" opacity="0.6" />
           </g>
 
+          <!-- Линии деления на головы -->
           <g id="headsLayer" class="no-export"></g>
 
+          <!-- Слой фигуры -->
           <g id="figureLayer" stroke="#000000" stroke-width="6"
              fill="none" stroke-linecap="round" stroke-linejoin="round">
             <g id="headGroup"></g>
@@ -47,8 +52,10 @@
       </div>
     </main>
 
+    <!-- Панель управления -->
     <aside class="panel" id="panel">
       <div class="panel-inner">
+
         <section class="block">
           <h2>Общее</h2>
           <label class="row">
@@ -105,6 +112,7 @@
             <button id="exportPng">Экспорт PNG</button>
           </div>
         </section>
+
       </div>
     </aside>
   </div>
