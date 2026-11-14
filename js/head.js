@@ -3,9 +3,6 @@
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // ============================================================
-  //  Параметры головы
-  // ============================================================
   const HEAD_PARAMS = [
     // --- Круг ---
     { group: 'Круг',
@@ -22,9 +19,7 @@
     // --- Челюсть ---
     { group: 'Челюсть',
       key: 'jawAttachY',   label: 'Высота крепления',   min: 0,    max: 1.0, step: 0.01, def: 0 },
-      // 0 = на середине круга, 1 = на самом низу круга (L3)
     { key: 'jawWidth',     label: 'Ширина челюсти',     min: 0,    max: 1.0, step: 0.01, def: 0.3 },
-      // 0 = угол прямо под точкой крепления, 1 = угол максимально широко (до краев круга)
   ];
 
   const LINE_PARAM = { key: 'line', label: 'Толщина линии', min: 0.001, max: 0.05, step: 0.001, def: 0.012 };
@@ -60,6 +55,7 @@
     groups: { grid: null, skull: null, chin: null, jaw: null },
 
     init(container) {
+      if (!container) return;
       container.innerHTML = '';
 
       this.groups.grid = document.createElementNS(NS, 'g');
@@ -101,7 +97,6 @@
       this.build();
     },
 
-    // ---- Уровни L0..L5 ----
     levels() {
       const { top, h } = this.cell;
       const p = this.shape;
@@ -124,7 +119,7 @@
       const p = this.shape;
       const lv = this.levels();
 
-      // --- Круг: L0..L3 ---
+      // Круг
       const circleTop = lv.L0;
       const circleBottom = lv.L3;
       const cy = (circleTop + circleBottom) / 2;
@@ -133,7 +128,7 @@
       const rx = ry0 * p.widthMul * p.radiusMul;
       const circle = { cx, cy, rx, ry };
 
-      // --- Подбородок: на L4 + сдвиг ---
+      // Подбородок
       const eps = Math.max(1, this.cell.h * 0.002);
       const rawChinY = lv.L4 + p.chinYOffset * lv.step;
       const chinY = Math.min(lv.L5 - eps, Math.max(lv.L3 + eps, rawChinY));
@@ -141,14 +136,11 @@
       const chinLeft  = { x: cx - chinHalf, y: chinY };
       const chinRight = { x: cx + chinHalf, y: chinY };
 
-      // --- ЧЕЛЮСТЬ ---
-      
-      // 1) Точка крепления на круге (синяя линия начинается здесь)
-      const attachMinY = cy; // середина круга
-      const attachMaxY = lv.L3; // низ круга
+      // Челюсть
+      const attachMinY = cy;
+      const attachMaxY = lv.L3;
       const attachY = attachMinY + Math.max(0, Math.min(1, p.jawAttachY)) * (attachMaxY - attachMinY);
 
-      // Координаты X на эллипсе для этой Y
       const tRaw = ry > 0 ? (attachY - cy) / ry : 0;
       const t = Math.max(-1, Math.min(1, tRaw));
       const attachDx = rx * Math.sqrt(Math.max(0, 1 - t * t));
@@ -156,13 +148,7 @@
       const attachLeft  = { x: cx - attachDx, y: attachY };
       const attachRight = { x: cx + attachDx, y: attachY };
 
-      // 2) Точка стыка (угол челюсти)
-      // Она находится на уровне низа круга L3
       const cornerY = lv.L3;
-
-      // Насколько широко расходится челюсть. 
-      // jawWidth = 0 -> угол на той же X, что и крепление (прямая линия)
-      // jawWidth = 1 -> угол упирается в край круга по X (максимальная ширина)
       const maxCornerDx = rx;
       const currentCornerDx = attachDx + (maxCornerDx - attachDx) * Math.max(0, Math.min(1, p.jawWidth));
 
@@ -173,11 +159,7 @@
         levels: lv,
         circle,
         chin: { chinY, chinHalf, chinLeft, chinRight },
-        jaw: {
-          attachLeft, attachRight,
-          cornerLeft, cornerRight,
-          chinLeft, chinRight
-        },
+        jaw: { attachLeft, attachRight, cornerLeft, cornerRight, chinLeft, chinRight },
       };
     },
 
@@ -186,19 +168,16 @@
       const g = this.compute();
       const strokePx = Math.max(0.5, this.line * this.cell.h);
 
-      // Сетка L0..L5
+      // Сетка
       this.groups.grid.innerHTML = '';
       this.groups.grid.setAttribute('stroke', '#b8bfcc');
       this.groups.grid.setAttribute('stroke-width', '2');
       this.groups.grid.setAttribute('stroke-dasharray', '18 14');
-      this.groups.grid.setAttribute('fill', 'none');
       for (const key of ['L0', 'L1', 'L2', 'L3', 'L4', 'L5']) {
         const y = g.levels[key];
         const line = document.createElementNS(NS, 'line');
-        line.setAttribute('x1', 0);
-        line.setAttribute('x2', 4096);
-        line.setAttribute('y1', y);
-        line.setAttribute('y2', y);
+        line.setAttribute('x1', 0); line.setAttribute('x2', 4096);
+        line.setAttribute('y1', y); line.setAttribute('y2', y);
         this.groups.grid.appendChild(line);
       }
 
@@ -210,15 +189,13 @@
       circle.setAttribute('rx', g.circle.rx);
       circle.setAttribute('ry', g.circle.ry);
       this.groups.skull.appendChild(circle);
-      this.groups.skull.setAttribute('stroke-width', String(strokePx));
+      this.groups.skull.setAttribute('stroke-width', strokePx);
       this.groups.skull.setAttribute('fill', 'none');
 
       // Челюсть
       this.groups.jaw.innerHTML = '';
       const j = g.jaw;
       const jawPath = document.createElementNS(NS, 'path');
-      
-      // Синяя линия (крепление) -> Угол (стык) -> Желтая линия (к подбородку)
       const d = [
         `M ${j.attachLeft.x} ${j.attachLeft.y}`,
         `L ${j.cornerLeft.x} ${j.cornerLeft.y}`,
@@ -227,14 +204,13 @@
         `L ${j.cornerRight.x} ${j.cornerRight.y}`,
         `L ${j.chinRight.x} ${j.chinRight.y}`,
       ].join(' ');
-      
       jawPath.setAttribute('d', d);
       jawPath.setAttribute('fill', 'none');
       this.groups.jaw.appendChild(jawPath);
-      this.groups.jaw.setAttribute('stroke-width', String(strokePx));
+      this.groups.jaw.setAttribute('stroke-width', strokePx);
       this.groups.jaw.setAttribute('fill', 'none');
 
-      // Подбородок (зеленая линия)
+      // Подбородок
       this.groups.chin.innerHTML = '';
       const chin = document.createElementNS(NS, 'line');
       chin.setAttribute('x1', g.chin.chinLeft.x);
@@ -242,7 +218,7 @@
       chin.setAttribute('x2', g.chin.chinRight.x);
       chin.setAttribute('y2', g.chin.chinRight.y);
       this.groups.chin.appendChild(chin);
-      this.groups.chin.setAttribute('stroke-width', String(strokePx));
+      this.groups.chin.setAttribute('stroke-width', strokePx);
       this.groups.chin.setAttribute('fill', 'none');
     },
   };
