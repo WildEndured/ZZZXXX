@@ -20,12 +20,13 @@
     widthMul: 1.0,
     radiusMul: 1.0,
 
+    // Новые дефолтные значения по скриншоту:
     chinHeightShift: 0,
-    chinWidth: 0.10,       // Обновлено
+    chinWidth: 0.10,
 
-    jawAttach: 0.5,        // Обновлено
-    jawLength: 0.35,       // Обновлено
-    jawAngleWidth: -0.08,  // Обновлено
+    jawAttach: 0.5,
+    jawLength: 0.35,
+    jawAngleWidth: -0.08, // -8%
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -103,14 +104,16 @@
     // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
     const baseTheta = Math.asin(attachRatio); 
-
+    
     const angleDX = params.jawAngleWidth * rx; 
+
     const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
     const jawLen = Math.min(params.jawLength, maxJawLen);
     const jawDY = jawLen * headH;
 
     function getJawSide(sign) {
       const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
+      
       const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
       const attachY = cy + ry * Math.sin(theta);
 
