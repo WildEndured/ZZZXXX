@@ -4,15 +4,21 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   // ============================================================
-  //  Каталог параметров головы
+  //  Параметры головы
   //  Модель: сетка L0..L5 (5 равных сегментов headH)
   // ============================================================
   const HEAD_PARAMS = [
+    // --- Круг ---
     { group: 'Круг',
       key: 'topOffset',    label: 'Верх головы (L0)',  min: -0.4, max: 0.4, step: 0.01, def: 0 },
     { key: 'bottomOffset', label: 'Низ головы (L3)',   min: -0.4, max: 0.4, step: 0.01, def: 0 },
     { key: 'widthMul',     label: 'Ширина головы',     min: 0.5,  max: 2.0, step: 0.01, def: 1.0 },
     { key: 'radiusMul',    label: 'Радиус головы',     min: 0.5,  max: 2.0, step: 0.01, def: 1.0 },
+
+    // --- Подбородок ---
+    { group: 'Подбородок',
+      key: 'chinYOffset',  label: 'Высота подбородка',  min: -0.4, max: 0.4, step: 0.01, def: 0 },
+    { key: 'chinWidth',    label: 'Ширина подбородка',  min: 0,    max: 1.0, step: 0.01, def: 0.55 },
   ];
 
   const LINE_PARAM = { key: 'line', label: 'Толщина линии', min: 0.001, max: 0.05, step: 0.001, def: 0.012 };
@@ -45,7 +51,7 @@
 
     cell: { top: 0, bottom: 0, h: 0, cx: 2048 },
 
-    groups: { grid: null, skull: null },
+    groups: { grid: null, skull: null, chin: null },
 
     init(container) {
       container.innerHTML = '';
@@ -56,8 +62,12 @@
       this.groups.skull = document.createElementNS(NS, 'g');
       this.groups.skull.setAttribute('data-part', 'head-skull');
 
+      this.groups.chin = document.createElementNS(NS, 'g');
+      this.groups.chin.setAttribute('data-part', 'head-chin');
+
       container.appendChild(this.groups.grid);
       container.appendChild(this.groups.skull);
+      container.appendChild(this.groups.chin);
 
       this.build();
     },
@@ -81,7 +91,7 @@
       this.build();
     },
 
-    // ---- Уровни L0..L5 (5 сегментов headH) ----
+    // ---- Уровни L0..L5 ----
     levels() {
       const { top, h } = this.cell;
       const p = this.shape;
@@ -99,23 +109,36 @@
       };
     },
 
-    // ---- Круг ----
+    // ---- Круг + подбородок ----
     compute() {
       const { cx } = this.cell;
       const p = this.shape;
       const lv = this.levels();
 
+      // Круг от L0 до L3
       const circleTop = lv.L0;
       const circleBottom = lv.L3;
       const cy = (circleTop + circleBottom) / 2;
       const ry0 = Math.abs(circleBottom - circleTop) / 2;
-
       const ry = ry0 * p.radiusMul;
       const rx = ry0 * p.widthMul * p.radiusMul;
+      const circle = { cx, cy, rx, ry };
+
+      // Подбородок: линия на уровне L4 + сдвиг.
+      // Ограничение: L3 < chinY < L5.
+      const eps = Math.max(1, this.cell.h * 0.002);
+      const rawChinY = lv.L4 + p.chinYOffset * lv.step;
+      const chinY = Math.min(lv.L5 - eps, Math.max(lv.L3 + eps, rawChinY));
+
+      // Ширина: chinWidth — доля от rx, максимум rx.
+      const chinHalf = Math.max(0, Math.min(1, p.chinWidth)) * rx;
+      const chinLeft  = { x: cx - chinHalf, y: chinY };
+      const chinRight = { x: cx + chinHalf, y: chinY };
 
       return {
         levels: lv,
-        circle: { cx, cy, rx, ry },
+        circle,
+        chin: { chinY, chinHalf, chinLeft, chinRight },
       };
     },
 
@@ -125,15 +148,14 @@
       const g = this.compute();
       const strokePx = Math.max(0.5, this.line * this.cell.h);
 
-      // Сетка L0..L5 (в экспорт не попадает — используется только визуально).
+      // Сетка L0..L5 (служебная, в экспорт не идёт)
       this.groups.grid.innerHTML = '';
       this.groups.grid.setAttribute('stroke', '#b8bfcc');
       this.groups.grid.setAttribute('stroke-width', '2');
       this.groups.grid.setAttribute('stroke-dasharray', '18 14');
       this.groups.grid.setAttribute('fill', 'none');
-      const lv = g.levels;
       for (const key of ['L0', 'L1', 'L2', 'L3', 'L4', 'L5']) {
-        const y = lv[key];
+        const y = g.levels[key];
         const line = document.createElementNS(NS, 'line');
         line.setAttribute('x1', 0);
         line.setAttribute('x2', 4096);
@@ -150,9 +172,19 @@
       circle.setAttribute('rx', g.circle.rx);
       circle.setAttribute('ry', g.circle.ry);
       this.groups.skull.appendChild(circle);
-
       this.groups.skull.setAttribute('stroke-width', String(strokePx));
       this.groups.skull.setAttribute('fill', 'none');
+
+      // Подбородок
+      this.groups.chin.innerHTML = '';
+      const chin = document.createElementNS(NS, 'line');
+      chin.setAttribute('x1', g.chin.chinLeft.x);
+      chin.setAttribute('y1', g.chin.chinLeft.y);
+      chin.setAttribute('x2', g.chin.chinRight.x);
+      chin.setAttribute('y2', g.chin.chinRight.y);
+      this.groups.chin.appendChild(chin);
+      this.groups.chin.setAttribute('stroke-width', String(strokePx));
+      this.groups.chin.setAttribute('fill', 'none');
     },
   };
 
