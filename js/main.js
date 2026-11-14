@@ -33,6 +33,7 @@
     marginRange: $('marginRange'),
     marginVal: $('marginVal'),
 
+    // Голова
     headTopShift: $('headTopShift'),
     headTopShiftVal: $('headTopShiftVal'),
     headBottomShift: $('headBottomShift'),
@@ -52,14 +53,21 @@
     headJawAngleWidth: $('headJawAngleWidth'),
     headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
-    torsoChestWidth: $('torsoChestWidth'),
-    torsoChestWidthVal: $('torsoChestWidthVal'),
+    // Торс
     torsoChestHeight: $('torsoChestHeight'),
     torsoChestHeightVal: $('torsoChestHeightVal'),
-    torsoChestTopTaper: $('torsoChestTopTaper'),
-    torsoChestTopTaperVal: $('torsoChestTopTaperVal'),
-    torsoChestBottomExpand: $('torsoChestBottomExpand'),
-    torsoChestBottomExpandVal: $('torsoChestBottomExpandVal'),
+    torsoChestWidth: $('torsoChestWidth'),
+    torsoChestWidthVal: $('torsoChestWidthVal'),
+    torsoChestTop: $('torsoChestTop'),
+    torsoChestTopVal: $('torsoChestTopVal'),
+    torsoChestBottom: $('torsoChestBottom'),
+    torsoChestBottomVal: $('torsoChestBottomVal'),
+    torsoPelvisWidth: $('torsoPelvisWidth'),
+    torsoPelvisWidthVal: $('torsoPelvisWidthVal'),
+    torsoPelvisHeight: $('torsoPelvisHeight'),
+    torsoPelvisHeightVal: $('torsoPelvisHeightVal'),
+    torsoPelvisRadius: $('torsoPelvisRadius'),
+    torsoPelvisRadiusVal: $('torsoPelvisRadiusVal'),
 
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
@@ -94,7 +102,7 @@
       heads: state.heads,
       centerX: CANVAS / 2,
       topY: usableTop,
-      torsoHeight: headHeight * 1.8, // (Оставляем для обратной совместимости, если где-то используется)
+      torsoHeight: headHeight * 1.8,
       torsoWidth: headHeight * 1.4,
       shoulderY: usableTop + headHeight,
       hipY: usableTop + headHeight + headHeight * 1.8,
@@ -221,55 +229,59 @@
     if (!window.Torso) return;
     const p = window.Torso.getParams();
 
-    dom.torsoChestWidth.value = p.chestWidth;
-    dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
+    dom.torsoChestHeight.value = p.chestHeightMul;
+    dom.torsoChestHeightVal.textContent = Math.round(p.chestHeightMul * 100);
 
-    dom.torsoChestHeight.value = p.chestHeight;
-    dom.torsoChestHeightVal.textContent = Math.round(p.chestHeight * 100);
+    dom.torsoChestWidth.value = p.chestWidthMul;
+    dom.torsoChestWidthVal.textContent = Math.round(p.chestWidthMul * 100);
 
-    dom.torsoChestTopTaper.value = p.chestTopTaper;
-    dom.torsoChestTopTaperVal.textContent = Math.round(p.chestTopTaper * 100);
+    dom.torsoChestTop.value = p.chestTopExpand;
+    dom.torsoChestTopVal.textContent = fmtSignedPercent(p.chestTopExpand);
 
-    dom.torsoChestBottomExpand.value = p.chestBottomExpand;
-    dom.torsoChestBottomExpandVal.textContent = Math.round(p.chestBottomExpand * 100);
+    dom.torsoChestBottom.value = p.chestBottomExpand;
+    dom.torsoChestBottomVal.textContent = fmtSignedPercent(p.chestBottomExpand);
+
+    dom.torsoPelvisWidth.value = p.pelvisWidthMul;
+    dom.torsoPelvisWidthVal.textContent = Math.round(p.pelvisWidthMul * 100);
+
+    dom.torsoPelvisHeight.value = p.pelvisHeightMul;
+    dom.torsoPelvisHeightVal.textContent = Math.round(p.pelvisHeightMul * 100);
+
+    dom.torsoPelvisRadius.value = p.pelvisRadius;
+    dom.torsoPelvisRadiusVal.textContent = Math.round(p.pelvisRadius * 100);
   }
 
-  function bindHeadInput(input, valEl, key, format) {
+  function bindModuleInput(input, valEl, key, format, moduleName) {
     if (!input || !valEl) return;
+    const mod = window[moduleName];
+    if (!mod) return;
     input.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value);
-      if (!window.Head) return;
-      window.Head.setParams({ [key]: v });
+      mod.setParams({ [key]: v });
       valEl.textContent = format(v);
       applyState();
     });
   }
 
-  function bindTorsoInput(input, valEl, key, format) {
-    if (!input || !valEl) return;
-    input.addEventListener('input', (e) => {
-      const v = parseFloat(e.target.value);
-      if (!window.Torso) return;
-      window.Torso.setParams({ [key]: v });
-      valEl.textContent = format(v);
-      applyState();
-    });
-  }
+  // Привязки для Головы
+  bindModuleInput(dom.headTopShift, dom.headTopShiftVal, 'topShift', fmtSignedPercent, 'Head');
+  bindModuleInput(dom.headBottomShift, dom.headBottomShiftVal, 'bottomShift', fmtSignedPercent, 'Head');
+  bindModuleInput(dom.headWidthMul, dom.headWidthMulVal, 'widthMul', (v) => Math.round(v * 100), 'Head');
+  bindModuleInput(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100), 'Head');
+  bindModuleInput(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmtSignedPercent, 'Head');
+  bindModuleInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100), 'Head');
+  bindModuleInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmtSignedPercent, 'Head');
+  bindModuleInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100), 'Head');
+  bindModuleInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent, 'Head');
 
-  bindHeadInput(dom.headTopShift, dom.headTopShiftVal, 'topShift', fmtSignedPercent);
-  bindHeadInput(dom.headBottomShift, dom.headBottomShiftVal, 'bottomShift', fmtSignedPercent);
-  bindHeadInput(dom.headWidthMul, dom.headWidthMulVal, 'widthMul', (v) => Math.round(v * 100));
-  bindHeadInput(dom.headRadiusMul, dom.headRadiusMulVal, 'radiusMul', (v) => Math.round(v * 100));
-  bindHeadInput(dom.headChinShift, dom.headChinShiftVal, 'chinHeightShift', fmtSignedPercent);
-  bindHeadInput(dom.headChinWidth, dom.headChinWidthVal, 'chinWidth', (v) => Math.round(v * 100));
-  bindHeadInput(dom.headJawAttach, dom.headJawAttachVal, 'jawAttach', fmtSignedPercent);
-  bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
-  bindHeadInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent);
-
-  bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoChestHeight, dom.torsoChestHeightVal, 'chestHeight', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoChestTopTaper, dom.torsoChestTopTaperVal, 'chestTopTaper', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoChestBottomExpand, dom.torsoChestBottomExpandVal, 'chestBottomExpand', (v) => Math.round(v * 100));
+  // Привязки для Торса
+  bindModuleInput(dom.torsoChestHeight, dom.torsoChestHeightVal, 'chestHeightMul', (v) => Math.round(v * 100), 'Torso');
+  bindModuleInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidthMul', (v) => Math.round(v * 100), 'Torso');
+  bindModuleInput(dom.torsoChestTop, dom.torsoChestTopVal, 'chestTopExpand', fmtSignedPercent, 'Torso');
+  bindModuleInput(dom.torsoChestBottom, dom.torsoChestBottomVal, 'chestBottomExpand', fmtSignedPercent, 'Torso');
+  bindModuleInput(dom.torsoPelvisWidth, dom.torsoPelvisWidthVal, 'pelvisWidthMul', (v) => Math.round(v * 100), 'Torso');
+  bindModuleInput(dom.torsoPelvisHeight, dom.torsoPelvisHeightVal, 'pelvisHeightMul', (v) => Math.round(v * 100), 'Torso');
+  bindModuleInput(dom.torsoPelvisRadius, dom.torsoPelvisRadiusVal, 'pelvisRadius', (v) => Math.round(v * 100), 'Torso');
 
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
