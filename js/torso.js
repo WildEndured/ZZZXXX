@@ -1,15 +1,15 @@
-/* js/torso.js — Этап 2: грудная клетка */
+/* js/torso.js — Этап 2: торс (грудная клетка + таз) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Параметры по умолчанию
+  // Параметры по умолчанию (только для грудной клетки)
   const params = {
     chestWidth: 1.0,        // 0.5 … 1.5
     chestHeight: 1.0,       // 0.5 … 1.5
-    chestTopTaper: 0.6,     // 0.1 … 0.9 (0.6 = верх уже низа в 2.5 раза)
+    chestTopTaper: 0.6,     // 0.1 … 0.9
     chestBottomExpand: 1.0, // 0.8 … 1.5
   };
 
@@ -22,7 +22,6 @@
     const torsoGroup = document.getElementById('torsoGroup');
     if (!torsoGroup) return null;
 
-    // Опционально: создаём слой для сетки торса (не экспортируется)
     const headsLayer = document.getElementById('headsLayer');
     let grid = document.getElementById('torsoGridLayer');
     if (headsLayer && !grid) {
@@ -51,32 +50,26 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.topY + headH; // L5 (основание шеи)
     
-    // Базовая высота торса = 2 головы (до L9)
-    const baseTorsoH = headH * 2;
-    const torsoH = baseTorsoH * params.chestHeight;
+    // Область торса: от L5 до L10 (высота ровно одна голова)
+    const topY = geo.topY + headH; // L5
+    const torsoH = headH;          // от L5 до L10
     
-    // Базовая ширина (радиус по X)
-    const baseRx = torsoH * 0.35;
+    // Базовая ширина яйца (в процентах от высоты головы)
+    const baseRx = headH * 0.35;
     const rx = baseRx * params.chestWidth;
 
-    // Сужение верха (чем больше taper, тем уже верх)
-    // 0.1 = почти не сужается, 0.9 = сильно сужается
+    // Параметры формы яйца
     const topHalfWidth = rx * (1 - params.chestTopTaper);
-    
-    // Расширение низа
     const bottomHalfWidth = rx * params.chestBottomExpand;
+    const actualH = torsoH * params.chestHeight;
     
-    // Критические точки по Y
-    const topEdgeY = topY;
-    const bottomEdgeY = topY + torsoH;
-    const cy = topY + torsoH / 2;
+    const cy = topY + actualH / 2;
+    const bottomY = topY + actualH;
 
     return {
-      cx, topY, torsoH, cy,
+      cx, topY, bottomY, actualH, cy,
       topHalfWidth, bottomHalfWidth, rx,
-      topEdgeY, bottomEdgeY,
     };
   }
 
@@ -84,38 +77,31 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // Строим яйцевидный эллипс через кубические кривые Безье
-    // Начинаем с верхней точки (cx, topEdgeY)
-    // Идём вправо вниз до правой широкой части, затем до нижней точки (cx, bottomEdgeY)
-    // Затем зеркально влево.
-    
-    const { cx, topEdgeY, bottomEdgeY, cy, topHalfWidth, bottomHalfWidth, torsoH } = t;
+    const { cx, topY, bottomY, actualH, cy, topHalfWidth, bottomHalfWidth } = t;
 
+    // 1. Грудная клетка (яйцо)
     // Управляющие точки для правой половины
-    // Верхняя правая четверть (сужается к верху)
     const cp1x = cx + topHalfWidth * 0.8;
-    const cp1y = topEdgeY + torsoH * 0.1;
+    const cp1y = topY + actualH * 0.1;
     const cp2x = cx + bottomHalfWidth;
-    const cp2y = cy - torsoH * 0.05;
+    const cp2y = cy - actualH * 0.05;
     
-    // Нижняя правая четверть (расширяется к низу)
     const cp3x = cx + bottomHalfWidth;
-    const cp3y = cy + torsoH * 0.05;
+    const cp3y = cy + actualH * 0.05;
     const cp4x = cx + bottomHalfWidth * 0.5;
-    const cp4y = bottomEdgeY - torsoH * 0.1;
+    const cp4y = bottomY - actualH * 0.1;
 
-    // Левая половина (зеркально)
     const cp4Lx = cx - bottomHalfWidth * 0.5;
     const cp3Lx = cx - bottomHalfWidth;
     const cp2Lx = cx - bottomHalfWidth;
     const cp1Lx = cx - topHalfWidth * 0.8;
 
     const d = `
-      M ${cx},${topEdgeY}
+      M ${cx},${topY}
       C ${cp1x},${cp1y} ${cp2x},${cp2y} ${cx + bottomHalfWidth},${cy}
-      C ${cp3x},${cp3y} ${cp4x},${cp4y} ${cx},${bottomEdgeY}
+      C ${cp3x},${cp3y} ${cp4x},${cp4y} ${cx},${bottomY}
       C ${cp4Lx},${cp4y} ${cp3Lx},${cp3y} ${cx - bottomHalfWidth},${cy}
-      C ${cp2Lx},${cp2y} ${cp1Lx},${cp1y} ${cx},${topEdgeY}
+      C ${cp2Lx},${cp2y} ${cp1Lx},${cp1y} ${cx},${topY}
       Z
     `;
 
@@ -129,10 +115,9 @@
     if (!els.grid) return;
     clear(els.grid);
 
-    // Осевая линия торса
     els.grid.appendChild(svgEl('line', {
       x1: t.cx, x2: t.cx,
-      y1: t.topEdgeY, y2: t.bottomEdgeY,
+      y1: t.topY, y2: t.bottomY,
       stroke: '#c0c4c9', 'stroke-width': 2,
       'stroke-dasharray': '8 12',
     }));
