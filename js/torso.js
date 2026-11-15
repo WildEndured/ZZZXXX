@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (с линиями и скруглением) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз (безопасные линии) */
 
 (function () {
   'use strict';
@@ -123,28 +123,51 @@
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
   }
 
-  // Пересечение отрезка (px,py)-(tx,ty) с окружностью (cx,cy,r)
-  function findArcIntersection(px, py, tx, ty, cx, cy, r) {
-    const dx = tx - px;
-    const dy = ty - py;
-    const ox = px - cx;
-    const oy = py - cy;
+  // Проверка: находится ли точка внутри прямоугольника со скруглением
+  function isInsideRoundedRect(px, py, x, y, w, hgt, r) {
+    if (px < x || px > x + w || py < y || py > y + hgt) return false;
+    // Левый верхний угол
+    if (px < x + r && py < y + r) {
+      const dx = px - (x + r);
+      const dy = py - (y + r);
+      return dx*dx + dy*dy <= r*r;
+    }
+    // Правый верхний угол
+    if (px > x + w - r && py < y + r) {
+      const dx = px - (x + w - r);
+      const dy = py - (y + r);
+      return dx*dx + dy*dy <= r*r;
+    }
+    // Левый нижний угол
+    if (px < x + r && py > y + hgt - r) {
+      const dx = px - (x + r);
+      const dy = py - (y + hgt - r);
+      return dx*dx + dy*dy <= r*r;
+    }
+    // Правый нижний угол
+    if (px > x + w - r && py > y + hgt - r) {
+      const dx = px - (x + w - r);
+      const dy = py - (y + hgt - r);
+      return dx*dx + dy*dy <= r*r;
+    }
+    return true;
+  }
 
-    const a = dx*dx + dy*dy;
-    const b = 2 * (ox*dx + oy*dy);
-    const c = ox*ox + oy*oy - r*r;
-
-    const disc = b*b - 4*a*c;
-    if (disc < 0) return { x: tx, y: ty };
-
-    const sqrtDisc = Math.sqrt(disc);
-    const t1 = (-b - sqrtDisc) / (2*a);
-    const t2 = (-b + sqrtDisc) / (2*a);
-
-    let t = t1 > 0 ? t1 : (t2 > 0 ? t2 : 1);
-    if (t > 1) t = 1;
-
-    return { x: px + t * dx, y: py + t * dy };
+  // Ищет точку внутри таза, двигаясь от P2 к target
+  function findPointInsidePelvis(p2x, p2y, tx, ty, h) {
+    const steps = 100;
+    let lastInside = { x: p2x, y: p2y };
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const px = p2x + (tx - p2x) * t;
+      const py = p2y + (ty - p2y) * t;
+      if (isInsideRoundedRect(px, py, h.pelvisX0, h.pelvisY0, h.pelvisW, h.pelvisH, h.rad)) {
+        lastInside = { x: px, y: py };
+      } else {
+        break;
+      }
+    }
+    return lastInside;
   }
 
   function drawGrid(h) {
@@ -228,26 +251,14 @@
     const p3x = h.pelvisX0 + h.pelvisW * (3 / 5);
     const p3y = h.pelvisY0 + h.pelvisH;
 
-    // 1. От P2 к верхнему левому углу (с учётом скругления)
-    const arcCxLeft = h.pelvisX0 + h.rad;
-    const arcCyLeft = h.pelvisY0 + h.rad;
-    const hitLeft = findArcIntersection(
-      p2x, p2y,
-      h.pelvisX0, h.pelvisY0,
-      arcCxLeft, arcCyLeft, h.rad
-    );
+    // 1. От P2 к верхнему левому углу (с проверкой внутри)
+    const hitLeft = findPointInsidePelvis(p2x, p2y, h.pelvisX0, h.pelvisY0, h);
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: hitLeft.x, y2: hitLeft.y, fill: 'none',
     }));
 
     // 2. От P3 к верхнему правому углу
-    const arcCxRight = h.pelvisX0 + h.pelvisW - h.rad;
-    const arcCyRight = h.pelvisY0 + h.rad;
-    const hitRight = findArcIntersection(
-      p3x, p3y,
-      h.pelvisX0 + h.pelvisW, h.pelvisY0,
-      arcCxRight, arcCyRight, h.rad
-    );
+    const hitRight = findPointInsidePelvis(p3x, p3y, h.pelvisX0 + h.pelvisW, h.pelvisY0, h);
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: hitRight.x, y2: hitRight.y, fill: 'none',
     }));
