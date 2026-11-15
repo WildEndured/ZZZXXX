@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    shoulderHeightCorr: 0.3, // 30% от верха груди
+    shoulderHeightCorr: 0.3, // Высота центра плеча (0.3 = верхняя треть груди)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -40,13 +40,10 @@
     return node;
   }
 
-  // Функция для поиска X на кривой Безье по заданному Y
-  // (Для плеч нам нужно найти, насколько широко грудь на высоте плеч)
+  // Поиск X на кривой Безье по заданному Y (ширина груди на высоте Y)
   function findChestXByY(targetY, h) {
-    // Если Y вне груди, возвращаем 0
     if (targetY < h.chestY0 || targetY > h.chestY0 + h.chestHeightPx) return 0;
 
-    // Бинарный поиск по T
     const points = [
       { x: h.cx, y: h.chestY0 },
       { x: h.cx + h.cpTopX, y: h.chestY0 },
@@ -66,7 +63,7 @@
 
     const mt = 1 - high;
     const finalX = mt*mt*mt*points[0].x + 3*mt*mt*high*points[1].x + 3*mt*high*high*points[2].x + high*high*high*points[3].x;
-    return finalX - h.cx; // Возвращаем ширину (расстояние от центра)
+    return finalX - h.cx; // Ширина от центра
   }
 
   function drawArms(geo) {
@@ -79,6 +76,8 @@
     clear(grid);
 
     const chestH = torso.chestHeightPx;
+    
+    // Радиус строго 1/3 от высоты груди
     const radius = chestH / 3;
 
     // Y-координата центра плеча (верхняя треть груди)
@@ -87,21 +86,23 @@
     // X-координата контура груди на этой высоте
     const halfWidthAtShoulderY = findChestXByY(shoulderY, torso);
 
-    // Центры плеч (сдвинуты на радиус наружу от груди)
+    // Центры плеч: касаются боков груди снаружи
+    // Левое: cx - halfWidth - radius
+    // Правое: cx + halfWidth + radius
     const leftCx = torso.cx - halfWidthAtShoulderY - radius;
     const rightCx = torso.cx + halfWidthAtShoulderY + radius;
 
-    // Рисуем левое плечо
+    // Левое плечо
     armL.appendChild(svgEl('circle', {
       cx: leftCx, cy: shoulderY, r: radius, fill: 'none'
     }));
 
-    // Рисуем правое плечо
+    // Правое плечо
     armR.appendChild(svgEl('circle', {
       cx: rightCx, cy: shoulderY, r: radius, fill: 'none'
     }));
 
-    // Маркеры для отладки
+    // Отладочные маркеры
     const mR = torso.headH * 0.012;
     grid.appendChild(svgEl('circle', {
       cx: leftCx, cy: shoulderY, r: mR, fill: '#2563eb', opacity: 0.85
