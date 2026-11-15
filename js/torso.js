@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (линии под 40°) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз (с пупком) */
 
 (function () {
   'use strict';
@@ -276,6 +276,17 @@
     const rightHitY = p3y - dy3;
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
+    }));
+
+    // --- ПУПОК ---
+    const navelX = h.cx;
+    const navelY = h.pelvisY0 + h.pelvisH * 0.1;
+    const navelLength = h.pelvisH * 0.15;
+
+    torsoGroup.appendChild(svgEl('line', {
+      x1: navelX, y1: navelY,
+      x2: navelX, y2: navelY + navelLength,
+      fill: 'none',
     }));
   }
 
