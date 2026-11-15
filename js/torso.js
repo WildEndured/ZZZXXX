@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Адаптивная шея + Грудь + Таз */
+/* js/torso.js — Этап 2: Шея, упирающаяся в чёрный контур */
 
 (function () {
   'use strict';
@@ -70,7 +70,7 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // Половина ширины груди на высоте y
+  // Точная математическая ширина груди (половина)
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -84,10 +84,10 @@
     }
   }
 
-  // Половина ширины челюсти на высоте y
+  // Математическая ширина челюсти (половина)
   function getJawHalfWidthAtY(y, headGeo) {
     if (!headGeo) return 0;
-    const { jaw, cx, l4 } = headGeo;
+    const { jaw, cx } = headGeo;
     const ptAttach = jaw.attachRight;
     const ptAngle = jaw.angleRight;
     const ptChin = jaw.chinRight;
@@ -144,43 +144,55 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Адаптивная шея ---
+    // Учитываем половину толщины обводки (для попадания в край чёрной линии)
+    const strokeWidth = 6;
+    const halfStroke = strokeWidth / 2;
+
+    // --- 1. Шея, упирающаяся в чёрный контур ---
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
     if (headGeo) {
-      // Находим верхнюю точку: сканируем челюсть, пока её ширина не станет >= ширины шеи
-      let neckTopY = headGeo.l4; 
+      let neckTopY = headGeo.l4;
+      let neckBottomY = h.chestY0;
+
+      // Ищем, где ширина челюсти равна ширине шеи (с учётом обводки)
+      // Нам нужно, чтобы X нашей линии совпал с внешним краем чёрной обводки челюсти.
+      // Поэтому прибавляем halfStroke к искомой ширине.
+      const targetTopHalfW = neckHalfW - halfStroke;
       const startScanY = headGeo.l3;
       const endScanY = headGeo.l4 + h.headH;
       
       for (let y = startScanY; y <= endScanY; y += 1) {
         const halfW = getJawHalfWidthAtY(y, headGeo);
-        if (halfW >= neckHalfW) {
+        if (halfW >= targetTopHalfW) {
           neckTopY = y;
           break;
         }
       }
 
-      // Находим нижнюю точку: сканируем грудь, пока её ширина не станет >= ширины шеи
-      let neckBottomY = h.chestY0;
+      // Ищем, где ширина груди равна ширине шеи (с учётом обводки).
+      // Здесь нам нужно, чтобы наша линия упёрлась во внешний край чёрной обводки груди.
+      const targetBottomHalfW = neckHalfW - halfStroke;
       for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
         const halfW = getChestHalfWidthAtY(y, h);
-        if (halfW >= neckHalfW) {
+        if (halfW >= targetBottomHalfW) {
           neckBottomY = y;
           break;
         }
       }
 
-      // Рисуем линии, адаптируя их длину
+      // Небольшой нахлёст в 1px, чтобы убрать микро-щели от сглаживания
+      const overlap = 1;
+      neckTopY -= overlap;
+      neckBottomY += overlap;
+
       if (neckBottomY > neckTopY) {
-        // Левая линия
         torsoGroup.appendChild(svgEl('line', {
           x1: h.cx - neckHalfW, y1: neckTopY,
           x2: h.cx - neckHalfW, y2: neckBottomY,
           fill: 'none',
         }));
-        // Правая линия
         torsoGroup.appendChild(svgEl('line', {
           x1: h.cx + neckHalfW, y1: neckTopY,
           x2: h.cx + neckHalfW, y2: neckBottomY,
@@ -189,7 +201,7 @@
       }
     }
 
-    // --- 2. Грудная клетка (Безье) ---
+    // --- 2. Грудная клетка ---
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -212,7 +224,7 @@
       fill: 'none',
     }));
 
-    // --- 3. Таз (Прямоугольник) ---
+    // --- 3. Таз ---
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0,
       y: h.pelvisY0,
