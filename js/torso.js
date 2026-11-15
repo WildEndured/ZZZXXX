@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея, врастающая в контур */
+/* js/torso.js — Этап 2: Шея (вертикальная, от краев подбородка) */
 
 (function () {
   'use strict';
@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    neckWidth: 0.20,
+    neckWidth: 0.20, // Этот ползунок теперь не влияет на привязку к подбородку, но оставим для низа
     chestWidth: 0.7,
     chestHeightCorr: -0.15,
     topNarrow: 0.6,
@@ -119,45 +119,51 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- ШЕЯ ---
     const headGeo = window.Head && window.Head.lastGeometry;
-    const neckHalfW = (h.headH * params.neckWidth) / 2;
-    const strokeWidth = 6;
-    const halfStroke = strokeWidth / 2;
 
     if (headGeo) {
-      // ВЕРХ: Начинаем ровно на L4, но поднимаем на пол-толщины линии вверх,
-      // чтобы линия физически зашла в подбородок и не оставила щели.
-      let neckTopY = headGeo.l4 - halfStroke;
+      // ВЕРХ: Берем ширину подбородка. Линии шеи начинаются ровно в его углах.
+      const chinLeftX = headGeo.chinLeftX;
+      const chinRightX = headGeo.chinRightX;
+      const neckTopY = headGeo.l4; // Ровно линия подбородка
 
-      // НИЗ: Ищем точку на груди, где её ширина >= ширины шеи.
-      let neckBottomY = h.chestY0 + h.chestHeightPx; // Fallback
+      // НИЗ: Ищем, куда опустятся эти вертикальные линии, чтобы упереться в грудь.
+      let neckBottomY_left = h.chestY0 + h.chestHeightPx;
+      let neckBottomY_right = h.chestY0 + h.chestHeightPx;
+
+      // Для левой линии (X = chinLeftX)
+      const dxLeft = Math.abs(chinLeftX - h.cx);
       for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
-        const halfW = getChestHalfWidthAtY(y, h);
-        if (halfW >= neckHalfW) {
-          // Нашли точку. Опускаем её на пол-толщины линии ВНИЗ, чтобы
-          // линия физически зашла внутрь груди.
-          neckBottomY = y + halfStroke;
+        if (getChestHalfWidthAtY(y, h) >= dxLeft) {
+          neckBottomY_left = y;
           break;
         }
       }
 
-      // Рисуем линии
-      if (neckBottomY > neckTopY) {
-        torsoGroup.appendChild(svgEl('line', {
-          x1: h.cx - neckHalfW, y1: neckTopY,
-          x2: h.cx - neckHalfW, y2: neckBottomY,
-          fill: 'none',
-        }));
-        torsoGroup.appendChild(svgEl('line', {
-          x1: h.cx + neckHalfW, y1: neckTopY,
-          x2: h.cx + neckHalfW, y2: neckBottomY,
-          fill: 'none',
-        }));
+      // Для правой линии (X = chinRightX)
+      const dxRight = Math.abs(chinRightX - h.cx);
+      for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
+        if (getChestHalfWidthAtY(y, h) >= dxRight) {
+          neckBottomY_right = y;
+          break;
+        }
       }
+
+      // Рисуем строго вертикальные линии
+      torsoGroup.appendChild(svgEl('line', {
+        x1: chinLeftX, y1: neckTopY,
+        x2: chinLeftX, y2: neckBottomY_left,
+        fill: 'none',
+      }));
+
+      torsoGroup.appendChild(svgEl('line', {
+        x1: chinRightX, y1: neckTopY,
+        x2: chinRightX, y2: neckBottomY_right,
+        fill: 'none',
+      }));
     }
 
-    // --- ГРУДЬ ---
+    // Грудь
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -180,7 +186,7 @@
       fill: 'none',
     }));
 
-    // --- ТАЗ ---
+    // Таз
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0,
       y: h.pelvisY0,
