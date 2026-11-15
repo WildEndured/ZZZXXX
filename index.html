@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=19" />
+  <link rel="stylesheet" href="style.css?v=20" />
 </head>
 <body>
   <div class="app">
@@ -139,56 +139,58 @@
         <section class="block">
           <h2>Руки</h2>
           
-          <div style="font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase;">Плечи</div>
+          <div style="font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase;">Размеры</div>
           <label class="row">
             <span>Радиус плеч: <b id="armShoulderRadiusVal">100</b>%</span>
             <input type="range" id="armShoulderRadius" min="0.1" max="2.0" step="0.01" value="1.0" />
           </label>
-
-          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Локти</div>
           <label class="row">
             <span>Радиус локтей: <b id="armElbowRadiusVal">4.5</b>%</span>
             <input type="range" id="armElbowRadius" min="0.01" max="0.15" step="0.001" value="0.045" />
           </label>
           <label class="row">
-            <span>Смещение локтей X: <b id="armElbowXVal">0</b>%</span>
-            <input type="range" id="armElbowX" min="-0.2" max="0.2" step="0.01" value="0" />
-          </label>
-          <label class="row">
-            <span>Смещение локтей Y: <b id="armElbowYVal">0</b>%</span>
-            <input type="range" id="armElbowY" min="-0.2" max="0.2" step="0.01" value="0" />
-          </label>
-
-          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Запястья</div>
-          <label class="row">
             <span>Радиус запястий: <b id="armWristRadiusVal">3.5</b>%</span>
             <input type="range" id="armWristRadius" min="0.01" max="0.15" step="0.001" value="0.035" />
           </label>
+
+          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Левый локоть</div>
           <label class="row">
-            <span>Смещение запястий X: <b id="armWristXVal">0</b>%</span>
-            <input type="range" id="armWristX" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение X: <b id="armElbowLeftXVal">0</b>%</span>
+            <input type="range" id="armElbowLeftX" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Смещение запястий Y: <b id="armWristYVal">0</b>%</span>
-            <input type="range" id="armWristY" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armElbowLeftYVal">0</b>%</span>
+            <input type="range" id="armElbowLeftY" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
 
-          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Смещение рук</div>
+          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правый локоть</div>
           <label class="row">
-            <span>Левая рука X: <b id="armLeftXVal">0</b>%</span>
-            <input type="range" id="armLeftX" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение X: <b id="armElbowRightXVal">0</b>%</span>
+            <input type="range" id="armElbowRightX" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Левая рука Y: <b id="armLeftYVal">0</b>%</span>
-            <input type="range" id="armLeftY" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armElbowRightYVal">0</b>%</span>
+            <input type="range" id="armElbowRightY" min="-0.2" max="0.2" step="0.01" value="0" />
+          </label>
+
+          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Левое запястье</div>
+          <label class="row">
+            <span>Смещение X: <b id="armWristLeftXVal">0</b>%</span>
+            <input type="range" id="armWristLeftX" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Правая рука X: <b id="armRightXVal">0</b>%</span>
-            <input type="range" id="armRightX" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armWristLeftYVal">0</b>%</span>
+            <input type="range" id="armWristLeftY" min="-0.2" max="0.2" step="0.01" value="0" />
+          </label>
+
+          <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правое запястье</div>
+          <label class="row">
+            <span>Смещение X: <b id="armWristRightXVal">0</b>%</span>
+            <input type="range" id="armWristRightX" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Правая рука Y: <b id="armRightYVal">0</b>%</span>
-            <input type="range" id="armRightY" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armWristRightYVal">0</b>%</span>
+            <input type="range" id="armWristRightY" min="-0.2" max="0.2" step="0.01" value="0" />
           </label>
         </section>
 
@@ -230,10 +232,10 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=19"></script>
-  <script src="js/torso.js?v=19"></script>
-  <script src="js/arm.js?v=19"></script>
-  <script src="js/leg.js?v=19"></script>
-  <script src="js/main.js?v=19"></script>
+  <script src="js/head.js?v=20"></script>
+  <script src="js/torso.js?v=20"></script>
+  <script src="js/arm.js?v=20"></script>
+  <script src="js/leg.js?v=20"></script>
+  <script src="js/main.js?v=20"></script>
 </body>
-  </html>
+</html>
