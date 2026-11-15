@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз (Без зазоров) */
+/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз (Точная математика) */
 
 (function () {
   'use strict';
@@ -70,6 +70,21 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
+  // Точная ширина груди (половина) на высоте y
+  function getChestHalfWidthAtY(y, h) {
+    const t = (y - h.chestY0) / h.chestHeightPx;
+    if (t < 0 || t > 1) return 0;
+
+    // Аппроксимация через синус (соответствует нашим кривым Безье)
+    if (t <= 0.6) {
+      const tNorm = t / 0.6;
+      return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
+    } else {
+      const tNorm = (t - 0.6) / 0.4;
+      return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
+    }
+  }
+
   function drawGrid(h) {
     const { grid } = els;
     clear(grid);
@@ -108,59 +123,45 @@
 
     // --- 1. Шея ---
     const headGeo = window.Head && window.Head.lastGeometry;
-    
-    // Если головы нет, используем T0
     const neckTopY = headGeo ? headGeo.l4 : h.chestY0; 
     
-    // Ширина шеи
     const neckHalfW = (h.headH * params.neckWidth) / 2;
     
-    // Чтобы не было зазора с головой, поднимаем линию шеи чуть выше L4
-    const overlapTop = h.headH * 0.02; 
-    const actualTopY = neckTopY - overlapTop;
-
-    // Ищем, куда упрется шея (в грудь)
-    let neckBottomY = h.chestY0;
-    const step = h.headH * 0.005; // Мелкий шаг для точности
+    // Мы хотим найти Y, где половина ширины груди равна neckHalfW
+    let neckBottomY = h.chestY0; // По умолчанию
     
-    for (let y = neckTopY; y < h.chestY0 + h.chestHeightPx; y += step) {
-      // Проверяем, находится ли X нашей линии ВНУТРИ контура груди на этой высоте
-      // Упрощенная проверка: мы просто смотрим, не пересекает ли линия пути Безье.
-      // Так как грудь симметрична, проверяем только X.
-      const t = (y - h.chestY0) / h.chestHeightPx;
-      let halfWidth = 0;
+    // Бинарный поиск точной точки пересечения
+    let low = h.chestY0;
+    let high = h.chestY0 + h.chestHeightPx;
+    
+    for (let i = 0; i < 20; i++) {
+      const mid = (low + high) / 2;
+      const halfW = getChestHalfWidthAtY(mid, h);
       
-      if (t >= 0 && t <= 1) {
-        if (t <= 0.6) {
-          const tNorm = t / 0.6;
-          halfWidth = h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
-        } else {
-          const tNorm = (t - 0.6) / 0.4;
-          halfWidth = h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
-        }
-      }
-
-      if (Math.abs(h.cx - neckHalfW - h.cx) <= halfWidth) { // Левая линия
-        neckBottomY = y;
-        break;
+      // Если на середине грудь уже, чем шея — значит, точка пересечения ниже
+      if (halfW < neckHalfW) {
+        low = mid;
+      } else {
+        high = mid;
       }
     }
+    
+    neckBottomY = high;
 
-    // Чтобы не было зазора с грудью, опускаем линию шеи чуть ниже найденной точки
-    const overlapBottom = h.headH * 0.02;
-    const actualBottomY = neckBottomY + overlapBottom;
-
-    if (actualBottomY > actualTopY) {
+    // Небольшое наложение для устранения визуальных зазоров из-за толщины линии
+    const overlap = h.headH * 0.01; 
+    
+    if (neckBottomY > neckTopY) {
       // Левая линия
       torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx - neckHalfW, y1: actualTopY,
-        x2: h.cx - neckHalfW, y2: actualBottomY,
+        x1: h.cx - neckHalfW, y1: neckTopY - overlap,
+        x2: h.cx - neckHalfW, y2: neckBottomY + overlap,
         fill: 'none',
       }));
       // Правая линия
       torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx + neckHalfW, y1: actualTopY,
-        x2: h.cx + neckHalfW, y2: actualBottomY,
+        x1: h.cx + neckHalfW, y1: neckTopY - overlap,
+        x2: h.cx + neckHalfW, y2: neckBottomY + overlap,
         fill: 'none',
       }));
     }
