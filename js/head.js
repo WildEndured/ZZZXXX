@@ -1,4 +1,4 @@
-/* js/head.js — Этап 2: круг + подбородок + челюсть */
+/* js/head.js — Откатная точка 2 (Рабочая версия) */
 
 (function () {
   'use strict';
@@ -14,7 +14,6 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
-  // Восстановленный коэффициент для челюсти
   const JAW_ANGLE_TO_THETA = 4.6;
 
   const params = {
