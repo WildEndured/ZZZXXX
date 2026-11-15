@@ -56,14 +56,17 @@
     // Торс
     torsoChestWidth: $('torsoChestWidth'),
     torsoChestWidthVal: $('torsoChestWidthVal'),
+    torsoChestHeightCorr: $('torsoChestHeightCorr'),
+    torsoChestHeightCorrVal: $('torsoChestHeightCorrVal'),
     torsoChestTop: $('torsoChestTop'),
     torsoChestTopVal: $('torsoChestTopVal'),
     torsoChestBottom: $('torsoChestBottom'),
     torsoChestBottomVal: $('torsoChestBottomVal'),
-    torsoPelvisHeight: $('torsoPelvisHeight'),
-    torsoPelvisHeightVal: $('torsoPelvisHeightVal'),
-    torsoPelvisWidth: $('torsoPelvisWidth'),
-    torsoPelvisWidthVal: $('torsoPelvisWidthVal'),
+    
+    torsoPelvisWidthCorr: $('torsoPelvisWidthCorr'),
+    torsoPelvisWidthCorrVal: $('torsoPelvisWidthCorrVal'),
+    torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'),
+    torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
     torsoPelvisRounding: $('torsoPelvisRounding'),
     torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
@@ -237,17 +240,20 @@
     dom.torsoChestWidth.value = p.chestWidth;
     dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
     
+    dom.torsoChestHeightCorr.value = p.chestHeightCorr;
+    dom.torsoChestHeightCorrVal.textContent = fmtSignedPercent(p.chestHeightCorr);
+
     dom.torsoChestTop.value = p.topNarrow;
     dom.torsoChestTopVal.textContent = Math.round(p.topNarrow * 100);
     
     dom.torsoChestBottom.value = p.bottomWide;
     dom.torsoChestBottomVal.textContent = Math.round(p.bottomWide * 100);
 
-    dom.torsoPelvisHeight.value = p.pelvisHeightMul;
-    dom.torsoPelvisHeightVal.textContent = Math.round(p.pelvisHeightMul * 100);
-    
-    dom.torsoPelvisWidth.value = p.pelvisWidthMul;
-    dom.torsoPelvisWidthVal.textContent = Math.round(p.pelvisWidthMul * 100);
+    dom.torsoPelvisWidthCorr.value = p.pelvisWidthCorr;
+    dom.torsoPelvisWidthCorrVal.textContent = fmtSignedPercent(p.pelvisWidthCorr);
+
+    dom.torsoPelvisHeightCorr.value = p.pelvisHeightCorr;
+    dom.torsoPelvisHeightCorrVal.textContent = fmtSignedPercent(p.pelvisHeightCorr);
     
     dom.torsoPelvisRounding.value = p.pelvisRounding;
     dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
@@ -265,10 +271,11 @@
   }
 
   bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoChestHeightCorr, dom.torsoChestHeightCorrVal, 'chestHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoChestTop, dom.torsoChestTopVal, 'topNarrow', (v) => Math.round(v * 100));
   bindTorsoInput(dom.torsoChestBottom, dom.torsoChestBottomVal, 'bottomWide', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoPelvisHeight, dom.torsoPelvisHeightVal, 'pelvisHeightMul', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoPelvisWidth, dom.torsoPelvisWidthVal, 'pelvisWidthMul', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoPelvisWidthCorr, dom.torsoPelvisWidthCorrVal, 'pelvisWidthCorr', fmtSignedPercent);
+  bindTorsoInput(dom.torsoPelvisHeightCorr, dom.torsoPelvisHeightCorrVal, 'pelvisHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisRounding, dom.torsoPelvisRoundingVal, 'pelvisRounding', (v) => Math.round(v * 100));
 
   // --- Подложка ---
