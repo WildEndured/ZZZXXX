@@ -14,6 +14,9 @@
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
 
+  // Восстановленный коэффициент для челюсти
+  const JAW_ANGLE_TO_THETA = 4.6;
+
   const params = {
     topShift: 0,
     bottomShift: 0,
@@ -72,6 +75,7 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
+    // L0 / L3
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -84,6 +88,7 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
+    // L4
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -98,8 +103,9 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
+    // Челюсть
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
-    const dTheta = params.jawAngleWidth;
+    const dTheta = params.jawAngleWidth * JAW_ANGLE_TO_THETA;
     const baseTheta = Math.asin(attachRatio);
 
     const THETA_LIM = Math.asin(0.98);
