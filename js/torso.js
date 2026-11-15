@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (безопасные линии) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз (линии под 35°) */
 
 (function () {
   'use strict';
@@ -123,28 +123,23 @@
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
   }
 
-  // Проверка: находится ли точка внутри прямоугольника со скруглением
   function isInsideRoundedRect(px, py, x, y, w, hgt, r) {
     if (px < x || px > x + w || py < y || py > y + hgt) return false;
-    // Левый верхний угол
     if (px < x + r && py < y + r) {
       const dx = px - (x + r);
       const dy = py - (y + r);
       return dx*dx + dy*dy <= r*r;
     }
-    // Правый верхний угол
     if (px > x + w - r && py < y + r) {
       const dx = px - (x + w - r);
       const dy = py - (y + r);
       return dx*dx + dy*dy <= r*r;
     }
-    // Левый нижний угол
     if (px < x + r && py > y + hgt - r) {
       const dx = px - (x + r);
       const dy = py - (y + hgt - r);
       return dx*dx + dy*dy <= r*r;
     }
-    // Правый нижний угол
     if (px > x + w - r && py > y + hgt - r) {
       const dx = px - (x + w - r);
       const dy = py - (y + hgt - r);
@@ -153,7 +148,6 @@
     return true;
   }
 
-  // Ищет точку внутри таза, двигаясь от P2 к target
   function findPointInsidePelvis(p2x, p2y, tx, ty, h) {
     const steps = 100;
     let lastInside = { x: p2x, y: p2y };
@@ -251,7 +245,7 @@
     const p3x = h.pelvisX0 + h.pelvisW * (3 / 5);
     const p3y = h.pelvisY0 + h.pelvisH;
 
-    // 1. От P2 к верхнему левому углу (с проверкой внутри)
+    // 1. От P2 к верхнему левому углу
     const hitLeft = findPointInsidePelvis(p2x, p2y, h.pelvisX0, h.pelvisY0, h);
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: hitLeft.x, y2: hitLeft.y, fill: 'none',
@@ -263,22 +257,22 @@
       x1: p3x, y1: p3y, x2: hitRight.x, y2: hitRight.y, fill: 'none',
     }));
 
-    // 3. От P2 влево-вверх под 30°
-    const tan30 = Math.tan(Math.PI / 6);
+    // 3. От P2 влево-вверх под 35° (было 30°)
+    const tan35 = Math.tan(35 * Math.PI / 180);
     const dx2 = p2x - h.pelvisX0;
-    let dy2 = dx2 * tan30;
+    let dy2 = dx2 * tan35;
     if (p2y - dy2 < h.pelvisY0) dy2 = p2y - h.pelvisY0;
-    const leftHitX = p2x - dy2 / tan30;
+    const leftHitX = p2x - dy2 / tan35;
     const leftHitY = p2y - dy2;
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
     }));
 
-    // 4. От P3 вправо-вверх под 30°
+    // 4. От P3 вправо-вверх под 35° (было 30°)
     const dx3 = h.pelvisX0 + h.pelvisW - p3x;
-    let dy3 = dx3 * tan30;
+    let dy3 = dx3 * tan35;
     if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
-    const rightHitX = p3x + dy3 / tan30;
+    const rightHitX = p3x + dy3 / tan35;
     const rightHitY = p3y - dy3;
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
