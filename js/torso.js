@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (Исправленное яйцо) */
+/* js/torso.js — Этап 2: Грудная клетка (Привязка к сетке голов) */
 
 (function () {
   'use strict';
@@ -7,9 +7,8 @@
 
   const params = {
     chestWidth: 0.9,      // Ширина (доля от headH)
-    chestHeight: 1.1,     // Высота (доля от headH)
     topNarrow: 0.4,       // Сужение верха (0…1)
-    bottomExpand: 0.1,    // Расширение низа (0…1)
+    bottomExpand: 0.2,    // Расширение низа (0…1)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -45,26 +44,22 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.topY + headH; // T0 привязан к L5
     
-    const chestH = params.chestHeight * headH;
-    const chestW = params.chestWidth * headH;
+    // T0 — это ровно L5 (низ первой головы)
+    const topY = geo.topY + headH; 
     
-    const bottomY = topY + chestH;
-    const midY = topY + chestH / 2; // Центр эллипса
+    // Высота грудной клетки = ровно 1 голова
+    const bottomY = topY + headH;
+    const midY = topY + headH / 2; // T1 (ровно посередине)
 
-    const rx = chestW / 2;
+    const rx = (params.chestWidth * headH) / 2;
     
-    // ВАЖНО: В SVG ось Y идет вниз.
-    // Верхняя половина (от midY до topY) должна быть УЖЕ (для сужения).
-    // Нижняя половина (от midY до bottomY) должна быть ШИРЕ (для расширения).
-    
-    // Радиус верхней половины (сужается)
-    const ryTop = (chestH / 2) * (1 - params.topNarrow * 0.8);
-    // Радиус нижней половины (расширяется)
-    const ryBot = (chestH / 2) * (1 + params.bottomExpand * 0.5);
+    // Верхняя половина (сужается)
+    const ryTop = (headH / 2) * (1 - params.topNarrow * 0.8);
+    // Нижняя половина (расширяется)
+    const ryBot = (headH / 2) * (1 + params.bottomExpand * 0.5);
 
-    return { headH, topY, cx, chestH, chestW, midY, bottomY, rx, ryTop, ryBot };
+    return { headH, topY, cx, midY, bottomY, rx, ryTop, ryBot };
   }
 
   function drawGrid(h) {
@@ -109,8 +104,7 @@
       const angle = (i / steps) * Math.PI * 2;
       const sinA = Math.sin(angle);
       
-      // ИСПРАВЛЕНИЕ: Если sinA > 0 (нижняя половина), используем ryBot (широкий).
-      // Если sinA < 0 (верхняя половина), используем ryTop (узкий).
+      // sinA > 0 — нижняя часть (широкая). sinA < 0 — верхняя (узкая).
       const ry = sinA > 0 ? h.ryBot : h.ryTop;
       
       const x = h.cx + h.rx * Math.cos(angle);
@@ -124,13 +118,12 @@
       fill: 'none',
     }));
 
-    // Маркеры
     const mR = h.headH * 0.012;
     const debugPoints = [
-      { x: h.cx, y: h.midY - h.ryTop, c: '#dc2626' }, // Верх (теперь узкий)
-      { x: h.cx + h.rx, y: h.midY, c: '#2563eb' },    // Право
-      { x: h.cx, y: h.midY + h.ryBot, c: '#16a34a' }, // Низ (теперь широкий)
-      { x: h.cx - h.rx, y: h.midY, c: '#2563eb' },    // Лево
+      { x: h.cx, y: h.topY, c: '#dc2626' },
+      { x: h.cx + h.rx, y: h.midY, c: '#2563eb' },
+      { x: h.cx, y: h.bottomY, c: '#16a34a' },
+      { x: h.cx - h.rx, y: h.midY, c: '#2563eb' },
     ];
     
     for (const pt of debugPoints) {
