@@ -260,9 +260,9 @@
     // 3. От P2 влево-вверх под 35° (было 30°)
     const tan35 = Math.tan(35 * Math.PI / 180);
     const dx2 = p2x - h.pelvisX0;
-    let dy2 = dx2 * tan35;
+    let dy2 = dx2 * tan40;
     if (p2y - dy2 < h.pelvisY0) dy2 = p2y - h.pelvisY0;
-    const leftHitX = p2x - dy2 / tan35;
+    const leftHitX = p2x - dy2 / tan40;
     const leftHitY = p2y - dy2;
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
@@ -270,9 +270,9 @@
 
     // 4. От P3 вправо-вверх под 35° (было 30°)
     const dx3 = h.pelvisX0 + h.pelvisW - p3x;
-    let dy3 = dx3 * tan35;
+    let dy3 = dx3 * tan40;
     if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
-    const rightHitX = p3x + dy3 / tan35;
+    const rightHitX = p3x + dy3 / tan40;
     const rightHitY = p3y - dy3;
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
