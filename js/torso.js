@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (с линиями) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз (с линиями и скруглением) */
 
 (function () {
   'use strict';
@@ -204,38 +204,51 @@
     const p3x = h.pelvisX0 + h.pelvisW * (3 / 5);
     const p3y = h.pelvisY0 + h.pelvisH;
 
-    const topLeftX = h.pelvisX0 + h.rad;
-    const topLeftY = h.pelvisY0;
-    const topRightX = h.pelvisX0 + h.pelvisW - h.rad;
-    const topRightY = h.pelvisY0;
+    // Центры дуг скругления (верхние левый и правый)
+    const arcLeftCx = h.pelvisX0 + h.rad;
+    const arcLeftCy = h.pelvisY0 + h.rad;
+    const arcRightCx = h.pelvisX0 + h.pelvisW - h.rad;
+    const arcRightCy = h.pelvisY0 + h.rad;
 
-    // 1. От P2 к левому верхнему углу
+    // 1. От P2 к левой верхней дуге (упирается в её край)
+    let dx1 = arcLeftCx - p2x;
+    let dy1 = arcLeftCy - p2y;
+    let dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+    let leftArcHitX = arcLeftCx - (dx1 / dist1) * h.rad;
+    let leftArcHitY = arcLeftCy - (dy1 / dist1) * h.rad;
+
     torsoGroup.appendChild(svgEl('line', {
-      x1: p2x, y1: p2y, x2: topLeftX, y2: topLeftY, fill: 'none',
+      x1: p2x, y1: p2y, x2: leftArcHitX, y2: leftArcHitY, fill: 'none',
     }));
 
-    // 2. От P3 к правому верхнему углу
+    // 2. От P3 к правой верхней дуге
+    let dx2_ = arcRightCx - p3x;
+    let dy2_ = arcRightCy - p3y;
+    let dist2 = Math.sqrt(dx2_*dx2_ + dy2_*dy2_);
+    let rightArcHitX = arcRightCx - (dx2_ / dist2) * h.rad;
+    let rightArcHitY = arcRightCy - (dy2_ / dist2) * h.rad;
+
     torsoGroup.appendChild(svgEl('line', {
-      x1: p3x, y1: p3y, x2: topRightX, y2: topRightY, fill: 'none',
+      x1: p3x, y1: p3y, x2: rightArcHitX, y2: rightArcHitY, fill: 'none',
     }));
 
     // 3. От P2 влево-вверх под 30°
     const tan30 = Math.tan(Math.PI / 6);
-    const dx2 = p2x - h.pelvisX0;
-    let dy2 = dx2 * tan30;
-    if (p2y - dy2 < h.pelvisY0) dy2 = p2y - h.pelvisY0;
-    const leftHitX = p2x - dy2 / tan30;
-    const leftHitY = p2y - dy2;
+    const dx3 = p2x - h.pelvisX0;
+    let dy3 = dx3 * tan30;
+    if (p2y - dy3 < h.pelvisY0) dy3 = p2y - h.pelvisY0;
+    const leftHitX = p2x - dy3 / tan30;
+    const leftHitY = p2y - dy3;
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
     }));
 
     // 4. От P3 вправо-вверх под 30°
-    const dx3 = h.pelvisX0 + h.pelvisW - p3x;
-    let dy3 = dx3 * tan30;
-    if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
-    const rightHitX = p3x + dy3 / tan30;
-    const rightHitY = p3y - dy3;
+    const dx4 = h.pelvisX0 + h.pelvisW - p3x;
+    let dy4 = dx4 * tan30;
+    if (p3y - dy4 < h.pelvisY0) dy4 = p3y - h.pelvisY0;
+    const rightHitX = p3x + dy4 / tan30;
+    const rightHitY = p3y - dy4;
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
     }));
