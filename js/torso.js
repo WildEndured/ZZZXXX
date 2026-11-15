@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз (Точная математика) */
+/* js/torso.js — Этап 2: Шея (без зазоров) + Грудь + Таз */
 
 (function () {
   'use strict';
@@ -75,7 +75,6 @@
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
 
-    // Аппроксимация через синус (соответствует нашим кривым Безье)
     if (t <= 0.6) {
       const tNorm = t / 0.6;
       return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
@@ -121,50 +120,39 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Шея ---
+    // --- 1. Шея (замкнутый контур) ---
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckTopY = headGeo ? headGeo.l4 : h.chestY0; 
-    
     const neckHalfW = (h.headH * params.neckWidth) / 2;
     
-    // Мы хотим найти Y, где половина ширины груди равна neckHalfW
-    let neckBottomY = h.chestY0; // По умолчанию
-    
-    // Бинарный поиск точной точки пересечения
+    // Бинарный поиск точной точки пересечения ширины шеи и ширины груди
     let low = h.chestY0;
     let high = h.chestY0 + h.chestHeightPx;
     
     for (let i = 0; i < 20; i++) {
       const mid = (low + high) / 2;
       const halfW = getChestHalfWidthAtY(mid, h);
-      
-      // Если на середине грудь уже, чем шея — значит, точка пересечения ниже
       if (halfW < neckHalfW) {
         low = mid;
       } else {
         high = mid;
       }
     }
-    
-    neckBottomY = high;
+    let neckBottomY = high;
 
-    // Небольшое наложение для устранения визуальных зазоров из-за толщины линии
-    const overlap = h.headH * 0.01; 
-    
-    if (neckBottomY > neckTopY) {
-      // Левая линия
-      torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx - neckHalfW, y1: neckTopY - overlap,
-        x2: h.cx - neckHalfW, y2: neckBottomY + overlap,
-        fill: 'none',
-      }));
-      // Правая линия
-      torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx + neckHalfW, y1: neckTopY - overlap,
-        x2: h.cx + neckHalfW, y2: neckBottomY + overlap,
-        fill: 'none',
-      }));
-    }
+    // Рисуем шею как path (П-образный контур)
+    // Чтобы контур был замкнутым и не давал зазоров, мы соединяем нижние концы линий.
+    const pathData = `
+      M ${h.cx - neckHalfW} ${neckTopY}
+      L ${h.cx - neckHalfW} ${neckBottomY}
+      L ${h.cx + neckHalfW} ${neckBottomY}
+      L ${h.cx + neckHalfW} ${neckTopY}
+    `;
+
+    torsoGroup.appendChild(svgEl('path', {
+      d: pathData.replace(/\s+/g, ' ').trim(),
+      fill: 'none',
+    }));
 
     // --- 2. Грудная клетка (Безье) ---
     const x0 = h.cx;
