@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (Привязка к сетке голов) */
+/* js/torso.js — Этап 2: Грудная клетка (Капля/Яйцо через Безье) */
 
 (function () {
   'use strict';
@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    chestWidth: 0.9,      // Ширина (доля от headH)
+    chestWidth: 0.9,      // Максимальная ширина (доля от headH)
     topNarrow: 0.4,       // Сужение верха (0…1)
     bottomExpand: 0.2,    // Расширение низа (0…1)
   };
@@ -45,21 +45,20 @@
     const headH = geo.headHeight;
     const cx = geo.centerX;
     
-    // T0 — это ровно L5 (низ первой головы)
+    // T0 = L5 (низ первой головы)
     const topY = geo.topY + headH; 
-    
-    // Высота грудной клетки = ровно 1 голова
+    // T2 = низ второй головы (высота = 1 голова)
     const bottomY = topY + headH;
-    const midY = topY + headH / 2; // T1 (ровно посередине)
+    const midY = topY + headH / 2; 
 
-    const rx = (params.chestWidth * headH) / 2;
+    const maxHalfW = (params.chestWidth * headH) / 2;
     
-    // Верхняя половина (сужается)
-    const ryTop = (headH / 2) * (1 - params.topNarrow * 0.8);
-    // Нижняя половина (расширяется)
-    const ryBot = (headH / 2) * (1 + params.bottomExpand * 0.5);
+    // Ширина в самой верхней точке (T0)
+    const topHalfW = Math.max(2, maxHalfW * (1 - params.topNarrow * 0.95));
+    // Ширина в самой нижней точке (T2)
+    const bottomHalfW = maxHalfW * (0.7 + params.bottomExpand * 0.5);
 
-    return { headH, topY, cx, midY, bottomY, rx, ryTop, ryBot };
+    return { headH, topY, cx, midY, bottomY, maxHalfW, topHalfW, bottomHalfW };
   }
 
   function drawGrid(h) {
@@ -97,38 +96,51 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    const points = [];
-    const steps = 120;
+    // Опорные точки для кривых Безье
+    const pTopL = { x: h.cx - h.topHalfW, y: h.topY };
+    const pTopR = { x: h.cx + h.topHalfW, y: h.topY };
     
-    for (let i = 0; i <= steps; i++) {
-      const angle = (i / steps) * Math.PI * 2;
-      const sinA = Math.sin(angle);
-      
-      // sinA > 0 — нижняя часть (широкая). sinA < 0 — верхняя (узкая).
-      const ry = sinA > 0 ? h.ryBot : h.ryTop;
-      
-      const x = h.cx + h.rx * Math.cos(angle);
-      const y = h.midY + ry * sinA;
-      
-      points.push(`${x.toFixed(2)},${y.toFixed(2)}`);
-    }
+    const pMidL = { x: h.cx - h.maxHalfW, y: h.midY };
+    const pMidR = { x: h.cx + h.maxHalfW, y: h.midY };
+    
+    const pBotL = { x: h.cx - h.bottomHalfW, y: h.bottomY };
+    const pBotR = { x: h.cx + h.bottomHalfW, y: h.bottomY };
 
-    torsoGroup.appendChild(svgEl('polygon', {
-      points: points.join(' '),
+    // Контрольные точки для плавности (выносим их по X чуть дальше, чтобы бока были круглыми)
+    const ctrlOffsetX = h.maxHalfW * 0.55;
+    
+    // Верхняя дуга (от левого верха до правого верха через центр)
+    const ctrlTopY = h.topY + (h.midY - h.topY) * 0.6;
+    // Нижняя дуга (от левого низа до правого низа через центр)
+    const ctrlBotY = h.midY + (h.bottomY - h.midY) * 0.4;
+
+    // Собираем путь: 
+    // Начинаем с левого верха -> идем в левый центр -> в левый низ -> в правый низ -> в правый центр -> в правый верх -> замыкаем верхнюю дугу.
+    const d = `
+      M ${pTopL.x} ${pTopL.y}
+      C ${pTopL.x - ctrlOffsetX * 0.2} ${ctrlTopY}, ${pMidL.x} ${ctrlTopY}, ${pMidL.x} ${pMidL.y}
+      C ${pMidL.x} ${ctrlBotY}, ${pBotL.x} ${ctrlBotY}, ${pBotL.x} ${pBotL.y}
+      L ${pBotR.x} ${pBotR.y}
+      C ${pBotR.x} ${ctrlBotY}, ${pMidR.x} ${ctrlBotY}, ${pMidR.x} ${pMidR.y}
+      C ${pMidR.x} ${ctrlTopY}, ${pTopR.x + ctrlOffsetX * 0.2} ${ctrlTopY}, ${pTopR.x} ${pTopR.y}
+      Z
+    `;
+
+    torsoGroup.appendChild(svgEl('path', {
+      d: d.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
+    // Маркеры
     const mR = h.headH * 0.012;
-    const debugPoints = [
-      { x: h.cx, y: h.topY, c: '#dc2626' },
-      { x: h.cx + h.rx, y: h.midY, c: '#2563eb' },
-      { x: h.cx, y: h.bottomY, c: '#16a34a' },
-      { x: h.cx - h.rx, y: h.midY, c: '#2563eb' },
+    const points = [
+      { p: pTopL, c: '#dc2626' }, { p: pTopR, c: '#dc2626' },
+      { p: pMidL, c: '#2563eb' }, { p: pMidR, c: '#2563eb' },
+      { p: pBotL, c: '#16a34a' }, { p: pBotR, c: '#16a34a' },
     ];
-    
-    for (const pt of debugPoints) {
+    for (const pt of points) {
       grid.appendChild(svgEl('circle', {
-        cx: pt.x, cy: pt.y, r: mR,
+        cx: pt.p.x, cy: pt.p.y, r: mR,
         fill: pt.c, opacity: 0.85,
       }));
     }
