@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея (вертикальная, от краев подбородка) */
+/* js/torso.js — Этап 2: Вертикальная шея, адаптирующаяся под контуры */
 
 (function () {
   'use strict';
@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    neckWidth: 0.20, // Этот ползунок теперь не влияет на привязку к подбородку, но оставим для низа
+    neckWidth: 0.20,
     chestWidth: 0.7,
     chestHeightCorr: -0.15,
     topNarrow: 0.6,
@@ -70,6 +70,7 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
+  // Ширина (половина) груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -81,6 +82,64 @@
       const tNorm = (t - 0.6) / 0.4;
       return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
     }
+  }
+
+  // Ищем Y, где контур груди имеет заданный X (правой половины)
+  // Возвращает САМУЮ ВЕРХНЮЮ точку, где грудь достигает такой ширины
+  function findChestYByX(x, h) {
+    const dx = Math.abs(x - h.cx);
+    
+    // Если X больше максимального радиуса — грудь никогда не будет такой широкой
+    if (dx > h.chestRx) return h.chestY0 + h.chestHeightPx;
+
+    // Бинарный поиск по Y: ищем, где ширина становится >= dx
+    let low = h.chestY0;
+    let high = h.chestY0 + h.chestHeightPx;
+    
+    for (let i = 0; i < 30; i++) {
+      const mid = (low + high) / 2;
+      const halfW = getChestHalfWidthAtY(mid, h);
+      if (halfW < dx) {
+        low = mid;
+      } else {
+        high = mid;
+      }
+    }
+    return high; // Это Y, где грудь "дорастает" до нужной ширины
+  }
+
+  // Ищем Y на челюсти для заданного X (правой половины)
+  function findJawYByX(x, headGeo) {
+    if (!headGeo) return headGeo.l4;
+    const dx = Math.abs(x - headGeo.cx);
+    
+    const ptAttach = headGeo.jaw.attachRight;
+    const ptAngle = headGeo.jaw.angleRight;
+    const ptChin = headGeo.jaw.chinRight;
+
+    // Отрезок 1: от точки крепления к углу челюсти
+    const ax = Math.abs(ptAttach.x - headGeo.cx);
+    const bx = Math.abs(ptAngle.x - headGeo.cx);
+    const minX = Math.min(ax, bx);
+    const maxX = Math.max(ax, bx);
+    
+    if (dx >= minX && dx <= maxX) {
+      const t = (dx - ax) / (bx - ax);
+      return ptAttach.y + (ptAngle.y - ptAttach.y) * t;
+    }
+
+    // Отрезок 2: от угла к подбородку
+    const cxChin = Math.abs(ptChin.x - headGeo.cx);
+    const minX2 = Math.min(bx, cxChin);
+    const maxX2 = Math.max(bx, cxChin);
+    
+    if (dx >= minX2 && dx <= maxX2) {
+      const t = (dx - bx) / (cxChin - bx);
+      return ptAngle.y + (ptChin.y - ptAngle.y) * t;
+    }
+
+    // Если X за пределами челюсти — возвращаем линию подбородка
+    return headGeo.l4;
   }
 
   function drawGrid(h) {
@@ -120,45 +179,31 @@
     clear(torsoGroup);
 
     const headGeo = window.Head && window.Head.lastGeometry;
+    const neckHalfW = (h.headH * params.neckWidth) / 2;
 
     if (headGeo) {
-      // ВЕРХ: Берем ширину подбородка. Линии шеи начинаются ровно в его углах.
-      const chinLeftX = headGeo.chinLeftX;
-      const chinRightX = headGeo.chinRightX;
-      const neckTopY = headGeo.l4; // Ровно линия подбородка
+      // X-координаты левой и правой линий шеи
+      const leftX = h.cx - neckHalfW;
+      const rightX = h.cx + neckHalfW;
 
-      // НИЗ: Ищем, куда опустятся эти вертикальные линии, чтобы упереться в грудь.
-      let neckBottomY_left = h.chestY0 + h.chestHeightPx;
-      let neckBottomY_right = h.chestY0 + h.chestHeightPx;
-
-      // Для левой линии (X = chinLeftX)
-      const dxLeft = Math.abs(chinLeftX - h.cx);
-      for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
-        if (getChestHalfWidthAtY(y, h) >= dxLeft) {
-          neckBottomY_left = y;
-          break;
-        }
-      }
-
-      // Для правой линии (X = chinRightX)
-      const dxRight = Math.abs(chinRightX - h.cx);
-      for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
-        if (getChestHalfWidthAtY(y, h) >= dxRight) {
-          neckBottomY_right = y;
-          break;
-        }
-      }
+      // ВЕРХ: Y на челюсти для наших X
+      const topLeftY = findJawYByX(leftX, headGeo);
+      const topRightY = findJawYByX(rightX, headGeo);
+      
+      // НИЗ: Y на груди для наших X
+      const botLeftY = findChestYByX(leftX, h);
+      const botRightY = findChestYByX(rightX, h);
 
       // Рисуем строго вертикальные линии
       torsoGroup.appendChild(svgEl('line', {
-        x1: chinLeftX, y1: neckTopY,
-        x2: chinLeftX, y2: neckBottomY_left,
+        x1: leftX, y1: topLeftY,
+        x2: leftX, y2: botLeftY,
         fill: 'none',
       }));
 
       torsoGroup.appendChild(svgEl('line', {
-        x1: chinRightX, y1: neckTopY,
-        x2: chinRightX, y2: neckBottomY_right,
+        x1: rightX, y1: topRightY,
+        x2: rightX, y2: botRightY,
         fill: 'none',
       }));
     }
