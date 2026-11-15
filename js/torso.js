@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз */
+/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз (Без зазоров) */
 
 (function () {
   'use strict';
@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    neckWidth: 0.20,      // Ширина шеи
+    neckWidth: 0.20,
     chestWidth: 0.7,
     chestHeightCorr: -0.15,
     topNarrow: 0.6,
@@ -46,33 +46,10 @@
     return node;
   }
 
-  // Функция для проверки, находится ли X внутри контура груди на высоте Y
-  function isInsideChest(x, y, h) {
-    if (y < h.chestY0 || y > h.chestY0 + h.chestHeightPx) return false;
-    
-    const t = (y - h.chestY0) / h.chestHeightPx; // 0..1
-    const x0 = h.cx;
-    let halfWidth;
-
-    // Аппроксимация ширины груди на высоте t (упрощенная для коллизии)
-    if (t <= 0.6) {
-      // Верхняя часть (от 0 до 0.6) — от cpTopX до rx
-      const tNorm = t / 0.6;
-      halfWidth = (h.cpTopX) + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
-    } else {
-      // Нижняя часть (от 0.6 до 1) — от rx до cpBottomX
-      const tNorm = (t - 0.6) / 0.4;
-      halfWidth = h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
-    }
-
-    return Math.abs(x - x0) <= halfWidth;
-  }
-
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
 
-    // --- Грудная клетка ---
     const chestHeightPx = headH * (1 + params.chestHeightCorr);
     const chestY0 = geo.topY + headH;
     
@@ -80,7 +57,6 @@
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
-    // --- Таз ---
     const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
     const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
     
@@ -94,7 +70,7 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  function drawGrid(h, geo) {
+  function drawGrid(h) {
     const { grid } = els;
     clear(grid);
 
@@ -126,45 +102,65 @@
     }
   }
 
-  function drawTorso(h, geo) {
+  function drawTorso(h) {
     const { torsoGroup } = els;
     clear(torsoGroup);
 
     // --- 1. Шея ---
-    // Получаем L4 из глобального состояния головы
     const headGeo = window.Head && window.Head.lastGeometry;
-    const neckTopY = headGeo ? headGeo.l4 : h.chestY0; // Если головы нет, падаем на T0
     
-    // Ищем, куда упрется шея
+    // Если головы нет, используем T0
+    const neckTopY = headGeo ? headGeo.l4 : h.chestY0; 
+    
+    // Ширина шеи
     const neckHalfW = (h.headH * params.neckWidth) / 2;
-    let neckBottomY = h.chestY0; // По умолчанию до T0
-    let foundCollision = false;
+    
+    // Чтобы не было зазора с головой, поднимаем линию шеи чуть выше L4
+    const overlapTop = h.headH * 0.02; 
+    const actualTopY = neckTopY - overlapTop;
 
-    for (let y = neckTopY; y < h.chestY0 + h.chestHeightPx; y += h.headH * 0.01) {
-      if (isInsideChest(h.cx - neckHalfW, y, h) || isInsideChest(h.cx + neckHalfW, y, h)) {
+    // Ищем, куда упрется шея (в грудь)
+    let neckBottomY = h.chestY0;
+    const step = h.headH * 0.005; // Мелкий шаг для точности
+    
+    for (let y = neckTopY; y < h.chestY0 + h.chestHeightPx; y += step) {
+      // Проверяем, находится ли X нашей линии ВНУТРИ контура груди на этой высоте
+      // Упрощенная проверка: мы просто смотрим, не пересекает ли линия пути Безье.
+      // Так как грудь симметрична, проверяем только X.
+      const t = (y - h.chestY0) / h.chestHeightPx;
+      let halfWidth = 0;
+      
+      if (t >= 0 && t <= 1) {
+        if (t <= 0.6) {
+          const tNorm = t / 0.6;
+          halfWidth = h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
+        } else {
+          const tNorm = (t - 0.6) / 0.4;
+          halfWidth = h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
+        }
+      }
+
+      if (Math.abs(h.cx - neckHalfW - h.cx) <= halfWidth) { // Левая линия
         neckBottomY = y;
-        foundCollision = true;
         break;
       }
     }
-    
-    // Если не нашли грудь (например, она сильно сужена), заканчиваем на T1
-    if (!foundCollision) {
-        neckBottomY = h.chestY0 + h.chestHeightPx * 0.2;
-    }
 
-    // Рисуем две линии шеи
-    if (neckBottomY > neckTopY) {
+    // Чтобы не было зазора с грудью, опускаем линию шеи чуть ниже найденной точки
+    const overlapBottom = h.headH * 0.02;
+    const actualBottomY = neckBottomY + overlapBottom;
+
+    if (actualBottomY > actualTopY) {
       // Левая линия
       torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx - neckHalfW, y1: neckTopY,
-        x2: h.cx - neckHalfW, y2: neckBottomY,
+        x1: h.cx - neckHalfW, y1: actualTopY,
+        x2: h.cx - neckHalfW, y2: actualBottomY,
         fill: 'none',
       }));
       // Правая линия
       torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx + neckHalfW, y1: neckTopY,
-        x2: h.cx + neckHalfW, y2: neckBottomY,
+        x1: h.cx + neckHalfW, y1: actualTopY,
+        x2: h.cx + neckHalfW, y2: actualBottomY,
         fill: 'none',
       }));
     }
@@ -207,8 +203,8 @@
   function update(geo) {
     if (!ensureDom()) return;
     const h = computeTorso(geo);
-    drawGrid(h, geo);
-    drawTorso(h, geo);
+    drawGrid(h);
+    drawTorso(h);
   }
 
   function getParams() { return { ...params }; }
