@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Плавающая шея (касание челюсти и груди) */
+/* js/torso.js — Этап 2: Шея + Грудь (Единый контур) + Таз */
 
 (function () {
   'use strict';
@@ -44,49 +44,6 @@
     const node = document.createElementNS(NS, name);
     if (attrs) for (const k in attrs) node.setAttribute(k, attrs[k]);
     return node;
-  }
-
-  // --- МАТЕМАТИКА ГРУДИ ---
-  function getChestHalfWidthAtY(y, h) {
-    const t = (y - h.chestY0) / h.chestHeightPx;
-    if (t < 0 || t > 1) return 0;
-    if (t <= 0.6) {
-      const tNorm = t / 0.6;
-      return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
-    } else {
-      const tNorm = (t - 0.6) / 0.4;
-      return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
-    }
-  }
-
-  // --- МАТЕМАТИКА ЧЕЛЮСТИ ---
-  // Возвращает X-координату челюсти на заданной высоте Y (для правой стороны).
-  // Челюсть — это ломаная: attach -> angle -> chin.
-  function getJawXAtY(y, headGeo) {
-    if (!headGeo) return headGeo.cx;
-    
-    const { jaw, cx, l4 } = headGeo;
-    const right = jaw.attachRight;
-    const angle = jaw.angleRight;
-    const chin = jaw.chinRight;
-
-    // 1. Если Y выше точки крепления — возвращаем точку крепления
-    if (y <= right.y) return right.x;
-
-    // 2. Если Y между точкой крепления и углом — интерполируем наклонную линию
-    if (y <= angle.y) {
-      const t = (y - right.y) / (angle.y - right.y);
-      return right.x + (angle.x - right.x) * t;
-    }
-
-    // 3. Если Y между углом и подбородком — интерполируем вторую линию
-    if (y <= chin.y) {
-      const t = (y - angle.y) / (chin.y - angle.y);
-      return angle.x + (chin.x - angle.x) * t;
-    }
-
-    // 4. Если Y ниже подбородка — возвращаем край подбородка
-    return chin.x;
   }
 
   function computeTorso(geo) {
@@ -149,74 +106,65 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Шея ---
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
-    // ВЕРХ: Ищем самую верхнюю точку, где X челюсти равен ширине шеи.
-    // Проходимся сверху вниз по челюсти, пока не найдем точку, где ширина челюсти >= ширины шеи.
-    let neckTopY = h.chestY0; 
+    // Начальные координаты для единого пути
+    let pathData = '';
+
     if (headGeo) {
-      const startY = headGeo.l0;
-      const endY = headGeo.l4;
-      const step = h.headH * 0.005;
+      const neckTopY = headGeo.l4;
       
-      for (let y = startY; y <= endY; y += step) {
-        const jawX = getJawXAtY(y, headGeo);
-        if (jawX >= neckHalfW) { // Нашли точку на челюсти, где она достаточно широкая
-          neckTopY = y;
-          break;
-        }
-      }
+      // 1. Левая линия шеи
+      pathData += `M ${h.cx - neckHalfW} ${neckTopY} `;
+      
+      // 2. Переход в левую часть груди
+      // Начинаем с левой линии шеи, спускаемся до T0
+      pathData += `L ${h.cx - neckHalfW} ${h.chestY0} `;
+
+      // 3. Левая часть груди (Безье)
+      const x0 = h.cx;
+      const y0 = h.chestY0;
+      const yMid = y0 + h.chestHeightPx * 0.6;
+      const yBot = y0 + h.chestHeightPx;
+      const rx = h.chestRx;
+      const cpTopX = h.cpTopX;
+      const cpBottomX = h.cpBottomX;
+
+      // Кривая вниз по левой стороне
+      pathData += `C ${x0 - cpTopX} ${y0}, ${x0 - rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 - rx} ${yMid} `;
+      // Кривая к центру низа (левая половина)
+      pathData += `C ${x0 - rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 - cpBottomX} ${yBot}, ${x0} ${yBot} `;
+      // Кривая от центра низа к правому боку (правая половина)
+      pathData += `C ${x0 + cpBottomX} ${yBot}, ${x0 + rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 + rx} ${yMid} `;
+      // Кривая вверх по правой стороне до T0
+      pathData += `C ${x0 + rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 + cpTopX} ${y0}, ${x0 + neckHalfW} ${y0} `;
+
+      // 4. Правая линия шеи (вверх)
+      pathData += `L ${h.cx + neckHalfW} ${neckTopY} `;
+
+    } else {
+      // Если головы нет, рисуем только грудь
+      const x0 = h.cx;
+      const y0 = h.chestY0;
+      const yMid = y0 + h.chestHeightPx * 0.6;
+      const yBot = y0 + h.chestHeightPx;
+      const rx = h.chestRx;
+      const cpTopX = h.cpTopX;
+      const cpBottomX = h.cpBottomX;
+
+      pathData = `
+        M ${x0} ${y0}
+        C ${x0 + cpTopX} ${y0}, ${x0 + rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 + rx} ${yMid}
+        C ${x0 + rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 + cpBottomX} ${yBot}, ${x0} ${yBot}
+        C ${x0 - cpBottomX} ${yBot}, ${x0 - rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 - rx} ${yMid}
+        C ${x0 - rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 - cpTopX} ${y0}, ${x0} ${y0}
+        Z
+      `;
     }
-
-    // НИЗ: Ищем точку, где ширина груди >= ширины шеи.
-    let neckBottomY = h.chestY0 + h.chestHeightPx; // Fallback
-    const step = h.headH * 0.005;
-    for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += step) {
-      const chestHalfW = getChestHalfWidthAtY(y, h);
-      if (chestHalfW >= neckHalfW) {
-        neckBottomY = y;
-        break;
-      }
-    }
-
-    // Рисуем шею, только если нашли валидные точки
-    if (neckBottomY > neckTopY) {
-      // Левая линия
-      torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx - neckHalfW, y1: neckTopY,
-        x2: h.cx - neckHalfW, y2: neckBottomY,
-        fill: 'none',
-      }));
-      // Правая линия
-      torsoGroup.appendChild(svgEl('line', {
-        x1: h.cx + neckHalfW, y1: neckTopY,
-        x2: h.cx + neckHalfW, y2: neckBottomY,
-        fill: 'none',
-      }));
-    }
-
-    // --- 2. Грудная клетка (Безье) ---
-    const x0 = h.cx;
-    const y0 = h.chestY0;
-    const yMid = y0 + h.chestHeightPx * 0.6;
-    const yBot = y0 + h.chestHeightPx;
-    const rx = h.chestRx;
-    const cpTopX = h.cpTopX;
-    const cpBottomX = h.cpBottomX;
-
-    const dChest = `
-      M ${x0} ${y0}
-      C ${x0 + cpTopX} ${y0}, ${x0 + rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 + rx} ${yMid}
-      C ${x0 + rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 + cpBottomX} ${yBot}, ${x0} ${yBot}
-      C ${x0 - cpBottomX} ${yBot}, ${x0 - rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 - rx} ${yMid}
-      C ${x0 - rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 - cpTopX} ${y0}, ${x0} ${y0}
-      Z
-    `;
 
     torsoGroup.appendChild(svgEl('path', {
-      d: dChest.replace(/\s+/g, ' ').trim(),
+      d: pathData.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
