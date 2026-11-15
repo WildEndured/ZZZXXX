@@ -123,6 +123,30 @@
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
   }
 
+  // Пересечение отрезка (px,py)-(tx,ty) с окружностью (cx,cy,r)
+  function findArcIntersection(px, py, tx, ty, cx, cy, r) {
+    const dx = tx - px;
+    const dy = ty - py;
+    const ox = px - cx;
+    const oy = py - cy;
+
+    const a = dx*dx + dy*dy;
+    const b = 2 * (ox*dx + oy*dy);
+    const c = ox*ox + oy*oy - r*r;
+
+    const disc = b*b - 4*a*c;
+    if (disc < 0) return { x: tx, y: ty };
+
+    const sqrtDisc = Math.sqrt(disc);
+    const t1 = (-b - sqrtDisc) / (2*a);
+    const t2 = (-b + sqrtDisc) / (2*a);
+
+    let t = t1 > 0 ? t1 : (t2 > 0 ? t2 : 1);
+    if (t > 1) t = 1;
+
+    return { x: px + t * dx, y: py + t * dy };
+  }
+
   function drawGrid(h) {
     const { grid } = els;
     clear(grid);
@@ -204,51 +228,47 @@
     const p3x = h.pelvisX0 + h.pelvisW * (3 / 5);
     const p3y = h.pelvisY0 + h.pelvisH;
 
-    // Центры дуг скругления (верхние левый и правый)
-    const arcLeftCx = h.pelvisX0 + h.rad;
-    const arcLeftCy = h.pelvisY0 + h.rad;
-    const arcRightCx = h.pelvisX0 + h.pelvisW - h.rad;
-    const arcRightCy = h.pelvisY0 + h.rad;
-
-    // 1. От P2 к левой верхней дуге (упирается в её край)
-    let dx1 = arcLeftCx - p2x;
-    let dy1 = arcLeftCy - p2y;
-    let dist1 = Math.sqrt(dx1*dx1 + dy1*dy1);
-    let leftArcHitX = arcLeftCx - (dx1 / dist1) * h.rad;
-    let leftArcHitY = arcLeftCy - (dy1 / dist1) * h.rad;
-
+    // 1. От P2 к верхнему левому углу (с учётом скругления)
+    const arcCxLeft = h.pelvisX0 + h.rad;
+    const arcCyLeft = h.pelvisY0 + h.rad;
+    const hitLeft = findArcIntersection(
+      p2x, p2y,
+      h.pelvisX0, h.pelvisY0,
+      arcCxLeft, arcCyLeft, h.rad
+    );
     torsoGroup.appendChild(svgEl('line', {
-      x1: p2x, y1: p2y, x2: leftArcHitX, y2: leftArcHitY, fill: 'none',
+      x1: p2x, y1: p2y, x2: hitLeft.x, y2: hitLeft.y, fill: 'none',
     }));
 
-    // 2. От P3 к правой верхней дуге
-    let dx2_ = arcRightCx - p3x;
-    let dy2_ = arcRightCy - p3y;
-    let dist2 = Math.sqrt(dx2_*dx2_ + dy2_*dy2_);
-    let rightArcHitX = arcRightCx - (dx2_ / dist2) * h.rad;
-    let rightArcHitY = arcRightCy - (dy2_ / dist2) * h.rad;
-
+    // 2. От P3 к верхнему правому углу
+    const arcCxRight = h.pelvisX0 + h.pelvisW - h.rad;
+    const arcCyRight = h.pelvisY0 + h.rad;
+    const hitRight = findArcIntersection(
+      p3x, p3y,
+      h.pelvisX0 + h.pelvisW, h.pelvisY0,
+      arcCxRight, arcCyRight, h.rad
+    );
     torsoGroup.appendChild(svgEl('line', {
-      x1: p3x, y1: p3y, x2: rightArcHitX, y2: rightArcHitY, fill: 'none',
+      x1: p3x, y1: p3y, x2: hitRight.x, y2: hitRight.y, fill: 'none',
     }));
 
     // 3. От P2 влево-вверх под 30°
     const tan30 = Math.tan(Math.PI / 6);
-    const dx3 = p2x - h.pelvisX0;
-    let dy3 = dx3 * tan30;
-    if (p2y - dy3 < h.pelvisY0) dy3 = p2y - h.pelvisY0;
-    const leftHitX = p2x - dy3 / tan30;
-    const leftHitY = p2y - dy3;
+    const dx2 = p2x - h.pelvisX0;
+    let dy2 = dx2 * tan30;
+    if (p2y - dy2 < h.pelvisY0) dy2 = p2y - h.pelvisY0;
+    const leftHitX = p2x - dy2 / tan30;
+    const leftHitY = p2y - dy2;
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
     }));
 
     // 4. От P3 вправо-вверх под 30°
-    const dx4 = h.pelvisX0 + h.pelvisW - p3x;
-    let dy4 = dx4 * tan30;
-    if (p3y - dy4 < h.pelvisY0) dy4 = p3y - h.pelvisY0;
-    const rightHitX = p3x + dy4 / tan30;
-    const rightHitY = p3y - dy4;
+    const dx3 = h.pelvisX0 + h.pelvisW - p3x;
+    let dy3 = dx3 * tan30;
+    if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
+    const rightHitX = p3x + dy3 / tan30;
+    const rightHitY = p3y - dy3;
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
     }));
