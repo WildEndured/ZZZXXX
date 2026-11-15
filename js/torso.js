@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз */
+/* js/torso.js — Этап 2: Грудная клетка + Таз (с коррекциями) */
 
 (function () {
   'use strict';
@@ -8,12 +8,13 @@
   const params = {
     // Грудная клетка
     chestWidth: 0.8,
+    chestHeightCorr: 0,   // коррекция высоты груди (-0.5..0.5)
     topNarrow: 0.4,
     bottomWide: 0.6,
     
     // Таз
-    pelvisWidthMul: 1.0,  // множитель ширины (от высоты груди)
-    pelvisHeightMul: 1.0, // множитель высоты (от ширины груди на T1)
+    pelvisWidthCorr: 0,   // коррекция ширины таза (-0.5..0.5)
+    pelvisHeightCorr: 0,  // коррекция высоты таза (-0.5..0.5)
     pelvisRounding: 0.3,  // скругление
   };
 
@@ -50,24 +51,26 @@
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const sectionH = headH;
 
     // --- Грудная клетка ---
-    const chestY0 = geo.topY + sectionH;
-    const chestHeightPx = sectionH; // 1 голова
-    const chestRx = (headH * params.chestWidth) / 2; // радиус на T1
+    // Базовая высота = 1 голова. Коррекция меняет её в пределах ±50%.
+    const chestHeightPx = headH * (1 + params.chestHeightCorr);
+    const chestY0 = geo.topY + headH; // Верх всегда строго на L5
     
+    const chestRx = (headH * params.chestWidth) / 2; 
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
     // --- Таз ---
-    // Высота таза = Ширина клетки на линии T1 (chestRx * 2)
-    const pelvisH = (chestRx * 2) * params.pelvisHeightMul;
-    // Ширина таза = Высота клетки (chestHeightPx)
-    const pelvisW = chestHeightPx * params.pelvisWidthMul;
+    // Базовая высота = Ширина клетки на T1 (2 * chestRx). Коррекция меняет ±50%.
+    const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
     
-    // Таз строго под грудью на линии T2, без зазоров
-    const pelvisY0 = chestY0 + chestHeightPx;
+    // Базовая ширина = Высота клетки (chestHeightPx). Коррекция меняет ±50%.
+    const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
+    
+    // Таз строго под грудью (сразу после её низа)
+    const chestYBot = chestY0 + chestHeightPx;
+    const pelvisY0 = chestYBot;
     const pelvisX0 = cx - pelvisW / 2;
     
     // Радиус скругления
