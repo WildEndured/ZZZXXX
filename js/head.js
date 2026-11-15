@@ -215,4 +215,43 @@
     const r = h.jaw;
 
     headGroup.appendChild(svgEl('polyline', {
-      points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},
+      points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`,
+      fill: 'none',
+    }));
+
+    headGroup.appendChild(svgEl('polyline', {
+      points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`,
+      fill: 'none',
+    }));
+  }
+
+  function update(geo) {
+    if (!ensureDom()) return;
+    const h = computeHead(geo);
+    drawGrid(h);
+    drawHead(h);
+  }
+
+  function getParams() { return { ...params }; }
+
+  function setParams(patch) {
+    if (!patch) return;
+    for (const k in params) {
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) {
+        params[k] = patch[k];
+      }
+    }
+  }
+
+  function resetParams() {
+    Object.assign(params, DEFAULT_PARAMS);
+  }
+
+  window.Head = {
+    update,
+    getParams,
+    setParams,
+    resetParams,
+    DEFAULT_PARAMS,
+  };
+})();
