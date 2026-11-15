@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея (плавающая) + Грудь + Таз */
+/* js/torso.js — Этап 2: Плавающая шея (касание челюсти и груди) */
 
 (function () {
   'use strict';
@@ -46,6 +46,49 @@
     return node;
   }
 
+  // --- МАТЕМАТИКА ГРУДИ ---
+  function getChestHalfWidthAtY(y, h) {
+    const t = (y - h.chestY0) / h.chestHeightPx;
+    if (t < 0 || t > 1) return 0;
+    if (t <= 0.6) {
+      const tNorm = t / 0.6;
+      return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
+    } else {
+      const tNorm = (t - 0.6) / 0.4;
+      return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
+    }
+  }
+
+  // --- МАТЕМАТИКА ЧЕЛЮСТИ ---
+  // Возвращает X-координату челюсти на заданной высоте Y (для правой стороны).
+  // Челюсть — это ломаная: attach -> angle -> chin.
+  function getJawXAtY(y, headGeo) {
+    if (!headGeo) return headGeo.cx;
+    
+    const { jaw, cx, l4 } = headGeo;
+    const right = jaw.attachRight;
+    const angle = jaw.angleRight;
+    const chin = jaw.chinRight;
+
+    // 1. Если Y выше точки крепления — возвращаем точку крепления
+    if (y <= right.y) return right.x;
+
+    // 2. Если Y между точкой крепления и углом — интерполируем наклонную линию
+    if (y <= angle.y) {
+      const t = (y - right.y) / (angle.y - right.y);
+      return right.x + (angle.x - right.x) * t;
+    }
+
+    // 3. Если Y между углом и подбородком — интерполируем вторую линию
+    if (y <= chin.y) {
+      const t = (y - angle.y) / (chin.y - angle.y);
+      return angle.x + (chin.x - angle.x) * t;
+    }
+
+    // 4. Если Y ниже подбородка — возвращаем край подбородка
+    return chin.x;
+  }
+
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
@@ -68,37 +111,6 @@
 
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
-  }
-
-  // Половина ширины груди на высоте y
-  function getChestHalfWidthAtY(y, h) {
-    const t = (y - h.chestY0) / h.chestHeightPx;
-    if (t < 0 || t > 1) return 0;
-
-    if (t <= 0.6) {
-      const tNorm = t / 0.6;
-      return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
-    } else {
-      const tNorm = (t - 0.6) / 0.4;
-      return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
-    }
-  }
-
-  // Половина ширины челюсти на высоте y (скольжение по подбородку)
-  function getJawHalfWidthAtY(y, headGeo) {
-    if (!headGeo) return 0;
-    const { l4, chinLeftX, chinRightX, cx, l3 } = headGeo;
-    
-    // Если выше L4 — это зона подбородка (линия). Если мы хотим скользить по челюсти, 
-    // нужно интерполировать между точкой крепления и подбородком.
-    // Для простоты: если Y выше L4, берем ширину подбородка (он горизонтален).
-    if (y <= l4) {
-      return (chinRightX - chinLeftX) / 2;
-    }
-    
-    // Если ниже L4 (в зону шеи), но выше L5, это просто пустота. 
-    // Возвращаем ширину подбородка, чтобы шея начиналась от него.
-    return (chinRightX - chinLeftX) / 2;
   }
 
   function drawGrid(h) {
@@ -137,52 +149,47 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Шея (Плавающая) ---
+    // --- 1. Шея ---
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
-    let neckTopY, neckBottomY;
-
+    // ВЕРХ: Ищем самую верхнюю точку, где X челюсти равен ширине шеи.
+    // Проходимся сверху вниз по челюсти, пока не найдем точку, где ширина челюсти >= ширины шеи.
+    let neckTopY = h.chestY0; 
     if (headGeo) {
-      // ВЕРХ: Скользит по челюсти/подбородку.
-      // Если шея уже подбородка — она начинается ровно от L4 (линия подбородка).
-      // Если шея шире подбородка — она начинается от линии L3 (низ круга).
-      const chinHalfW = (headGeo.chinRightX - headGeo.chinLeftX) / 2;
-      if (neckHalfW <= chinHalfW) {
-        neckTopY = headGeo.l4; // Точка ровно на подбородке
-      } else {
-        // Шея шире подбородка, начинаем от L3 (низ круга)
-        // Для простоты используем L3 как верхнюю границу
-        neckTopY = headGeo.l3; 
-      }
-
-      // НИЗ: Скользит по грудной клетке.
-      // Ищем, где ширина груди равна ширине шеи.
-      let low = h.chestY0;
-      let high = h.chestY0 + h.chestHeightPx;
-      for (let i = 0; i < 20; i++) {
-        const mid = (low + high) / 2;
-        const halfW = getChestHalfWidthAtY(mid, h);
-        if (halfW < neckHalfW) {
-          low = mid;
-        } else {
-          high = mid;
+      const startY = headGeo.l0;
+      const endY = headGeo.l4;
+      const step = h.headH * 0.005;
+      
+      for (let y = startY; y <= endY; y += step) {
+        const jawX = getJawXAtY(y, headGeo);
+        if (jawX >= neckHalfW) { // Нашли точку на челюсти, где она достаточно широкая
+          neckTopY = y;
+          break;
         }
       }
-      neckBottomY = high;
-    } else {
-      // Если головы нет, шея идет от T0 до T0 + 20%
-      neckTopY = h.chestY0;
-      neckBottomY = h.chestY0 + h.chestHeightPx * 0.2;
     }
 
-    // Рисуем линии шеи, если они валидны
+    // НИЗ: Ищем точку, где ширина груди >= ширины шеи.
+    let neckBottomY = h.chestY0 + h.chestHeightPx; // Fallback
+    const step = h.headH * 0.005;
+    for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += step) {
+      const chestHalfW = getChestHalfWidthAtY(y, h);
+      if (chestHalfW >= neckHalfW) {
+        neckBottomY = y;
+        break;
+      }
+    }
+
+    // Рисуем шею, только если нашли валидные точки
     if (neckBottomY > neckTopY) {
+      // Левая линия
       torsoGroup.appendChild(svgEl('line', {
         x1: h.cx - neckHalfW, y1: neckTopY,
         x2: h.cx - neckHalfW, y2: neckBottomY,
         fill: 'none',
       }));
+      // Правая линия
       torsoGroup.appendChild(svgEl('line', {
         x1: h.cx + neckHalfW, y1: neckTopY,
         x2: h.cx + neckHalfW, y2: neckBottomY,
