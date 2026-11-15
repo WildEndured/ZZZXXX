@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (линии под 35°) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз (линии под 40°) */
 
 (function () {
   'use strict';
@@ -257,8 +257,8 @@
       x1: p3x, y1: p3y, x2: hitRight.x, y2: hitRight.y, fill: 'none',
     }));
 
-    // 3. От P2 влево-вверх под 35° (было 30°)
-    const tan35 = Math.tan(35 * Math.PI / 180);
+    // 3. От P2 влево-вверх под 40°
+    const tan40 = Math.tan(40 * Math.PI / 180);
     const dx2 = p2x - h.pelvisX0;
     let dy2 = dx2 * tan40;
     if (p2y - dy2 < h.pelvisY0) dy2 = p2y - h.pelvisY0;
@@ -268,7 +268,7 @@
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
     }));
 
-    // 4. От P3 вправо-вверх под 35° (было 30°)
+    // 4. От P3 вправо-вверх под 40°
     const dx3 = h.pelvisX0 + h.pelvisW - p3x;
     let dy3 = dx3 * tan40;
     if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
