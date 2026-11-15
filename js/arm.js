@@ -6,7 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    shoulderOffset: 0.0,
+    shoulderHeightCorr: 0.3, // 30% от верха груди
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -40,39 +40,80 @@
     return node;
   }
 
-  function update(geo) {
-    if (!ensureDom()) return;
-    const { armL, armR } = els;
+  // Функция для поиска X на кривой Безье по заданному Y
+  // (Для плеч нам нужно найти, насколько широко грудь на высоте плеч)
+  function findChestXByY(targetY, h) {
+    // Если Y вне груди, возвращаем 0
+    if (targetY < h.chestY0 || targetY > h.chestY0 + h.chestHeightPx) return 0;
+
+    // Бинарный поиск по T
+    const points = [
+      { x: h.cx, y: h.chestY0 },
+      { x: h.cx + h.cpTopX, y: h.chestY0 },
+      { x: h.cx + h.chestRx, y: h.chestY0 + h.chestHeightPx * 0.3 },
+      { x: h.cx + h.chestRx, y: h.chestY0 + h.chestHeightPx * 0.6 },
+    ];
+
+    let low = 0, high = 1;
+    for (let i = 0; i < 40; i++) {
+      const mid = (low + high) / 2;
+      const mt = 1 - mid;
+      const midY = mt*mt*mt*points[0].y + 3*mt*mt*mid*points[1].y + 3*mt*mid*mid*points[2].y + mid*mid*mid*points[3].y;
+      
+      if (midY < targetY) low = mid;
+      else high = mid;
+    }
+
+    const mt = 1 - high;
+    const finalX = mt*mt*mt*points[0].x + 3*mt*mt*high*points[1].x + 3*mt*high*high*points[2].x + high*high*high*points[3].x;
+    return finalX - h.cx; // Возвращаем ширину (расстояние от центра)
+  }
+
+  function drawArms(geo) {
+    const torso = window.Torso && window.Torso.lastGeometry;
+    if (!torso) return;
+
+    const { armL, armR, grid } = els;
     clear(armL);
     clear(armR);
+    clear(grid);
 
-    const torsoParams = window.Torso ? window.Torso.getParams() : null;
-    if (!torsoParams) return;
+    const chestH = torso.chestHeightPx;
+    const radius = chestH / 3;
 
-    const headH = geo.headHeight;
-    const cx = geo.centerX;
+    // Y-координата центра плеча (верхняя треть груди)
+    const shoulderY = torso.chestY0 + (chestH * params.shoulderHeightCorr);
 
-    const chestHeightPx = headH * (1 + torsoParams.chestHeightCorr);
-    const chestY0 = geo.topY + headH;
-    const chestRx = (headH * torsoParams.chestWidth) / 2;
+    // X-координата контура груди на этой высоте
+    const halfWidthAtShoulderY = findChestXByY(shoulderY, torso);
 
-    // Радиус = T0.5 - T0 = четверть высоты груди
-    const shoulderRadius = chestHeightPx / 4;
+    // Центры плеч (сдвинуты на радиус наружу от груди)
+    const leftCx = torso.cx - halfWidthAtShoulderY - radius;
+    const rightCx = torso.cx + halfWidthAtShoulderY + radius;
 
-    // Верх круга касается T0
-    const shoulderCy = chestY0 + shoulderRadius;
-
-    const offset = params.shoulderOffset * headH;
-    const leftCx = cx - chestRx - shoulderRadius + offset;
-    const rightCx = cx + chestRx + shoulderRadius - offset;
-
+    // Рисуем левое плечо
     armL.appendChild(svgEl('circle', {
-      cx: leftCx, cy: shoulderCy, r: shoulderRadius, fill: 'none',
+      cx: leftCx, cy: shoulderY, r: radius, fill: 'none'
     }));
 
+    // Рисуем правое плечо
     armR.appendChild(svgEl('circle', {
-      cx: rightCx, cy: shoulderCy, r: shoulderRadius, fill: 'none',
+      cx: rightCx, cy: shoulderY, r: radius, fill: 'none'
     }));
+
+    // Маркеры для отладки
+    const mR = torso.headH * 0.012;
+    grid.appendChild(svgEl('circle', {
+      cx: leftCx, cy: shoulderY, r: mR, fill: '#2563eb', opacity: 0.85
+    }));
+    grid.appendChild(svgEl('circle', {
+      cx: rightCx, cy: shoulderY, r: mR, fill: '#2563eb', opacity: 0.85
+    }));
+  }
+
+  function update(geo) {
+    if (!ensureDom()) return;
+    drawArms(geo);
   }
 
   function getParams() { return { ...params }; }
