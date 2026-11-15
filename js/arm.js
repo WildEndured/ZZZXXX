@@ -1,25 +1,22 @@
-/* js/arm.js — Этап 2: Плечи, локти, запястья (по эталону) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
-  // Параметры (пока зашиты по эталону, ползунки добавим позже)
   const params = {
-    // Радиусы (в долях от headHeight, как в эталоне r = state.x.r * sectionH)
-    wristRadius: 0.035,   // радиус запястья
-    elbowRadius: 0.045,   // радиус локтя
-
-    // Смещения (в долях headHeight, как state.x.x * sectionH)
-    wristLeftX: 0,
-    wristLeftY: 0,
-    wristRightX: 0,
-    wristRightY: 0,
-    elbowLeftX: 0,
-    elbowLeftY: 0,
-    elbowRightX: 0,
-    elbowRightY: 0,
+    shoulderRadiusMul: 1.0,
+    elbowRadius: 0.045,
+    elbowX: 0,
+    elbowY: 0,
+    wristRadius: 0.035,
+    wristX: 0,
+    wristY: 0,
+    leftX: 0,
+    leftY: 0,
+    rightX: 0,
+    rightY: 0,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -53,7 +50,6 @@
     return node;
   }
 
-  // Ширина груди на высоте Y (та же формула синуса, что в эталоне)
   function getChestCurveWidth(t, chestRx, topNarrow) {
     if (t <= 0.6) {
       const tNorm = t / 0.6;
@@ -78,69 +74,71 @@
     const topNarrow = torso.cpTopX / chestRx;
 
     // === ПЛЕЧИ ===
-    const shoulderRadius = (chestH / 3) / 2;
+    const baseShoulderRadius = (chestH / 3) / 2;
+    const shoulderRadius = baseShoulderRadius * params.shoulderRadiusMul;
+
     const shoulderCy = torso.chestY0 + shoulderRadius;
     const t = (shoulderCy - torso.chestY0) / chestH;
     const curveWidth = getChestCurveWidth(t, chestRx, topNarrow);
 
-    const leftCx = torso.cx - curveWidth - shoulderRadius;
-    const rightCx = torso.cx + curveWidth + shoulderRadius;
+    const leftOffsetX = params.leftX * headH;
+    const leftOffsetY = params.leftY * headH;
+    const rightOffsetX = params.rightX * headH;
+    const rightOffsetY = params.rightY * headH;
+
+    const leftCx = torso.cx - curveWidth - shoulderRadius + leftOffsetX;
+    const rightCx = torso.cx + curveWidth + shoulderRadius + rightOffsetX;
+    const leftCy = shoulderCy + leftOffsetY;
+    const rightCy = shoulderCy + rightOffsetY;
 
     armL.appendChild(svgEl('circle', {
-      cx: leftCx, cy: shoulderCy, r: shoulderRadius, fill: 'none'
+      cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none'
     }));
     armR.appendChild(svgEl('circle', {
-      cx: rightCx, cy: shoulderCy, r: shoulderRadius, fill: 'none'
+      cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none'
     }));
 
-    // === НИЗ ТАЗА (для позиции запястий) ===
+    // === ЗАПЯСТЬЯ ===
     const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
+    const wristRadius = params.wristRadius * headH;
+    const wristOffsetX = params.wristX * headH;
+    const wristOffsetY = params.wristY * headH;
 
-    // === ЛЕВОЕ ЗАПЯСТЬЕ ===
-    const wristLeftRadius = params.wristRadius * headH;
-    const wristLeftCy = pelvisBottomY - wristLeftRadius + (params.wristLeftY * headH);
-    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + (params.wristLeftX * headH);
+    const wristLeftCy = pelvisBottomY - wristRadius + wristOffsetY + leftOffsetY;
+    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristOffsetX + leftOffsetX;
 
-    armL.appendChild(svgEl('circle', {
-      cx: wristLeftCx, cy: wristLeftCy, r: wristLeftRadius, fill: 'none'
-    }));
-
-    // === ЛЕВЫЙ ЛОКОТЬ ===
-    const elbowLeftRadius = params.elbowRadius * headH;
-    const elbowLeftCxBase = (leftCx + wristLeftCx) / 2;
-    const elbowLeftCyBase = (shoulderCy + wristLeftCy) / 2;
-    const elbowLeftCx = elbowLeftCxBase + (params.elbowLeftX * headH);
-    const elbowLeftCy = elbowLeftCyBase + (params.elbowLeftY * headH);
+    const wristRightCy = pelvisBottomY - wristRadius + wristOffsetY + rightOffsetY;
+    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristOffsetX + rightOffsetX;
 
     armL.appendChild(svgEl('circle', {
-      cx: elbowLeftCx, cy: elbowLeftCy, r: elbowLeftRadius, fill: 'none'
+      cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none'
     }));
-
-    // === ПРАВОЕ ЗАПЯСТЬЕ ===
-    const wristRightRadius = params.wristRadius * headH;
-    const wristRightCy = pelvisBottomY - wristRightRadius + (params.wristRightY * headH);
-    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + (params.wristRightX * headH);
-
     armR.appendChild(svgEl('circle', {
-      cx: wristRightCx, cy: wristRightCy, r: wristRightRadius, fill: 'none'
+      cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none'
     }));
 
-    // === ПРАВЫЙ ЛОКОТЬ ===
-    const elbowRightRadius = params.elbowRadius * headH;
-    const elbowRightCxBase = (rightCx + wristRightCx) / 2;
-    const elbowRightCyBase = (shoulderCy + wristRightCy) / 2;
-    const elbowRightCx = elbowRightCxBase + (params.elbowRightX * headH);
-    const elbowRightCy = elbowRightCyBase + (params.elbowRightY * headH);
+    // === ЛОКТИ ===
+    const elbowRadius = params.elbowRadius * headH;
+    const elbowOffsetX = params.elbowX * headH;
+    const elbowOffsetY = params.elbowY * headH;
 
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowOffsetX;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowOffsetY;
+    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowOffsetX;
+    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowOffsetY;
+
+    armL.appendChild(svgEl('circle', {
+      cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none'
+    }));
     armR.appendChild(svgEl('circle', {
-      cx: elbowRightCx, cy: elbowRightCy, r: elbowRightRadius, fill: 'none'
+      cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === ОТЛАДОЧНЫЕ МАРКЕРЫ (центры всех суставов) ===
+    // === МАРКЕРЫ ===
     const mR = headH * 0.012;
     const markers = [
-      { x: leftCx, y: shoulderCy, c: '#2563eb' },
-      { x: rightCx, y: shoulderCy, c: '#2563eb' },
+      { x: leftCx, y: leftCy, c: '#2563eb' },
+      { x: rightCx, y: rightCy, c: '#2563eb' },
       { x: elbowLeftCx, y: elbowLeftCy, c: '#f59e0b' },
       { x: elbowRightCx, y: elbowRightCy, c: '#f59e0b' },
       { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' },
