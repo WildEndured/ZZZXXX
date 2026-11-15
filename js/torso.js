@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Раздельные фигуры, плавающая шея */
+/* js/torso.js — Этап 2: Адаптивная шея (по контуру) */
 
 (function () {
   'use strict';
@@ -70,11 +70,10 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // Точная ширина (половина) контура груди на высоте y
+  // Ширина (половина) контура груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
-
     if (t <= 0.6) {
       const tNorm = t / 0.6;
       return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
@@ -84,36 +83,32 @@
     }
   }
 
-  // Точная ширина (половина) челюсти на высоте y (ломаная из 2 сегментов)
+  // Ширина (половина) челюсти на высоте y
   function getJawHalfWidthAtY(y, headGeo) {
     if (!headGeo) return 0;
     
     const jaw = headGeo.jaw;
-    // Используем правую сторону (она симметрична левой)
     const ptAttach = jaw.attachRight;
     const ptAngle = jaw.angleRight;
     const ptChin = jaw.chinRight;
     
-    // Проверяем: если Y между точкой крепления и углом
     if (y >= ptAttach.y && y <= ptAngle.y) {
       const t = (y - ptAttach.y) / (ptAngle.y - ptAttach.y);
       const x = ptAttach.x + (ptAngle.x - ptAttach.x) * t;
-      return Math.abs(x - headGeo.cx); // Возвращаем расстояние от центра
+      return Math.abs(x - headGeo.cx);
     }
     
-    // Если Y между углом и подбородком
     if (y > ptAngle.y && y <= ptChin.y) {
       const t = (y - ptAngle.y) / (ptChin.y - ptAngle.y);
       const x = ptAngle.x + (ptChin.x - ptAngle.x) * t;
       return Math.abs(x - headGeo.cx);
     }
     
-    // Если Y ниже подбородка — возвращаем ширину подбородка
     if (y > ptChin.y) {
       return Math.abs(ptChin.x - headGeo.cx);
     }
     
-    return 0; // Выше крепления
+    return 0;
   }
 
   function drawGrid(h) {
@@ -152,51 +147,51 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Плавающая шея ---
+    // --- 1. Адаптивная шея ---
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
+    const STROKE_W = 6; // Толщина обводки из figureLayer
 
     if (headGeo) {
       let neckTopY = headGeo.l4;
-      let neckBottomY = h.chestY0;
+      let neckBottomY = h.chestY0 + h.chestHeightPx;
 
-      // 1. Поиск верха (скользим по челюсти сверху вниз, пока её ширина не станет >= ширины шеи)
-      const startScanY = headGeo.l3; // Начинаем с линии L3 (чтобы не цеплять за уши)
-      const endScanY = headGeo.l4 + h.headH; // Сканируем чуть ниже подбородка
-      
-      for (let y = startScanY; y <= endScanY; y += 1) {
-        const halfW = getJawHalfWidthAtY(y, headGeo);
-        if (halfW >= neckHalfW) {
+      // Ищем точку на челюсти
+      for (let y = headGeo.l3; y <= headGeo.l4 + h.headH; y += 1) {
+        if (getJawHalfWidthAtY(y, headGeo) >= neckHalfW) {
           neckTopY = y;
           break;
         }
       }
 
-      // 2. Поиск низа (скользим по груди сверху вниз, пока её ширина не станет >= ширины шеи)
+      // Ищем точку на груди
       for (let y = h.chestY0; y <= h.chestY0 + h.chestHeightPx; y += 1) {
-        const halfW = getChestHalfWidthAtY(y, h);
-        if (halfW >= neckHalfW) {
+        if (getChestHalfWidthAtY(y, h) >= neckHalfW) {
           neckBottomY = y;
           break;
         }
       }
 
-      // Рисуем две независимые линии
+      // Адаптируем длину с учетом толщины линии, чтобы она перекрывала контуры
+      const offset = STROKE_W / 2;
+
       if (neckBottomY > neckTopY) {
+        // Левая линия
         torsoGroup.appendChild(svgEl('line', {
-          x1: h.cx - neckHalfW, y1: neckTopY,
-          x2: h.cx - neckHalfW, y2: neckBottomY,
+          x1: h.cx - neckHalfW, y1: neckTopY - offset,
+          x2: h.cx - neckHalfW, y2: neckBottomY + offset,
           fill: 'none',
         }));
+        // Правая линия
         torsoGroup.appendChild(svgEl('line', {
-          x1: h.cx + neckHalfW, y1: neckTopY,
-          x2: h.cx + neckHalfW, y2: neckBottomY,
+          x1: h.cx + neckHalfW, y1: neckTopY - offset,
+          x2: h.cx + neckHalfW, y2: neckBottomY + offset,
           fill: 'none',
         }));
       }
     }
 
-    // --- 2. Грудная клетка (отдельный путь) ---
+    // --- 2. Грудная клетка ---
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -219,7 +214,7 @@
       fill: 'none',
     }));
 
-    // --- 3. Таз (отдельный прямоугольник) ---
+    // --- 3. Таз ---
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0,
       y: h.pelvisY0,
