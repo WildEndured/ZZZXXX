@@ -91,7 +91,9 @@
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
     if (l4 < l4Min) l4 = l4Min;
     if (l4 > l4Max) l4 = l4Max;
-    if (l4Min > l4Max) l4 = (l3 + bottomY) / 2;
+    if (l4Min > l4Max) {
+      l4 = Math.max(l4Min, (l3 + bottomY) / 2);
+    }
 
     let chinHalf = (params.chinWidth * headH) / 2;
     const chinHalfMax = Math.max(rx * 1.1, headH * 0.05);
@@ -102,10 +104,9 @@
 
     // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
-    const baseTheta = Math.asin(attachRatio); 
-    const THETA_LIM = Math.asin(0.98);
+    const baseTheta = Math.asin(attachRatio);
 
-    const angleDX = params.jawAngleWidth * rx; 
+    const angleDX = params.jawAngleWidth * rx;
 
     const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
     const jawLen = Math.min(params.jawLength, maxJawLen);
@@ -113,7 +114,7 @@
 
     function getJawSide(sign) {
       const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
-      
+
       const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
       const attachY = cy + ry * Math.sin(theta);
 
@@ -123,7 +124,7 @@
       return {
         attach: { x: attachX, y: attachY },
         angle: { x: angleX, y: angleY },
-        chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 }
+        chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 },
       };
     }
 
@@ -231,8 +232,9 @@
 
   function update(geo) {
     if (!ensureDom()) return;
+    if (!geo || !Number.isFinite(geo.headHeight) || !Number.isFinite(geo.centerX)) return;
     const h = computeHead(geo);
-    window.Head.lastGeometry = h; // Экспорт геометрии для шеи в torso.js
+    if (window.Head) window.Head.lastGeometry = h;
     drawGrid(h);
     drawHead(h);
   }
