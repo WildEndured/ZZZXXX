@@ -12,8 +12,8 @@
     bottomWide: 0.6,
     
     // Таз
-    pelvisWidthMul: 1.0,  // множитель (по умолчанию 1.0 = точно равен высоте груди)
-    pelvisHeightMul: 1.0, // множитель (по умолчанию 1.0 = точно равен ширине груди)
+    pelvisWidthMul: 1.0,  // множитель ширины (от высоты груди)
+    pelvisHeightMul: 1.0, // множитель высоты (от ширины груди на T1)
     pelvisRounding: 0.3,  // скругление
   };
 
@@ -55,26 +55,25 @@
     // --- Грудная клетка ---
     const chestY0 = geo.topY + sectionH;
     const chestHeightPx = sectionH; // 1 голова
-    const chestWidthPx = headH * params.chestWidth; // полная ширина
-    const chestRx = chestWidthPx / 2;
+    const chestRx = (headH * params.chestWidth) / 2; // радиус на T1
     
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
     // --- Таз ---
-    // Высота таза = Ширина клетки (chestRx * 2)
+    // Высота таза = Ширина клетки на линии T1 (chestRx * 2)
     const pelvisH = (chestRx * 2) * params.pelvisHeightMul;
     // Ширина таза = Высота клетки (chestHeightPx)
     const pelvisW = chestHeightPx * params.pelvisWidthMul;
     
-    // Таз строго под грудью, без зазоров
+    // Таз строго под грудью на линии T2, без зазоров
     const pelvisY0 = chestY0 + chestHeightPx;
     const pelvisX0 = cx - pelvisW / 2;
     
     // Радиус скругления
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
-    return { headH, cx, chestY0, chestHeightPx, chestWidthPx, chestRx, cpTopX, cpBottomX,
+    return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
@@ -89,7 +88,7 @@
       { y: h.chestY0, label: 'T0' },
       { y: h.chestY0 + h.chestHeightPx / 2, label: 'T1' },
       { y: h.chestY0 + h.chestHeightPx, label: 'T2' },
-      { y: h.pelvisY0 + h.pelvisH, label: 'T3' }, // Низ таза
+      { y: h.pelvisY0 + h.pelvisH, label: 'T3' },
     ];
 
     for (const { y, label } of lines) {
