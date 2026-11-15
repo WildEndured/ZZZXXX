@@ -6,8 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    shoulderOffset: 0.0, // Сдвиг плеч от края груди (0 = ровно на краю)
-    shoulderRadiusMul: 1.0, // Множитель радиуса (если захочешь менять)
+    shoulderOffset: 0.0, // Сдвиг плеч от края груди (0 = касаются груди)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -60,17 +59,15 @@
     const chestY0 = geo.topY + headH;
     const chestRx = (headH * torsoParams.chestWidth) / 2;
 
-    // --- 2. Параметры плеч ---
-    // Радиус = половина расстояния от T0 до T1 (где T1 = середина груди)
-    const shoulderRadius = (chestHeightPx / 2) * 0.5 * params.shoulderRadiusMul;
+    // --- 2. Параметры плеч (радиус = T0.5 - T0, то есть четверть высоты груди) ---
+    // T0 = chestY0. T1 = chestY0 + chestHeightPx / 2. T0.5 = середина между ними.
+    // Радиус = (T0.5 - T0) = chestHeightPx / 4.
+    const shoulderRadius = chestHeightPx / 4;
 
-    // Центр по Y = T0 + радиус (чтобы верхушка круга касалась T0)
+    // Центр по Y = T0 + радиус (чтобы верхушка касалась T0)
     const shoulderCy = chestY0 + shoulderRadius;
 
-    // Центр по X:
-    // Левый: cx - chestRx - shoulderRadius + offset
-    // Правый: cx + chestRx + shoulderRadius - offset
-    // По умолчанию (offset = 0) круги касаются краев груди снаружи.
+    // Центр по X: касаемся краев груди снаружи
     const offset = params.shoulderOffset * headH;
     
     const leftCx = cx - chestRx - shoulderRadius + offset;
