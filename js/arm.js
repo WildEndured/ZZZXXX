@@ -7,12 +7,19 @@
 
   const params = {
     shoulderRadiusMul: 1.0,
+
     elbowRadius: 0.045,
-    elbowX: 0,
-    elbowY: 0,
+    elbowLeftX: 0,
+    elbowLeftY: 0,
+    elbowRightX: 0,
+    elbowRightY: 0,
+
     wristRadius: 0.035,
-    wristX: 0,
-    wristY: 0,
+    wristLeftX: 0,
+    wristLeftY: 0,
+    wristRightX: 0,
+    wristRightY: 0,
+
     leftX: 0,
     leftY: 0,
     rightX: 0,
@@ -101,14 +108,18 @@
     // === ЗАПЯСТЬЯ ===
     const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
     const wristRadius = params.wristRadius * headH;
-    const wristOffsetX = params.wristX * headH;
-    const wristOffsetY = params.wristY * headH;
 
-    const wristLeftCy = pelvisBottomY - wristRadius + wristOffsetY + leftOffsetY;
-    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristOffsetX + leftOffsetX;
+    // ЛЕВОЕ ЗАПЯСТЬЕ
+    const wristLeftOffsetX = params.wristLeftX * headH;
+    const wristLeftOffsetY = params.wristLeftY * headH;
+    const wristLeftCy = pelvisBottomY - wristRadius + wristLeftOffsetY + leftOffsetY;
+    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
 
-    const wristRightCy = pelvisBottomY - wristRadius + wristOffsetY + rightOffsetY;
-    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristOffsetX + rightOffsetX;
+    // ПРАВОЕ ЗАПЯСТЬЕ
+    const wristRightOffsetX = params.wristRightX * headH;
+    const wristRightOffsetY = params.wristRightY * headH;
+    const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
+    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
     armL.appendChild(svgEl('circle', {
       cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none'
@@ -119,13 +130,18 @@
 
     // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
-    const elbowOffsetX = params.elbowX * headH;
-    const elbowOffsetY = params.elbowY * headH;
 
-    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowOffsetX;
-    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowOffsetY;
-    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowOffsetX;
-    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowOffsetY;
+    // ЛЕВЫЙ ЛОКОТЬ
+    const elbowLeftOffsetX = params.elbowLeftX * headH;
+    const elbowLeftOffsetY = params.elbowLeftY * headH;
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowLeftOffsetY;
+
+    // ПРАВЫЙ ЛОКОТЬ
+    const elbowRightOffsetX = params.elbowRightX * headH;
+    const elbowRightOffsetY = params.elbowRightY * headH;
+    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
+    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
     armL.appendChild(svgEl('circle', {
       cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none'
