@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз + Диагонали */
+/* js/torso.js — Этап 2: Торс с направляющими для ног */
 
 (function () {
   'use strict';
@@ -123,29 +123,6 @@
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
   }
 
-  // Точки P0...P6 на нижней грани таза
-  function computePelvisBottomPoints(h) {
-    const pts = [];
-    for (let i = 0; i <= 6; i++) {
-      const t = i / 6;
-      pts.push({
-        x: h.pelvisX0 + h.pelvisW * t,
-        y: h.pelvisY0 + h.pelvisH,
-        label: 'P' + i,
-      });
-    }
-    return pts;
-  }
-
-  // Верхние углы таза (с учётом скругления)
-  function computePelvisTopCorners(h) {
-    const r = h.rad;
-    return {
-      topLeft: { x: h.pelvisX0, y: h.pelvisY0 + r },
-      topRight: { x: h.pelvisX0 + h.pelvisW, y: h.pelvisY0 + r },
-    };
-  }
-
   function drawGrid(h) {
     const { grid } = els;
     clear(grid);
@@ -163,50 +140,72 @@
     for (const { y, label } of lines) {
       grid.appendChild(svgEl('line', {
         x1: lineX1, x2: lineX2, y1: y, y2: y,
-        stroke: '#9aa0a6', 'stroke-width': 2,
-        'stroke-dasharray': '16 12',
+        stroke: '#9aa0a6', 'stroke-width': 2, 'stroke-dasharray': '16 12',
       }));
       const t = svgEl('text', {
-        x: lineX1 - 12, y: y + 8,
-        'text-anchor': 'end',
-        'font-size': 28,
-        'font-family': 'system-ui, sans-serif',
-        fill: '#9aa0a6',
+        x: lineX1 - 12, y: y + 8, 'text-anchor': 'end',
+        'font-size': 28, 'font-family': 'system-ui, sans-serif', fill: '#9aa0a6',
       });
       t.textContent = label;
       grid.appendChild(t);
     }
 
-    // --- Отладочные маркеры для точек таза ---
-    const bottomPts = computePelvisBottomPoints(h);
-    const topCorners = computePelvisTopCorners(h);
-    const mR = h.headH * 0.008;
+    // --- НАПРАВЛЯЮЩИЕ ДЛЯ НОГ ---
+    const pBottomY = h.pelvisY0 + h.pelvisH;
+    const step = h.pelvisW / 4; // 5 точек = 4 отрезка
 
-    for (const pt of bottomPts) {
+    // Точки деления дна таза P0..P4
+    const P = [
+      { x: h.pelvisX0, y: pBottomY },                 // P0 (левый край)
+      { x: h.pelvisX0 + step, y: pBottomY },          // P1
+      { x: h.pelvisX0 + step * 2, y: pBottomY },      // P2 (центр)
+      { x: h.pelvisX0 + step * 3, y: pBottomY },      // P3
+      { x: h.pelvisX0 + step * 4, y: pBottomY },      // P4 (правый край)
+    ];
+
+    // Верхние углы таза
+    const topLeft = { x: h.pelvisX0, y: h.pelvisY0 };
+    const topRight = { x: h.pelvisX0 + h.pelvisW, y: h.pelvisY0 };
+
+    // Угол 30 градусов от горизонтали (вниз-наружу)
+    const angleRad = 30 * Math.PI / 180;
+    const lineLength = h.pelvisH * 1.5; // Достаточная длина для наглядности
+
+    // Линия от P2 в левый верхний угол
+    grid.appendChild(svgEl('line', {
+      x1: P[2].x, y1: P[2].y, x2: topLeft.x, y2: topLeft.y,
+      stroke: '#dc2626', 'stroke-width': 2, 'stroke-dasharray': '8 6',
+    }));
+
+    // Линия от P3 в правый верхний угол
+    grid.appendChild(svgEl('line', {
+      x1: P[3].x, y1: P[3].y, x2: topRight.x, y2: topRight.y,
+      stroke: '#dc2626', 'stroke-width': 2, 'stroke-dasharray': '8 6',
+    }));
+
+    // Линия от P2 влево-вниз под 30°
+    const p2EndX = P[2].x - Math.cos(angleRad) * lineLength;
+    const p2EndY = P[2].y + Math.sin(angleRad) * lineLength;
+    grid.appendChild(svgEl('line', {
+      x1: P[2].x, y1: P[2].y, x2: p2EndX, y2: p2EndY,
+      stroke: '#2563eb', 'stroke-width': 2, 'stroke-dasharray': '8 6',
+    }));
+
+    // Линия от P3 вправо-вниз под 30°
+    const p3EndX = P[3].x + Math.cos(angleRad) * lineLength;
+    const p3EndY = P[3].y + Math.sin(angleRad) * lineLength;
+    grid.appendChild(svgEl('line', {
+      x1: P[3].x, y1: P[3].y, x2: p3EndX, y2: p3EndY,
+      stroke: '#2563eb', 'stroke-width': 2, 'stroke-dasharray': '8 6',
+    }));
+
+    // Маркеры P0..P4
+    const mR = h.headH * 0.012;
+    for (const pt of P) {
       grid.appendChild(svgEl('circle', {
-        cx: pt.x, cy: pt.y, r: mR,
-        fill: '#2563eb', opacity: 0.85,
+        cx: pt.x, cy: pt.y, r: mR, fill: '#9aa0a6', opacity: 0.85
       }));
-      const t = svgEl('text', {
-        x: pt.x, y: pt.y + 28,
-        'text-anchor': 'middle',
-        'font-size': 22,
-        'font-family': 'system-ui, sans-serif',
-        fill: '#2563eb',
-      });
-      t.textContent = pt.label;
-      grid.appendChild(t);
     }
-
-    // Маркеры верхних углов
-    grid.appendChild(svgEl('circle', {
-      cx: topCorners.topLeft.x, cy: topCorners.topLeft.y, r: mR,
-      fill: '#dc2626', opacity: 0.85,
-    }));
-    grid.appendChild(svgEl('circle', {
-      cx: topCorners.topRight.x, cy: topCorners.topRight.y, r: mR,
-      fill: '#dc2626', opacity: 0.85,
-    }));
   }
 
   function drawTorso(h) {
@@ -216,7 +215,6 @@
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
-    // --- Шея ---
     if (headGeo) {
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
@@ -233,7 +231,6 @@
       }));
     }
 
-    // --- Грудь ---
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -254,56 +251,10 @@
       d: dChest.replace(/\s+/g, ' ').trim(), fill: 'none',
     }));
 
-    // --- Таз (прямоугольник) ---
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0, y: h.pelvisY0,
       width: h.pelvisW, height: h.pelvisH,
       rx: h.rad, ry: h.rad, fill: 'none',
-    }));
-
-    // --- Диагонали от P2 и P3 ---
-    const bottomPts = computePelvisBottomPoints(h);
-    const topCorners = computePelvisTopCorners(h);
-
-    const P2 = bottomPts[2];
-    const P3 = bottomPts[3];
-
-    // 1. От P2 к верхнему левому углу
-    torsoGroup.appendChild(svgEl('line', {
-      x1: P2.x, y1: P2.y,
-      x2: topCorners.topLeft.x, y2: topCorners.topLeft.y,
-      fill: 'none',
-    }));
-
-    // 2. От P3 к верхнему правому углу
-    torsoGroup.appendChild(svgEl('line', {
-      x1: P3.x, y1: P3.y,
-      x2: topCorners.topRight.x, y2: topCorners.topRight.y,
-      fill: 'none',
-    }));
-
-    // 3. От P2 под 30° к левому краю таза
-    // Угол 30° от горизонтали, идем влево и вверх.
-    // Пересечение с левой гранью таза (x = pelvisX0)
-    const leftDx = P2.x - h.pelvisX0;
-    const leftDy = leftDx * Math.tan((30 * Math.PI) / 180);
-    const leftTarget = { x: h.pelvisX0, y: P2.y - leftDy };
-
-    torsoGroup.appendChild(svgEl('line', {
-      x1: P2.x, y1: P2.y,
-      x2: leftTarget.x, y2: leftTarget.y,
-      fill: 'none',
-    }));
-
-    // 4. От P3 под 30° к правому краю таза
-    const rightDx = (h.pelvisX0 + h.pelvisW) - P3.x;
-    const rightDy = rightDx * Math.tan((30 * Math.PI) / 180);
-    const rightTarget = { x: h.pelvisX0 + h.pelvisW, y: P3.y - rightDy };
-
-    torsoGroup.appendChild(svgEl('line', {
-      x1: P3.x, y1: P3.y,
-      x2: rightTarget.x, y2: rightTarget.y,
-      fill: 'none',
     }));
   }
 
@@ -324,5 +275,8 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  window.Torso = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, lastGeometry: null };
+  window.Torso = { 
+    update, getParams, setParams, resetParams, DEFAULT_PARAMS,
+    lastGeometry: null 
+  };
 })();
