@@ -1,14 +1,22 @@
-/* js/torso.js — Этап 2: Грудная клетка (Гладкий яйцевидный эллипс) */
+/* js/torso.js — Этап 2: Грудная клетка и Таз (Адаптация) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
+  // Параметры (в процентах, как в твоем коде, но переведенные в доли)
   const params = {
-    chestWidth: 0.9,      // Ширина (максимальная, по центру)
-    topNarrow: 0.4,       // Сужение верха
-    bottomExpand: 0.2,    // Расширение низа
+    // Грудная клетка
+    chestWidth: 0.9,      // baseRx = headH * 0.5 * (1 + chestWidth/100) -> ~0.9
+    chestTop: 0.2,        // topEx (сужение верха)
+    chestBottom: 0.0,     // botEx (расширение низа)
+    chestHeight: 1.0,     // ry (высота)
+
+    // Таз
+    pelvisWidth: 1.0,
+    pelvisHeight: 0.5,
+    pelvisRounding: 0.5,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -41,27 +49,52 @@
     return node;
   }
 
+  // Вспомогательная функция для конвертации массива точек в path
+  function pointsToPath(points, close) {
+    if (points.length === 0) return '';
+    let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+    for (let i = 1; i < points.length; i++) {
+      d += ` L ${points[i][0].toFixed(2)} ${points[i][1].toFixed(2)}`;
+    }
+    if (close) d += ' Z';
+    return d;
+  }
+
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
     
-    // Жесткие рамки от T0 до T2 (1 голова)
-    const t0Y = geo.topY + headH; 
-    const t2Y = t0Y + headH;
-    const midY = t0Y + headH / 2; // T1
+    // Начало торса (2/Х)
+    const y1 = geo.topY + headH; 
+    const h = headH; // 1 модуль
 
-    // Максимальная ширина (по центру T1)
-    const maxRx = (params.chestWidth * headH) / 2;
-    
-    // Ширина на самом верху (T0) — зависит от сужения
-    // Если topNarrow = 0.4, то верх будет 60% от максимальной ширины
-    const topRx = maxRx * (1 - params.topNarrow * 0.9);
-    
-    // Ширина на самом низу (T2) — зависит от расширения
-    // Если bottomExpand = 0.2, то низ будет 110% от максимальной ширины
-    const botRx = maxRx * (1 + params.bottomExpand * 0.5);
+    // Грудная клетка
+    // В твоем коде baseRx = h * 0.5 * (1 + cfg.chest.width / 100)
+    // У нас params.chestWidth = 1.0 (то есть 100%), значит baseRx = h * 0.5 * 2 = h
+    // Но чтобы было похоже на овал, сделаем чуть уже.
+    const baseRx = h * 0.4 * (1 + params.chestWidth);
+    const topEx = params.chestTop;
+    const botEx = params.chestBottom;
+    const ry = h * 0.5 * params.chestHeight;
 
-    return { headH, t0Y, t2Y, midY, cx, maxRx, topRx, botRx };
+    const chestCy = y1 + ry; // эллипс вписан в модуль
+    const rxTop = baseRx * (1 + topEx);
+    const rxBot = baseRx * (1 + botEx);
+
+    // Таз
+    const ellipseWidth = 2 * baseRx;
+    const ellipseHeight = 2 * ry;
+
+    const pelvisW = ellipseWidth * params.pelvisWidth;
+    const pelvisH = ellipseHeight * params.pelvisHeight;
+
+    const chestBottom = chestCy + ry;
+    const gap = h * 0.05;
+    const pelvisTop = chestBottom + gap;
+    const pelvisX = cx - pelvisW / 2;
+
+    return { headH, y1, h, cx, baseRx, topEx, botEx, ry, chestCy, rxTop, rxBot,
+             ellipseWidth, ellipseHeight, pelvisW, pelvisH, chestBottom, gap, pelvisTop, pelvisX };
   }
 
   function drawGrid(h) {
@@ -72,9 +105,9 @@
     const lineX2 = h.cx + h.headH * 0.75;
 
     const lines = [
-      { y: h.t0Y, label: 'T0' },
-      { y: h.midY, label: 'T1' },
-      { y: h.t2Y, label: 'T2' },
+      { y: h.y1, label: 'T0' },
+      { y: h.y1 + h.h / 2, label: 'T1' },
+      { y: h.y1 + h.h, label: 'T2' },
     ];
 
     for (const { y, label } of lines) {
@@ -99,45 +132,81 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    // Точки сопряжения (по центру, T1)
-    const pMidR = { x: h.cx + h.maxRx, y: h.midY };
-    const pMidL = { x: h.cx - h.maxRx, y: h.midY };
-
-    // Строим путь: 
-    // 1. Начинаем с левой точки на T1 (pMidL)
-    // 2. Идем вверх к T0 через кривую Безье (используя topRx для контроля)
-    // 3. Спускаемся вниз к T2 через правую точку на T1 через кривую Безье
-    // 4. Возвращаемся по нижней дуге обратно к pMidL
+    // 1. Грудная клетка (две дуги)
+    const steps = 64;
+    const pts = [];
     
-    // Контрольные точки для верха (чтобы он был острым)
-    const ctrlTopY = h.t0Y + (h.midY - h.t0Y) * 0.4;
-    
-    // Контрольные точки для низа (чтобы он был плавным)
-    const ctrlBotY = h.t2Y - (h.t2Y - h.midY) * 0.4;
-
-    const d = `
-      M ${pMidL.x} ${pMidL.y}
-      C ${h.cx - h.topRx} ${ctrlTopY}, ${h.cx - h.topRx * 0.5} ${h.t0Y}, ${h.cx} ${h.t0Y}
-      C ${h.cx + h.topRx * 0.5} ${h.t0Y}, ${h.cx + h.topRx} ${ctrlTopY}, ${pMidR.x} ${pMidR.y}
-      C ${h.cx + h.botRx} ${ctrlBotY}, ${h.cx + h.botRx * 0.5} ${h.t2Y}, ${h.cx} ${h.t2Y}
-      C ${h.cx - h.botRx * 0.5} ${h.t2Y}, ${h.cx - h.botRx} ${ctrlBotY}, ${pMidL.x} ${pMidL.y}
-      Z
-    `;
+    // Верхняя половина (от π до 2π) с rxTop
+    for (let i = 0; i <= steps; i++) {
+      const t = Math.PI + Math.PI * i / steps;
+      pts.push([h.cx + Math.cos(t) * h.rxTop, h.chestCy + Math.sin(t) * h.ry]);
+    }
+    // Нижняя половина (от 0 до π) с rxBot
+    for (let i = 0; i <= steps; i++) {
+      const t = Math.PI - Math.PI * i / steps;
+      pts.push([h.cx + Math.cos(t) * h.rxBot, h.chestCy + Math.sin(t) * h.ry]);
+    }
 
     torsoGroup.appendChild(svgEl('path', {
-      d: d.replace(/\s+/g, ' ').trim(),
+      d: pointsToPath(pts, true),
+      fill: 'none',
+    }));
+
+    // 2. Таз (прямоугольник со скругленными углами)
+    const rad = Math.min(h.pelvisW, h.pelvisH) / 2 * params.pelvisRounding;
+    
+    // В SVG нет простого тега "rect с радиусами", используем path
+    const x = h.pelvisX;
+    const y = h.pelvisTop;
+    const w = h.pelvisW;
+    const hh = h.pelvisH;
+    
+    // Рисуем прямоугольник с закруглениями через путь
+    const rectPath = `
+      M ${x + rad} ${y}
+      L ${x + w - rad} ${y}
+      A ${rad} ${rad} 0 0 1 ${x + w} ${y + rad}
+      L ${x + w} ${y + hh - rad}
+      A ${rad} ${rad} 0 0 1 ${x + w - rad} ${y + hh}
+      L ${x + rad} ${y + hh}
+      A ${rad} ${rad} 0 0 1 ${x} ${y + hh - rad}
+      L ${x} ${y + rad}
+      A ${rad} ${rad} 0 0 1 ${x + rad} ${y}
+      Z
+    `;
+    
+    torsoGroup.appendChild(svgEl('path', {
+      d: rectPath.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
     // Маркеры
     const mR = h.headH * 0.012;
-    const debugPoints = [
-      { x: h.cx, y: h.t0Y, c: '#dc2626' }, // Верх
-      { x: pMidR.x, y: pMidR.y, c: '#2563eb' }, // Право центр
-      { x: h.cx, y: h.t2Y, c: '#16a34a' }, // Низ
-      { x: pMidL.x, y: pMidL.y, c: '#2563eb' }, // Лево центр
-    ];
     
+    // Плечи
+    const shoulderY = h.chestCy - h.ry + (2 * h.ry) / 3;
+    const shoulderL = { x: h.cx - h.rxTop, y: shoulderY };
+    const shoulderR = { x: h.cx + h.rxTop, y: shoulderY };
+
+    // Запястья
+    const wristY = h.pelvisTop + h.pelvisH * 0.1;
+    const wristL = { x: h.pelvisX, y: wristY };
+    const wristR = { x: h.pelvisX + h.pelvisW, y: wristY };
+
+    // Ноги
+    const p25 = h.pelvisX + h.pelvisW * 0.4;
+    const p45 = h.pelvisX + h.pelvisW * 0.8;
+    const pelvisBottomY = h.pelvisTop + h.pelvisH;
+
+    const debugPoints = [
+      { x: shoulderL.x, y: shoulderL.y, c: '#2563eb' },
+      { x: shoulderR.x, y: shoulderR.y, c: '#2563eb' },
+      { x: wristL.x, y: wristL.y, c: '#f59e0b' },
+      { x: wristR.x, y: wristR.y, c: '#f59e0b' },
+      { x: p25, y: pelvisBottomY, c: '#16a34a' },
+      { x: p45, y: pelvisBottomY, c: '#16a34a' },
+    ];
+
     for (const pt of debugPoints) {
       grid.appendChild(svgEl('circle', {
         cx: pt.x, cy: pt.y, r: mR,
@@ -151,6 +220,25 @@
     const h = computeTorso(geo);
     drawGrid(h);
     drawTorso(h);
+
+    // Сохраняем якоря для рук и ног
+    const shoulderY = h.chestCy - h.ry + (2 * h.ry) / 3;
+    const wristY = h.pelvisTop + h.pelvisH * 0.1;
+    const pelvisBottomY = h.pelvisTop + h.pelvisH;
+    
+    window.Torso.anchors = {
+      shoulderL: { x: h.cx - h.rxTop, y: shoulderY },
+      shoulderR: { x: h.cx + h.rxTop, y: shoulderY },
+      wristL: { x: h.pelvisX, y: wristY },
+      wristR: { x: h.pelvisX + h.pelvisW, y: wristY },
+      pelvisBottom: { 
+        y: pelvisBottomY, 
+        x2of5: h.pelvisX + h.pelvisW * 0.4, 
+        x4of5: h.pelvisX + h.pelvisW * 0.8,
+        left: h.pelvisX, 
+        right: h.pelvisX + h.pelvisW 
+      }
+    };
   }
 
   function getParams() { return { ...params }; }
@@ -162,5 +250,12 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  window.Torso = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
+  window.Torso = { 
+    update, 
+    getParams, 
+    setParams, 
+    resetParams, 
+    DEFAULT_PARAMS,
+    anchors: null 
+  };
 })();
