@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (Идеальный эллипс от T0 до T2) */
+/* js/torso.js — Этап 2: Грудная клетка (Гладкий яйцевидный эллипс) */
 
 (function () {
   'use strict';
@@ -6,9 +6,9 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    chestWidth: 0.9,      // Ширина (радиус по X)
-    topNarrow: 0.4,       // Сужение верха (сжимает верхнюю половину)
-    bottomExpand: 0.2,    // Расширение низа (растягивает нижнюю половину)
+    chestWidth: 0.9,      // Ширина (максимальная, по центру)
+    topNarrow: 0.4,       // Сужение верха
+    bottomExpand: 0.2,    // Расширение низа
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -45,28 +45,23 @@
     const headH = geo.headHeight;
     const cx = geo.centerX;
     
-    // Жесткие рамки от T0 до T2 (ровно 1 голова)
+    // Жесткие рамки от T0 до T2 (1 голова)
     const t0Y = geo.topY + headH; 
     const t2Y = t0Y + headH;
-    
-    // Центр эллипса строго посередине
-    const cy = (t0Y + t2Y) / 2; 
-    // Базовый радиус по Y (половина высоты)
-    const baseRy = (t2Y - t0Y) / 2; 
+    const midY = t0Y + headH / 2; // T1
 
-    // Радиус по X (ширина)
+    // Максимальная ширина (по центру T1)
     const maxRx = (params.chestWidth * headH) / 2;
     
-    // Радиусы по X для верхней и нижней половин
-    // Верх сужается (уменьшаем X), низ расширяется (увеличиваем X)
-    const topRx = maxRx * (1 - params.topNarrow * 0.8);
-    const botRx = maxRx * (1 + params.bottomExpand * 0.5);
+    // Ширина на самом верху (T0) — зависит от сужения
+    // Если topNarrow = 0.4, то верх будет 60% от максимальной ширины
+    const topRx = maxRx * (1 - params.topNarrow * 0.9);
     
-    // Радиусы по Y (чтобы они вписывались ровно в T0 и T2)
-    const topRy = baseRy;
-    const botRy = baseRy;
+    // Ширина на самом низу (T2) — зависит от расширения
+    // Если bottomExpand = 0.2, то низ будет 110% от максимальной ширины
+    const botRx = maxRx * (1 + params.bottomExpand * 0.5);
 
-    return { headH, t0Y, t2Y, midY: cy, cx, topRx, botRx, topRy, botRy };
+    return { headH, t0Y, t2Y, midY, cx, maxRx, topRx, botRx };
   }
 
   function drawGrid(h) {
@@ -104,39 +99,43 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    // Рисуем верхнюю половину (дуга сверху)
-    // От левого бока (cx - topRx, cy) до правого бока (cx + topRx, cy) через верх (cx, t0Y)
-    const dTop = `
-      M ${h.cx - h.topRx} ${h.midY}
-      A ${h.topRx} ${h.topRy} 0 0 1 ${h.cx + h.topRx} ${h.midY}
-    `;
+    // Точки сопряжения (по центру, T1)
+    const pMidR = { x: h.cx + h.maxRx, y: h.midY };
+    const pMidL = { x: h.cx - h.maxRx, y: h.midY };
 
-    // Рисуем нижнюю половину (дуга снизу)
-    // От правого бока (cx + botRx, cy) до левого бока (cx - botRx, cy) через низ (cx, t2Y)
-    const dBot = `
-      M ${h.cx + h.botRx} ${h.midY}
-      A ${h.botRx} ${h.botRy} 0 0 1 ${h.cx - h.botRx} ${h.midY}
+    // Строим путь: 
+    // 1. Начинаем с левой точки на T1 (pMidL)
+    // 2. Идем вверх к T0 через кривую Безье (используя topRx для контроля)
+    // 3. Спускаемся вниз к T2 через правую точку на T1 через кривую Безье
+    // 4. Возвращаемся по нижней дуге обратно к pMidL
+    
+    // Контрольные точки для верха (чтобы он был острым)
+    const ctrlTopY = h.t0Y + (h.midY - h.t0Y) * 0.4;
+    
+    // Контрольные точки для низа (чтобы он был плавным)
+    const ctrlBotY = h.t2Y - (h.t2Y - h.midY) * 0.4;
+
+    const d = `
+      M ${pMidL.x} ${pMidL.y}
+      C ${h.cx - h.topRx} ${ctrlTopY}, ${h.cx - h.topRx * 0.5} ${h.t0Y}, ${h.cx} ${h.t0Y}
+      C ${h.cx + h.topRx * 0.5} ${h.t0Y}, ${h.cx + h.topRx} ${ctrlTopY}, ${pMidR.x} ${pMidR.y}
+      C ${h.cx + h.botRx} ${ctrlBotY}, ${h.cx + h.botRx * 0.5} ${h.t2Y}, ${h.cx} ${h.t2Y}
+      C ${h.cx - h.botRx * 0.5} ${h.t2Y}, ${h.cx - h.botRx} ${ctrlBotY}, ${pMidL.x} ${pMidL.y}
+      Z
     `;
 
     torsoGroup.appendChild(svgEl('path', {
-      d: dTop.replace(/\s+/g, ' ').trim(),
-      fill: 'none',
-    }));
-
-    torsoGroup.appendChild(svgEl('path', {
-      d: dBot.replace(/\s+/g, ' ').trim(),
+      d: d.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
     // Маркеры
     const mR = h.headH * 0.012;
     const debugPoints = [
-      { x: h.cx, y: h.t0Y, c: '#dc2626' },          // Верх (T0)
-      { x: h.cx + h.topRx, y: h.midY, c: '#2563eb' }, // Право верх
-      { x: h.cx - h.topRx, y: h.midY, c: '#2563eb' }, // Лево верх
-      { x: h.cx, y: h.t2Y, c: '#16a34a' },          // Низ (T2)
-      { x: h.cx + h.botRx, y: h.midY, c: '#ea580c' }, // Право низ
-      { x: h.cx - h.botRx, y: h.midY, c: '#ea580c' }, // Лево низ
+      { x: h.cx, y: h.t0Y, c: '#dc2626' }, // Верх
+      { x: pMidR.x, y: pMidR.y, c: '#2563eb' }, // Право центр
+      { x: h.cx, y: h.t2Y, c: '#16a34a' }, // Низ
+      { x: pMidL.x, y: pMidL.y, c: '#2563eb' }, // Лево центр
     ];
     
     for (const pt of debugPoints) {
