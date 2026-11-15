@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея, плавающая по челюсти и груди */
+/* js/torso.js — Этап 2: Шея (точное касание Безье) + Грудь + Таз */
 
 (function () {
   'use strict';
@@ -70,44 +70,62 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // --- МАТЕМАТИКА ГРУДИ ---
-  // Возвращает половину ширины груди на высоте y
-  function getChestHalfWidthAtY(y, h) {
-    const t = (y - h.chestY0) / h.chestHeightPx;
-    if (t < 0 || t > 1) return 0;
+  // --- МАТЕМАТИКА ГРУДИ (ТОЧНАЯ ПО БЕЗЬЕ) ---
+  // Опорные точки верхней правой кривой Безье (для поиска Y по X)
+  function getChestTopCurvePoints(h) {
+    const x0 = h.cx;
+    const y0 = h.chestY0;
+    const yMid = y0 + h.chestHeightPx * 0.6;
+    const rx = h.chestRx;
 
-    if (t <= 0.6) {
-      const tNorm = t / 0.6;
-      return h.cpTopX + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
-    } else {
-      const tNorm = (t - 0.6) / 0.4;
-      return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
-    }
+    return [
+      { x: x0, y: y0 },                                          // P0
+      { x: x0 + h.cpTopX, y: y0 },                               // P1
+      { x: x0 + rx, y: y0 + h.chestHeightPx * 0.3 },             // P2
+      { x: x0 + rx, y: yMid },                                   // P3
+    ];
   }
 
-  // Ищет Y на груди, где ширина равна заданному X
-  function findChestYByX(x, h) {
-    const dx = Math.abs(x - h.cx);
-    if (dx > h.chestRx) return h.chestY0 + h.chestHeightPx; // Если шире груди — падаем на низ
+  // Уравнение X(t) для кубической Безье
+  function bezierX(t, p) {
+    const mt = 1 - t;
+    return mt*mt*mt*p[0].x + 3*mt*mt*t*p[1].x + 3*mt*t*t*p[2].x + t*t*t*p[3].x;
+  }
 
-    let low = h.chestY0;
-    let high = h.chestY0 + h.chestHeightPx;
-    
-    // Бинарный поиск. Нам нужна САМАЯ ВЕРХНЯЯ точка, где грудь достигает ширины dx.
-    for (let i = 0; i < 30; i++) {
+  // Уравнение Y(t) для кубической Безье
+  function bezierY(t, p) {
+    const mt = 1 - t;
+    return mt*mt*mt*p[0].y + 3*mt*mt*t*p[1].y + 3*mt*t*t*p[2].y + t*t*t*p[3].y;
+  }
+
+  // Точный поиск Y на верхней правой кривой Безье по заданному X
+  function findChestYByX(x, h) {
+    const points = getChestTopCurvePoints(h);
+    const dx = Math.abs(x - h.cx);
+    const maxDx = h.chestRx; // Максимальная ширина
+
+    // Если X больше максимальной ширины груди — возвращаем низ (клип)
+    if (dx > maxDx) return h.chestY0 + h.chestHeightPx;
+
+    // Бинарный поиск параметра t, при котором bezierX(t) == dx
+    let low = 0;
+    let high = 1;
+
+    for (let i = 0; i < 40; i++) {
       const mid = (low + high) / 2;
-      const halfW = getChestHalfWidthAtY(mid, h);
-      if (halfW < dx) {
-        low = mid; // Грудь еще узкая, спускаемся ниже
+      const midX = bezierX(mid, points) - h.cx; // Смещение от центра
+      if (midX < dx) {
+        low = mid;
       } else {
-        high = mid; // Грудь достаточно широкая, поднимаемся выше
+        high = mid;
       }
     }
-    return high;
+
+    // Возвращаем Y в найденной точке
+    return bezierY(high, points);
   }
 
   // --- МАТЕМАТИКА ЧЕЛЮСТИ ---
-  // Ищет Y на ВТОРОМ отрезке челюсти (от угла до подбородка), где X равен заданному
   function findJawYOnSecondSegment(x, headGeo) {
     if (!headGeo) return headGeo.l4;
     
@@ -119,12 +137,10 @@
     const dxChin = Math.abs(ptChin.x - cx);
     const targetDx = Math.abs(x - cx);
 
-    // Клипуем X, чтобы он не вылетел за пределы отрезка
     const minDx = Math.min(dxAngle, dxChin);
     const maxDx = Math.max(dxAngle, dxChin);
     const clampedDx = Math.max(minDx, Math.min(maxDx, targetDx));
 
-    // Линейная интерполяция Y между углом и подбородком
     if (dxAngle === dxChin) return ptAngle.y;
     const t = (clampedDx - dxAngle) / (dxChin - dxAngle);
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
@@ -173,11 +189,11 @@
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
 
-      // ВЕРХ: Ищем Y на втором отрезке челюсти
+      // ВЕРХ: Y на втором отрезке челюсти (линейно)
       const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
       const topRightY = findJawYOnSecondSegment(rightX, headGeo);
       
-      // НИЗ: Ищем Y на груди
+      // НИЗ: Y на груди (через точное уравнение Безье)
       const botLeftY = findChestYByX(leftX, h);
       const botRightY = findChestYByX(rightX, h);
 
