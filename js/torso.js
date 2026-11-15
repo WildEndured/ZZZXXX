@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз + Шея */
+/* js/torso.js — Этап 2: Грудная клетка + Таз + Шея (от углов челюсти) */
 
 (function () {
   'use strict';
@@ -71,7 +71,7 @@
     
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
-    // --- Шея ---
+    // --- Шея (нижние точки на T0) ---
     const neckHalfW = (headH * params.neckWidth) / 2;
     const neckBottomL = { x: cx - neckHalfW, y: chestY0 };
     const neckBottomR = { x: cx + neckHalfW, y: chestY0 };
@@ -114,22 +114,24 @@
     clear(torsoGroup);
 
     // --- Шея ---
-    // Берём точки крепления челюсти из head.js
+    // Берём углы челюсти из head.js (neckTopLeft / neckTopRight)
     if (window.Head && window.Head.anchors) {
-      const topL = window.Head.anchors.attachLeft;
-      const topR = window.Head.anchors.attachRight;
-      
-      torsoGroup.appendChild(svgEl('line', {
-        x1: topL.x, y1: topL.y,
-        x2: h.neckBottomL.x, y2: h.neckBottomL.y,
-        fill: 'none',
-      }));
+      const topL = window.Head.anchors.neckTopLeft;
+      const topR = window.Head.anchors.neckTopRight;
 
-      torsoGroup.appendChild(svgEl('line', {
-        x1: topR.x, y1: topR.y,
-        x2: h.neckBottomR.x, y2: h.neckBottomR.y,
-        fill: 'none',
-      }));
+      if (topL && topR) {
+        torsoGroup.appendChild(svgEl('line', {
+          x1: topL.x, y1: topL.y,
+          x2: h.neckBottomL.x, y2: h.neckBottomL.y,
+          fill: 'none',
+        }));
+
+        torsoGroup.appendChild(svgEl('line', {
+          x1: topR.x, y1: topR.y,
+          x2: h.neckBottomR.x, y2: h.neckBottomR.y,
+          fill: 'none',
+        }));
+      }
     }
 
     // --- Грудная клетка (Безье) ---
