@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (ЭЛЛИПС) */
+/* js/torso.js — Этап 2: Грудная клетка (ЕДИНЫЙ ЭЛЛИПС) */
 
 (function () {
   'use strict';
@@ -45,24 +45,25 @@
     const headH = geo.headHeight;
     const cx = geo.centerX;
     
-    // T0 — ровно L5 (низ первой головы)
-    const topY = geo.topY + headH; 
-    // Высота = ровно 1 голова
-    const bottomY = topY + headH;
-    const midY = topY + headH / 2; 
+    // T0 (верх) и T2 (низ) — жестко 1 голова
+    const t0Y = geo.topY + headH; 
+    const t2Y = t0Y + headH;
+    const midY = t0Y + headH / 2; // T1
 
-    // Ширина (радиус по X)
+    // Общая ширина (радиус X)
     const rx = (params.chestWidth * headH) / 2;
     
-    // Радиус по Y для верхней половины (сужение)
-    // Если topNarrow = 1, верхний радиус будет очень маленьким (заостренным)
-    const ryTop = (headH / 2) * (1 - params.topNarrow * 0.9);
-    
-    // Радиус по Y для нижней половины (расширение)
-    // Если bottomExpand = 1, нижний радиус будет больше
-    const ryBot = (headH / 2) * (1 + params.bottomExpand * 0.9);
+    // Как сильно сужается верх и расширяется низ
+    // Если topNarrow=0 и bottomExpand=0, то это ровный круг/эллипс.
+    const topShift = params.topNarrow * (headH / 2); 
+    const botShift = params.bottomExpand * (headH / 2);
 
-    return { headH, topY, cx, midY, bottomY, rx, ryTop, ryBot };
+    // Высота эллипса зависит от сдвигов.
+    // Чтобы фигура вписывалась в T0-T2, её центр сдвигается.
+    const ry = (headH / 2) - (topShift * 0.5) + (botShift * 0.5);
+    const cy = midY - (topShift * 0.5) + (botShift * 0.5);
+
+    return { headH, t0Y, t2Y, midY, cx, cy, rx, ry };
   }
 
   function drawGrid(h) {
@@ -73,9 +74,9 @@
     const lineX2 = h.cx + h.headH * 0.75;
 
     const lines = [
-      { y: h.topY, label: 'T0' },
+      { y: h.t0Y, label: 'T0' },
       { y: h.midY, label: 'T1' },
-      { y: h.bottomY, label: 'T2' },
+      { y: h.t2Y, label: 'T2' },
     ];
 
     for (const { y, label } of lines) {
@@ -100,38 +101,23 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    // Рисуем ДВЕ половинки эллипса через path (дуги), чтобы верх и низ были разными.
-    // M — старт в середине, A — дуга до противоположной точки.
-    
-    // Верхняя дуга (от левого края до правого через верх)
-    const dTop = `
-      M ${h.cx - h.rx} ${h.midY}
-      A ${h.rx} ${h.ryTop} 0 0 1 ${h.cx + h.rx} ${h.midY}
-    `;
-
-    // Нижняя дуга (от правого края до левого через низ)
-    const dBot = `
-      M ${h.cx + h.rx} ${h.midY}
-      A ${h.rx} ${h.ryBot} 0 0 1 ${h.cx - h.rx} ${h.midY}
-    `;
-
-    torsoGroup.appendChild(svgEl('path', {
-      d: dTop.replace(/\s+/g, ' ').trim(),
+    // Рисуем ОДИН цельный эллипс.
+    // Он будет сужаться сверху, потому что центр (cy) смещен вниз.
+    torsoGroup.appendChild(svgEl('ellipse', {
+      cx: h.cx,
+      cy: h.cy,
+      rx: h.rx,
+      ry: h.ry,
       fill: 'none',
     }));
 
-    torsoGroup.appendChild(svgEl('path', {
-      d: dBot.replace(/\s+/g, ' ').trim(),
-      fill: 'none',
-    }));
-
-    // Маркеры
+    // Маркеры границ (для отладки)
     const mR = h.headH * 0.012;
     const debugPoints = [
-      { x: h.cx, y: h.midY - h.ryTop, c: '#dc2626' }, // Верх
-      { x: h.cx + h.rx, y: h.midY, c: '#2563eb' },    // Право
-      { x: h.cx, y: h.midY + h.ryBot, c: '#16a34a' }, // Низ
-      { x: h.cx - h.rx, y: h.midY, c: '#2563eb' },    // Лево
+      { x: h.cx, y: h.cy - h.ry, c: '#dc2626' }, // Верх эллипса
+      { x: h.cx + h.rx, y: h.cy, c: '#2563eb' }, // Право
+      { x: h.cx, y: h.cy + h.ry, c: '#16a34a' }, // Низ эллипса
+      { x: h.cx - h.rx, y: h.cy, c: '#2563eb' }, // Лево
     ];
     
     for (const pt of debugPoints) {
