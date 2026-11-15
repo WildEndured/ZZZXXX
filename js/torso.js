@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Вертикальная шея, адаптирующаяся под контуры */
+/* js/torso.js — Этап 2: Шея растет из второго отрезка челюсти */
 
 (function () {
   'use strict';
@@ -52,25 +52,25 @@
 
     const chestHeightPx = headH * (1 + params.chestHeightCorr);
     const chestY0 = geo.topY + headH;
-
-    const chestRx = (headH * params.chestWidth) / 2;
+    
+    const chestRx = (headH * params.chestWidth) / 2; 
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
     const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
     const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
-
+    
     const chestYBot = chestY0 + chestHeightPx;
     const pelvisY0 = chestYBot;
     const pelvisX0 = cx - pelvisW / 2;
-
+    
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // Ширина (половина) груди на высоте y
+  // Половина ширины груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -84,67 +84,57 @@
     }
   }
 
-  // Нижняя граница головы на данном X:
-  // нижняя огибающая эллипса, челюсти и линии подбородка.
-  function headBottomYAtX(x, headGeo) {
-    if (!headGeo) return 0;
-    const { cx, cy, rx, ry, l4, jaw } = headGeo;
-
-    // Эллипс (нижняя половина)
-    let yEllipse = -Infinity;
-    const dxN = (x - cx) / rx;
-    if (Math.abs(dxN) <= 1) {
-      yEllipse = cy + ry * Math.sqrt(1 - dxN * dxN);
-    }
-
-    // Челюсть — по стороне, к которой относится X
-    const side = x >= cx ? 1 : -1;
-    const attach = side === 1 ? jaw.attachRight : jaw.attachLeft;
-    const angle  = side === 1 ? jaw.angleRight  : jaw.angleLeft;
-    const chin   = side === 1 ? jaw.chinRight   : jaw.chinLeft;
-
-    const ax  = Math.abs(attach.x - cx);
-    const bx  = Math.abs(angle.x  - cx);
-    const cxx = Math.abs(chin.x   - cx);
-    const dxAbs = Math.abs(x - cx);
-
-    const lerpY = (x0, y0, x1, y1) => {
-      const span = x1 - x0;
-      if (Math.abs(span) < 1e-9) return y0;
-      const t = (dxAbs - x0) / span;
-      return y0 + (y1 - y0) * t;
-    };
-
-    let yJaw = -Infinity;
-    const s1min = Math.min(ax, bx), s1max = Math.max(ax, bx);
-    if (dxAbs >= s1min && dxAbs <= s1max) {
-      yJaw = Math.max(yJaw, lerpY(ax, attach.y, bx, angle.y));
-    }
-    const s2min = Math.min(bx, cxx), s2max = Math.max(bx, cxx);
-    if (dxAbs >= s2min && dxAbs <= s2max) {
-      yJaw = Math.max(yJaw, lerpY(bx, angle.y, cxx, chin.y));
-    }
-
-    return Math.max(yEllipse, yJaw, l4);
-  }
-
-  // Верхняя граница груди на данном X.
-  // Ищем только на расширяющемся участке (t ∈ [0, 0.6]).
-  // Если X уже верхней точки (dx ≤ cpTopX) или вне груди — верхняя кромка.
-  function chestTopYAtX(x, h) {
+  // Поиск Y на груди для заданного X
+  function findChestYByX(x, h) {
     const dx = Math.abs(x - h.cx);
-    if (dx >= h.chestRx) return h.chestY0;
-    if (dx <= h.cpTopX)  return h.chestY0;
+    if (dx > h.chestRx) return h.chestY0 + h.chestHeightPx;
 
     let low = h.chestY0;
-    let high = h.chestY0 + h.chestHeightPx * 0.6;
-    for (let i = 0; i < 20; i++) {
+    let high = h.chestY0 + h.chestHeightPx;
+    
+    for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2;
       const halfW = getChestHalfWidthAtY(mid, h);
-      if (halfW < dx) low = mid;
-      else high = mid;
+      if (halfW < dx) {
+        low = mid;
+      } else {
+        high = mid;
+      }
     }
     return high;
+  }
+
+  // --- ГЛАВНОЕ: Поиск Y на ВТОРОМ ОТРЕЗКЕ челюсти ---
+  // Второй отрезок: от угла (angleRight) до края подбородка (chinRight)
+  function findJawYOnSecondSegment(x, headGeo) {
+    if (!headGeo) return headGeo.l4;
+    
+    const ptAngle = headGeo.jaw.angleRight;
+    const ptChin = headGeo.jaw.chinRight;
+    const cx = headGeo.cx;
+
+    // Координаты на правой стороне
+    const ax = ptAngle.x;
+    const ay = ptAngle.y;
+    const bx = ptChin.x;
+    const by = ptChin.y;
+
+    // Ширина (расстояние от центра) для угла и подбородка
+    const dxAngle = Math.abs(ax - cx);
+    const dxChin = Math.abs(bx - cx);
+
+    // Мы ищем по X (расстоянию от центра)
+    const targetDx = Math.abs(x - cx);
+
+    // Клипуем X, чтобы он не выходил за пределы второго отрезка
+    const minDx = Math.min(dxAngle, dxChin);
+    const maxDx = Math.max(dxAngle, dxChin);
+    const clampedDx = Math.max(minDx, Math.min(maxDx, targetDx));
+
+    // Интерполируем Y между углом и подбородком
+    if (dxAngle === dxChin) return ay; // Защита от деления на ноль
+    const t = (clampedDx - dxAngle) / (dxChin - dxAngle);
+    return ay + (by - ay) * t;
   }
 
   function drawGrid(h) {
@@ -187,20 +177,25 @@
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
     if (headGeo) {
-      const leftX  = h.cx - neckHalfW;
+      const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
 
-      const topLeftY  = headBottomYAtX(leftX,  headGeo);
-      const topRightY = headBottomYAtX(rightX, headGeo);
-      const botLeftY  = chestTopYAtX(leftX,  h);
-      const botRightY = chestTopYAtX(rightX, h);
+      // ВЕРХ: Ищем Y строго на ВТОРОМ ОТРЕЗКЕ челюсти
+      const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
+      const topRightY = findJawYOnSecondSegment(rightX, headGeo);
+      
+      // НИЗ: Ищем Y на груди
+      const botLeftY = findChestYByX(leftX, h);
+      const botRightY = findChestYByX(rightX, h);
 
+      // Левая линия (строго вертикальная)
       torsoGroup.appendChild(svgEl('line', {
         x1: leftX, y1: topLeftY,
         x2: leftX, y2: botLeftY,
         fill: 'none',
       }));
 
+      // Правая линия (строго вертикальная)
       torsoGroup.appendChild(svgEl('line', {
         x1: rightX, y1: topRightY,
         x2: rightX, y2: botRightY,
