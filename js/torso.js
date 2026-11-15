@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз (с коррекциями) */
+/* js/torso.js — Этап 2: Грудная клетка + Таз */
 
 (function () {
   'use strict';
@@ -7,15 +7,15 @@
 
   const params = {
     // Грудная клетка
-    chestWidth: 0.8,
-    chestHeightCorr: 0,   // коррекция высоты груди (-0.5..0.5)
-    topNarrow: 0.4,
-    bottomWide: 0.6,
+    chestWidth: 0.7,
+    chestHeightCorr: -0.15,
+    topNarrow: 0.6,
+    bottomWide: 0.8,
     
     // Таз
-    pelvisWidthCorr: 0,   // коррекция ширины таза (-0.5..0.5)
-    pelvisHeightCorr: 0,  // коррекция высоты таза (-0.5..0.5)
-    pelvisRounding: 0.3,  // скругление
+    pelvisWidthCorr: 0,
+    pelvisHeightCorr: 0,
+    pelvisRounding: 0.6,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -53,27 +53,21 @@
     const cx = geo.centerX;
 
     // --- Грудная клетка ---
-    // Базовая высота = 1 голова. Коррекция меняет её в пределах ±50%.
     const chestHeightPx = headH * (1 + params.chestHeightCorr);
-    const chestY0 = geo.topY + headH; // Верх всегда строго на L5
+    const chestY0 = geo.topY + headH;
     
     const chestRx = (headH * params.chestWidth) / 2; 
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
     // --- Таз ---
-    // Базовая высота = Ширина клетки на T1 (2 * chestRx). Коррекция меняет ±50%.
     const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
-    
-    // Базовая ширина = Высота клетки (chestHeightPx). Коррекция меняет ±50%.
     const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
     
-    // Таз строго под грудью (сразу после её низа)
     const chestYBot = chestY0 + chestHeightPx;
     const pelvisY0 = chestYBot;
     const pelvisX0 = cx - pelvisW / 2;
     
-    // Радиус скругления
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
