@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (ЕДИНЫЙ ЭЛЛИПС) */
+/* js/torso.js — Этап 2: Грудная клетка (Идеальный эллипс от T0 до T2) */
 
 (function () {
   'use strict';
@@ -6,9 +6,9 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    chestWidth: 0.9,      // Ширина
-    topNarrow: 0.4,       // Сужение верха (0…1)
-    bottomExpand: 0.2,    // Расширение низа (0…1)
+    chestWidth: 0.9,      // Ширина (радиус по X)
+    topNarrow: 0.4,       // Сужение верха (сжимает верхнюю половину)
+    bottomExpand: 0.2,    // Расширение низа (растягивает нижнюю половину)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -45,25 +45,28 @@
     const headH = geo.headHeight;
     const cx = geo.centerX;
     
-    // T0 (верх) и T2 (низ) — жестко 1 голова
+    // Жесткие рамки от T0 до T2 (ровно 1 голова)
     const t0Y = geo.topY + headH; 
     const t2Y = t0Y + headH;
-    const midY = t0Y + headH / 2; // T1
-
-    // Общая ширина (радиус X)
-    const rx = (params.chestWidth * headH) / 2;
     
-    // Как сильно сужается верх и расширяется низ
-    // Если topNarrow=0 и bottomExpand=0, то это ровный круг/эллипс.
-    const topShift = params.topNarrow * (headH / 2); 
-    const botShift = params.bottomExpand * (headH / 2);
+    // Центр эллипса строго посередине
+    const cy = (t0Y + t2Y) / 2; 
+    // Базовый радиус по Y (половина высоты)
+    const baseRy = (t2Y - t0Y) / 2; 
 
-    // Высота эллипса зависит от сдвигов.
-    // Чтобы фигура вписывалась в T0-T2, её центр сдвигается.
-    const ry = (headH / 2) - (topShift * 0.5) + (botShift * 0.5);
-    const cy = midY - (topShift * 0.5) + (botShift * 0.5);
+    // Радиус по X (ширина)
+    const maxRx = (params.chestWidth * headH) / 2;
+    
+    // Радиусы по X для верхней и нижней половин
+    // Верх сужается (уменьшаем X), низ расширяется (увеличиваем X)
+    const topRx = maxRx * (1 - params.topNarrow * 0.8);
+    const botRx = maxRx * (1 + params.bottomExpand * 0.5);
+    
+    // Радиусы по Y (чтобы они вписывались ровно в T0 и T2)
+    const topRy = baseRy;
+    const botRy = baseRy;
 
-    return { headH, t0Y, t2Y, midY, cx, cy, rx, ry };
+    return { headH, t0Y, t2Y, midY: cy, cx, topRx, botRx, topRy, botRy };
   }
 
   function drawGrid(h) {
@@ -101,23 +104,39 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    // Рисуем ОДИН цельный эллипс.
-    // Он будет сужаться сверху, потому что центр (cy) смещен вниз.
-    torsoGroup.appendChild(svgEl('ellipse', {
-      cx: h.cx,
-      cy: h.cy,
-      rx: h.rx,
-      ry: h.ry,
+    // Рисуем верхнюю половину (дуга сверху)
+    // От левого бока (cx - topRx, cy) до правого бока (cx + topRx, cy) через верх (cx, t0Y)
+    const dTop = `
+      M ${h.cx - h.topRx} ${h.midY}
+      A ${h.topRx} ${h.topRy} 0 0 1 ${h.cx + h.topRx} ${h.midY}
+    `;
+
+    // Рисуем нижнюю половину (дуга снизу)
+    // От правого бока (cx + botRx, cy) до левого бока (cx - botRx, cy) через низ (cx, t2Y)
+    const dBot = `
+      M ${h.cx + h.botRx} ${h.midY}
+      A ${h.botRx} ${h.botRy} 0 0 1 ${h.cx - h.botRx} ${h.midY}
+    `;
+
+    torsoGroup.appendChild(svgEl('path', {
+      d: dTop.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
-    // Маркеры границ (для отладки)
+    torsoGroup.appendChild(svgEl('path', {
+      d: dBot.replace(/\s+/g, ' ').trim(),
+      fill: 'none',
+    }));
+
+    // Маркеры
     const mR = h.headH * 0.012;
     const debugPoints = [
-      { x: h.cx, y: h.cy - h.ry, c: '#dc2626' }, // Верх эллипса
-      { x: h.cx + h.rx, y: h.cy, c: '#2563eb' }, // Право
-      { x: h.cx, y: h.cy + h.ry, c: '#16a34a' }, // Низ эллипса
-      { x: h.cx - h.rx, y: h.cy, c: '#2563eb' }, // Лево
+      { x: h.cx, y: h.t0Y, c: '#dc2626' },          // Верх (T0)
+      { x: h.cx + h.topRx, y: h.midY, c: '#2563eb' }, // Право верх
+      { x: h.cx - h.topRx, y: h.midY, c: '#2563eb' }, // Лево верх
+      { x: h.cx, y: h.t2Y, c: '#16a34a' },          // Низ (T2)
+      { x: h.cx + h.botRx, y: h.midY, c: '#ea580c' }, // Право низ
+      { x: h.cx - h.botRx, y: h.midY, c: '#ea580c' }, // Лево низ
     ];
     
     for (const pt of debugPoints) {
