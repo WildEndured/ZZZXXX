@@ -1,4 +1,4 @@
-/* js/head.js — Точка 2 (Рабочая версия + anchors от челюсти) */
+/* js/head.js — Точка 2 (с anchors для адаптивной шеи) */
 
 (function () {
   'use strict';
@@ -206,11 +206,10 @@
     drawGrid(h);
     drawHead(h);
 
-    // Сохраняем якоря для шеи (берём УГЛЫ челюсти, а не точки на эллипсе)
+    // Экспорт углов челюсти для шеи
     window.Head.anchors = {
       neckTopLeft: h.jaw.angleLeft,
       neckTopRight: h.jaw.angleRight,
-      l5Y: h.topY + L5_BASE * h.headH,
     };
   }
 
