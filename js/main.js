@@ -54,6 +54,8 @@
     headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
     // Торс
+    torsoNeckWidth: $('torsoNeckWidth'),
+    torsoNeckWidthVal: $('torsoNeckWidthVal'),
     torsoChestWidth: $('torsoChestWidth'),
     torsoChestWidthVal: $('torsoChestWidthVal'),
     torsoChestHeightCorr: $('torsoChestHeightCorr'),
@@ -237,6 +239,9 @@
     if (!window.Torso) return;
     const p = window.Torso.getParams();
 
+    dom.torsoNeckWidth.value = p.neckWidth;
+    dom.torsoNeckWidthVal.textContent = Math.round(p.neckWidth * 100);
+
     dom.torsoChestWidth.value = p.chestWidth;
     dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
     
@@ -270,6 +275,7 @@
     });
   }
 
+  bindTorsoInput(dom.torsoNeckWidth, dom.torsoNeckWidthVal, 'neckWidth', (v) => Math.round(v * 100));
   bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
   bindTorsoInput(dom.torsoChestHeightCorr, dom.torsoChestHeightCorrVal, 'chestHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoChestTop, dom.torsoChestTopVal, 'topNarrow', (v) => Math.round(v * 100));
