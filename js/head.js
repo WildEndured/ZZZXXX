@@ -1,4 +1,4 @@
-/* js/head.js — Адаптация эталонной архитектуры (с округлением челюсти) */
+/* js/head.js — Точка 2 (Рабочая версия) */
 
 (function () {
   'use strict';
@@ -26,10 +26,10 @@
     jawAttach: 0.20,
     jawLength: 0.35,
     jawAngleWidth: -0.30,
-    jawRound: 0, // НОВЫЙ ПАРАМЕТР: 0 = угловатая челюсть, 1 = максимально скругленная
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
+
   let els = null;
 
   function ensureDom() {
@@ -72,7 +72,7 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // --- Эллипс ---
+    // L0 / L3
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -85,7 +85,7 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // --- Подбородок ---
+    // L4
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -100,41 +100,50 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // --- Челюсть (логика из твоего кода) ---
+    // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
     const baseTheta = Math.asin(attachRatio); 
-    
-    // Находим точку на эллипсе
-    const attachRightX = cx + rx * Math.cos(baseTheta);
-    const attachRightY = cy + ry * Math.sin(baseTheta);
-    const attachLeftX = cx + rx * Math.cos(Math.PI - baseTheta);
-    const attachLeftY = cy + ry * Math.sin(Math.PI - baseTheta);
+    const THETA_LIM = Math.asin(0.98);
 
-    // Длина спуска и сдвиг угла
-    const distToChin = l4 - attachRightY;
-    const verticalDrop = Math.max(0, distToChin * params.jawLength);
-    const angleShift = params.jawAngleWidth * (rx * 2); // используем полную ширину, как в твоем коде (headW)
+    const angleDX = params.jawAngleWidth * rx; 
 
-    // Промежуточные точки (углы)
-    const midLeft = { x: attachLeftX - angleShift, y: attachLeftY + verticalDrop };
-    const midRight = { x: attachRightX + angleShift, y: attachRightY + verticalDrop };
-    
-    // Точки подбородка
-    const bottomLeft = { x: chinLeftX, y: l4 };
-    const bottomRight = { x: chinRightX, y: l4 };
+    const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
+    const jawLen = Math.min(params.jawLength, maxJawLen);
+    const jawDY = jawLen * headH;
+
+    function getJawSide(sign) {
+      const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
+      
+      const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
+      const attachY = cy + ry * Math.sin(theta);
+
+      const angleX = clamp(attachX + sign * angleDX, cx - rx * 1.2, cx + rx * 1.2);
+      const angleY = attachY + jawDY;
+
+      return {
+        attach: { x: attachX, y: attachY },
+        angle: { x: angleX, y: angleY },
+        chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 }
+      };
+    }
+
+    const right = getJawSide(1);
+    const left = getJawSide(-1);
 
     return {
       headH, topY, bottomY, cx,
-      l0, l3, l4, cy, rx, ry,
-      chinY: l4, chinLeftX, chinRightX,
+      l0, l3, l4,
+      cy, rx, ry,
+      chinY: l4,
+      chinLeftX, chinRightX,
       jaw: {
-        attachLeft: { x: attachLeftX, y: attachLeftY },
-        attachRight: { x: attachRightX, y: attachRightY },
-        midLeft, midRight,
-        bottomLeft, bottomRight,
-        verticalDrop,
-        angleShift
-      }
+        attachRight: right.attach,
+        attachLeft: left.attach,
+        angleRight: right.angle,
+        angleLeft: left.angle,
+        chinRight: right.chin,
+        chinLeft: left.chin,
+      },
     };
   }
 
@@ -177,62 +186,45 @@
       stroke: '#c0c4c9', 'stroke-width': 2,
       'stroke-dasharray': '8 12',
     }));
+
+    const mR = h.headH * 0.012;
+    const points = [
+      { p: h.jaw.attachRight, color: '#2563eb' },
+      { p: h.jaw.attachLeft, color: '#2563eb' },
+      { p: h.jaw.angleRight, color: '#dc2626' },
+      { p: h.jaw.angleLeft, color: '#dc2626' },
+    ];
+    for (const { p, color } of points) {
+      grid.appendChild(svgEl('circle', {
+        cx: p.x, cy: p.y, r: mR,
+        fill: color, opacity: 0.85,
+      }));
+    }
   }
 
   function drawHead(h) {
     const { headGroup } = els;
     clear(headGroup);
 
-    // 1. Эллипс
     headGroup.appendChild(svgEl('ellipse', {
       cx: h.cx, cy: h.cy, rx: h.rx, ry: h.ry, fill: 'none',
     }));
 
-    // 2. Подбородок
     headGroup.appendChild(svgEl('line', {
       x1: h.chinLeftX, y1: h.chinY,
       x2: h.chinRightX, y2: h.chinY,
       fill: 'none',
     }));
 
-    // 3. Челюсть с округлением (как в твоем коде)
-    const { attachLeft, attachRight, midLeft, midRight, bottomLeft, bottomRight, verticalDrop } = h.jaw;
-    
-    let pathData = '';
-    const roundFactor = params.jawRound;
+    const r = h.jaw;
 
-    if (roundFactor > 0.01) {
-      // Контрольные точки для Безье
-      const cp1Left = { x: attachLeft.x, y: attachLeft.y + verticalDrop * 0.6 };
-      const cp1Right = { x: attachRight.x, y: attachRight.y + verticalDrop * 0.6 };
-      const cp2Left = { x: bottomLeft.x, y: bottomLeft.y - verticalDrop * 0.4 };
-      const cp2Right = { x: bottomRight.x, y: bottomRight.y - verticalDrop * 0.4 };
+    headGroup.appendChild(svgEl('polyline', {
+      points: `${r.attachRight.x},${r.attachRight.y} ${r.angleRight.x},${r.angleRight.y} ${r.chinRight.x},${r.chinRight.y}`,
+      fill: 'none',
+    }));
 
-      const c1L = { x: attachLeft.x + (cp1Left.x - attachLeft.x) * roundFactor, y: attachLeft.y + (cp1Left.y - attachLeft.y) * roundFactor };
-      const c2L = { x: midLeft.x + (cp2Left.x - midLeft.x) * roundFactor, y: midLeft.y + (cp2Left.y - midLeft.y) * roundFactor };
-      const c1R = { x: attachRight.x + (cp1Right.x - attachRight.x) * roundFactor, y: attachRight.y + (cp1Right.y - attachRight.y) * roundFactor };
-      const c2R = { x: midRight.x + (cp2Right.x - midRight.x) * roundFactor, y: midRight.y + (cp2Right.y - midRight.y) * roundFactor };
-
-      pathData = `
-        M ${attachLeft.x} ${attachLeft.y}
-        C ${c1L.x} ${c1L.y}, ${c2L.x} ${c2L.y}, ${bottomLeft.x} ${bottomLeft.y}
-        M ${attachRight.x} ${attachRight.y}
-        C ${c1R.x} ${c1R.y}, ${c2R.x} ${c2R.y}, ${bottomRight.x} ${bottomRight.y}
-      `;
-    } else {
-      // Прямые линии (угловатая челюсть)
-      pathData = `
-        M ${attachLeft.x} ${attachLeft.y}
-        L ${midLeft.x} ${midLeft.y}
-        L ${bottomLeft.x} ${bottomLeft.y}
-        M ${attachRight.x} ${attachRight.y}
-        L ${midRight.x} ${midRight.y}
-        L ${bottomRight.x} ${bottomRight.y}
-      `;
-    }
-
-    headGroup.appendChild(svgEl('path', {
-      d: pathData.replace(/\s+/g, ' ').trim(),
+    headGroup.appendChild(svgEl('polyline', {
+      points: `${r.attachLeft.x},${r.attachLeft.y} ${r.angleLeft.x},${r.angleLeft.y} ${r.chinLeft.x},${r.chinLeft.y}`,
       fill: 'none',
     }));
   }
@@ -245,13 +237,25 @@
   }
 
   function getParams() { return { ...params }; }
+
   function setParams(patch) {
     if (!patch) return;
     for (const k in params) {
-      if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k];
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) {
+        params[k] = patch[k];
+      }
     }
   }
-  function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  window.Head = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
+  function resetParams() {
+    Object.assign(params, DEFAULT_PARAMS);
+  }
+
+  window.Head = {
+    update,
+    getParams,
+    setParams,
+    resetParams,
+    DEFAULT_PARAMS,
+  };
 })();
