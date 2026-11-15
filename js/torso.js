@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз + Шея (от углов челюсти) */
+/* js/torso.js — Этап 2: Грудная клетка + Таз + Адаптивная шея */
 
 (function () {
   'use strict';
@@ -6,19 +6,13 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    // Грудная клетка
     chestWidth: 0.7,
     chestHeightCorr: -0.15,
     topNarrow: 0.6,
     bottomWide: 0.8,
-    
-    // Таз
     pelvisWidthCorr: 0,
     pelvisHeightCorr: 0,
     pelvisRounding: 0.6,
-
-    // Шея
-    neckWidth: 0.4,   // ширина шеи внизу (в долях headH)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -53,7 +47,6 @@
     const headH = geo.headHeight;
     const cx = geo.centerX;
 
-    // --- Грудная клетка ---
     const chestHeightPx = headH * (1 + params.chestHeightCorr);
     const chestY0 = geo.topY + headH;
     
@@ -61,7 +54,6 @@
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
-    // --- Таз ---
     const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
     const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
     
@@ -71,14 +63,14 @@
     
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
-    // --- Шея (нижние точки на T0) ---
-    const neckHalfW = (headH * params.neckWidth) / 2;
-    const neckBottomL = { x: cx - neckHalfW, y: chestY0 };
-    const neckBottomR = { x: cx + neckHalfW, y: chestY0 };
+    // Верхние края груди на уровне T0 (точки, где стартует контур груди)
+    // При t=0 кривая Безье начинается в (cx, chestY0), а верхняя точка сужения на уровне T0 — это cpTopX.
+    const chestTopLeftX = cx - cpTopX;
+    const chestTopRightX = cx + cpTopX;
 
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad,
-             neckBottomL, neckBottomR };
+             chestTopLeftX, chestTopRightX };
   }
 
   function drawGrid(h) {
@@ -113,22 +105,23 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- Шея ---
-    // Берём углы челюсти из head.js (neckTopLeft / neckTopRight)
+    // --- Шея (адаптивная) ---
     if (window.Head && window.Head.anchors) {
       const topL = window.Head.anchors.neckTopLeft;
       const topR = window.Head.anchors.neckTopRight;
 
       if (topL && topR) {
+        // Линия от левого угла челюсти к левому краю груди на T0
         torsoGroup.appendChild(svgEl('line', {
           x1: topL.x, y1: topL.y,
-          x2: h.neckBottomL.x, y2: h.neckBottomL.y,
+          x2: h.chestTopLeftX, y2: h.chestY0,
           fill: 'none',
         }));
 
+        // Линия от правого угла челюсти к правому краю груди на T0
         torsoGroup.appendChild(svgEl('line', {
           x1: topR.x, y1: topR.y,
-          x2: h.neckBottomR.x, y2: h.neckBottomR.y,
+          x2: h.chestTopRightX, y2: h.chestY0,
           fill: 'none',
         }));
       }
