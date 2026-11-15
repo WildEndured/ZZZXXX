@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея (без зазоров) + Грудь + Таз */
+/* js/torso.js — Этап 2: Шея (плавающая) + Грудь + Таз */
 
 (function () {
   'use strict';
@@ -70,7 +70,7 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // Точная ширина груди (половина) на высоте y
+  // Половина ширины груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -82,6 +82,23 @@
       const tNorm = (t - 0.6) / 0.4;
       return h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
     }
+  }
+
+  // Половина ширины челюсти на высоте y (скольжение по подбородку)
+  function getJawHalfWidthAtY(y, headGeo) {
+    if (!headGeo) return 0;
+    const { l4, chinLeftX, chinRightX, cx, l3 } = headGeo;
+    
+    // Если выше L4 — это зона подбородка (линия). Если мы хотим скользить по челюсти, 
+    // нужно интерполировать между точкой крепления и подбородком.
+    // Для простоты: если Y выше L4, берем ширину подбородка (он горизонтален).
+    if (y <= l4) {
+      return (chinRightX - chinLeftX) / 2;
+    }
+    
+    // Если ниже L4 (в зону шеи), но выше L5, это просто пустота. 
+    // Возвращаем ширину подбородка, чтобы шея начиналась от него.
+    return (chinRightX - chinLeftX) / 2;
   }
 
   function drawGrid(h) {
@@ -120,39 +137,58 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- 1. Шея (замкнутый контур) ---
+    // --- 1. Шея (Плавающая) ---
     const headGeo = window.Head && window.Head.lastGeometry;
-    const neckTopY = headGeo ? headGeo.l4 : h.chestY0; 
     const neckHalfW = (h.headH * params.neckWidth) / 2;
-    
-    // Бинарный поиск точной точки пересечения ширины шеи и ширины груди
-    let low = h.chestY0;
-    let high = h.chestY0 + h.chestHeightPx;
-    
-    for (let i = 0; i < 20; i++) {
-      const mid = (low + high) / 2;
-      const halfW = getChestHalfWidthAtY(mid, h);
-      if (halfW < neckHalfW) {
-        low = mid;
+
+    let neckTopY, neckBottomY;
+
+    if (headGeo) {
+      // ВЕРХ: Скользит по челюсти/подбородку.
+      // Если шея уже подбородка — она начинается ровно от L4 (линия подбородка).
+      // Если шея шире подбородка — она начинается от линии L3 (низ круга).
+      const chinHalfW = (headGeo.chinRightX - headGeo.chinLeftX) / 2;
+      if (neckHalfW <= chinHalfW) {
+        neckTopY = headGeo.l4; // Точка ровно на подбородке
       } else {
-        high = mid;
+        // Шея шире подбородка, начинаем от L3 (низ круга)
+        // Для простоты используем L3 как верхнюю границу
+        neckTopY = headGeo.l3; 
       }
+
+      // НИЗ: Скользит по грудной клетке.
+      // Ищем, где ширина груди равна ширине шеи.
+      let low = h.chestY0;
+      let high = h.chestY0 + h.chestHeightPx;
+      for (let i = 0; i < 20; i++) {
+        const mid = (low + high) / 2;
+        const halfW = getChestHalfWidthAtY(mid, h);
+        if (halfW < neckHalfW) {
+          low = mid;
+        } else {
+          high = mid;
+        }
+      }
+      neckBottomY = high;
+    } else {
+      // Если головы нет, шея идет от T0 до T0 + 20%
+      neckTopY = h.chestY0;
+      neckBottomY = h.chestY0 + h.chestHeightPx * 0.2;
     }
-    let neckBottomY = high;
 
-    // Рисуем шею как path (П-образный контур)
-    // Чтобы контур был замкнутым и не давал зазоров, мы соединяем нижние концы линий.
-    const pathData = `
-      M ${h.cx - neckHalfW} ${neckTopY}
-      L ${h.cx - neckHalfW} ${neckBottomY}
-      L ${h.cx + neckHalfW} ${neckBottomY}
-      L ${h.cx + neckHalfW} ${neckTopY}
-    `;
-
-    torsoGroup.appendChild(svgEl('path', {
-      d: pathData.replace(/\s+/g, ' ').trim(),
-      fill: 'none',
-    }));
+    // Рисуем линии шеи, если они валидны
+    if (neckBottomY > neckTopY) {
+      torsoGroup.appendChild(svgEl('line', {
+        x1: h.cx - neckHalfW, y1: neckTopY,
+        x2: h.cx - neckHalfW, y2: neckBottomY,
+        fill: 'none',
+      }));
+      torsoGroup.appendChild(svgEl('line', {
+        x1: h.cx + neckHalfW, y1: neckTopY,
+        x2: h.cx + neckHalfW, y2: neckBottomY,
+        fill: 'none',
+      }));
+    }
 
     // --- 2. Грудная клетка (Безье) ---
     const x0 = h.cx;
