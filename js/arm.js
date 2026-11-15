@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья) + линии к шее */
 
 (function () {
   'use strict';
@@ -7,19 +7,16 @@
 
   const params = {
     shoulderRadiusMul: 1.0,
-
     elbowRadius: 0.045,
     elbowLeftX: 0,
     elbowLeftY: 0,
     elbowRightX: 0,
     elbowRightY: 0,
-
     wristRadius: 0.035,
     wristLeftX: 0,
     wristLeftY: 0,
     wristRightX: 0,
     wristRightY: 0,
-
     leftX: 0,
     leftY: 0,
     rightX: 0,
@@ -68,6 +65,7 @@
 
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
+    const head = window.Head && window.Head.lastGeometry;
     if (!torso) return;
 
     const { armL, armR, grid } = els;
@@ -105,17 +103,45 @@
       cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none'
     }));
 
+    // === ЛИНИИ ОТ ПЛЕЧ К СЕРЕДИНЕ ШЕИ ===
+    if (head && torso) {
+      // Середина левой линии шеи
+      const neckHalfW = (headH * (window.Torso.getParams().neckWidth || 0.20)) / 2;
+      const neckTopY = head.l4;
+      const neckBottomY = torso.chestY0; // Шея заканчивается на верху груди
+      const neckMidY = (neckTopY + neckBottomY) / 2;
+
+      const leftNeckMid = { x: torso.cx - neckHalfW, y: neckMidY };
+      const rightNeckMid = { x: torso.cx + neckHalfW, y: neckMidY };
+
+      // Верхние точки плеч
+      const leftShoulderTop = { x: leftCx, y: leftCy - shoulderRadius };
+      const rightShoulderTop = { x: rightCx, y: rightCy - shoulderRadius };
+
+      // Линия от левого плеча к левой середине шеи
+      armL.appendChild(svgEl('line', {
+        x1: leftShoulderTop.x, y1: leftShoulderTop.y,
+        x2: leftNeckMid.x, y2: leftNeckMid.y,
+        fill: 'none',
+      }));
+
+      // Линия от правого плеча к правой середине шеи
+      armR.appendChild(svgEl('line', {
+        x1: rightShoulderTop.x, y1: rightShoulderTop.y,
+        x2: rightNeckMid.x, y2: rightNeckMid.y,
+        fill: 'none',
+      }));
+    }
+
     // === ЗАПЯСТЬЯ ===
     const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
     const wristRadius = params.wristRadius * headH;
 
-    // ЛЕВОЕ ЗАПЯСТЬЕ
     const wristLeftOffsetX = params.wristLeftX * headH;
     const wristLeftOffsetY = params.wristLeftY * headH;
     const wristLeftCy = pelvisBottomY - wristRadius + wristLeftOffsetY + leftOffsetY;
     const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
 
-    // ПРАВОЕ ЗАПЯСТЬЕ
     const wristRightOffsetX = params.wristRightX * headH;
     const wristRightOffsetY = params.wristRightY * headH;
     const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
@@ -131,13 +157,11 @@
     // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
 
-    // ЛЕВЫЙ ЛОКОТЬ
     const elbowLeftOffsetX = params.elbowLeftX * headH;
     const elbowLeftOffsetY = params.elbowLeftY * headH;
     const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
     const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowLeftOffsetY;
 
-    // ПРАВЫЙ ЛОКОТЬ
     const elbowRightOffsetX = params.elbowRightX * headH;
     const elbowRightOffsetY = params.elbowRightY * headH;
     const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
