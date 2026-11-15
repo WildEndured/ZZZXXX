@@ -17,6 +17,7 @@
     },
     head: null,
     torso: null,
+    arm: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -64,13 +65,36 @@
     torsoChestTopVal: $('torsoChestTopVal'),
     torsoChestBottom: $('torsoChestBottom'),
     torsoChestBottomVal: $('torsoChestBottomVal'),
-    
     torsoPelvisWidthCorr: $('torsoPelvisWidthCorr'),
     torsoPelvisWidthCorrVal: $('torsoPelvisWidthCorrVal'),
     torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'),
     torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
     torsoPelvisRounding: $('torsoPelvisRounding'),
     torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
+
+    // Руки
+    armShoulderRadius: $('armShoulderRadius'),
+    armShoulderRadiusVal: $('armShoulderRadiusVal'),
+    armElbowRadius: $('armElbowRadius'),
+    armElbowRadiusVal: $('armElbowRadiusVal'),
+    armElbowX: $('armElbowX'),
+    armElbowXVal: $('armElbowXVal'),
+    armElbowY: $('armElbowY'),
+    armElbowYVal: $('armElbowYVal'),
+    armWristRadius: $('armWristRadius'),
+    armWristRadiusVal: $('armWristRadiusVal'),
+    armWristX: $('armWristX'),
+    armWristXVal: $('armWristXVal'),
+    armWristY: $('armWristY'),
+    armWristYVal: $('armWristYVal'),
+    armLeftX: $('armLeftX'),
+    armLeftXVal: $('armLeftXVal'),
+    armLeftY: $('armLeftY'),
+    armLeftYVal: $('armLeftYVal'),
+    armRightX: $('armRightX'),
+    armRightXVal: $('armRightXVal'),
+    armRightY: $('armRightY'),
+    armRightYVal: $('armRightYVal'),
 
     // Подложка
     underlayFile: $('underlayFile'),
@@ -241,25 +265,18 @@
 
     dom.torsoNeckWidth.value = p.neckWidth;
     dom.torsoNeckWidthVal.textContent = Math.round(p.neckWidth * 100);
-
     dom.torsoChestWidth.value = p.chestWidth;
     dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
-    
     dom.torsoChestHeightCorr.value = p.chestHeightCorr;
     dom.torsoChestHeightCorrVal.textContent = fmtSignedPercent(p.chestHeightCorr);
-
     dom.torsoChestTop.value = p.topNarrow;
     dom.torsoChestTopVal.textContent = Math.round(p.topNarrow * 100);
-    
     dom.torsoChestBottom.value = p.bottomWide;
     dom.torsoChestBottomVal.textContent = Math.round(p.bottomWide * 100);
-
     dom.torsoPelvisWidthCorr.value = p.pelvisWidthCorr;
     dom.torsoPelvisWidthCorrVal.textContent = fmtSignedPercent(p.pelvisWidthCorr);
-
     dom.torsoPelvisHeightCorr.value = p.pelvisHeightCorr;
     dom.torsoPelvisHeightCorrVal.textContent = fmtSignedPercent(p.pelvisHeightCorr);
-    
     dom.torsoPelvisRounding.value = p.pelvisRounding;
     dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
   }
@@ -283,6 +300,61 @@
   bindTorsoInput(dom.torsoPelvisWidthCorr, dom.torsoPelvisWidthCorrVal, 'pelvisWidthCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisHeightCorr, dom.torsoPelvisHeightCorrVal, 'pelvisHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisRounding, dom.torsoPelvisRoundingVal, 'pelvisRounding', (v) => Math.round(v * 100));
+
+  // --- Руки ---
+  function syncArmUIFromParams() {
+    if (!window.Arm) return;
+    const p = window.Arm.getParams();
+
+    dom.armShoulderRadius.value = p.shoulderRadiusMul;
+    dom.armShoulderRadiusVal.textContent = Math.round(p.shoulderRadiusMul * 100);
+
+    dom.armElbowRadius.value = p.elbowRadius;
+    dom.armElbowRadiusVal.textContent = Math.round(p.elbowRadius * 1000) / 10;
+    dom.armElbowX.value = p.elbowX;
+    dom.armElbowXVal.textContent = fmtSignedPercent(p.elbowX);
+    dom.armElbowY.value = p.elbowY;
+    dom.armElbowYVal.textContent = fmtSignedPercent(p.elbowY);
+
+    dom.armWristRadius.value = p.wristRadius;
+    dom.armWristRadiusVal.textContent = Math.round(p.wristRadius * 1000) / 10;
+    dom.armWristX.value = p.wristX;
+    dom.armWristXVal.textContent = fmtSignedPercent(p.wristX);
+    dom.armWristY.value = p.wristY;
+    dom.armWristYVal.textContent = fmtSignedPercent(p.wristY);
+
+    dom.armLeftX.value = p.leftX;
+    dom.armLeftXVal.textContent = fmtSignedPercent(p.leftX);
+    dom.armLeftY.value = p.leftY;
+    dom.armLeftYVal.textContent = fmtSignedPercent(p.leftY);
+    dom.armRightX.value = p.rightX;
+    dom.armRightXVal.textContent = fmtSignedPercent(p.rightX);
+    dom.armRightY.value = p.rightY;
+    dom.armRightYVal.textContent = fmtSignedPercent(p.rightY);
+  }
+
+  function bindArmInput(input, valEl, key, format) {
+    if (!input || !valEl) return;
+    input.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!window.Arm) return;
+      window.Arm.setParams({ [key]: v });
+      valEl.textContent = format(v);
+      applyState();
+    });
+  }
+
+  bindArmInput(dom.armShoulderRadius, dom.armShoulderRadiusVal, 'shoulderRadiusMul', (v) => Math.round(v * 100));
+  bindArmInput(dom.armElbowRadius, dom.armElbowRadiusVal, 'elbowRadius', (v) => Math.round(v * 1000) / 10);
+  bindArmInput(dom.armElbowX, dom.armElbowXVal, 'elbowX', fmtSignedPercent);
+  bindArmInput(dom.armElbowY, dom.armElbowYVal, 'elbowY', fmtSignedPercent);
+  bindArmInput(dom.armWristRadius, dom.armWristRadiusVal, 'wristRadius', (v) => Math.round(v * 1000) / 10);
+  bindArmInput(dom.armWristX, dom.armWristXVal, 'wristX', fmtSignedPercent);
+  bindArmInput(dom.armWristY, dom.armWristYVal, 'wristY', fmtSignedPercent);
+  bindArmInput(dom.armLeftX, dom.armLeftXVal, 'leftX', fmtSignedPercent);
+  bindArmInput(dom.armLeftY, dom.armLeftYVal, 'leftY', fmtSignedPercent);
+  bindArmInput(dom.armRightX, dom.armRightXVal, 'rightX', fmtSignedPercent);
+  bindArmInput(dom.armRightY, dom.armRightYVal, 'rightY', fmtSignedPercent);
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
@@ -358,6 +430,7 @@
       margin: state.margin,
       head: window.Head ? window.Head.getParams() : null,
       torso: window.Torso ? window.Torso.getParams() : null,
+      arm: window.Arm ? window.Arm.getParams() : null,
     };
   }
 
@@ -391,6 +464,16 @@
         window.Torso.resetParams();
       }
       syncTorsoUIFromParams();
+    }
+
+    if (window.Arm) {
+      if (snap.arm && typeof snap.arm === 'object') {
+        window.Arm.resetParams();
+        window.Arm.setParams(snap.arm);
+      } else {
+        window.Arm.resetParams();
+      }
+      syncArmUIFromParams();
     }
 
     applyState();
@@ -510,6 +593,7 @@
 
     syncHeadUIFromParams();
     syncTorsoUIFromParams();
+    syncArmUIFromParams();
 
     renderPresets();
     applyState();
