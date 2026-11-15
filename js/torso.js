@@ -12,10 +12,9 @@
     bottomWide: 0.6,
     
     // Таз
-    pelvisWidth: 1.0,     // множитель ширины (от высоты груди)
-    pelvisHeight: 0.5,    // множитель высоты (от ширины груди)
-    pelvisRounding: 0.3,  // скругление углов (0..1)
-    pelvisGap: 0.05,      // отступ от груди (в долях головы)
+    pelvisWidthMul: 1.0,  // множитель (по умолчанию 1.0 = точно равен высоте груди)
+    pelvisHeightMul: 1.0, // множитель (по умолчанию 1.0 = точно равен ширине груди)
+    pelvisRounding: 0.3,  // скругление
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -56,26 +55,27 @@
     // --- Грудная клетка ---
     const chestY0 = geo.topY + sectionH;
     const chestHeightPx = sectionH; // 1 голова
-    const chestRx = (headH * params.chestWidth) / 2;
+    const chestWidthPx = headH * params.chestWidth; // полная ширина
+    const chestRx = chestWidthPx / 2;
+    
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
     // --- Таз ---
-    // По твоему коду: 
-    // pelvisW = chestHeightPx * pelvis.widthMod
-    // pelvisH = (chestRx * 2) * pelvis.heightMod
-    const pelvisW = chestHeightPx * params.pelvisWidth;
-    const pelvisH = (chestRx * 2) * params.pelvisHeight;
+    // Высота таза = Ширина клетки (chestRx * 2)
+    const pelvisH = (chestRx * 2) * params.pelvisHeightMul;
+    // Ширина таза = Высота клетки (chestHeightPx)
+    const pelvisW = chestHeightPx * params.pelvisWidthMul;
     
-    const gap = sectionH * params.pelvisGap;
-    const pelvisY0 = chestY0 + chestHeightPx + gap;
+    // Таз строго под грудью, без зазоров
+    const pelvisY0 = chestY0 + chestHeightPx;
     const pelvisX0 = cx - pelvisW / 2;
     
     // Радиус скругления
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
-    return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
-             pelvisW, pelvisH, pelvisY0, pelvisX0, rad, gap };
+    return { headH, cx, chestY0, chestHeightPx, chestWidthPx, chestRx, cpTopX, cpBottomX,
+             pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
   function drawGrid(h) {
@@ -89,8 +89,7 @@
       { y: h.chestY0, label: 'T0' },
       { y: h.chestY0 + h.chestHeightPx / 2, label: 'T1' },
       { y: h.chestY0 + h.chestHeightPx, label: 'T2' },
-      { y: h.pelvisY0, label: 'T3' },
-      { y: h.pelvisY0 + h.pelvisH, label: 'T4' },
+      { y: h.pelvisY0 + h.pelvisH, label: 'T3' }, // Низ таза
     ];
 
     for (const { y, label } of lines) {
@@ -138,7 +137,7 @@
       fill: 'none',
     }));
 
-    // 2. Таз (Прямоугольник со скругленными углами)
+    // 2. Таз (Прямоугольник)
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0,
       y: h.pelvisY0,
