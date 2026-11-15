@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея с нахлестом (гарантированно без зазоров) */
+/* js/torso.js — Этап 2: Шея, плавающая по челюсти и груди */
 
 (function () {
   'use strict';
@@ -70,6 +70,8 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
+  // --- МАТЕМАТИКА ГРУДИ ---
+  // Возвращает половину ширины груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -83,25 +85,29 @@
     }
   }
 
+  // Ищет Y на груди, где ширина равна заданному X
   function findChestYByX(x, h) {
     const dx = Math.abs(x - h.cx);
-    if (dx > h.chestRx) return h.chestY0 + h.chestHeightPx;
+    if (dx > h.chestRx) return h.chestY0 + h.chestHeightPx; // Если шире груди — падаем на низ
 
     let low = h.chestY0;
     let high = h.chestY0 + h.chestHeightPx;
     
+    // Бинарный поиск. Нам нужна САМАЯ ВЕРХНЯЯ точка, где грудь достигает ширины dx.
     for (let i = 0; i < 30; i++) {
       const mid = (low + high) / 2;
       const halfW = getChestHalfWidthAtY(mid, h);
       if (halfW < dx) {
-        low = mid;
+        low = mid; // Грудь еще узкая, спускаемся ниже
       } else {
-        high = mid;
+        high = mid; // Грудь достаточно широкая, поднимаемся выше
       }
     }
     return high;
   }
 
+  // --- МАТЕМАТИКА ЧЕЛЮСТИ ---
+  // Ищет Y на ВТОРОМ отрезке челюсти (от угла до подбородка), где X равен заданному
   function findJawYOnSecondSegment(x, headGeo) {
     if (!headGeo) return headGeo.l4;
     
@@ -113,10 +119,12 @@
     const dxChin = Math.abs(ptChin.x - cx);
     const targetDx = Math.abs(x - cx);
 
+    // Клипуем X, чтобы он не вылетел за пределы отрезка
     const minDx = Math.min(dxAngle, dxChin);
     const maxDx = Math.max(dxAngle, dxChin);
     const clampedDx = Math.max(minDx, Math.min(maxDx, targetDx));
 
+    // Линейная интерполяция Y между углом и подбородком
     if (dxAngle === dxChin) return ptAngle.y;
     const t = (clampedDx - dxAngle) / (dxChin - dxAngle);
     return ptAngle.y + (ptChin.y - ptAngle.y) * t;
@@ -160,33 +168,30 @@
 
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
-    
-    // Нахлест в пикселях, чтобы перекрыть чёрную обводку
-    const overlap = 6;
 
     if (headGeo) {
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
 
-      // Ищем точки на контурах
+      // ВЕРХ: Ищем Y на втором отрезке челюсти
       const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
       const topRightY = findJawYOnSecondSegment(rightX, headGeo);
       
+      // НИЗ: Ищем Y на груди
       const botLeftY = findChestYByX(leftX, h);
       const botRightY = findChestYByX(rightX, h);
 
-      // Добавляем нахлест: верх поднимаем, низ опускаем
-      // Левая линия
+      // Левая линия (строго вертикальная)
       torsoGroup.appendChild(svgEl('line', {
-        x1: leftX, y1: topLeftY - overlap,
-        x2: leftX, y2: botLeftY + overlap,
+        x1: leftX, y1: topLeftY,
+        x2: leftX, y2: botLeftY,
         fill: 'none',
       }));
 
-      // Правая линия
+      // Правая линия (строго вертикальная)
       torsoGroup.appendChild(svgEl('line', {
-        x1: rightX, y1: topRightY - overlap,
-        x2: rightX, y2: botRightY + overlap,
+        x1: rightX, y1: topRightY,
+        x2: rightX, y2: botRightY,
         fill: 'none',
       }));
     }
