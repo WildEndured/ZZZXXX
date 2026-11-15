@@ -60,6 +60,12 @@
     torsoChestTopVal: $('torsoChestTopVal'),
     torsoChestBottom: $('torsoChestBottom'),
     torsoChestBottomVal: $('torsoChestBottomVal'),
+    torsoPelvisHeight: $('torsoPelvisHeight'),
+    torsoPelvisHeightVal: $('torsoPelvisHeightVal'),
+    torsoPelvisWidth: $('torsoPelvisWidth'),
+    torsoPelvisWidthVal: $('torsoPelvisWidthVal'),
+    torsoPelvisRounding: $('torsoPelvisRounding'),
+    torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
     // Подложка
     underlayFile: $('underlayFile'),
@@ -236,6 +242,15 @@
     
     dom.torsoChestBottom.value = p.bottomWide;
     dom.torsoChestBottomVal.textContent = Math.round(p.bottomWide * 100);
+
+    dom.torsoPelvisHeight.value = p.pelvisHeightMul;
+    dom.torsoPelvisHeightVal.textContent = Math.round(p.pelvisHeightMul * 100);
+    
+    dom.torsoPelvisWidth.value = p.pelvisWidthMul;
+    dom.torsoPelvisWidthVal.textContent = Math.round(p.pelvisWidthMul * 100);
+    
+    dom.torsoPelvisRounding.value = p.pelvisRounding;
+    dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
   }
 
   function bindTorsoInput(input, valEl, key, format) {
@@ -252,6 +267,9 @@
   bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
   bindTorsoInput(dom.torsoChestTop, dom.torsoChestTopVal, 'topNarrow', (v) => Math.round(v * 100));
   bindTorsoInput(dom.torsoChestBottom, dom.torsoChestBottomVal, 'bottomWide', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoPelvisHeight, dom.torsoPelvisHeightVal, 'pelvisHeightMul', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoPelvisWidth, dom.torsoPelvisWidthVal, 'pelvisWidthMul', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoPelvisRounding, dom.torsoPelvisRoundingVal, 'pelvisRounding', (v) => Math.round(v * 100));
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
