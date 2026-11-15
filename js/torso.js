@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 3: грудная клетка + таз */
+/* js/torso.js — Этап 2: Грудная клетка */
 
 (function () {
   'use strict';
@@ -6,20 +6,13 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    // Грудная клетка (эллипс L5..L10)
-    chestWidthMul: 1.0,     // 0.5 … 1.5
-    chestHeightMul: 1.0,    // 0.5 … 1.5
-    chestTopTaper: 0.0,     // -0.5 … 0.5 — расширение/сужение верха
-    chestBottomTaper: 0.0,  // -0.5 … 0.5 — расширение/сужение низа
-
-    // Таз (прямоугольник)
-    pelvisWidthMul: 1.0,    // 0.5 … 1.5
-    pelvisHeightMul: 1.0,   // 0.5 … 1.5
-    pelvisRadius: 0.0,      // 0 … 0.5 (доля от min(w,h)/2)
+    chestWidth: 1.0,      // Ширина (доля от headH)
+    chestHeight: 0.8,     // Высота (доля от headH)
+    topNarrow: 0.3,       // Сужение верха (0…1)
+    bottomExpand: 0.2,    // Расширение низа (0…1)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
-
   let els = null;
 
   function ensureDom() {
@@ -35,7 +28,6 @@
       grid.setAttribute('class', 'no-export');
       headsLayer.appendChild(grid);
     }
-
     els = { torsoGroup, headsLayer, grid };
     return els;
   }
@@ -46,9 +38,7 @@
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
-    if (attrs) {
-      for (const k in attrs) node.setAttribute(k, attrs[k]);
-    }
+    if (attrs) for (const k in attrs) node.setAttribute(k, attrs[k]);
     return node;
   }
 
@@ -56,115 +46,49 @@
     return v < lo ? lo : v > hi ? hi : v;
   }
 
-  /**
-   * Строит path грудной клетки.
-   * Четыре точки-«полюса»:
-   *   top    — верх по центру
-   *   bottom — низ по центру
-   *   left   — левый «бок» (на уровне середины)
-   *   right  — правый «бок»
-   * Управляющие точки выносим по бокам, чтобы верх и низ
-   * можно было независимо сужать/расширять.
-   */
-  function buildChestPath(cx, topY, bottomY, topHalfW, bottomHalfW) {
-    const cy = (topY + bottomY) / 2;
-
-    // Опорные точки
-    const topPt    = { x: cx, y: topY };
-    const bottomPt = { x: cx, y: bottomY };
-    const rightPt  = { x: cx + topHalfW * 0.5 + bottomHalfW * 0.5, y: cy };
-    const leftPt   = { x: cx - topHalfW * 0.5 - bottomHalfW * 0.5, y: cy };
-
-    // Управляющие точки для правой половины
-    const k = 0.5523; // константа для аппроксимации эллипса кубическими Безье
-    const topRightCtrlY    = topY + (cy - topY) * k;
-    const bottomRightCtrlY = bottomY - (bottomY - cy) * k;
-
-    const topCtrlRightX    = cx + topHalfW * k;
-    const topCtrlLeftX     = cx - topHalfW * k;
-    const bottomCtrlRightX = cx + bottomHalfW * k;
-    const bottomCtrlLeftX  = cx - bottomHalfW * k;
-
-    const rightCtrlMidX = rightPt.x;
-    const leftCtrlMidX  = leftPt.x;
-
-    // Строим: сверху → вправо → вниз → влево → наверх
-    return [
-      `M ${topPt.x} ${topPt.y}`,
-      // верх → правый бок
-      `C ${topCtrlRightX} ${topY} ${rightCtrlMidX} ${topRightCtrlY} ${rightPt.x} ${rightPt.y}`,
-      // правый бок → низ
-      `C ${rightCtrlMidX} ${bottomRightCtrlY} ${bottomCtrlRightX} ${bottomY} ${bottomPt.x} ${bottomPt.y}`,
-      // низ → левый бок
-      `C ${bottomCtrlLeftX} ${bottomY} ${leftCtrlMidX} ${bottomRightCtrlY} ${leftPt.x} ${leftPt.y}`,
-      // левый бок → верх
-      `C ${leftCtrlMidX} ${topRightCtrlY} ${topCtrlLeftX} ${topY} ${topPt.x} ${topPt.y}`,
-      'Z',
-    ].join(' ');
-  }
-
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
+    
+    // Верх грудной клетки начинается от основания шеи (L5 головы)
+    const topY = geo.topY + headH; 
 
-    // --- Грудная клетка: L5 .. L10 ---
-    const l5 = geo.topY + headH * 1.0;
-    const l10Base = l5 + headH * 1.0;
+    const chestH = params.chestHeight * headH;
+    const chestW = params.chestWidth * headH;
+    
+    // Базовые точки
+    const maxHalfW = chestW / 2;
+    const midY = topY + chestH / 2;
+    const bottomY = topY + chestH;
 
-    const chestHalfW = (headH * 0.5) * params.chestWidthMul;
-    const chestHalfH = ((l10Base - l5) / 2) * params.chestHeightMul;
-    const chestCy = (l5 + l10Base) / 2;
-    const chestTopY = chestCy - chestHalfH;
-    const chestBottomY = chestCy + chestHalfH;
-
-    // Полуширины сверху и снизу (с учётом taper)
-    // taper: + — расширяем, − — сужаем
-    const topHalfW = chestHalfW * (1 + params.chestTopTaper);
-    const bottomHalfW = chestHalfW * (1 + params.chestBottomTaper);
-
-    // --- Таз ---
-    // По правилу: ширина = высоте эллипса, высота = ширине эллипса.
-    // Высота эллипса = 2 * chestHalfH, ширина эллипса = 2 * chestHalfW.
-    const pelvisW = (chestHalfH * 2) * params.pelvisWidthMul;
-    const pelvisH = (chestHalfW * 2) * params.pelvisHeightMul;
-    const pelvisX = cx - pelvisW / 2;
-    const pelvisY = chestBottomY;
-    // Скругление: доля от половины меньшей стороны
-    const rBase = Math.min(pelvisW, pelvisH) / 2;
-    const radius = clamp(params.pelvisRadius, 0, 0.5) * rBase * 2;
+    // Коэффициенты для верхней и нижней дуг
+    // Если topNarrow = 0 -> верхний радиус = maxHalfW (ровный овал)
+    // Если topNarrow = 1 -> верхний радиус = 0 (острый верх)
+    const topHalfW = maxHalfW * (1 - params.topNarrow * 0.9); 
+    
+    // Если bottomExpand = 0 -> нижний радиус = maxHalfW (ровный овал)
+    // Если bottomExpand = 1 -> нижний радиус = maxHalfW * 1.2 (широкий низ)
+    const bottomHalfW = maxHalfW * (1 + params.bottomExpand * 0.5);
 
     return {
-      headH, cx,
-      l5, l10: l10Base,
-      chest: {
-        topY: chestTopY,
-        bottomY: chestBottomY,
-        cy: chestCy,
-        halfW: chestHalfW,
-        halfH: chestHalfH,
-        topHalfW,
-        bottomHalfW,
-      },
-      pelvis: {
-        x: pelvisX,
-        y: pelvisY,
-        w: pelvisW,
-        h: pelvisH,
-        radius,
-      },
+      headH, topY, cx,
+      chestH, chestW,
+      midY, bottomY,
+      maxHalfW, topHalfW, bottomHalfW
     };
   }
 
-  function drawGrid(t) {
+  function drawGrid(h) {
     const { grid } = els;
     clear(grid);
 
-    const lineX1 = t.cx - t.headH * 0.9;
-    const lineX2 = t.cx + t.headH * 0.9;
+    const lineX1 = h.cx - h.headH * 0.75;
+    const lineX2 = h.cx + h.headH * 0.75;
 
     const lines = [
-      { y: t.l5, label: 'L5' },
-      { y: t.l10, label: 'L10' },
+      { y: h.topY, label: 'T0' },
+      { y: h.midY, label: 'T1' },
+      { y: h.bottomY, label: 'T2' },
     ];
 
     for (const { y, label } of lines) {
@@ -173,74 +97,97 @@
         stroke: '#9aa0a6', 'stroke-width': 2,
         'stroke-dasharray': '16 12',
       }));
-      const tEl = svgEl('text', {
+      const t = svgEl('text', {
         x: lineX1 - 12, y: y + 8,
         'text-anchor': 'end',
         'font-size': 28,
         'font-family': 'system-ui, sans-serif',
         fill: '#9aa0a6',
       });
-      tEl.textContent = label;
-      grid.appendChild(tEl);
+      t.textContent = label;
+      grid.appendChild(t);
     }
   }
 
-  function drawTorso(t) {
+  function drawTorso(h) {
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // Грудная клетка
-    const chestD = buildChestPath(
-      t.cx,
-      t.chest.topY,
-      t.chest.bottomY,
-      t.chest.topHalfW,
-      t.chest.bottomHalfW
-    );
+    const p = {
+      // Верхняя точка (суженная)
+      x1: h.cx - h.topHalfW, y1: h.topY,
+      x2: h.cx + h.topHalfW, y2: h.topY,
+      
+      // Самая широкая точка (по центру)
+      x3: h.cx + h.maxHalfW, y3: h.midY,
+      x4: h.cx - h.maxHalfW, y4: h.midY,
+      
+      // Нижняя точка (расширенная)
+      x5: h.cx - h.bottomHalfW, y5: h.bottomY,
+      x6: h.cx + h.bottomHalfW, y6: h.bottomY,
+    };
+
+    // Строим путь с помощью кубических кривых Безье (C)
+    // M (Move) — старт в левом верхнем углу
+    // C — кривая до правого верхнего угла через контрольные точки
+    // C — кривая до правого нижнего угла
+    // C — кривая до левого нижнего угла
+    // C — кривая обратно в левый верхний угол
+    
+    // Контрольные точки для верхней дуги (сужение)
+    const ctrlTopY = h.topY + (h.midY - h.topY) * 0.55;
+    // Контрольные точки для нижней дуги (расширение)
+    const ctrlBotY = h.bottomY - (h.bottomY - h.midY) * 0.55;
+
+    const d = `
+      M ${p.x1} ${p.y1}
+      C ${p.x1} ${ctrlTopY}, ${p.x3} ${ctrlTopY}, ${p.x3} ${p.y3}
+      C ${p.x3} ${ctrlBotY}, ${p.x6} ${ctrlBotY}, ${p.x6} ${p.y6}
+      L ${p.x5} ${p.y5}
+      C ${p.x5} ${ctrlBotY}, ${p.x4} ${ctrlBotY}, ${p.x4} ${p.y4}
+      C ${p.x4} ${ctrlTopY}, ${p.x1} ${ctrlTopY}, ${p.x1} ${p.y1}
+      Z
+    `;
+
     torsoGroup.appendChild(svgEl('path', {
-      d: chestD,
+      d: d.replace(/\s+/g, ' ').trim(),
       fill: 'none',
     }));
 
-    // Таз
-    torsoGroup.appendChild(svgEl('rect', {
-      x: t.pelvis.x,
-      y: t.pelvis.y,
-      width: t.pelvis.w,
-      height: t.pelvis.h,
-      rx: t.pelvis.radius,
-      ry: t.pelvis.radius,
-      fill: 'none',
-    }));
+    // Маркеры (для отладки)
+    const { grid } = els;
+    const mR = h.headH * 0.012;
+    const points = [
+      { x: p.x1, y: p.y1, color: '#dc2626' },
+      { x: p.x2, y: p.y2, color: '#dc2626' },
+      { x: p.x3, y: p.y3, color: '#2563eb' },
+      { x: p.x4, y: p.y4, color: '#2563eb' },
+      { x: p.x5, y: p.y5, color: '#16a34a' },
+      { x: p.x6, y: p.y6, color: '#16a34a' },
+    ];
+    for (const pt of points) {
+      grid.appendChild(svgEl('circle', {
+        cx: pt.x, cy: pt.y, r: mR,
+        fill: pt.color, opacity: 0.85,
+      }));
+    }
   }
 
   function update(geo) {
     if (!ensureDom()) return;
-    const t = computeTorso(geo);
-    drawGrid(t);
-    drawTorso(t);
+    const h = computeTorso(geo);
+    drawGrid(h);
+    drawTorso(h);
   }
 
   function getParams() { return { ...params }; }
-
   function setParams(patch) {
     if (!patch) return;
     for (const k in params) {
-      if (typeof patch[k] === 'number' && isFinite(patch[k])) {
-        params[k] = patch[k];
-      }
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k];
     }
   }
+  function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  function resetParams() {
-    Object.assign(params, DEFAULT_PARAMS);
-  }
-
-  window.Torso = {
-    update,
-    getParams,
-    setParams,
-    resetParams,
-    DEFAULT_PARAMS,
-  };
+  window.Torso = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
 })();
