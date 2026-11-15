@@ -1,4 +1,4 @@
-/* js/head.js — Точка 2 (Рабочая версия) */
+/* js/head.js — Точка 2 (Рабочая версия + anchors для шеи) */
 
 (function () {
   'use strict';
@@ -19,17 +19,14 @@
     bottomShift: 0,
     widthMul: 1.0,
     radiusMul: 1.0,
-
     chinHeightShift: 0,
     chinWidth: 0.10,
-
     jawAttach: 0.20,
     jawLength: 0.35,
     jawAngleWidth: -0.30,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
-
   let els = null;
 
   function ensureDom() {
@@ -45,26 +42,19 @@
       grid.setAttribute('class', 'no-export');
       headsLayer.appendChild(grid);
     }
-
     els = { headGroup, headsLayer, grid };
     return els;
   }
 
-  function clear(el) {
-    while (el.firstChild) el.removeChild(el.firstChild);
-  }
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
-    if (attrs) {
-      for (const k in attrs) node.setAttribute(k, attrs[k]);
-    }
+    if (attrs) for (const k in attrs) node.setAttribute(k, attrs[k]);
     return node;
   }
 
-  function clamp(v, lo, hi) {
-    return v < lo ? lo : v > hi ? hi : v;
-  }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
   function computeHead(geo) {
     const headH = geo.headHeight;
@@ -72,7 +62,6 @@
     const cx = geo.centerX;
     const bottomY = topY + headH;
 
-    // L0 / L3
     let l0 = topY + L0_BASE * headH + params.topShift * headH;
     let l3 = topY + L3_BASE * headH + params.bottomShift * headH;
     if (l3 - l0 < MIN_GAP_L0_L3 * headH) {
@@ -85,7 +74,6 @@
     const ry = ((l3 - l0) / 2) * params.radiusMul;
     const rx = ry * params.widthMul;
 
-    // L4
     let l4 = topY + L4_BASE * headH + params.chinHeightShift * headH;
     const l4Min = l3 + MIN_GAP_L3_L4 * headH;
     const l4Max = bottomY - MIN_GAP_L4_L5 * headH;
@@ -100,10 +88,8 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
     const baseTheta = Math.asin(attachRatio); 
-    const THETA_LIM = Math.asin(0.98);
 
     const angleDX = params.jawAngleWidth * rx; 
 
@@ -113,10 +99,8 @@
 
     function getJawSide(sign) {
       const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
-      
       const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
       const attachY = cy + ry * Math.sin(theta);
-
       const angleX = clamp(attachX + sign * angleDX, cx - rx * 1.2, cx + rx * 1.2);
       const angleY = attachY + jawDY;
 
@@ -132,10 +116,8 @@
 
     return {
       headH, topY, bottomY, cx,
-      l0, l3, l4,
-      cy, rx, ry,
-      chinY: l4,
-      chinLeftX, chinRightX,
+      l0, l3, l4, cy, rx, ry,
+      chinY: l4, chinLeftX, chinRightX,
       jaw: {
         attachRight: right.attach,
         attachLeft: left.attach,
@@ -166,25 +148,19 @@
     for (const { y, label } of lines) {
       grid.appendChild(svgEl('line', {
         x1: lineX1, x2: lineX2, y1: y, y2: y,
-        stroke: '#9aa0a6', 'stroke-width': 2,
-        'stroke-dasharray': '16 12',
+        stroke: '#9aa0a6', 'stroke-width': 2, 'stroke-dasharray': '16 12',
       }));
       const t = svgEl('text', {
-        x: lineX1 - 12, y: y + 8,
-        'text-anchor': 'end',
-        'font-size': 28,
-        'font-family': 'system-ui, sans-serif',
-        fill: '#9aa0a6',
+        x: lineX1 - 12, y: y + 8, 'text-anchor': 'end',
+        'font-size': 28, 'font-family': 'system-ui, sans-serif', fill: '#9aa0a6',
       });
       t.textContent = label;
       grid.appendChild(t);
     }
 
     grid.appendChild(svgEl('line', {
-      x1: h.cx, x2: h.cx,
-      y1: h.topY, y2: h.bottomY,
-      stroke: '#c0c4c9', 'stroke-width': 2,
-      'stroke-dasharray': '8 12',
+      x1: h.cx, x2: h.cx, y1: h.topY, y2: h.bottomY,
+      stroke: '#c0c4c9', 'stroke-width': 2, 'stroke-dasharray': '8 12',
     }));
 
     const mR = h.headH * 0.012;
@@ -195,10 +171,7 @@
       { p: h.jaw.angleLeft, color: '#dc2626' },
     ];
     for (const { p, color } of points) {
-      grid.appendChild(svgEl('circle', {
-        cx: p.x, cy: p.y, r: mR,
-        fill: color, opacity: 0.85,
-      }));
+      grid.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: mR, fill: color, opacity: 0.85 }));
     }
   }
 
@@ -211,9 +184,7 @@
     }));
 
     headGroup.appendChild(svgEl('line', {
-      x1: h.chinLeftX, y1: h.chinY,
-      x2: h.chinRightX, y2: h.chinY,
-      fill: 'none',
+      x1: h.chinLeftX, y1: h.chinY, x2: h.chinRightX, y2: h.chinY, fill: 'none',
     }));
 
     const r = h.jaw;
@@ -234,28 +205,23 @@
     const h = computeHead(geo);
     drawGrid(h);
     drawHead(h);
+
+    // Сохраняем якоря для шеи (берём точки, где челюсть крепится к голове)
+    window.Head.anchors = {
+      attachLeft: h.jaw.attachLeft,
+      attachRight: h.jaw.attachRight,
+      l5Y: h.topY + L5_BASE * h.headH,
+    };
   }
 
   function getParams() { return { ...params }; }
-
   function setParams(patch) {
     if (!patch) return;
     for (const k in params) {
-      if (typeof patch[k] === 'number' && isFinite(patch[k])) {
-        params[k] = patch[k];
-      }
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k];
     }
   }
+  function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  function resetParams() {
-    Object.assign(params, DEFAULT_PARAMS);
-  }
-
-  window.Head = {
-    update,
-    getParams,
-    setParams,
-    resetParams,
-    DEFAULT_PARAMS,
-  };
+  window.Head = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, anchors: null };
 })();
