@@ -1,4 +1,4 @@
-/* js/head.js — Этап 2: круг + подбородок + челюсть */
+/* js/head.js — Точка 2 (Реальная версия) */
 
 (function () {
   'use strict';
@@ -13,8 +13,6 @@
   const MIN_GAP_L0_L3 = 0.5;
   const MIN_GAP_L3_L4 = 0.05;
   const MIN_GAP_L4_L5 = 0.05;
-
-  const JAW_ANGLE_TO_THETA = 4.6;
 
   const params = {
     topShift: 0,
@@ -102,34 +100,35 @@
     const chinLeftX = cx - chinHalf;
     const chinRightX = cx + chinHalf;
 
-    // Челюсть
+    // --- ЧЕЛЮСТЬ ---
     const attachRatio = clamp(params.jawAttach, -0.98, 0.98);
-    const dTheta = params.jawAngleWidth * JAW_ANGLE_TO_THETA;
-    const baseTheta = Math.asin(attachRatio);
-
+    const baseTheta = Math.asin(attachRatio); 
     const THETA_LIM = Math.asin(0.98);
-    let thetaR = baseTheta + dTheta;
-    thetaR = clamp(thetaR, -THETA_LIM, THETA_LIM);
-    const thetaL = Math.PI - thetaR;
 
-    const attachRightX = cx + rx * Math.cos(thetaR);
-    const attachRightY = cy + ry * Math.sin(thetaR);
-    const attachLeftX = cx + rx * Math.cos(thetaL);
-    const attachLeftY = cy + ry * Math.sin(thetaL);
+    const angleDX = params.jawAngleWidth * rx; 
 
-    const maxJawLen = Math.max(0, (l4 - attachRightY) / headH - 0.02);
+    const maxJawLen = Math.max(0, (l4 - cy) / headH - 0.05);
     const jawLen = Math.min(params.jawLength, maxJawLen);
+    const jawDY = jawLen * headH;
 
-    const angleDX = params.jawAngleWidth * headH;
+    function getJawSide(sign) {
+      const theta = sign === 1 ? baseTheta : Math.PI - baseTheta;
+      
+      const attachX = cx + sign * rx * Math.abs(Math.cos(theta));
+      const attachY = cy + ry * Math.sin(theta);
 
-    let angleRightX = attachRightX + angleDX;
-    let angleLeftX = attachLeftX - angleDX;
-    const angleLimit = rx * 1.05;
-    angleRightX = clamp(angleRightX, cx - angleLimit, cx + angleLimit);
-    angleLeftX = clamp(angleLeftX, cx - angleLimit, cx + angleLimit);
+      const angleX = clamp(attachX + sign * angleDX, cx - rx * 1.2, cx + rx * 1.2);
+      const angleY = attachY + jawDY;
 
-    const angleRightY = attachRightY + jawLen * headH;
-    const angleLeftY = attachLeftY + jawLen * headH;
+      return {
+        attach: { x: attachX, y: attachY },
+        angle: { x: angleX, y: angleY },
+        chin: { x: sign === 1 ? chinRightX : chinLeftX, y: l4 }
+      };
+    }
+
+    const right = getJawSide(1);
+    const left = getJawSide(-1);
 
     return {
       headH, topY, bottomY, cx,
@@ -138,12 +137,12 @@
       chinY: l4,
       chinLeftX, chinRightX,
       jaw: {
-        attachRight: { x: attachRightX, y: attachRightY },
-        attachLeft: { x: attachLeftX, y: attachLeftY },
-        angleRight: { x: angleRightX, y: angleRightY },
-        angleLeft: { x: angleLeftX, y: angleLeftY },
-        chinRight: { x: chinRightX, y: l4 },
-        chinLeft: { x: chinLeftX, y: l4 },
+        attachRight: right.attach,
+        attachLeft: left.attach,
+        angleRight: right.angle,
+        angleLeft: left.angle,
+        chinRight: right.chin,
+        chinLeft: left.chin,
       },
     };
   }
