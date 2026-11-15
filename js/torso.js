@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз + Адаптивная шея */
+/* js/torso.js — Этап 2: Шея + Грудная клетка + Таз */
 
 (function () {
   'use strict';
@@ -6,6 +6,7 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
+    neckWidth: 0.20,      // Ширина шеи
     chestWidth: 0.7,
     chestHeightCorr: -0.15,
     topNarrow: 0.6,
@@ -35,7 +36,9 @@
     return els;
   }
 
-  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+  function clear(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
@@ -43,10 +46,33 @@
     return node;
   }
 
+  // Функция для проверки, находится ли X внутри контура груди на высоте Y
+  function isInsideChest(x, y, h) {
+    if (y < h.chestY0 || y > h.chestY0 + h.chestHeightPx) return false;
+    
+    const t = (y - h.chestY0) / h.chestHeightPx; // 0..1
+    const x0 = h.cx;
+    let halfWidth;
+
+    // Аппроксимация ширины груди на высоте t (упрощенная для коллизии)
+    if (t <= 0.6) {
+      // Верхняя часть (от 0 до 0.6) — от cpTopX до rx
+      const tNorm = t / 0.6;
+      halfWidth = (h.cpTopX) + (h.chestRx - h.cpTopX) * Math.sin(tNorm * Math.PI / 2);
+    } else {
+      // Нижняя часть (от 0.6 до 1) — от rx до cpBottomX
+      const tNorm = (t - 0.6) / 0.4;
+      halfWidth = h.chestRx - (h.chestRx - h.cpBottomX) * Math.sin(tNorm * Math.PI / 2);
+    }
+
+    return Math.abs(x - x0) <= halfWidth;
+  }
+
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
 
+    // --- Грудная клетка ---
     const chestHeightPx = headH * (1 + params.chestHeightCorr);
     const chestY0 = geo.topY + headH;
     
@@ -54,6 +80,7 @@
     const cpTopX = chestRx * params.topNarrow;
     const cpBottomX = chestRx * params.bottomWide;
 
+    // --- Таз ---
     const pelvisH = (chestRx * 2) * (1 + params.pelvisHeightCorr);
     const pelvisW = chestHeightPx * (1 + params.pelvisWidthCorr);
     
@@ -63,17 +90,11 @@
     
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
-    // Верхние края груди на уровне T0 (точки, где стартует контур груди)
-    // При t=0 кривая Безье начинается в (cx, chestY0), а верхняя точка сужения на уровне T0 — это cpTopX.
-    const chestTopLeftX = cx - cpTopX;
-    const chestTopRightX = cx + cpTopX;
-
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
-             pelvisW, pelvisH, pelvisY0, pelvisX0, rad,
-             chestTopLeftX, chestTopRightX };
+             pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  function drawGrid(h) {
+  function drawGrid(h, geo) {
     const { grid } = els;
     clear(grid);
 
@@ -90,44 +111,65 @@
     for (const { y, label } of lines) {
       grid.appendChild(svgEl('line', {
         x1: lineX1, x2: lineX2, y1: y, y2: y,
-        stroke: '#9aa0a6', 'stroke-width': 2, 'stroke-dasharray': '16 12',
+        stroke: '#9aa0a6', 'stroke-width': 2,
+        'stroke-dasharray': '16 12',
       }));
       const t = svgEl('text', {
-        x: lineX1 - 12, y: y + 8, 'text-anchor': 'end',
-        'font-size': 28, 'font-family': 'system-ui, sans-serif', fill: '#9aa0a6',
+        x: lineX1 - 12, y: y + 8,
+        'text-anchor': 'end',
+        'font-size': 28,
+        'font-family': 'system-ui, sans-serif',
+        fill: '#9aa0a6',
       });
       t.textContent = label;
       grid.appendChild(t);
     }
   }
 
-  function drawTorso(h) {
+  function drawTorso(h, geo) {
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // --- Шея (адаптивная) ---
-    if (window.Head && window.Head.anchors) {
-      const topL = window.Head.anchors.neckTopLeft;
-      const topR = window.Head.anchors.neckTopRight;
+    // --- 1. Шея ---
+    // Получаем L4 из глобального состояния головы
+    const headGeo = window.Head && window.Head.lastGeometry;
+    const neckTopY = headGeo ? headGeo.l4 : h.chestY0; // Если головы нет, падаем на T0
+    
+    // Ищем, куда упрется шея
+    const neckHalfW = (h.headH * params.neckWidth) / 2;
+    let neckBottomY = h.chestY0; // По умолчанию до T0
+    let foundCollision = false;
 
-      if (topL && topR) {
-        // Линия от левого угла челюсти к левому краю груди на T0
-        torsoGroup.appendChild(svgEl('line', {
-          x1: topL.x, y1: topL.y,
-          x2: h.chestTopLeftX, y2: h.chestY0,
-          fill: 'none',
-        }));
-
-        // Линия от правого угла челюсти к правому краю груди на T0
-        torsoGroup.appendChild(svgEl('line', {
-          x1: topR.x, y1: topR.y,
-          x2: h.chestTopRightX, y2: h.chestY0,
-          fill: 'none',
-        }));
+    for (let y = neckTopY; y < h.chestY0 + h.chestHeightPx; y += h.headH * 0.01) {
+      if (isInsideChest(h.cx - neckHalfW, y, h) || isInsideChest(h.cx + neckHalfW, y, h)) {
+        neckBottomY = y;
+        foundCollision = true;
+        break;
       }
     }
+    
+    // Если не нашли грудь (например, она сильно сужена), заканчиваем на T1
+    if (!foundCollision) {
+        neckBottomY = h.chestY0 + h.chestHeightPx * 0.2;
+    }
 
-    // --- Грудная клетка (Безье) ---
+    // Рисуем две линии шеи
+    if (neckBottomY > neckTopY) {
+      // Левая линия
+      torsoGroup.appendChild(svgEl('line', {
+        x1: h.cx - neckHalfW, y1: neckTopY,
+        x2: h.cx - neckHalfW, y2: neckBottomY,
+        fill: 'none',
+      }));
+      // Правая линия
+      torsoGroup.appendChild(svgEl('line', {
+        x1: h.cx + neckHalfW, y1: neckTopY,
+        x2: h.cx + neckHalfW, y2: neckBottomY,
+        fill: 'none',
+      }));
+    }
+
+    // --- 2. Грудная клетка (Безье) ---
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -150,19 +192,23 @@
       fill: 'none',
     }));
 
-    // --- Таз ---
+    // --- 3. Таз (Прямоугольник) ---
     torsoGroup.appendChild(svgEl('rect', {
-      x: h.pelvisX0, y: h.pelvisY0,
-      width: h.pelvisW, height: h.pelvisH,
-      rx: h.rad, ry: h.rad, fill: 'none',
+      x: h.pelvisX0,
+      y: h.pelvisY0,
+      width: h.pelvisW,
+      height: h.pelvisH,
+      rx: h.rad,
+      ry: h.rad,
+      fill: 'none',
     }));
   }
 
   function update(geo) {
     if (!ensureDom()) return;
     const h = computeTorso(geo);
-    drawGrid(h);
-    drawTorso(h);
+    drawGrid(h, geo);
+    drawTorso(h, geo);
   }
 
   function getParams() { return { ...params }; }
