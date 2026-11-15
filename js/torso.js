@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка + Таз */
+/* js/torso.js — Этап 2: Грудная клетка + Таз + Шея */
 
 (function () {
   'use strict';
@@ -16,6 +16,9 @@
     pelvisWidthCorr: 0,
     pelvisHeightCorr: 0,
     pelvisRounding: 0.6,
+
+    // Шея
+    neckWidth: 0.4,   // ширина шеи внизу (в долях headH)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -38,9 +41,7 @@
     return els;
   }
 
-  function clear(el) {
-    while (el.firstChild) el.removeChild(el.firstChild);
-  }
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
@@ -70,8 +71,14 @@
     
     const rad = Math.min(pelvisW, pelvisH) / 2 * params.pelvisRounding;
 
+    // --- Шея ---
+    const neckHalfW = (headH * params.neckWidth) / 2;
+    const neckBottomL = { x: cx - neckHalfW, y: chestY0 };
+    const neckBottomR = { x: cx + neckHalfW, y: chestY0 };
+
     return { headH, cx, chestY0, chestHeightPx, chestRx, cpTopX, cpBottomX,
-             pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
+             pelvisW, pelvisH, pelvisY0, pelvisX0, rad,
+             neckBottomL, neckBottomR };
   }
 
   function drawGrid(h) {
@@ -91,15 +98,11 @@
     for (const { y, label } of lines) {
       grid.appendChild(svgEl('line', {
         x1: lineX1, x2: lineX2, y1: y, y2: y,
-        stroke: '#9aa0a6', 'stroke-width': 2,
-        'stroke-dasharray': '16 12',
+        stroke: '#9aa0a6', 'stroke-width': 2, 'stroke-dasharray': '16 12',
       }));
       const t = svgEl('text', {
-        x: lineX1 - 12, y: y + 8,
-        'text-anchor': 'end',
-        'font-size': 28,
-        'font-family': 'system-ui, sans-serif',
-        fill: '#9aa0a6',
+        x: lineX1 - 12, y: y + 8, 'text-anchor': 'end',
+        'font-size': 28, 'font-family': 'system-ui, sans-serif', fill: '#9aa0a6',
       });
       t.textContent = label;
       grid.appendChild(t);
@@ -110,7 +113,26 @@
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // 1. Грудная клетка (Безье)
+    // --- Шея ---
+    // Берём точки крепления челюсти из head.js
+    if (window.Head && window.Head.anchors) {
+      const topL = window.Head.anchors.attachLeft;
+      const topR = window.Head.anchors.attachRight;
+      
+      torsoGroup.appendChild(svgEl('line', {
+        x1: topL.x, y1: topL.y,
+        x2: h.neckBottomL.x, y2: h.neckBottomL.y,
+        fill: 'none',
+      }));
+
+      torsoGroup.appendChild(svgEl('line', {
+        x1: topR.x, y1: topR.y,
+        x2: h.neckBottomR.x, y2: h.neckBottomR.y,
+        fill: 'none',
+      }));
+    }
+
+    // --- Грудная клетка (Безье) ---
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -133,15 +155,11 @@
       fill: 'none',
     }));
 
-    // 2. Таз (Прямоугольник)
+    // --- Таз ---
     torsoGroup.appendChild(svgEl('rect', {
-      x: h.pelvisX0,
-      y: h.pelvisY0,
-      width: h.pelvisW,
-      height: h.pelvisH,
-      rx: h.rad,
-      ry: h.rad,
-      fill: 'none',
+      x: h.pelvisX0, y: h.pelvisY0,
+      width: h.pelvisW, height: h.pelvisH,
+      rx: h.rad, ry: h.rad, fill: 'none',
     }));
   }
 
