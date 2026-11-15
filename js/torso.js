@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея растет из второго отрезка челюсти */
+/* js/torso.js — Этап 2: Шея + Грудь единым контуром */
 
 (function () {
   'use strict';
@@ -70,7 +70,6 @@
              pelvisW, pelvisH, pelvisY0, pelvisX0, rad };
   }
 
-  // Половина ширины груди на высоте y
   function getChestHalfWidthAtY(y, h) {
     const t = (y - h.chestY0) / h.chestHeightPx;
     if (t < 0 || t > 1) return 0;
@@ -104,8 +103,7 @@
     return high;
   }
 
-  // --- ГЛАВНОЕ: Поиск Y на ВТОРОМ ОТРЕЗКЕ челюсти ---
-  // Второй отрезок: от угла (angleRight) до края подбородка (chinRight)
+  // Поиск Y на втором отрезке челюсти (угол -> подбородок)
   function findJawYOnSecondSegment(x, headGeo) {
     if (!headGeo) return headGeo.l4;
     
@@ -113,26 +111,18 @@
     const ptChin = headGeo.jaw.chinRight;
     const cx = headGeo.cx;
 
-    // Координаты на правой стороне
-    const ax = ptAngle.x;
-    const ay = ptAngle.y;
-    const bx = ptChin.x;
-    const by = ptChin.y;
+    const ax = ptAngle.x, ay = ptAngle.y;
+    const bx = ptChin.x, by = ptChin.y;
 
-    // Ширина (расстояние от центра) для угла и подбородка
     const dxAngle = Math.abs(ax - cx);
     const dxChin = Math.abs(bx - cx);
-
-    // Мы ищем по X (расстоянию от центра)
     const targetDx = Math.abs(x - cx);
 
-    // Клипуем X, чтобы он не выходил за пределы второго отрезка
     const minDx = Math.min(dxAngle, dxChin);
     const maxDx = Math.max(dxAngle, dxChin);
     const clampedDx = Math.max(minDx, Math.min(maxDx, targetDx));
 
-    // Интерполируем Y между углом и подбородком
-    if (dxAngle === dxChin) return ay; // Защита от деления на ноль
+    if (dxAngle === dxChin) return ay;
     const t = (clampedDx - dxAngle) / (dxChin - dxAngle);
     return ay + (by - ay) * t;
   }
@@ -176,34 +166,6 @@
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
-    if (headGeo) {
-      const leftX = h.cx - neckHalfW;
-      const rightX = h.cx + neckHalfW;
-
-      // ВЕРХ: Ищем Y строго на ВТОРОМ ОТРЕЗКЕ челюсти
-      const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
-      const topRightY = findJawYOnSecondSegment(rightX, headGeo);
-      
-      // НИЗ: Ищем Y на груди
-      const botLeftY = findChestYByX(leftX, h);
-      const botRightY = findChestYByX(rightX, h);
-
-      // Левая линия (строго вертикальная)
-      torsoGroup.appendChild(svgEl('line', {
-        x1: leftX, y1: topLeftY,
-        x2: leftX, y2: botLeftY,
-        fill: 'none',
-      }));
-
-      // Правая линия (строго вертикальная)
-      torsoGroup.appendChild(svgEl('line', {
-        x1: rightX, y1: topRightY,
-        x2: rightX, y2: botRightY,
-        fill: 'none',
-      }));
-    }
-
-    // Грудь
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -212,21 +174,47 @@
     const cpTopX = h.cpTopX;
     const cpBottomX = h.cpBottomX;
 
-    const dChest = `
-      M ${x0} ${y0}
-      C ${x0 + cpTopX} ${y0}, ${x0 + rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 + rx} ${yMid}
-      C ${x0 + rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 + cpBottomX} ${yBot}, ${x0} ${yBot}
-      C ${x0 - cpBottomX} ${yBot}, ${x0 - rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 - rx} ${yMid}
-      C ${x0 - rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 - cpTopX} ${y0}, ${x0} ${y0}
-      Z
-    `;
+    if (headGeo) {
+      const leftX = h.cx - neckHalfW;
+      const rightX = h.cx + neckHalfW;
 
-    torsoGroup.appendChild(svgEl('path', {
-      d: dChest.replace(/\s+/g, ' ').trim(),
-      fill: 'none',
-    }));
+      const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
+      const topRightY = findJawYOnSecondSegment(rightX, headGeo);
+      
+      const botLeftY = findChestYByX(leftX, h);
+      const botRightY = findChestYByX(rightX, h);
 
-    // Таз
+      // Строим ЕДИНЫЙ ПУТЬ: шея + грудь.
+      const dTorso = `
+        M ${leftX} ${topLeftY}
+        L ${leftX} ${botLeftY}
+        C ${leftX} ${yBot - h.chestHeightPx * 0.1}, ${x0 - cpBottomX} ${yBot}, ${x0} ${yBot}
+        C ${x0 + cpBottomX} ${yBot}, ${rightX} ${yBot - h.chestHeightPx * 0.1}, ${rightX} ${botRightY}
+        L ${rightX} ${topRightY}
+      `;
+
+      torsoGroup.appendChild(svgEl('path', {
+        d: dTorso.replace(/\s+/g, ' ').trim(),
+        fill: 'none',
+      }));
+
+    } else {
+      // Fallback без головы: просто грудь
+      const dChest = `
+        M ${x0} ${y0}
+        C ${x0 + cpTopX} ${y0}, ${x0 + rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 + rx} ${yMid}
+        C ${x0 + rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 + cpBottomX} ${yBot}, ${x0} ${yBot}
+        C ${x0 - cpBottomX} ${yBot}, ${x0 - rx} ${yBot - h.chestHeightPx * 0.1}, ${x0 - rx} ${yMid}
+        C ${x0 - rx} ${y0 + h.chestHeightPx * 0.3}, ${x0 - cpTopX} ${y0}, ${x0} ${y0}
+        Z
+      `;
+      torsoGroup.appendChild(svgEl('path', {
+        d: dChest.replace(/\s+/g, ' ').trim(),
+        fill: 'none',
+      }));
+    }
+
+    // Таз (отдельно)
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0,
       y: h.pelvisY0,
