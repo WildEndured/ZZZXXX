@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=11" />
 </head>
 <body>
   <div class="app">
@@ -102,6 +102,10 @@
         <section class="block">
           <h2>Торс</h2>
           <label class="row">
+            <span>Ширина шеи: <b id="torsoNeckWidthVal">20</b>%</span>
+            <input type="range" id="torsoNeckWidth" min="0.05" max="0.6" step="0.01" value="0.20" />
+          </label>
+          <label class="row">
             <span>Ширина грудной клетки: <b id="torsoChestWidthVal">70</b>%</span>
             <input type="range" id="torsoChestWidth" min="0.30" max="1.50" step="0.01" value="0.7" />
           </label>
@@ -170,10 +174,10 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=10"></script>
-  <script src="js/torso.js?v=10"></script>
-  <script src="js/arm.js?v=10"></script>
-  <script src="js/leg.js?v=10"></script>
-  <script src="js/main.js?v=10"></script>
+  <script src="js/head.js?v=11"></script>
+  <script src="js/torso.js?v=11"></script>
+  <script src="js/arm.js?v=11"></script>
+  <script src="js/leg.js?v=11"></script>
+  <script src="js/main.js?v=11"></script>
 </body>
 </html>
