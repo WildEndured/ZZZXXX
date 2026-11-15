@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 3: грудная клетка и таз */
+/* js/torso.js — Этап 3: грудная клетка + таз */
 
 (function () {
   'use strict';
@@ -6,16 +6,16 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    // Грудная клетка (яйцо)
-    chestTopWidth: 1.0,    // Расширение/сужение верха
-    chestBottomWidth: 1.0, // Расширение/сужение низа
-    chestHeight: 1.0,      // Высота
-    chestWidth: 1.0,       // Ширина
+    // Грудная клетка (эллипс L5..L10)
+    chestWidthMul: 1.0,     // 0.5 … 1.5
+    chestHeightMul: 1.0,    // 0.5 … 1.5
+    chestTopTaper: 0.0,     // -0.5 … 0.5 — расширение/сужение верха
+    chestBottomTaper: 0.0,  // -0.5 … 0.5 — расширение/сужение низа
 
     // Таз (прямоугольник)
-    pelvisWidthAdj: 1.0,   // Корректировка ширины
-    pelvisHeightAdj: 1.0,  // Корректировка высоты
-    pelvisRadius: 0.2,     // Скругление углов (в долях от меньшей стороны)
+    pelvisWidthMul: 1.0,    // 0.5 … 1.5
+    pelvisHeightMul: 1.0,   // 0.5 … 1.5
+    pelvisRadius: 0.0,      // 0 … 0.5 (доля от min(w,h)/2)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -52,117 +52,173 @@
     return node;
   }
 
+  function clamp(v, lo, hi) {
+    return v < lo ? lo : v > hi ? hi : v;
+  }
+
+  /**
+   * Строит path грудной клетки.
+   * Четыре точки-«полюса»:
+   *   top    — верх по центру
+   *   bottom — низ по центру
+   *   left   — левый «бок» (на уровне середины)
+   *   right  — правый «бок»
+   * Управляющие точки выносим по бокам, чтобы верх и низ
+   * можно было независимо сужать/расширять.
+   */
+  function buildChestPath(cx, topY, bottomY, topHalfW, bottomHalfW) {
+    const cy = (topY + bottomY) / 2;
+
+    // Опорные точки
+    const topPt    = { x: cx, y: topY };
+    const bottomPt = { x: cx, y: bottomY };
+    const rightPt  = { x: cx + topHalfW * 0.5 + bottomHalfW * 0.5, y: cy };
+    const leftPt   = { x: cx - topHalfW * 0.5 - bottomHalfW * 0.5, y: cy };
+
+    // Управляющие точки для правой половины
+    const k = 0.5523; // константа для аппроксимации эллипса кубическими Безье
+    const topRightCtrlY    = topY + (cy - topY) * k;
+    const bottomRightCtrlY = bottomY - (bottomY - cy) * k;
+
+    const topCtrlRightX    = cx + topHalfW * k;
+    const topCtrlLeftX     = cx - topHalfW * k;
+    const bottomCtrlRightX = cx + bottomHalfW * k;
+    const bottomCtrlLeftX  = cx - bottomHalfW * k;
+
+    const rightCtrlMidX = rightPt.x;
+    const leftCtrlMidX  = leftPt.x;
+
+    // Строим: сверху → вправо → вниз → влево → наверх
+    return [
+      `M ${topPt.x} ${topPt.y}`,
+      // верх → правый бок
+      `C ${topCtrlRightX} ${topY} ${rightCtrlMidX} ${topRightCtrlY} ${rightPt.x} ${rightPt.y}`,
+      // правый бок → низ
+      `C ${rightCtrlMidX} ${bottomRightCtrlY} ${bottomCtrlRightX} ${bottomY} ${bottomPt.x} ${bottomPt.y}`,
+      // низ → левый бок
+      `C ${bottomCtrlLeftX} ${bottomY} ${leftCtrlMidX} ${bottomRightCtrlY} ${leftPt.x} ${leftPt.y}`,
+      // левый бок → верх
+      `C ${leftCtrlMidX} ${topRightCtrlY} ${topCtrlLeftX} ${topY} ${topPt.x} ${topPt.y}`,
+      'Z',
+    ].join(' ');
+  }
+
   function computeTorso(geo) {
     const headH = geo.headHeight;
     const cx = geo.centerX;
-    const topY = geo.topY + headH; // Торс начинается со второй головы
-    const bottomY = topY + headH;
 
-    // --- 1. Грудная клетка (эллипс) ---
-    // Базовые размеры в долях headH
-    let chestH = headH * 0.9 * params.chestHeight;
-    let chestW = headH * 0.7 * params.chestWidth;
-    
-    // Центр яйца
-    let chestCy = topY + chestH / 2 + (headH - chestH) * 0.2; // Чуть выше центра секции
-    let chestRx = chestW / 2;
-    let chestRy = chestH / 2;
+    // --- Грудная клетка: L5 .. L10 ---
+    const l5 = geo.topY + headH * 1.0;
+    const l10Base = l5 + headH * 1.0;
 
-    // Коэффициенты ширины верха и низа
-    const topW = params.chestTopWidth;
-    const botW = params.chestBottomWidth;
+    const chestHalfW = (headH * 0.5) * params.chestWidthMul;
+    const chestHalfH = ((l10Base - l5) / 2) * params.chestHeightMul;
+    const chestCy = (l5 + l10Base) / 2;
+    const chestTopY = chestCy - chestHalfH;
+    const chestBottomY = chestCy + chestHalfH;
 
-    // Рисуем яйцо через path
-    // Верхняя точка
-    const pTop = { x: cx, y: chestCy - chestRy };
-    // Нижняя точка
-    const pBot = { x: cx, y: chestCy + chestRy };
-    // Крайние точки (уровень центра)
-    const pRight = { x: cx + chestRx, y: chestCy };
-    const pLeft = { x: cx - chestRx, y: chestCy };
+    // Полуширины сверху и снизу (с учётом taper)
+    // taper: + — расширяем, − — сужаем
+    const topHalfW = chestHalfW * (1 + params.chestTopTaper);
+    const bottomHalfW = chestHalfW * (1 + params.chestBottomTaper);
 
-    // Контрольные точки для Безье
-    // Верхняя половина
-    const cpTopRight = { x: cx + chestRx * topW, y: chestCy - chestRy * 0.8 };
-    const cpTopLeft  = { x: cx - chestRx * topW, y: chestCy - chestRy * 0.8 };
-    // Нижняя половина
-    const cpBotRight = { x: cx + chestRx * botW, y: chestCy + chestRy * 0.8 };
-    const cpBotLeft  = { x: cx - chestRx * botW, y: chestCy + chestRy * 0.8 };
-
-    const chestPath = `
-      M ${pTop.x} ${pTop.y}
-      C ${cpTopRight.x} ${cpTopRight.y}, ${pRight.x} ${pRight.y}, ${pRight.x} ${pRight.y}
-      C ${cpBotRight.x} ${cpBotRight.y}, ${pBot.x} ${pBot.y}, ${pBot.x} ${pBot.y}
-      C ${cpBotLeft.x} ${cpBotLeft.y}, ${pLeft.x} ${pLeft.y}, ${pLeft.x} ${pLeft.y}
-      C ${cpTopLeft.x} ${cpTopLeft.y}, ${pTop.x} ${pTop.y}, ${pTop.x} ${pTop.y}
-      Z
-    `;
-
-    // --- 2. Таз (прямоугольник) ---
-    // По правилу: ширина = высоте эллипса, высота = ширине эллипса
-    let pelvisW = chestH * params.pelvisWidthAdj;
-    let pelvisH = chestW * params.pelvisHeightAdj;
-    
-    // Позиция: сразу под эллипсом, выравниваем по центру
-    let pelvisY = chestCy + chestRy + (headH * 0.05); // небольшой отступ
-
-    // Скругление (rx) не больше половины меньшей стороны
-    const maxR = Math.min(pelvisW, pelvisH) / 2;
-    let radius = params.pelvisRadius * maxR;
+    // --- Таз ---
+    // По правилу: ширина = высоте эллипса, высота = ширине эллипса.
+    // Высота эллипса = 2 * chestHalfH, ширина эллипса = 2 * chestHalfW.
+    const pelvisW = (chestHalfH * 2) * params.pelvisWidthMul;
+    const pelvisH = (chestHalfW * 2) * params.pelvisHeightMul;
+    const pelvisX = cx - pelvisW / 2;
+    const pelvisY = chestBottomY;
+    // Скругление: доля от половины меньшей стороны
+    const rBase = Math.min(pelvisW, pelvisH) / 2;
+    const radius = clamp(params.pelvisRadius, 0, 0.5) * rBase * 2;
 
     return {
-      headH, cx, topY, bottomY,
-      chest: { path: chestPath, cx, cy: chestCy, rx: chestRx, ry: chestRy },
+      headH, cx,
+      l5, l10: l10Base,
+      chest: {
+        topY: chestTopY,
+        bottomY: chestBottomY,
+        cy: chestCy,
+        halfW: chestHalfW,
+        halfH: chestHalfH,
+        topHalfW,
+        bottomHalfW,
+      },
       pelvis: {
-        x: cx - pelvisW / 2,
+        x: pelvisX,
         y: pelvisY,
         w: pelvisW,
         h: pelvisH,
-        rx: radius
-      }
+        radius,
+      },
     };
   }
 
-  function drawGrid(h, geo) {
+  function drawGrid(t) {
     const { grid } = els;
     clear(grid);
 
-    // Осевая линия (для ориентира)
-    grid.appendChild(svgEl('line', {
-      x1: h.cx, x2: h.cx,
-      y1: h.topY, y2: h.bottomY,
-      stroke: '#c0c4c9', 'stroke-width': 2,
-      'stroke-dasharray': '8 12',
-    }));
+    const lineX1 = t.cx - t.headH * 0.9;
+    const lineX2 = t.cx + t.headH * 0.9;
+
+    const lines = [
+      { y: t.l5, label: 'L5' },
+      { y: t.l10, label: 'L10' },
+    ];
+
+    for (const { y, label } of lines) {
+      grid.appendChild(svgEl('line', {
+        x1: lineX1, x2: lineX2, y1: y, y2: y,
+        stroke: '#9aa0a6', 'stroke-width': 2,
+        'stroke-dasharray': '16 12',
+      }));
+      const tEl = svgEl('text', {
+        x: lineX1 - 12, y: y + 8,
+        'text-anchor': 'end',
+        'font-size': 28,
+        'font-family': 'system-ui, sans-serif',
+        fill: '#9aa0a6',
+      });
+      tEl.textContent = label;
+      grid.appendChild(tEl);
+    }
   }
 
-  function drawTorso(h) {
+  function drawTorso(t) {
     const { torsoGroup } = els;
     clear(torsoGroup);
 
-    // Грудная клетка (Path)
+    // Грудная клетка
+    const chestD = buildChestPath(
+      t.cx,
+      t.chest.topY,
+      t.chest.bottomY,
+      t.chest.topHalfW,
+      t.chest.bottomHalfW
+    );
     torsoGroup.appendChild(svgEl('path', {
-      d: h.chest.path,
+      d: chestD,
       fill: 'none',
     }));
 
-    // Таз (Rect)
+    // Таз
     torsoGroup.appendChild(svgEl('rect', {
-      x: h.pelvis.x,
-      y: h.pelvis.y,
-      width: h.pelvis.w,
-      height: h.pelvis.h,
-      rx: h.pelvis.rx,
-      ry: h.pelvis.rx,
+      x: t.pelvis.x,
+      y: t.pelvis.y,
+      width: t.pelvis.w,
+      height: t.pelvis.h,
+      rx: t.pelvis.radius,
+      ry: t.pelvis.radius,
       fill: 'none',
     }));
   }
 
   function update(geo) {
     if (!ensureDom()) return;
-    const h = computeTorso(geo);
-    drawGrid(h, geo);
-    drawTorso(h);
+    const t = computeTorso(geo);
+    drawGrid(t);
+    drawTorso(t);
   }
 
   function getParams() { return { ...params }; }
