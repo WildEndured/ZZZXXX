@@ -77,24 +77,26 @@
     armShoulderRadiusVal: $('armShoulderRadiusVal'),
     armElbowRadius: $('armElbowRadius'),
     armElbowRadiusVal: $('armElbowRadiusVal'),
-    armElbowX: $('armElbowX'),
-    armElbowXVal: $('armElbowXVal'),
-    armElbowY: $('armElbowY'),
-    armElbowYVal: $('armElbowYVal'),
     armWristRadius: $('armWristRadius'),
     armWristRadiusVal: $('armWristRadiusVal'),
-    armWristX: $('armWristX'),
-    armWristXVal: $('armWristXVal'),
-    armWristY: $('armWristY'),
-    armWristYVal: $('armWristYVal'),
-    armLeftX: $('armLeftX'),
-    armLeftXVal: $('armLeftXVal'),
-    armLeftY: $('armLeftY'),
-    armLeftYVal: $('armLeftYVal'),
-    armRightX: $('armRightX'),
-    armRightXVal: $('armRightXVal'),
-    armRightY: $('armRightY'),
-    armRightYVal: $('armRightYVal'),
+
+    armElbowLeftX: $('armElbowLeftX'),
+    armElbowLeftXVal: $('armElbowLeftXVal'),
+    armElbowLeftY: $('armElbowLeftY'),
+    armElbowLeftYVal: $('armElbowLeftYVal'),
+    armElbowRightX: $('armElbowRightX'),
+    armElbowRightXVal: $('armElbowRightXVal'),
+    armElbowRightY: $('armElbowRightY'),
+    armElbowRightYVal: $('armElbowRightYVal'),
+
+    armWristLeftX: $('armWristLeftX'),
+    armWristLeftXVal: $('armWristLeftXVal'),
+    armWristLeftY: $('armWristLeftY'),
+    armWristLeftYVal: $('armWristLeftYVal'),
+    armWristRightX: $('armWristRightX'),
+    armWristRightXVal: $('armWristRightXVal'),
+    armWristRightY: $('armWristRightY'),
+    armWristRightYVal: $('armWristRightYVal'),
 
     // Подложка
     underlayFile: $('underlayFile'),
@@ -311,26 +313,27 @@
 
     dom.armElbowRadius.value = p.elbowRadius;
     dom.armElbowRadiusVal.textContent = Math.round(p.elbowRadius * 1000) / 10;
-    dom.armElbowX.value = p.elbowX;
-    dom.armElbowXVal.textContent = fmtSignedPercent(p.elbowX);
-    dom.armElbowY.value = p.elbowY;
-    dom.armElbowYVal.textContent = fmtSignedPercent(p.elbowY);
 
     dom.armWristRadius.value = p.wristRadius;
     dom.armWristRadiusVal.textContent = Math.round(p.wristRadius * 1000) / 10;
-    dom.armWristX.value = p.wristX;
-    dom.armWristXVal.textContent = fmtSignedPercent(p.wristX);
-    dom.armWristY.value = p.wristY;
-    dom.armWristYVal.textContent = fmtSignedPercent(p.wristY);
 
-    dom.armLeftX.value = p.leftX;
-    dom.armLeftXVal.textContent = fmtSignedPercent(p.leftX);
-    dom.armLeftY.value = p.leftY;
-    dom.armLeftYVal.textContent = fmtSignedPercent(p.leftY);
-    dom.armRightX.value = p.rightX;
-    dom.armRightXVal.textContent = fmtSignedPercent(p.rightX);
-    dom.armRightY.value = p.rightY;
-    dom.armRightYVal.textContent = fmtSignedPercent(p.rightY);
+    dom.armElbowLeftX.value = p.elbowLeftX;
+    dom.armElbowLeftXVal.textContent = fmtSignedPercent(p.elbowLeftX);
+    dom.armElbowLeftY.value = p.elbowLeftY;
+    dom.armElbowLeftYVal.textContent = fmtSignedPercent(p.elbowLeftY);
+    dom.armElbowRightX.value = p.elbowRightX;
+    dom.armElbowRightXVal.textContent = fmtSignedPercent(p.elbowRightX);
+    dom.armElbowRightY.value = p.elbowRightY;
+    dom.armElbowRightYVal.textContent = fmtSignedPercent(p.elbowRightY);
+
+    dom.armWristLeftX.value = p.wristLeftX;
+    dom.armWristLeftXVal.textContent = fmtSignedPercent(p.wristLeftX);
+    dom.armWristLeftY.value = p.wristLeftY;
+    dom.armWristLeftYVal.textContent = fmtSignedPercent(p.wristLeftY);
+    dom.armWristRightX.value = p.wristRightX;
+    dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
+    dom.armWristRightY.value = p.wristRightY;
+    dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
   }
 
   function bindArmInput(input, valEl, key, format) {
@@ -346,15 +349,17 @@
 
   bindArmInput(dom.armShoulderRadius, dom.armShoulderRadiusVal, 'shoulderRadiusMul', (v) => Math.round(v * 100));
   bindArmInput(dom.armElbowRadius, dom.armElbowRadiusVal, 'elbowRadius', (v) => Math.round(v * 1000) / 10);
-  bindArmInput(dom.armElbowX, dom.armElbowXVal, 'elbowX', fmtSignedPercent);
-  bindArmInput(dom.armElbowY, dom.armElbowYVal, 'elbowY', fmtSignedPercent);
   bindArmInput(dom.armWristRadius, dom.armWristRadiusVal, 'wristRadius', (v) => Math.round(v * 1000) / 10);
-  bindArmInput(dom.armWristX, dom.armWristXVal, 'wristX', fmtSignedPercent);
-  bindArmInput(dom.armWristY, dom.armWristYVal, 'wristY', fmtSignedPercent);
-  bindArmInput(dom.armLeftX, dom.armLeftXVal, 'leftX', fmtSignedPercent);
-  bindArmInput(dom.armLeftY, dom.armLeftYVal, 'leftY', fmtSignedPercent);
-  bindArmInput(dom.armRightX, dom.armRightXVal, 'rightX', fmtSignedPercent);
-  bindArmInput(dom.armRightY, dom.armRightYVal, 'rightY', fmtSignedPercent);
+
+  bindArmInput(dom.armElbowLeftX, dom.armElbowLeftXVal, 'elbowLeftX', fmtSignedPercent);
+  bindArmInput(dom.armElbowLeftY, dom.armElbowLeftYVal, 'elbowLeftY', fmtSignedPercent);
+  bindArmInput(dom.armElbowRightX, dom.armElbowRightXVal, 'elbowRightX', fmtSignedPercent);
+  bindArmInput(dom.armElbowRightY, dom.armElbowRightYVal, 'elbowRightY', fmtSignedPercent);
+
+  bindArmInput(dom.armWristLeftX, dom.armWristLeftXVal, 'wristLeftX', fmtSignedPercent);
+  bindArmInput(dom.armWristLeftY, dom.armWristLeftYVal, 'wristLeftY', fmtSignedPercent);
+  bindArmInput(dom.armWristRightX, dom.armWristRightXVal, 'wristRightX', fmtSignedPercent);
+  bindArmInput(dom.armWristRightY, dom.armWristRightYVal, 'wristRightY', fmtSignedPercent);
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
