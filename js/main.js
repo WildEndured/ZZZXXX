@@ -16,7 +16,6 @@
       naturalHeight: 0,
     },
     head: null,
-    torso: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -33,7 +32,6 @@
     marginRange: $('marginRange'),
     marginVal: $('marginVal'),
 
-    // --- Голова ---
     headTopShift: $('headTopShift'),
     headTopShiftVal: $('headTopShiftVal'),
     headBottomShift: $('headBottomShift'),
@@ -53,15 +51,6 @@
     headJawAngleWidth: $('headJawAngleWidth'),
     headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
-    // --- Торс ---
-    torsoChestWidth: $('torsoChestWidth'),
-    torsoChestWidthVal: $('torsoChestWidthVal'),
-    torsoTopNarrow: $('torsoTopNarrow'),
-    torsoTopNarrowVal: $('torsoTopNarrowVal'),
-    torsoBottomExpand: $('torsoBottomExpand'),
-    torsoBottomExpandVal: $('torsoBottomExpandVal'),
-
-    // --- Подложка ---
     underlayFile: $('underlayFile'),
     opacityRange: $('opacityRange'),
     opacityVal: $('opacityVal'),
@@ -69,10 +58,10 @@
     scaleVal: $('scaleVal'),
     removeUnderlay: $('removeUnderlay'),
 
-    // --- Пресеты и Экспорт ---
     presetName: $('presetName'),
     savePreset: $('savePreset'),
     presetList: $('presetList'),
+
     exportSvg: $('exportSvg'),
     exportPng: $('exportPng'),
   };
@@ -95,6 +84,15 @@
       heads: state.heads,
       centerX: CANVAS / 2,
       topY: usableTop,
+      torsoHeight: headHeight * 1.8,
+      torsoWidth: headHeight * 1.4,
+      shoulderY: usableTop + headHeight,
+      hipY: usableTop + headHeight + headHeight * 1.8,
+      armLength: headHeight * 2.2,
+      armWidth: headHeight * 0.35,
+      legLength: headHeight * 2.5,
+      legWidth: headHeight * 0.45,
+      legOffsetX: headHeight * 0.4,
     };
   }
 
@@ -177,27 +175,34 @@
     return p > 0 ? `+${p}` : String(p);
   }
 
-  // --- Голова ---
   function syncHeadUIFromParams() {
     if (!window.Head) return;
     const p = window.Head.getParams();
 
     dom.headTopShift.value = p.topShift;
     dom.headTopShiftVal.textContent = fmtSignedPercent(p.topShift);
+
     dom.headBottomShift.value = p.bottomShift;
     dom.headBottomShiftVal.textContent = fmtSignedPercent(p.bottomShift);
+
     dom.headWidthMul.value = p.widthMul;
     dom.headWidthMulVal.textContent = Math.round(p.widthMul * 100);
+
     dom.headRadiusMul.value = p.radiusMul;
     dom.headRadiusMulVal.textContent = Math.round(p.radiusMul * 100);
+
     dom.headChinShift.value = p.chinHeightShift;
     dom.headChinShiftVal.textContent = fmtSignedPercent(p.chinHeightShift);
+
     dom.headChinWidth.value = p.chinWidth;
     dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
+
     dom.headJawAttach.value = p.jawAttach;
     dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttach);
+
     dom.headJawLength.value = p.jawLength;
     dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
+
     dom.headJawAngleWidth.value = p.jawAngleWidth;
     dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
   }
@@ -223,37 +228,6 @@
   bindHeadInput(dom.headJawLength, dom.headJawLengthVal, 'jawLength', (v) => Math.round(v * 100));
   bindHeadInput(dom.headJawAngleWidth, dom.headJawAngleWidthVal, 'jawAngleWidth', fmtSignedPercent);
 
-  // --- Торс ---
-  function syncTorsoUIFromParams() {
-    if (!window.Torso) return;
-    const p = window.Torso.getParams();
-
-    dom.torsoChestWidth.value = p.chestWidth;
-    dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
-    
-    dom.torsoTopNarrow.value = p.topNarrow;
-    dom.torsoTopNarrowVal.textContent = Math.round(p.topNarrow * 100);
-    
-    dom.torsoBottomExpand.value = p.bottomExpand;
-    dom.torsoBottomExpandVal.textContent = Math.round(p.bottomExpand * 100);
-  }
-
-  function bindTorsoInput(input, valEl, key, format) {
-    if (!input || !valEl) return;
-    input.addEventListener('input', (e) => {
-      const v = parseFloat(e.target.value);
-      if (!window.Torso) return;
-      window.Torso.setParams({ [key]: v });
-      valEl.textContent = format(v);
-      applyState();
-    });
-  }
-
-  bindTorsoInput(dom.torsoChestWidth, dom.torsoChestWidthVal, 'chestWidth', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoTopNarrow, dom.torsoTopNarrowVal, 'topNarrow', (v) => Math.round(v * 100));
-  bindTorsoInput(dom.torsoBottomExpand, dom.torsoBottomExpandVal, 'bottomExpand', (v) => Math.round(v * 100));
-
-  // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -301,7 +275,6 @@
     applyState();
   });
 
-  // --- Пресеты ---
   function loadPresets() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -326,7 +299,6 @@
       heads: state.heads,
       margin: state.margin,
       head: window.Head ? window.Head.getParams() : null,
-      torso: window.Torso ? window.Torso.getParams() : null,
     };
   }
 
@@ -350,16 +322,6 @@
         window.Head.resetParams();
       }
       syncHeadUIFromParams();
-    }
-
-    if (window.Torso) {
-      if (snap.torso && typeof snap.torso === 'object') {
-        window.Torso.resetParams();
-        window.Torso.setParams(snap.torso);
-      } else {
-        window.Torso.resetParams();
-      }
-      syncTorsoUIFromParams();
     }
 
     applyState();
@@ -416,7 +378,6 @@
     renderPresets();
   });
 
-  // --- Экспорт ---
   function buildExportSvg() {
     const clone = dom.svg.cloneNode(true);
     clone.querySelectorAll('.no-export').forEach((el) => el.remove());
@@ -478,7 +439,6 @@
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
 
     syncHeadUIFromParams();
-    syncTorsoUIFromParams();
 
     renderPresets();
     applyState();
