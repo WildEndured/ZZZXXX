@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Грудная клетка (Суперэллипс) */
+/* js/torso.js — Этап 2: Грудная клетка (Исправленное яйцо) */
 
 (function () {
   'use strict';
@@ -54,6 +54,11 @@
     const midY = topY + chestH / 2; // Центр эллипса
 
     const rx = chestW / 2;
+    
+    // ВАЖНО: В SVG ось Y идет вниз.
+    // Верхняя половина (от midY до topY) должна быть УЖЕ (для сужения).
+    // Нижняя половина (от midY до bottomY) должна быть ШИРЕ (для расширения).
+    
     // Радиус верхней половины (сужается)
     const ryTop = (chestH / 2) * (1 - params.topNarrow * 0.8);
     // Радиус нижней половины (расширяется)
@@ -97,17 +102,15 @@
     const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
-    // Генерируем точки для эллипса (120 шагов для гладкости)
     const points = [];
     const steps = 120;
     
     for (let i = 0; i <= steps; i++) {
       const angle = (i / steps) * Math.PI * 2;
-      
-      // Определяем, верхняя это половина или нижняя
-      // sin(angle) > 0 — нижняя часть (так как Y растет вниз)
-      // sin(angle) < 0 — верхняя часть
       const sinA = Math.sin(angle);
+      
+      // ИСПРАВЛЕНИЕ: Если sinA > 0 (нижняя половина), используем ryBot (широкий).
+      // Если sinA < 0 (верхняя половина), используем ryTop (узкий).
       const ry = sinA > 0 ? h.ryBot : h.ryTop;
       
       const x = h.cx + h.rx * Math.cos(angle);
@@ -121,12 +124,12 @@
       fill: 'none',
     }));
 
-    // Маркеры для отладки (верх, центр, низ)
+    // Маркеры
     const mR = h.headH * 0.012;
     const debugPoints = [
-      { x: h.cx, y: h.midY - h.ryTop, c: '#dc2626' }, // Верх
+      { x: h.cx, y: h.midY - h.ryTop, c: '#dc2626' }, // Верх (теперь узкий)
       { x: h.cx + h.rx, y: h.midY, c: '#2563eb' },    // Право
-      { x: h.cx, y: h.midY + h.ryBot, c: '#16a34a' }, // Низ
+      { x: h.cx, y: h.midY + h.ryBot, c: '#16a34a' }, // Низ (теперь широкий)
       { x: h.cx - h.rx, y: h.midY, c: '#2563eb' },    // Лево
     ];
     
