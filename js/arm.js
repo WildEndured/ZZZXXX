@@ -1,19 +1,33 @@
-/* js/arm.js — Этап 2: Плечи (два круга между T0 и T1) */
+/* js/arm.js — Этап 2: Плечи (два круга) */
 
 (function () {
   'use strict';
 
   const NS = 'http://www.w3.org/2000/svg';
 
+  const params = {
+    shoulderOffset: 0.0, // Сдвиг плеч от края груди (0 = ровно на краю)
+    shoulderRadiusMul: 1.0, // Множитель радиуса (если захочешь менять)
+  };
+
+  const DEFAULT_PARAMS = Object.freeze({ ...params });
   let els = null;
 
   function ensureDom() {
     if (els) return els;
-    const leftGroup = document.getElementById('armLeftGroup');
-    const rightGroup = document.getElementById('armRightGroup');
-    if (!leftGroup || !rightGroup) return null;
+    const armL = document.getElementById('armLeftGroup');
+    const armR = document.getElementById('armRightGroup');
+    const headsLayer = document.getElementById('headsLayer');
+    if (!armL || !armR || !headsLayer) return null;
 
-    els = { leftGroup, rightGroup };
+    let grid = document.getElementById('armGridLayer');
+    if (!grid) {
+      grid = document.createElementNS(NS, 'g');
+      grid.setAttribute('id', 'armGridLayer');
+      grid.setAttribute('class', 'no-export');
+      headsLayer.appendChild(grid);
+    }
+    els = { armL, armR, headsLayer, grid };
     return els;
   }
 
@@ -27,38 +41,74 @@
     return node;
   }
 
-  function drawArms() {
-    if (!ensureDom()) return;
-
-    const torsoGeo = window.Torso && window.Torso.lastGeometry;
-    if (!torsoGeo) return;
-
-    const { leftGroup, rightGroup } = els;
-    clear(leftGroup);
-    clear(rightGroup);
-
-    const { shoulderRadius, shoulderCy, shoulderLeftCx, shoulderRightCx } = torsoGeo;
-
-    // Левое плечо
-    leftGroup.appendChild(svgEl('circle', {
-      cx: shoulderLeftCx,
-      cy: shoulderCy,
-      r: shoulderRadius,
-      fill: 'none',
-    }));
-
-    // Правое плечо
-    rightGroup.appendChild(svgEl('circle', {
-      cx: shoulderRightCx,
-      cy: shoulderCy,
-      r: shoulderRadius,
-      fill: 'none',
-    }));
-  }
-
   function update(geo) {
-    drawArms();
+    if (!ensureDom()) return;
+    const { armL, armR, grid } = els;
+    clear(armL);
+    clear(armR);
+    clear(grid);
+
+    // Получаем параметры груди из Torso (если он есть)
+    const torsoParams = window.Torso ? window.Torso.getParams() : null;
+    if (!torsoParams) return;
+
+    const headH = geo.headHeight;
+    const cx = geo.centerX;
+
+    // --- 1. Вычисляем параметры груди (как в torso.js) ---
+    const chestHeightPx = headH * (1 + torsoParams.chestHeightCorr);
+    const chestY0 = geo.topY + headH;
+    const chestRx = (headH * torsoParams.chestWidth) / 2;
+
+    // --- 2. Параметры плеч ---
+    // Радиус = половина расстояния от T0 до T1 (где T1 = середина груди)
+    const shoulderRadius = (chestHeightPx / 2) * 0.5 * params.shoulderRadiusMul;
+
+    // Центр по Y = T0 + радиус (чтобы верхушка круга касалась T0)
+    const shoulderCy = chestY0 + shoulderRadius;
+
+    // Центр по X:
+    // Левый: cx - chestRx - shoulderRadius + offset
+    // Правый: cx + chestRx + shoulderRadius - offset
+    // По умолчанию (offset = 0) круги касаются краев груди снаружи.
+    const offset = params.shoulderOffset * headH;
+    
+    const leftCx = cx - chestRx - shoulderRadius + offset;
+    const rightCx = cx + chestRx + shoulderRadius - offset;
+
+    // --- 3. Рисуем круги ---
+    armL.appendChild(svgEl('circle', {
+      cx: leftCx, cy: shoulderCy, r: shoulderRadius,
+      fill: 'none',
+    }));
+
+    armR.appendChild(svgEl('circle', {
+      cx: rightCx, cy: shoulderCy, r: shoulderRadius,
+      fill: 'none',
+    }));
+
+    // --- 4. Отладочные маркеры (не экспортируются) ---
+    const mR = headH * 0.008;
+    const debugPoints = [
+      { x: leftCx, y: shoulderCy, c: '#2563eb' },
+      { x: rightCx, y: shoulderCy, c: '#2563eb' },
+    ];
+    for (const pt of debugPoints) {
+      grid.appendChild(svgEl('circle', {
+        cx: pt.x, cy: pt.y, r: mR,
+        fill: pt.c, opacity: 0.85,
+      }));
+    }
   }
 
-  window.Arm = { update };
+  function getParams() { return { ...params }; }
+  function setParams(patch) {
+    if (!patch) return;
+    for (const k in params) {
+      if (typeof patch[k] === 'number' && isFinite(patch[k])) params[k] = patch[k];
+    }
+  }
+  function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
+
+  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
 })();
