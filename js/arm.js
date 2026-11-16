@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, контур верхней части) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, плавный контур верхней части) */
 
 (function () {
   'use strict';
@@ -170,28 +170,39 @@
       cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (1/3 изгиб, 2/3 прямая) ===
-    // Левая рука (внешняя сторона — слева)
+    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (Плавный переход) ===
+    // Левая рука
     const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
     const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
+    
+    // Точка перехода (1/3 пути)
     const leftMid1 = { 
         x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) / 3,
         y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) / 3
     };
+
+    // Контрольная точка для выпуклости (выносим наружу)
+    const leftCtrl1 = { 
+        x: leftShoulderOuter.x - shoulderRadius * 0.4, 
+        y: leftShoulderOuter.y + (leftMid1.y - leftShoulderOuter.y) * 0.5 
+    };
     
-    // Багль (выпуклость) на первой трети
-    const bugleOffsetX = -shoulderRadius * 0.3; // выгибаем наружу (влево)
-    const leftCtrl = { x: leftMid1.x + bugleOffsetX, y: leftMid1.y };
+    // Контрольная точка для стыка (лежит на прямой линии, чтобы обеспечить плавность)
+    // Берем точку на 1/3 пути от leftMid1 к leftElbowOuter
+    const leftCtrl2 = {
+        x: leftMid1.x + (leftElbowOuter.x - leftMid1.x) / 3,
+        y: leftMid1.y + (leftElbowOuter.y - leftMid1.y) / 3
+    };
 
     let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} `;
-    leftArmPath += `Q ${leftCtrl.x} ${leftCtrl.y}, ${leftMid1.x} ${leftMid1.y} `;
+    // Кубическая кривая: от плеча к точке 1/3, с плавным выходом
+    leftArmPath += `C ${leftCtrl1.x} ${leftCtrl1.y}, ${leftCtrl2.x} ${leftCtrl2.y}, ${leftMid1.x} ${leftMid1.y} `;
+    // Прямая линия до локтя
     leftArmPath += `L ${leftElbowOuter.x} ${leftElbowOuter.y}`;
 
-    armL.appendChild(svgEl('path', {
-      d: leftArmPath, fill: 'none'
-    }));
+    armL.appendChild(svgEl('path', { d: leftArmPath, fill: 'none' }));
 
-    // Правая рука (внешняя сторона — справа)
+    // Правая рука (симметрично)
     const rightShoulderOuter = { x: rightCx + shoulderRadius, y: rightCy };
     const rightElbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     const rightMid1 = { 
@@ -199,16 +210,21 @@
         y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) / 3
     };
     
-    const bugleOffsetXR = shoulderRadius * 0.3; // выгибаем наружу (вправо)
-    const rightCtrl = { x: rightMid1.x + bugleOffsetXR, y: rightMid1.y };
+    const rightCtrl1 = { 
+        x: rightShoulderOuter.x + shoulderRadius * 0.4, 
+        y: rightShoulderOuter.y + (rightMid1.y - rightShoulderOuter.y) * 0.5 
+    };
+    
+    const rightCtrl2 = {
+        x: rightMid1.x + (rightElbowOuter.x - rightMid1.x) / 3,
+        y: rightMid1.y + (rightElbowOuter.y - rightMid1.y) / 3
+    };
 
     let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} `;
-    rightArmPath += `Q ${rightCtrl.x} ${rightCtrl.y}, ${rightMid1.x} ${rightMid1.y} `;
+    rightArmPath += `C ${rightCtrl1.x} ${rightCtrl1.y}, ${rightCtrl2.x} ${rightCtrl2.y}, ${rightMid1.x} ${rightMid1.y} `;
     rightArmPath += `L ${rightElbowOuter.x} ${rightElbowOuter.y}`;
 
-    armR.appendChild(svgEl('path', {
-      d: rightArmPath, fill: 'none'
-    }));
+    armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
 
     // === ТОЧКИ ДЕЛЕНИЯ НА 3 ЧАСТИ (для отладки) ===
     const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
