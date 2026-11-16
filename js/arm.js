@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, плавный контур верхней части) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, плавный контур) */
 
 (function () {
   'use strict';
@@ -170,59 +170,48 @@
       cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (Плавный переход) ===
-    // Левая рука
+    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (Одна плавная кривая) ===
+    
+    // ЛЕВАЯ РУКА
     const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
     const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     
-    // Точка перехода (1/3 пути)
-    const leftMid1 = { 
-        x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) / 3,
-        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) / 3
-    };
-
-    // Контрольная точка для выпуклости (выносим наружу)
+    // Контрольная точка 1: создает выпуклость (bugle) в первой трети
+    // Выносим её влево и чуть вниз от плеча
     const leftCtrl1 = { 
-        x: leftShoulderOuter.x - shoulderRadius * 0.4, 
-        y: leftShoulderOuter.y + (leftMid1.y - leftShoulderOuter.y) * 0.5 
+        x: leftShoulderOuter.x - shoulderRadius * 0.5, 
+        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.33 
     };
     
-    // Контрольная точка для стыка (лежит на прямой линии, чтобы обеспечить плавность)
-    // Берем точку на 1/3 пути от leftMid1 к leftElbowOuter
-    const leftCtrl2 = {
-        x: leftMid1.x + (leftElbowOuter.x - leftMid1.x) / 3,
-        y: leftMid1.y + (leftElbowOuter.y - leftMid1.y) / 3
+    // Контрольная точка 2: направляет кривую прямо к локтю
+    // Ставим её на 2/3 пути по X и Y, чтобы кривая плавно выпрямилась
+    const leftCtrl2 = { 
+        x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) * 0.66, 
+        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.66 
     };
 
+    // Строим единую кубическую кривую от плеча до локтя
     let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} `;
-    // Кубическая кривая: от плеча к точке 1/3, с плавным выходом
-    leftArmPath += `C ${leftCtrl1.x} ${leftCtrl1.y}, ${leftCtrl2.x} ${leftCtrl2.y}, ${leftMid1.x} ${leftMid1.y} `;
-    // Прямая линия до локтя
-    leftArmPath += `L ${leftElbowOuter.x} ${leftElbowOuter.y}`;
+    leftArmPath += `C ${leftCtrl1.x} ${leftCtrl1.y}, ${leftCtrl2.x} ${leftCtrl2.y}, ${leftElbowOuter.x} ${leftElbowOuter.y}`;
 
     armL.appendChild(svgEl('path', { d: leftArmPath, fill: 'none' }));
 
-    // Правая рука (симметрично)
+    // ПРАВАЯ РУКА (симметрично)
     const rightShoulderOuter = { x: rightCx + shoulderRadius, y: rightCy };
     const rightElbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
-    const rightMid1 = { 
-        x: rightShoulderOuter.x + (rightElbowOuter.x - rightShoulderOuter.x) / 3,
-        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) / 3
-    };
     
     const rightCtrl1 = { 
-        x: rightShoulderOuter.x + shoulderRadius * 0.4, 
-        y: rightShoulderOuter.y + (rightMid1.y - rightShoulderOuter.y) * 0.5 
+        x: rightShoulderOuter.x + shoulderRadius * 0.5, 
+        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.33 
     };
     
-    const rightCtrl2 = {
-        x: rightMid1.x + (rightElbowOuter.x - rightMid1.x) / 3,
-        y: rightMid1.y + (rightElbowOuter.y - rightMid1.y) / 3
+    const rightCtrl2 = { 
+        x: rightShoulderOuter.x + (rightElbowOuter.x - rightShoulderOuter.x) * 0.66, 
+        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.66 
     };
 
     let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} `;
-    rightArmPath += `C ${rightCtrl1.x} ${rightCtrl1.y}, ${rightCtrl2.x} ${rightCtrl2.y}, ${rightMid1.x} ${rightMid1.y} `;
-    rightArmPath += `L ${rightElbowOuter.x} ${rightElbowOuter.y}`;
+    rightArmPath += `C ${rightCtrl1.x} ${rightCtrl1.y}, ${rightCtrl2.x} ${rightCtrl2.y}, ${rightElbowOuter.x} ${rightElbowOuter.y}`;
 
     armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
 
