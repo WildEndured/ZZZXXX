@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья) + линии к шее */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, точки контура) */
 
 (function () {
   'use strict';
@@ -105,27 +105,23 @@
 
     // === ЛИНИИ ОТ ПЛЕЧ К СЕРЕДИНЕ ШЕИ ===
     if (head && torso) {
-      // Середина левой линии шеи
       const neckHalfW = (headH * (window.Torso.getParams().neckWidth || 0.20)) / 2;
       const neckTopY = head.l4;
-      const neckBottomY = torso.chestY0; // Шея заканчивается на верху груди
+      const neckBottomY = torso.chestY0;
       const neckMidY = (neckTopY + neckBottomY) / 2;
 
       const leftNeckMid = { x: torso.cx - neckHalfW, y: neckMidY };
       const rightNeckMid = { x: torso.cx + neckHalfW, y: neckMidY };
 
-      // Верхние точки плеч
       const leftShoulderTop = { x: leftCx, y: leftCy - shoulderRadius };
       const rightShoulderTop = { x: rightCx, y: rightCy - shoulderRadius };
 
-      // Линия от левого плеча к левой середине шеи
       armL.appendChild(svgEl('line', {
         x1: leftShoulderTop.x, y1: leftShoulderTop.y,
         x2: leftNeckMid.x, y2: leftNeckMid.y,
         fill: 'none',
       }));
 
-      // Линия от правого плеча к правой середине шеи
       armR.appendChild(svgEl('line', {
         x1: rightShoulderTop.x, y1: rightShoulderTop.y,
         x2: rightNeckMid.x, y2: rightNeckMid.y,
@@ -174,7 +170,39 @@
       cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === МАРКЕРЫ ===
+    // === ТОЧКИ ДЕЛЕНИЯ НА 3 ЧАСТИ ===
+    const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+
+    const lShoulder = { x: leftCx, y: leftCy };
+    const lElbow = { x: elbowLeftCx, y: elbowLeftCy };
+    const lWrist = { x: wristLeftCx, y: wristLeftCy };
+
+    const rShoulder = { x: rightCx, y: rightCy };
+    const rElbow = { x: elbowRightCx, y: elbowRightCy };
+    const rWrist = { x: wristRightCx, y: wristRightCy };
+
+    const leftSE1 = lerp(lShoulder, lElbow, 1/3);
+    const leftSE2 = lerp(lShoulder, lElbow, 2/3);
+    const leftEW1 = lerp(lElbow, lWrist, 1/3);
+    const leftEW2 = lerp(lElbow, lWrist, 2/3);
+
+    const rightSE1 = lerp(rShoulder, rElbow, 1/3);
+    const rightSE2 = lerp(rShoulder, rElbow, 2/3);
+    const rightEW1 = lerp(rElbow, rWrist, 1/3);
+    const rightEW2 = lerp(rElbow, rWrist, 2/3);
+
+    const tinyR = headH * 0.008;
+    const contourPoints = [
+      leftSE1, leftSE2, leftEW1, leftEW2,
+      rightSE1, rightSE2, rightEW1, rightEW2
+    ];
+    for (const pt of contourPoints) {
+      grid.appendChild(svgEl('circle', {
+        cx: pt.x, cy: pt.y, r: tinyR, fill: '#000000', opacity: 0.5
+      }));
+    }
+
+    // === МАРКЕРЫ СУСТАВОВ ===
     const mR = headH * 0.012;
     const markers = [
       { x: leftCx, y: leftCy, c: '#2563eb' },
