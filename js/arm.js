@@ -13,9 +13,9 @@
     elbowRightX: 0,
     elbowRightY: 0,
     wristRadius: 0.08,
-    wristLeftX: 0,
+    wristLeftX: -0.20,   // Смещено влево
     wristLeftY: 0,
-    wristRightX: 0,
+    wristRightX: 0.20,   // Смещено вправо
     wristRightY: 0,
     leftX: 0,
     leftY: 0,
