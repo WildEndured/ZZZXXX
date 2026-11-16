@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (внутренний контур плеча прямой линией) */
+/* js/arm.js — Этап 2: Руки (по референсу) */
 
 (function () {
   'use strict';
@@ -13,9 +13,9 @@
     elbowRightX: 0,
     elbowRightY: 0,
     wristRadius: 0.08,
-    wristLeftX: -0.20,   // Смещено влево
+    wristLeftX: -0.20,
     wristLeftY: 0,
-    wristRightX: 0.20,   // Смещено вправо
+    wristRightX: 0.20,
     wristRightY: 0,
     leftX: 0,
     leftY: 0,
@@ -171,6 +171,7 @@
     }));
 
     // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ ===
+    // Левая рука
     const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
     const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     const leftCtrl1_arm = { x: leftShoulderOuter.x - shoulderRadius * 0.5, y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.33 };
@@ -178,6 +179,7 @@
     let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} C ${leftCtrl1_arm.x} ${leftCtrl1_arm.y}, ${leftCtrl2_arm.x} ${leftCtrl2_arm.y}, ${leftElbowOuter.x} ${leftElbowOuter.y}`;
     armL.appendChild(svgEl('path', { d: leftArmPath, fill: 'none' }));
 
+    // Правая рука
     const rightShoulderOuter = { x: rightCx + shoulderRadius, y: rightCy };
     const rightElbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     const rightCtrl1_arm = { x: rightShoulderOuter.x + shoulderRadius * 0.5, y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.33 };
@@ -185,7 +187,7 @@
     let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} C ${rightCtrl1_arm.x} ${rightCtrl1_arm.y}, ${rightCtrl2_arm.x} ${rightCtrl2_arm.y}, ${rightElbowOuter.x} ${rightElbowOuter.y}`;
     armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
 
-    // === ВНУТРЕННИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (ПРЯМАЯ ЛИНИЯ) ===
+    // === ВНУТРЕННИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (ПРЯМАЯ) ===
     const leftShoulderInner = { x: leftCx + shoulderRadius, y: leftCy };
     const leftElbowInner = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     armL.appendChild(svgEl('line', {
@@ -203,35 +205,38 @@
     }));
 
     // === ВНЕШНИЙ КОНТУР ПРЕДПЛЕЧЬЯ (Локоть -> Запястье) ===
+    // Левая рука (выпуклость в первой трети, затем к запястью)
     const leftForearmOuterStart = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     const leftWristOuter = { x: wristLeftCx - wristRadius, y: wristLeftCy };
     const leftCtrl1_outer = {
-        x: leftForearmOuterStart.x - shoulderRadius * 0.2,
+        x: leftForearmOuterStart.x - shoulderRadius * 0.3, // выгибаем наружу для объема
         y: leftForearmOuterStart.y + (leftWristOuter.y - leftForearmOuterStart.y) * 0.25
     };
     const leftCtrl2_outer = {
-        x: leftForearmOuterStart.x + (leftWristOuter.x - leftForearmOuterStart.x) * 0.7,
-        y: leftForearmOuterStart.y + (leftWristOuter.y - leftForearmOuterStart.y) * 0.7
+        x: leftForearmOuterStart.x + (leftWristOuter.x - leftForearmOuterStart.x) * 0.6,
+        y: leftForearmOuterStart.y + (leftWristOuter.y - leftForearmOuterStart.y) * 0.8
     };
     let leftForearmOuterPath = `M ${leftForearmOuterStart.x} ${leftForearmOuterStart.y} `;
     leftForearmOuterPath += `C ${leftCtrl1_outer.x} ${leftCtrl1_outer.y}, ${leftCtrl2_outer.x} ${leftCtrl2_outer.y}, ${leftWristOuter.x} ${leftWristOuter.y}`;
     armL.appendChild(svgEl('path', { d: leftForearmOuterPath, fill: 'none' }));
 
+    // Правая рука
     const rightForearmOuterStart = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     const rightWristOuter = { x: wristRightCx + wristRadius, y: wristRightCy };
     const rightCtrl1_outer = {
-        x: rightForearmOuterStart.x + shoulderRadius * 0.2,
+        x: rightForearmOuterStart.x + shoulderRadius * 0.3,
         y: rightForearmOuterStart.y + (rightWristOuter.y - rightForearmOuterStart.y) * 0.25
     };
     const rightCtrl2_outer = {
-        x: rightForearmOuterStart.x + (rightWristOuter.x - rightForearmOuterStart.x) * 0.7,
-        y: rightForearmOuterStart.y + (rightWristOuter.y - rightForearmOuterStart.y) * 0.7
+        x: rightForearmOuterStart.x + (rightWristOuter.x - rightForearmOuterStart.x) * 0.6,
+        y: rightForearmOuterStart.y + (rightWristOuter.y - rightForearmOuterStart.y) * 0.8
     };
     let rightForearmOuterPath = `M ${rightForearmOuterStart.x} ${rightForearmOuterStart.y} `;
     rightForearmOuterPath += `C ${rightCtrl1_outer.x} ${rightCtrl1_outer.y}, ${rightCtrl2_outer.x} ${rightCtrl2_outer.y}, ${rightWristOuter.x} ${rightWristOuter.y}`;
     armR.appendChild(svgEl('path', { d: rightForearmOuterPath, fill: 'none' }));
 
     // === ВНУТРЕННИЙ КОНТУР ПРЕДПЛЕЧЬЯ (Локоть -> Запястье) ===
+    // Левая рука (вогнутость в последней трети)
     const leftForearmInnerStart = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     const leftWristInner = { x: wristLeftCx + wristRadius, y: wristLeftCy };
     const leftCtrl1_inner = {
@@ -239,13 +244,14 @@
         y: leftForearmInnerStart.y + (leftWristInner.y - leftForearmInnerStart.y) * 0.25
     };
     const leftCtrl2_inner = {
-        x: leftForearmInnerStart.x + (leftWristInner.x - leftForearmInnerStart.x) * 0.3,
+        x: leftForearmInnerStart.x + (leftWristInner.x - leftForearmInnerStart.x) * 0.3, // сильно внутрь
         y: leftForearmInnerStart.y + (leftWristInner.y - leftForearmInnerStart.y) * 0.8
     };
     let leftForearmInnerPath = `M ${leftForearmInnerStart.x} ${leftForearmInnerStart.y} `;
     leftForearmInnerPath += `C ${leftCtrl1_inner.x} ${leftCtrl1_inner.y}, ${leftCtrl2_inner.x} ${leftCtrl2_inner.y}, ${leftWristInner.x} ${leftWristInner.y}`;
     armL.appendChild(svgEl('path', { d: leftForearmInnerPath, fill: 'none' }));
 
+    // Правая рука
     const rightForearmInnerStart = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
     const rightWristInner = { x: wristRightCx - wristRadius, y: wristRightCy };
     const rightCtrl1_inner = {
