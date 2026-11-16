@@ -7,12 +7,12 @@
 
   const params = {
     shoulderRadiusMul: 1.0,
-    elbowRadius: 0.045,
+    elbowRadius: 0.08,
     elbowLeftX: 0,
     elbowLeftY: 0,
     elbowRightX: 0,
     elbowRightY: 0,
-    wristRadius: 0.035,
+    wristRadius: 0.08,
     wristLeftX: 0,
     wristLeftY: 0,
     wristRightX: 0,
@@ -171,7 +171,6 @@
     }));
 
     // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ ===
-    // (уже был, без изменений)
     const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
     const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     const leftCtrl1_arm = { x: leftShoulderOuter.x - shoulderRadius * 0.5, y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.33 };
@@ -187,7 +186,6 @@
     armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
 
     // === ВНУТРЕННИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (ПРЯМАЯ ЛИНИЯ) ===
-    // Левая рука (внутренняя сторона справа от плеча)
     const leftShoulderInner = { x: leftCx + shoulderRadius, y: leftCy };
     const leftElbowInner = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     armL.appendChild(svgEl('line', {
@@ -196,7 +194,6 @@
       fill: 'none',
     }));
 
-    // Правая рука (внутренняя сторона слева от плеча)
     const rightShoulderInner = { x: rightCx - shoulderRadius, y: rightCy };
     const rightElbowInner = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
     armR.appendChild(svgEl('line', {
@@ -235,7 +232,6 @@
     armR.appendChild(svgEl('path', { d: rightForearmOuterPath, fill: 'none' }));
 
     // === ВНУТРЕННИЙ КОНТУР ПРЕДПЛЕЧЬЯ (Локоть -> Запястье) ===
-    // Левая рука
     const leftForearmInnerStart = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     const leftWristInner = { x: wristLeftCx + wristRadius, y: wristLeftCy };
     const leftCtrl1_inner = {
@@ -250,7 +246,6 @@
     leftForearmInnerPath += `C ${leftCtrl1_inner.x} ${leftCtrl1_inner.y}, ${leftCtrl2_inner.x} ${leftCtrl2_inner.y}, ${leftWristInner.x} ${leftWristInner.y}`;
     armL.appendChild(svgEl('path', { d: leftForearmInnerPath, fill: 'none' }));
 
-    // Правая рука
     const rightForearmInnerStart = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
     const rightWristInner = { x: wristRightCx - wristRadius, y: wristRightCy };
     const rightCtrl1_inner = {
