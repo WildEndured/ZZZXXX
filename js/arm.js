@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, плавный контур) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, контуры) */
 
 (function () {
   'use strict';
@@ -170,50 +170,81 @@
       cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (Одна плавная кривая) ===
-    
-    // ЛЕВАЯ РУКА
+    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ ===
+    // Левая рука
     const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
     const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     
-    // Контрольная точка 1: создает выпуклость (bugle) в первой трети
-    // Выносим её влево и чуть вниз от плеча
-    const leftCtrl1 = { 
-        x: leftShoulderOuter.x - shoulderRadius * 0.5, 
-        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.33 
-    };
-    
-    // Контрольная точка 2: направляет кривую прямо к локтю
-    // Ставим её на 2/3 пути по X и Y, чтобы кривая плавно выпрямилась
-    const leftCtrl2 = { 
-        x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) * 0.66, 
-        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.66 
-    };
+    const leftCtrl1_arm = { x: leftShoulderOuter.x - shoulderRadius * 0.5, y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.33 };
+    const leftCtrl2_arm = { x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) * 0.66, y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) * 0.66 };
 
-    // Строим единую кубическую кривую от плеча до локтя
-    let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} `;
-    leftArmPath += `C ${leftCtrl1.x} ${leftCtrl1.y}, ${leftCtrl2.x} ${leftCtrl2.y}, ${leftElbowOuter.x} ${leftElbowOuter.y}`;
-
+    let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} C ${leftCtrl1_arm.x} ${leftCtrl1_arm.y}, ${leftCtrl2_arm.x} ${leftCtrl2_arm.y}, ${leftElbowOuter.x} ${leftElbowOuter.y}`;
     armL.appendChild(svgEl('path', { d: leftArmPath, fill: 'none' }));
 
-    // ПРАВАЯ РУКА (симметрично)
+    // Правая рука
     const rightShoulderOuter = { x: rightCx + shoulderRadius, y: rightCy };
     const rightElbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     
-    const rightCtrl1 = { 
-        x: rightShoulderOuter.x + shoulderRadius * 0.5, 
-        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.33 
+    const rightCtrl1_arm = { x: rightShoulderOuter.x + shoulderRadius * 0.5, y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.33 };
+    const rightCtrl2_arm = { x: rightShoulderOuter.x + (rightElbowOuter.x - rightShoulderOuter.x) * 0.66, y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.66 };
+
+    let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} C ${rightCtrl1_arm.x} ${rightCtrl1_arm.y}, ${rightCtrl2_arm.x} ${rightCtrl2_arm.y}, ${rightElbowOuter.x} ${rightElbowOuter.y}`;
+    armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
+
+    // === ВНЕШНИЙ КОНТУР: ЛОКОТЬ -> ЗАПЯСТЬЕ (1/3 расширение, 2/3 сужение) ===
+    
+    // ЛЕВАЯ РУКА
+    const leftElbowOuterStart = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
+    const leftWristOuter = { x: wristLeftCx - wristRadius, y: wristLeftCy };
+    
+    // Точка конца первой трети (где максимальное расширение)
+    const leftMidForearm = {
+      x: leftElbowOuterStart.x + (leftWristOuter.x - leftElbowOuterStart.x) * 0.33,
+      y: leftElbowOuterStart.y + (leftWristOuter.y - leftElbowOuterStart.y) * 0.33
+    };
+
+    // Выгибаем наружу в первой трети
+    const leftCtrl1_fore = {
+        x: leftElbowOuterStart.x - shoulderRadius * 0.2,
+        y: leftElbowOuterStart.y + (leftMidForearm.y - leftElbowOuterStart.y) * 0.5
     };
     
-    const rightCtrl2 = { 
-        x: rightShoulderOuter.x + (rightElbowOuter.x - rightShoulderOuter.x) * 0.66, 
-        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) * 0.66 
+    // Направляем к запястью (для сужения во второй половине)
+    const leftCtrl2_fore = {
+        x: leftMidForearm.x + (leftWristOuter.x - leftMidForearm.x) * 0.6,
+        y: leftMidForearm.y + (leftWristOuter.y - leftMidForearm.y) * 0.6
     };
 
-    let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} `;
-    rightArmPath += `C ${rightCtrl1.x} ${rightCtrl1.y}, ${rightCtrl2.x} ${rightCtrl2.y}, ${rightElbowOuter.x} ${rightElbowOuter.y}`;
+    let leftForearmPath = `M ${leftElbowOuterStart.x} ${leftElbowOuterStart.y} `;
+    leftForearmPath += `C ${leftCtrl1_fore.x} ${leftCtrl1_fore.y}, ${leftCtrl2_fore.x} ${leftCtrl2_fore.y}, ${leftMidForearm.x} ${leftMidForearm.y} `;
+    leftForearmPath += `Q ${leftMidForearm.x + (leftWristOuter.x - leftMidForearm.x) * 0.5} ${leftMidForearm.y + (leftWristOuter.y - leftMidForearm.y) * 0.5}, ${leftWristOuter.x} ${leftWristOuter.y}`;
 
-    armR.appendChild(svgEl('path', { d: rightArmPath, fill: 'none' }));
+    armL.appendChild(svgEl('path', { d: leftForearmPath, fill: 'none' }));
+
+    // ПРАВАЯ РУКА
+    const rightElbowOuterStart = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
+    const rightWristOuter = { x: wristRightCx + wristRadius, y: wristRightCy };
+
+    const rightMidForearm = {
+      x: rightElbowOuterStart.x + (rightWristOuter.x - rightElbowOuterStart.x) * 0.33,
+      y: rightElbowOuterStart.y + (rightWristOuter.y - rightElbowOuterStart.y) * 0.33
+    };
+
+    const rightCtrl1_fore = {
+        x: rightElbowOuterStart.x + shoulderRadius * 0.2,
+        y: rightElbowOuterStart.y + (rightMidForearm.y - rightElbowOuterStart.y) * 0.5
+    };
+    
+    const rightCtrl2_fore = {
+        x: rightMidForearm.x + (rightWristOuter.x - rightMidForearm.x) * 0.6,
+        y: rightMidForearm.y + (rightWristOuter.y - rightMidForearm.y) * 0.6
+    };
+
+    let rightForearmPath = `M ${rightElbowOuterStart.x} ${rightElbowOuterStart.y} `;
+    rightForearmPath += `C ${rightCtrl1_fore.x} ${rightCtrl1_fore.y}, ${rightCtrl2_fore.x} ${rightCtrl2_fore.y}, ${rightMidForearm.x} ${rightMidForearm.y} `;
+    rightForearmPath += `Q ${rightMidForearm.x + (rightWristOuter.x - rightMidForearm.x) * 0.5} ${rightMidForearm.y + (rightWristOuter.y - rightMidForearm.y) * 0.5}, ${rightWristOuter.x} ${rightWristOuter.y}`;
+
+    armR.appendChild(svgEl('path', { d: rightForearmPath, fill: 'none' }));
 
     // === ТОЧКИ ДЕЛЕНИЯ НА 3 ЧАСТИ (для отладки) ===
     const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
