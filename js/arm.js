@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, точки контура) */
+/* js/arm.js — Этап 2: Руки (плечи, локти, запястья, контур верхней части) */
 
 (function () {
   'use strict';
@@ -170,7 +170,47 @@
       cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none'
     }));
 
-    // === ТОЧКИ ДЕЛЕНИЯ НА 3 ЧАСТИ ===
+    // === ВНЕШНИЙ КОНТУР: ПЛЕЧО -> ЛОКОТЬ (1/3 изгиб, 2/3 прямая) ===
+    // Левая рука (внешняя сторона — слева)
+    const leftShoulderOuter = { x: leftCx - shoulderRadius, y: leftCy };
+    const leftElbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
+    const leftMid1 = { 
+        x: leftShoulderOuter.x + (leftElbowOuter.x - leftShoulderOuter.x) / 3,
+        y: leftShoulderOuter.y + (leftElbowOuter.y - leftShoulderOuter.y) / 3
+    };
+    
+    // Багль (выпуклость) на первой трети
+    const bugleOffsetX = -shoulderRadius * 0.3; // выгибаем наружу (влево)
+    const leftCtrl = { x: leftMid1.x + bugleOffsetX, y: leftMid1.y };
+
+    let leftArmPath = `M ${leftShoulderOuter.x} ${leftShoulderOuter.y} `;
+    leftArmPath += `Q ${leftCtrl.x} ${leftCtrl.y}, ${leftMid1.x} ${leftMid1.y} `;
+    leftArmPath += `L ${leftElbowOuter.x} ${leftElbowOuter.y}`;
+
+    armL.appendChild(svgEl('path', {
+      d: leftArmPath, fill: 'none'
+    }));
+
+    // Правая рука (внешняя сторона — справа)
+    const rightShoulderOuter = { x: rightCx + shoulderRadius, y: rightCy };
+    const rightElbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
+    const rightMid1 = { 
+        x: rightShoulderOuter.x + (rightElbowOuter.x - rightShoulderOuter.x) / 3,
+        y: rightShoulderOuter.y + (rightElbowOuter.y - rightShoulderOuter.y) / 3
+    };
+    
+    const bugleOffsetXR = shoulderRadius * 0.3; // выгибаем наружу (вправо)
+    const rightCtrl = { x: rightMid1.x + bugleOffsetXR, y: rightMid1.y };
+
+    let rightArmPath = `M ${rightShoulderOuter.x} ${rightShoulderOuter.y} `;
+    rightArmPath += `Q ${rightCtrl.x} ${rightCtrl.y}, ${rightMid1.x} ${rightMid1.y} `;
+    rightArmPath += `L ${rightElbowOuter.x} ${rightElbowOuter.y}`;
+
+    armR.appendChild(svgEl('path', {
+      d: rightArmPath, fill: 'none'
+    }));
+
+    // === ТОЧКИ ДЕЛЕНИЯ НА 3 ЧАСТИ (для отладки) ===
     const lerp = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 
     const lShoulder = { x: leftCx, y: leftCy };
