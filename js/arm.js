@@ -24,16 +24,13 @@
     rightY: 0,
   };
 
-  // Массив смещений для 13 точек левой руки
-  // Каждая точка имеет dx и dy (в долях headH)
-  for (let i = 1; i <= 13; i++) {
-    params[`leftUA${i}_dx`] = 0;
-    params[`leftUA${i}_dy`] = 0;
-  }
-  // Массив смещений для 13 точек правой руки
-  for (let i = 1; i <= 13; i++) {
-    params[`rightUA${i}_dx`] = 0;
-    params[`rightUA${i}_dy`] = 0;
+  // Динамически добавляем 52 параметра для смещений точек (left/right, 13 точек, x/y)
+  const pointNames = ['UA1','UA2','UA3','UA4','UA5','FR1','FR2','FR3','FR4','FR5','FR6','FR7','FR8'];
+  for (const side of ['left', 'right']) {
+    for (const pt of pointNames) {
+      params[`${side}${pt}_dx`] = 0;
+      params[`${side}${pt}_dy`] = 0;
+    }
   }
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -144,9 +141,9 @@
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
 
     // === ФУНКЦИЯ СМЕЩЕНИЯ ===
-    function getPt(baseX, baseY, side, idx) {
-      const keyX = `${side}UA${idx}_dx`;
-      const keyY = `${side}UA${idx}_dy`;
+    function getPt(baseX, baseY, side, ptName) {
+      const keyX = `${side}${ptName}_dx`;
+      const keyY = `${side}${ptName}_dy`;
       return {
         x: baseX + (params[keyX] || 0) * headH,
         y: baseY + (params[keyY] || 0) * headH
@@ -155,20 +152,20 @@
 
     // === ЛЕВАЯ РУКА (13 точек) ===
     // Плечо (1-5)
-    const l_UA1 = getPt(leftCx - shoulderRadius, leftCy + shoulderRadius * 0.6, 'left', 1);
-    const l_UA2 = getPt(leftCx - shoulderRadius, leftCy, 'left', 2);
-    const l_UA3 = getPt(leftCx - shoulderRadius * 0.5, leftCy - shoulderRadius, 'left', 3);
-    const l_UA4 = getPt(leftCx + shoulderRadius * 0.5, leftCy + shoulderRadius, 'left', 4);
-    const l_UA5 = getPt(leftCx + shoulderRadius, leftCy, 'left', 5);
+    const l_UA1 = getPt(leftCx - shoulderRadius, leftCy + shoulderRadius * 0.6, 'left', 'UA1');
+    const l_UA2 = getPt(leftCx - shoulderRadius, leftCy, 'left', 'UA2');
+    const l_UA3 = getPt(leftCx - shoulderRadius * 0.5, leftCy - shoulderRadius, 'left', 'UA3');
+    const l_UA4 = getPt(leftCx + shoulderRadius * 0.5, leftCy + shoulderRadius, 'left', 'UA4');
+    const l_UA5 = getPt(leftCx + shoulderRadius, leftCy, 'left', 'UA5');
     // Предплечье (6-13)
-    const l_FR1 = getPt(wristLeftCx - wristRadius, wristLeftCy, 'left', 6);
-    const l_FR2 = getPt(wristLeftCx - wristRadius * 0.5 - (wristLeftCx - elbowLeftCx) * 0.33, wristLeftCy - (wristLeftCy - elbowLeftCy) * 0.33, 'left', 7);
-    const l_FR3 = getPt(elbowLeftCx - elbowRadius * 0.5 - (wristLeftCx - elbowLeftCx) * 0.33, elbowLeftCy - (wristLeftCy - elbowLeftCy) * 0.33, 'left', 8);
-    const l_FR4 = getPt(elbowLeftCx - elbowRadius, elbowLeftCy, 'left', 9);
-    const l_FR5 = getPt(wristLeftCx + wristRadius, wristLeftCy, 'left', 10);
-    const l_FR6 = getPt(wristLeftCx + wristRadius * 0.5 + (elbowLeftCx - wristLeftCx) * 0.33, wristLeftCy + (elbowLeftCy - wristLeftCy) * 0.33, 'left', 11);
-    const l_FR7 = getPt(elbowLeftCx + elbowRadius * 0.5 + (wristLeftCx - elbowLeftCx) * 0.33, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.33, 'left', 12);
-    const l_FR8 = getPt(elbowLeftCx + elbowRadius, elbowLeftCy, 'left', 13);
+    const l_FR1 = getPt(wristLeftCx - wristRadius, wristLeftCy, 'left', 'FR1');
+    const l_FR2 = getPt(wristLeftCx - wristRadius * 0.5 - (wristLeftCx - elbowLeftCx) * 0.33, wristLeftCy - (wristLeftCy - elbowLeftCy) * 0.33, 'left', 'FR2');
+    const l_FR3 = getPt(elbowLeftCx - elbowRadius * 0.5 - (wristLeftCx - elbowLeftCx) * 0.33, elbowLeftCy - (wristLeftCy - elbowLeftCy) * 0.33, 'left', 'FR3');
+    const l_FR4 = getPt(elbowLeftCx - elbowRadius, elbowLeftCy, 'left', 'FR4');
+    const l_FR5 = getPt(wristLeftCx + wristRadius, wristLeftCy, 'left', 'FR5');
+    const l_FR6 = getPt(wristLeftCx + wristRadius * 0.5 + (elbowLeftCx - wristLeftCx) * 0.33, wristLeftCy + (elbowLeftCy - wristLeftCy) * 0.33, 'left', 'FR6');
+    const l_FR7 = getPt(elbowLeftCx + elbowRadius * 0.5 + (wristLeftCx - elbowLeftCx) * 0.33, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.33, 'left', 'FR7');
+    const l_FR8 = getPt(elbowLeftCx + elbowRadius, elbowLeftCy, 'left', 'FR8');
 
     // Контуры левой руки
     let leftOuter = `M ${l_UA3.x} ${l_UA3.y} L ${l_UA2.x} ${l_UA2.y} L ${l_UA1.x} ${l_UA1.y} L ${l_FR4.x} ${l_FR4.y} L ${l_FR3.x} ${l_FR3.y} L ${l_FR2.x} ${l_FR2.y} L ${l_FR1.x} ${l_FR1.y}`;
@@ -179,20 +176,20 @@
 
     // === ПРАВАЯ РУКА (13 точек) ===
     // Плечо (1-5)
-    const r_UA1 = getPt(rightCx + shoulderRadius, rightCy + shoulderRadius * 0.6, 'right', 1);
-    const r_UA2 = getPt(rightCx + shoulderRadius, rightCy, 'right', 2);
-    const r_UA3 = getPt(rightCx + shoulderRadius * 0.5, rightCy - shoulderRadius, 'right', 3);
-    const r_UA4 = getPt(rightCx - shoulderRadius * 0.5, rightCy + shoulderRadius, 'right', 4);
-    const r_UA5 = getPt(rightCx - shoulderRadius, rightCy, 'right', 5);
+    const r_UA1 = getPt(rightCx + shoulderRadius, rightCy + shoulderRadius * 0.6, 'right', 'UA1');
+    const r_UA2 = getPt(rightCx + shoulderRadius, rightCy, 'right', 'UA2');
+    const r_UA3 = getPt(rightCx + shoulderRadius * 0.5, rightCy - shoulderRadius, 'right', 'UA3');
+    const r_UA4 = getPt(rightCx - shoulderRadius * 0.5, rightCy + shoulderRadius, 'right', 'UA4');
+    const r_UA5 = getPt(rightCx - shoulderRadius, rightCy, 'right', 'UA5');
     // Предплечье (6-13)
-    const r_FR1 = getPt(wristRightCx + wristRadius, wristRightCy, 'right', 6);
-    const r_FR2 = getPt(wristRightCx + wristRadius * 0.5 + (elbowRightCx - wristRightCx) * 0.33, wristRightCy + (elbowRightCy - wristRightCy) * 0.33, 'right', 7);
-    const r_FR3 = getPt(elbowRightCx + elbowRadius * 0.5 + (wristRightCx - elbowRightCx) * 0.33, elbowRightCy + (wristRightCy - elbowRightCy) * 0.33, 'right', 8);
-    const r_FR4 = getPt(elbowRightCx + elbowRadius, elbowRightCy, 'right', 9);
-    const r_FR5 = getPt(wristRightCx - wristRadius, wristRightCy, 'right', 10);
-    const r_FR6 = getPt(wristRightCx - wristRadius * 0.5 - (wristRightCx - elbowRightCx) * 0.33, wristRightCy - (wristRightCy - elbowRightCy) * 0.33, 'right', 11);
-    const r_FR7 = getPt(elbowRightCx - elbowRadius * 0.5 - (wristRightCx - elbowRightCx) * 0.33, elbowRightCy - (wristRightCy - elbowRightCy) * 0.33, 'right', 12);
-    const r_FR8 = getPt(elbowRightCx - elbowRadius, elbowRightCy, 'right', 13);
+    const r_FR1 = getPt(wristRightCx + wristRadius, wristRightCy, 'right', 'FR1');
+    const r_FR2 = getPt(wristRightCx + wristRadius * 0.5 + (elbowRightCx - wristRightCx) * 0.33, wristRightCy + (elbowRightCy - wristRightCy) * 0.33, 'right', 'FR2');
+    const r_FR3 = getPt(elbowRightCx + elbowRadius * 0.5 + (wristRightCx - elbowRightCx) * 0.33, elbowRightCy + (wristRightCy - elbowRightCy) * 0.33, 'right', 'FR3');
+    const r_FR4 = getPt(elbowRightCx + elbowRadius, elbowRightCy, 'right', 'FR4');
+    const r_FR5 = getPt(wristRightCx - wristRadius, wristRightCy, 'right', 'FR5');
+    const r_FR6 = getPt(wristRightCx - wristRadius * 0.5 - (wristRightCx - elbowRightCx) * 0.33, wristRightCy - (wristRightCy - elbowRightCy) * 0.33, 'right', 'FR6');
+    const r_FR7 = getPt(elbowRightCx - elbowRadius * 0.5 - (wristRightCx - elbowRightCx) * 0.33, elbowRightCy - (wristRightCy - elbowRightCy) * 0.33, 'right', 'FR7');
+    const r_FR8 = getPt(elbowRightCx - elbowRadius, elbowRightCy, 'right', 'FR8');
 
     // Контуры правой руки
     let rightOuter = `M ${r_UA3.x} ${r_UA3.y} L ${r_UA2.x} ${r_UA2.y} L ${r_UA1.x} ${r_UA1.y} L ${r_FR4.x} ${r_FR4.y} L ${r_FR3.x} ${r_FR3.y} L ${r_FR2.x} ${r_FR2.y} L ${r_FR1.x} ${r_FR1.y}`;
