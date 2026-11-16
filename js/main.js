@@ -72,22 +72,13 @@
     torsoPelvisRounding: $('torsoPelvisRounding'),
     torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
-    // Руки
+    // Руки (базовые)
     armShoulderRadius: $('armShoulderRadius'),
     armShoulderRadiusVal: $('armShoulderRadiusVal'),
     armElbowRadius: $('armElbowRadius'),
     armElbowRadiusVal: $('armElbowRadiusVal'),
     armWristRadius: $('armWristRadius'),
     armWristRadiusVal: $('armWristRadiusVal'),
-
-    armElbowLeftX: $('armElbowLeftX'),
-    armElbowLeftXVal: $('armElbowLeftXVal'),
-    armElbowLeftY: $('armElbowLeftY'),
-    armElbowLeftYVal: $('armElbowLeftYVal'),
-    armElbowRightX: $('armElbowRightX'),
-    armElbowRightXVal: $('armElbowRightXVal'),
-    armElbowRightY: $('armElbowRightY'),
-    armElbowRightYVal: $('armElbowRightYVal'),
 
     armWristLeftX: $('armWristLeftX'),
     armWristLeftXVal: $('armWristLeftXVal'),
@@ -210,7 +201,7 @@
   });
 
   function fmtSignedPercent(v) {
-    const p = Math.round(v * 100);
+    const p = Math.round(v * 1000) / 10; // Для точности 0.1%
     return p > 0 ? `+${p}` : String(p);
   }
 
@@ -303,28 +294,17 @@
   bindTorsoInput(dom.torsoPelvisHeightCorr, dom.torsoPelvisHeightCorrVal, 'pelvisHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisRounding, dom.torsoPelvisRoundingVal, 'pelvisRounding', (v) => Math.round(v * 100));
 
-  // --- Руки ---
+  // --- Руки (базовые) ---
   function syncArmUIFromParams() {
     if (!window.Arm) return;
     const p = window.Arm.getParams();
 
     dom.armShoulderRadius.value = p.shoulderRadiusMul;
     dom.armShoulderRadiusVal.textContent = Math.round(p.shoulderRadiusMul * 100);
-
     dom.armElbowRadius.value = p.elbowRadius;
     dom.armElbowRadiusVal.textContent = Math.round(p.elbowRadius * 1000) / 10;
-
     dom.armWristRadius.value = p.wristRadius;
     dom.armWristRadiusVal.textContent = Math.round(p.wristRadius * 1000) / 10;
-
-    dom.armElbowLeftX.value = p.elbowLeftX;
-    dom.armElbowLeftXVal.textContent = fmtSignedPercent(p.elbowLeftX);
-    dom.armElbowLeftY.value = p.elbowLeftY;
-    dom.armElbowLeftYVal.textContent = fmtSignedPercent(p.elbowLeftY);
-    dom.armElbowRightX.value = p.elbowRightX;
-    dom.armElbowRightXVal.textContent = fmtSignedPercent(p.elbowRightX);
-    dom.armElbowRightY.value = p.elbowRightY;
-    dom.armElbowRightYVal.textContent = fmtSignedPercent(p.elbowRightY);
 
     dom.armWristLeftX.value = p.wristLeftX;
     dom.armWristLeftXVal.textContent = fmtSignedPercent(p.wristLeftX);
@@ -334,6 +314,22 @@
     dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
     dom.armWristRightY.value = p.wristRightY;
     dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
+
+    // Синхронизируем 52 ползунка точек
+    const pointNames = ['UA1','UA2','UA3','UA4','UA5','FR1','FR2','FR3','FR4','FR5','FR6','FR7','FR8'];
+    for (const side of ['left', 'right']) {
+      for (const pt of pointNames) {
+        for (const axis of ['x', 'y']) {
+          const key = `${side}${pt}_d${axis}`;
+          const input = document.getElementById(key);
+          const valEl = document.getElementById(`${key}Val`);
+          if (input && valEl && typeof p[key] === 'number') {
+            input.value = p[key];
+            valEl.textContent = fmtSignedPercent(p[key]);
+          }
+        }
+      }
+    }
   }
 
   function bindArmInput(input, valEl, key, format) {
@@ -351,15 +347,64 @@
   bindArmInput(dom.armElbowRadius, dom.armElbowRadiusVal, 'elbowRadius', (v) => Math.round(v * 1000) / 10);
   bindArmInput(dom.armWristRadius, dom.armWristRadiusVal, 'wristRadius', (v) => Math.round(v * 1000) / 10);
 
-  bindArmInput(dom.armElbowLeftX, dom.armElbowLeftXVal, 'elbowLeftX', fmtSignedPercent);
-  bindArmInput(dom.armElbowLeftY, dom.armElbowLeftYVal, 'elbowLeftY', fmtSignedPercent);
-  bindArmInput(dom.armElbowRightX, dom.armElbowRightXVal, 'elbowRightX', fmtSignedPercent);
-  bindArmInput(dom.armElbowRightY, dom.armElbowRightYVal, 'elbowRightY', fmtSignedPercent);
-
   bindArmInput(dom.armWristLeftX, dom.armWristLeftXVal, 'wristLeftX', fmtSignedPercent);
   bindArmInput(dom.armWristLeftY, dom.armWristLeftYVal, 'wristLeftY', fmtSignedPercent);
   bindArmInput(dom.armWristRightX, dom.armWristRightXVal, 'wristRightX', fmtSignedPercent);
   bindArmInput(dom.armWristRightY, dom.armWristRightYVal, 'wristRightY', fmtSignedPercent);
+
+  // --- Генератор точек рук ---
+  function generateArmPointSliders() {
+    const leftContainer = document.getElementById('leftArmPointsContainer');
+    const rightContainer = document.getElementById('rightArmPointsContainer');
+    if (!leftContainer || !rightContainer) return;
+
+    const pointNames = ['UA1','UA2','UA3','UA4','UA5','FR1','FR2','FR3','FR4','FR5','FR6','FR7','FR8'];
+
+    function makeSlider(side, pt, axis) {
+      const key = `${side}${pt}_d${axis}`;
+      const valId = `${key}Val`;
+      
+      const label = document.createElement('label');
+      label.className = 'row';
+      label.style.marginBottom = '4px';
+      
+      const span = document.createElement('span');
+      span.style.fontSize = '11px';
+      span.innerHTML = `${pt} ${axis.toUpperCase()}: <b id="${valId}">0</b>%`;
+      
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.id = key;
+      input.min = '-0.2';
+      input.max = '0.2';
+      input.step = '0.005';
+      input.value = '0';
+      input.style.height = '12px';
+      
+      label.appendChild(span);
+      label.appendChild(input);
+      return label;
+    }
+
+    for (const pt of pointNames) {
+      leftContainer.appendChild(makeSlider('left', pt, 'x'));
+      leftContainer.appendChild(makeSlider('left', pt, 'y'));
+      rightContainer.appendChild(makeSlider('right', pt, 'x'));
+      rightContainer.appendChild(makeSlider('right', pt, 'y'));
+    }
+
+    // Биндинги
+    for (const pt of pointNames) {
+      for (const side of ['left', 'right']) {
+        for (const axis of ['x', 'y']) {
+          const key = `${side}${pt}_d${axis}`;
+          const input = document.getElementById(key);
+          const valEl = document.getElementById(`${key}Val`);
+          bindArmInput(input, valEl, key, fmtSignedPercent);
+        }
+      }
+    }
+  }
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
@@ -595,6 +640,9 @@
     dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
     dom.scaleRange.value = Math.round(state.underlay.scale * 100);
     dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
+
+    // Генерируем ползунки для точек рук ДО синхронизации
+    generateArmPointSliders();
 
     syncHeadUIFromParams();
     syncTorsoUIFromParams();
