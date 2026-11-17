@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (плавные кривые по точкам, исправлен FR3) */
+/* js/arm.js — Этап 2: Руки (квадратичные кривые) */
 
 (function () {
   'use strict';
@@ -71,26 +71,25 @@
     }
   }
 
-  // Построение плавной кривой (Catmull-Rom -> Bezier)
-  function buildSmoothPath(points, closePath = false) {
+  // Построение плавной кривой через квадратичные Безье (Q)
+  function buildQuadraticPath(points) {
     if (points.length < 2) return '';
+    
     let d = `M ${points[0].x} ${points[0].y}`;
     
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i > 0 ? i - 1 : i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+    for (let i = 1; i < points.length; i++) {
+      const curr = points[i];
+      const prev = points[i - 1];
       
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-      
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+      if (i === 1) {
+        // Первая кривая идет от точки 0 к точке 1
+        // Контрольная точка - сама точка 0 (или середина)
+        d += ` Q ${prev.x} ${prev.y}, ${curr.x} ${curr.y}`;
+      } else {
+        // Для последующих точек используем точку как контрольную для плавного перехода
+        d += ` Q ${prev.x} ${prev.y}, ${curr.x} ${curr.y}`;
+      }
     }
-    
-    if (closePath) d += ' Z';
     return d;
   }
 
@@ -170,7 +169,6 @@
       };
     }
 
-    // Вспомогательная функция для интерполяции (от локтя к запястью)
     function lerp(a, b, t) {
       return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
     }
@@ -178,72 +176,76 @@
     // ==========================================
     // ЛЕВАЯ РУКА
     // ==========================================
-    // Плечо
     const l_UA1 = getPt(leftCx - shoulderRadius, leftCy + shoulderRadius * 0.6, 'left', 'UA1');
     const l_UA2 = getPt(leftCx - shoulderRadius, leftCy, 'left', 'UA2');
     const l_UA3 = getPt(leftCx - shoulderRadius * 0.5, leftCy - shoulderRadius, 'left', 'UA3');
     const l_UA4 = getPt(leftCx + shoulderRadius * 0.5, leftCy + shoulderRadius, 'left', 'UA4');
     const l_UA5 = getPt(leftCx + shoulderRadius, leftCy, 'left', 'UA5');
 
-    // Базовые крайние точки предплечья
     const l_elbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     const l_wristOuter = { x: wristLeftCx - wristRadius, y: wristLeftCy };
     const l_elbowInner = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     const l_wristInner = { x: wristLeftCx + wristRadius, y: wristLeftCy };
 
-    // Внешние точки предплечья (от локтя к запястью)
-    const l_FR4 = getPt(l_elbowOuter.x, l_elbowOuter.y, 'left', 'FR4'); // 0/3 (локоть)
-    const l_FR3 = getPt(lerp(l_elbowOuter, l_wristOuter, 1/3).x, lerp(l_elbowOuter, l_wristOuter, 1/3).y, 'left', 'FR3'); // 1/3
-    const l_FR2 = getPt(lerp(l_elbowOuter, l_wristOuter, 2/3).x, lerp(l_elbowOuter, l_wristOuter, 2/3).y, 'left', 'FR2'); // 2/3
-    const l_FR1 = getPt(l_wristOuter.x, l_wristOuter.y, 'left', 'FR1'); // 3/3 (запястье)
+    const l_FR4 = getPt(l_elbowOuter.x, l_elbowOuter.y, 'left', 'FR4');
+    const l_FR3 = getPt(lerp(l_elbowOuter, l_wristOuter, 1/3).x, lerp(l_elbowOuter, l_wristOuter, 1/3).y, 'left', 'FR3');
+    const l_FR2 = getPt(lerp(l_elbowOuter, l_wristOuter, 2/3).x, lerp(l_elbowOuter, l_wristOuter, 2/3).y, 'left', 'FR2');
+    const l_FR1 = getPt(l_wristOuter.x, l_wristOuter.y, 'left', 'FR1');
 
-    // Внутренние точки предплечья (от локтя к запястью)
-    const l_FR8 = getPt(l_elbowInner.x, l_elbowInner.y, 'left', 'FR8'); // 0/3 (локоть)
-    const l_FR7 = getPt(lerp(l_elbowInner, l_wristInner, 1/3).x, lerp(l_elbowInner, l_wristInner, 1/3).y, 'left', 'FR7'); // 1/3
-    const l_FR6 = getPt(lerp(l_elbowInner, l_wristInner, 2/3).x, lerp(l_elbowInner, l_wristInner, 2/3).y, 'left', 'FR6'); // 2/3
-    const l_FR5 = getPt(l_wristInner.x, l_wristInner.y, 'left', 'FR5'); // 3/3 (запястье)
+    const l_FR8 = getPt(l_elbowInner.x, l_elbowInner.y, 'left', 'FR8');
+    const l_FR7 = getPt(lerp(l_elbowInner, l_wristInner, 1/3).x, lerp(l_elbowInner, l_wristInner, 1/3).y, 'left', 'FR7');
+    const l_FR6 = getPt(lerp(l_elbowInner, l_wristInner, 2/3).x, lerp(l_elbowInner, l_wristInner, 2/3).y, 'left', 'FR6');
+    const l_FR5 = getPt(l_wristInner.x, l_wristInner.y, 'left', 'FR5');
 
-    // Контуры левой руки
-    const leftOuterPts = [l_UA3, l_UA2, l_UA1, l_FR4, l_FR3, l_FR2, l_FR1];
-    armL.appendChild(svgEl('path', { d: buildSmoothPath(leftOuterPts), fill: 'none' }));
+    // Контуры левой руки (Квадратичные Безье)
+    // Внимание: для Q-кривой используются пары (контрольная, конечная)
+    let leftOuter = `M ${l_UA3.x} ${l_UA3.y}`;
+    leftOuter += ` Q ${l_UA2.x} ${l_UA2.y}, ${l_UA1.x} ${l_UA1.y}`;
+    leftOuter += ` Q ${l_FR4.x} ${l_FR4.y}, ${l_FR3.x} ${l_FR3.y}`;
+    leftOuter += ` Q ${l_FR2.x} ${l_FR2.y}, ${l_FR1.x} ${l_FR1.y}`;
+    armL.appendChild(svgEl('path', { d: leftOuter, fill: 'none' }));
 
-    const leftInnerPts = [l_UA5, l_UA4, l_FR8, l_FR7, l_FR6, l_FR5];
-    armL.appendChild(svgEl('path', { d: buildSmoothPath(leftInnerPts), fill: 'none' }));
+    let leftInner = `M ${l_UA5.x} ${l_UA5.y}`;
+    leftInner += ` Q ${l_UA4.x} ${l_UA4.y}, ${l_FR8.x} ${l_FR8.y}`;
+    leftInner += ` Q ${l_FR7.x} ${l_FR7.y}, ${l_FR6.x} ${l_FR6.y}`;
+    leftInner += ` Q ${l_FR5.x} ${l_FR5.y}, ${l_FR5.x} ${l_FR5.y}`; // Упрощение для последней точки
+    armL.appendChild(svgEl('path', { d: leftInner, fill: 'none' }));
 
     // ==========================================
     // ПРАВАЯ РУКА
     // ==========================================
-    // Плечо
     const r_UA1 = getPt(rightCx + shoulderRadius, rightCy + shoulderRadius * 0.6, 'right', 'UA1');
     const r_UA2 = getPt(rightCx + shoulderRadius, rightCy, 'right', 'UA2');
     const r_UA3 = getPt(rightCx + shoulderRadius * 0.5, rightCy - shoulderRadius, 'right', 'UA3');
     const r_UA4 = getPt(rightCx - shoulderRadius * 0.5, rightCy + shoulderRadius, 'right', 'UA4');
     const r_UA5 = getPt(rightCx - shoulderRadius, rightCy, 'right', 'UA5');
 
-    // Базовые крайние точки предплечья
     const r_elbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     const r_wristOuter = { x: wristRightCx + wristRadius, y: wristRightCy };
     const r_elbowInner = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
     const r_wristInner = { x: wristRightCx - wristRadius, y: wristRightCy };
 
-    // Внешние точки предплечья (от локтя к запястью)
     const r_FR4 = getPt(r_elbowOuter.x, r_elbowOuter.y, 'right', 'FR4');
     const r_FR3 = getPt(lerp(r_elbowOuter, r_wristOuter, 1/3).x, lerp(r_elbowOuter, r_wristOuter, 1/3).y, 'right', 'FR3');
     const r_FR2 = getPt(lerp(r_elbowOuter, r_wristOuter, 2/3).x, lerp(r_elbowOuter, r_wristOuter, 2/3).y, 'right', 'FR2');
     const r_FR1 = getPt(r_wristOuter.x, r_wristOuter.y, 'right', 'FR1');
 
-    // Внутренние точки предплечья (от локтя к запястью)
     const r_FR8 = getPt(r_elbowInner.x, r_elbowInner.y, 'right', 'FR8');
     const r_FR7 = getPt(lerp(r_elbowInner, r_wristInner, 1/3).x, lerp(r_elbowInner, r_wristInner, 1/3).y, 'right', 'FR7');
     const r_FR6 = getPt(lerp(r_elbowInner, r_wristInner, 2/3).x, lerp(r_elbowInner, r_wristInner, 2/3).y, 'right', 'FR6');
     const r_FR5 = getPt(r_wristInner.x, r_wristInner.y, 'right', 'FR5');
 
-    // Контуры правой руки
-    const rightOuterPts = [r_UA3, r_UA2, r_UA1, r_FR4, r_FR3, r_FR2, r_FR1];
-    armR.appendChild(svgEl('path', { d: buildSmoothPath(rightOuterPts), fill: 'none' }));
+    let rightOuter = `M ${r_UA3.x} ${r_UA3.y}`;
+    rightOuter += ` Q ${r_UA2.x} ${r_UA2.y}, ${r_UA1.x} ${r_UA1.y}`;
+    rightOuter += ` Q ${r_FR4.x} ${r_FR4.y}, ${r_FR3.x} ${r_FR3.y}`;
+    rightOuter += ` Q ${r_FR2.x} ${r_FR2.y}, ${r_FR1.x} ${r_FR1.y}`;
+    armR.appendChild(svgEl('path', { d: rightOuter, fill: 'none' }));
 
-    const rightInnerPts = [r_UA5, r_UA4, r_FR8, r_FR7, r_FR6, r_FR5];
-    armR.appendChild(svgEl('path', { d: buildSmoothPath(rightInnerPts), fill: 'none' }));
+    let rightInner = `M ${r_UA5.x} ${r_UA5.y}`;
+    rightInner += ` Q ${r_UA4.x} ${r_UA4.y}, ${r_FR8.x} ${r_FR8.y}`;
+    rightInner += ` Q ${r_FR7.x} ${r_FR7.y}, ${r_FR6.x} ${r_FR6.y}`;
+    rightInner += ` Q ${r_FR5.x} ${r_FR5.y}, ${r_FR5.x} ${r_FR5.y}`;
+    armR.appendChild(svgEl('path', { d: rightInner, fill: 'none' }));
 
     // === ОТЛАДОЧНЫЕ ТОЧКИ ===
     const tinyR = headH * 0.01;
@@ -260,13 +262,6 @@
       grid.appendChild(svgEl('circle', {
         cx: item.p.x, cy: item.p.y, r: tinyR, fill: '#2563eb', opacity: 0.8
       }));
-      const text = svgEl('text', {
-        x: item.p.x + tinyR * 2, y: item.p.y + tinyR,
-        'font-size': headH * 0.02, fill: '#2563eb',
-        'font-family': 'monospace'
-      });
-      text.textContent = item.name;
-      grid.appendChild(text);
     }
   }
 
