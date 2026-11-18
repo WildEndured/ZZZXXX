@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (окружности и касательные) */
+/* js/arm.js — Этап 2: Руки (через окружности и касательные) */
 
 (function () {
   'use strict';
@@ -9,14 +9,10 @@
     shoulderRadiusMul: 1.0,
     elbowRadius: 0.08,
     wristRadius: 0.08,
-    
-    // Радиусы дополнительных кругов (в долях от headH)
-    r4: 0.07, // круг 4 (между плечом и локтем)
-    r3: 0.06, // круг 3 (между локтем и запястьем, верхний)
-    r2: 0.055, // круг 2
-    r1: 0.05, // круг 1 (ближе к запястью)
-
-    // Позиционирование (как было)
+    r4: 0.07,
+    r3: 0.06,
+    r2: 0.055,
+    r1: 0.05,
     wristLeftX: -0.20,
     wristLeftY: 0,
     wristRightX: 0.20,
@@ -69,7 +65,6 @@
 
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
-    const head = window.Head && window.Head.lastGeometry;
     if (!torso) return;
 
     const { armL, armR, grid } = els;
@@ -114,83 +109,80 @@
     const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
     const elbowRadius = params.elbowRadius * headH;
-
     const elbowLeftCx = (leftCx + wristLeftCx) / 2;
     const elbowLeftCy = (leftCy + wristLeftCy) / 2;
     const elbowRightCx = (rightCx + wristRightCx) / 2;
     const elbowRightCy = (rightCy + wristRightCy) / 2;
 
-    // Вспомогательная функция: рисуем круги и возвращаем их данные
-    function drawJoints(cxList, cyList, rList, group) {
-      for (let i = 0; i < cxList.length; i++) {
-        group.appendChild(svgEl('circle', { cx: cxList[i], cy: cyList[i], r: rList[i], fill: 'none', 'stroke-opacity': 0.3 }));
-      }
-    }
-
     // === ЛЕВАЯ РУКА ===
-    // Круги: П (0), 4 (1), Л (2), 3 (3), 2 (4), 1 (5), З (6)
-    const lR = [shoulderRadius, params.r4 * headH, elbowRadius, params.r3 * headH, params.r2 * headH, params.r1 * headH, wristRadius];
-    const lCx = [leftCx, (leftCx + elbowLeftCx) / 2, elbowLeftCx, (elbowLeftCx + wristLeftCx) / 2, elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.66, elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.33, wristLeftCx];
-    const lCy = [leftCy, (leftCy + elbowLeftCy) / 2, elbowLeftCy, (elbowLeftCy + wristLeftCy) / 2, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.66, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.33, wristLeftCy];
-
-    drawJoints(lCx, lCy, lR, armL);
+    // Список кругов сверху вниз: плечо, 4, локоть, 3, 2, 1, запястье
+    const lCircles = [
+      { cx: leftCx, cy: leftCy, r: shoulderRadius },
+      { cx: (leftCx + elbowLeftCx) / 2, cy: (leftCy + elbowLeftCy) / 2, r: params.r4 * headH },
+      { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius },
+      { cx: elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.33, cy: elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.33, r: params.r3 * headH },
+      { cx: elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.66, cy: elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.66, r: params.r2 * headH },
+      { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius },
+    ];
 
     // === ПРАВАЯ РУКА ===
-    const rR = [shoulderRadius, params.r4 * headH, elbowRadius, params.r3 * headH, params.r2 * headH, params.r1 * headH, wristRadius];
-    const rCx = [rightCx, (rightCx + elbowRightCx) / 2, elbowRightCx, (elbowRightCx + wristRightCx) / 2, elbowRightCx + (wristRightCx - elbowRightCx) * 0.66, elbowRightCx + (wristRightCx - elbowRightCx) * 0.33, wristRightCx];
-    const rCy = [rightCy, (rightCy + elbowRightCy) / 2, elbowRightCy, (elbowRightCy + wristRightCy) / 2, elbowRightCy + (wristRightCy - elbowRightCy) * 0.66, elbowRightCy + (wristRightCy - elbowRightCy) * 0.33, wristRightCy];
+    const rCircles = [
+      { cx: rightCx, cy: rightCy, r: shoulderRadius },
+      { cx: (rightCx + elbowRightCx) / 2, cy: (rightCy + elbowRightCy) / 2, r: params.r4 * headH },
+      { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius },
+      { cx: elbowRightCx + (wristRightCx - elbowRightCx) * 0.33, cy: elbowRightCy + (wristRightCy - elbowRightCy) * 0.33, r: params.r3 * headH },
+      { cx: elbowRightCx + (wristRightCx - elbowRightCx) * 0.66, cy: elbowRightCy + (wristRightCy - elbowRightCy) * 0.66, r: params.r2 * headH },
+      { cx: wristRightCx, cy: wristRightCy, r: wristRadius },
+    ];
 
-    drawJoints(rCx, rCy, rR, armR);
+    // Рисуем сами круги (для отладки, полупрозрачные)
+    for (const c of lCircles) {
+      armL.appendChild(svgEl('circle', { cx: c.cx, cy: c.cy, r: c.r, fill: 'none', 'stroke-opacity': 0.3 }));
+    }
+    for (const c of rCircles) {
+      armR.appendChild(svgEl('circle', { cx: c.cx, cy: c.cy, r: c.r, fill: 'none', 'stroke-opacity': 0.3 }));
+    }
 
-    // --- ФУНКЦИЯ ДЛЯ ПОСТРОЕНИЯ КАСАТЕЛЬНЫХ ---
-    function buildTangentPath(cxList, cyList, rList, isLeft) {
+    // === ФУНКЦИЯ ПОСТРОЕНИЯ КАСАТЕЛЬНЫХ ===
+    // Для простоты и стабильности соединяем крайние точки кругов через Q (квадратичные Безье)
+    function buildOuterPath(circles, sign) {
       let path = '';
-      
-      // Внешняя сторона (для левой руки - это левая сторона, для правой - правая)
-      const sign = isLeft ? -1 : 1;
-      
-      // Верхняя касательная (внешняя)
-      for (let i = 0; i < cxList.length - 1; i++) {
-        const x1 = cxList[i] + sign * rList[i];
-        const y1 = cyList[i];
-        const x2 = cxList[i+1] + sign * rList[i+1];
-        const y2 = cyList[i+1];
+      for (let i = 0; i < circles.length - 1; i++) {
+        const c1 = circles[i];
+        const c2 = circles[i + 1];
+        
+        const x1 = c1.cx + sign * c1.r;
+        const y1 = c1.cy;
+        const x2 = c2.cx + sign * c2.r;
+        const y2 = c2.cy;
         
         if (i === 0) path += `M ${x1} ${y1}`;
-        // Квадратичная кривая для плавности (контрольная точка между ними)
-        const midX = (x1 + x2) / 2;
+        
+        // Контрольная точка для плавности (посередине)
+        const midX = (x1 + x2) / 2 + sign * (c1.r + c2.r) * 0.1;
         const midY = (y1 + y2) / 2;
-        // Для плавности используем Q с контрольной точкой посередине
-        path += ` Q ${midX + sign * rList[i]*0.2} ${midY}, ${x2} ${y2}`;
+        
+        path += ` Q ${midX} ${midY}, ${x2} ${y2}`;
       }
       return path;
     }
 
-    // Рисуем внешние контуры
-    armL.appendChild(svgEl('path', { d: buildTangentPath(lCx, lCy, lR, true), fill: 'none' }));
-    armR.appendChild(svgEl('path', { d: buildTangentPath(rCx, rCy, rR, false), fill: 'none' }));
+    // Левая рука: внешняя сторона (sign = -1), внутренняя (sign = 1)
+    armL.appendChild(svgEl('path', { d: buildOuterPath(lCircles, -1), fill: 'none' }));
+    armL.appendChild(svgEl('path', { d: buildOuterPath(lCircles, 1), fill: 'none' }));
 
-    // Рисуем внутренние контуры (просто зеркально)
-    function buildInnerTangentPath(cxList, cyList, rList, isLeft) {
-      let path = '';
-      const sign = isLeft ? 1 : -1;
-      
-      for (let i = 0; i < cxList.length - 1; i++) {
-        const x1 = cxList[i] + sign * rList[i];
-        const y1 = cyList[i];
-        const x2 = cxList[i+1] + sign * rList[i+1];
-        const y2 = cyList[i+1];
-        
-        if (i === 0) path += `M ${x1} ${y1}`;
-        const midX = (x1 + x2) / 2;
-        const midY = (y1 + y2) / 2;
-        path += ` Q ${midX + sign * rList[i]*0.2} ${midY}, ${x2} ${y2}`;
-      }
-      return path;
+    // Правая рука: внешняя (sign = 1), внутренняя (sign = -1)
+    armR.appendChild(svgEl('path', { d: buildOuterPath(rCircles, 1), fill: 'none' }));
+    armR.appendChild(svgEl('path', { d: buildOuterPath(rCircles, -1), fill: 'none' }));
+
+    // === ОТЛАДОЧНЫЕ МАРКЕРЫ ЦЕНТРОВ ===
+    const tinyR = headH * 0.012;
+    const allCenters = [...lCircles, ...rCircles];
+    for (const c of allCenters) {
+      grid.appendChild(svgEl('circle', {
+        cx: c.cx, cy: c.cy, r: tinyR, fill: '#2563eb', opacity: 0.8
+      }));
     }
-
-    armL.appendChild(svgEl('path', { d: buildInnerTangentPath(lCx, lCy, lR, true), fill: 'none' }));
-    armR.appendChild(svgEl('path', { d: buildInnerTangentPath(rCx, rCy, rR, false), fill: 'none' }));
   }
 
   function update(geo) {
