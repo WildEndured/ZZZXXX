@@ -72,7 +72,7 @@
     torsoPelvisRounding: $('torsoPelvisRounding'),
     torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
-    // Руки (базовые)
+    // Руки
     armShoulderRadius: $('armShoulderRadius'),
     armShoulderRadiusVal: $('armShoulderRadiusVal'),
     armElbowRadius: $('armElbowRadius'),
@@ -80,7 +80,6 @@
     armWristRadius: $('armWristRadius'),
     armWristRadiusVal: $('armWristRadiusVal'),
 
-    // Руки (радиусы дополнительных кругов)
     armR1: $('armR1'),
     armR1Val: $('armR1Val'),
     armR2: $('armR2'),
@@ -349,6 +348,7 @@
   bindArmInput(dom.armShoulderRadius, dom.armShoulderRadiusVal, 'shoulderRadiusMul', (v) => Math.round(v * 100));
   bindArmInput(dom.armElbowRadius, dom.armElbowRadiusVal, 'elbowRadius', (v) => Math.round(v * 1000) / 10);
   bindArmInput(dom.armWristRadius, dom.armWristRadiusVal, 'wristRadius', (v) => Math.round(v * 1000) / 10);
+  
   bindArmInput(dom.armR1, dom.armR1Val, 'r1', (v) => Math.round(v * 1000) / 10);
   bindArmInput(dom.armR2, dom.armR2Val, 'r2', (v) => Math.round(v * 1000) / 10);
   bindArmInput(dom.armR3, dom.armR3Val, 'r3', (v) => Math.round(v * 1000) / 10);
