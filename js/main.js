@@ -8,13 +8,7 @@
   const state = {
     heads: 5,
     margin: 0,
-    underlay: {
-      src: null,
-      opacity: 0.5,
-      scale: 1.0,
-      naturalWidth: 0,
-      naturalHeight: 0,
-    },
+    underlay: { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 },
     head: null,
     torso: null,
     arm: null,
@@ -23,95 +17,45 @@
   const $ = (id) => document.getElementById(id);
 
   const dom = {
-    svg: $('svg'),
-    gridRect: $('gridRect'),
-    headsLayer: $('headsLayer'),
-    underlayImage: $('underlayImage'),
-    underlayLayer: $('underlayLayer'),
+    svg: $('svg'), gridRect: $('gridRect'), headsLayer: $('headsLayer'),
+    underlayImage: $('underlayImage'), underlayLayer: $('underlayLayer'),
 
-    headsRange: $('headsRange'),
-    headsVal: $('headsVal'),
-    marginRange: $('marginRange'),
-    marginVal: $('marginVal'),
+    headsRange: $('headsRange'), headsVal: $('headsVal'),
+    marginRange: $('marginRange'), marginVal: $('marginVal'),
 
-    // Голова
-    headTopShift: $('headTopShift'),
-    headTopShiftVal: $('headTopShiftVal'),
-    headBottomShift: $('headBottomShift'),
-    headBottomShiftVal: $('headBottomShiftVal'),
-    headWidthMul: $('headWidthMul'),
-    headWidthMulVal: $('headWidthMulVal'),
-    headRadiusMul: $('headRadiusMul'),
-    headRadiusMulVal: $('headRadiusMulVal'),
-    headChinShift: $('headChinShift'),
-    headChinShiftVal: $('headChinShiftVal'),
-    headChinWidth: $('headChinWidth'),
-    headChinWidthVal: $('headChinWidthVal'),
-    headJawAttach: $('headJawAttach'),
-    headJawAttachVal: $('headJawAttachVal'),
-    headJawLength: $('headJawLength'),
-    headJawLengthVal: $('headJawLengthVal'),
-    headJawAngleWidth: $('headJawAngleWidth'),
-    headJawAngleWidthVal: $('headJawAngleWidthVal'),
+    headTopShift: $('headTopShift'), headTopShiftVal: $('headTopShiftVal'),
+    headBottomShift: $('headBottomShift'), headBottomShiftVal: $('headBottomShiftVal'),
+    headWidthMul: $('headWidthMul'), headWidthMulVal: $('headWidthMulVal'),
+    headRadiusMul: $('headRadiusMul'), headRadiusMulVal: $('headRadiusMulVal'),
+    headChinShift: $('headChinShift'), headChinShiftVal: $('headChinShiftVal'),
+    headChinWidth: $('headChinWidth'), headChinWidthVal: $('headChinWidthVal'),
+    headJawAttach: $('headJawAttach'), headJawAttachVal: $('headJawAttachVal'),
+    headJawLength: $('headJawLength'), headJawLengthVal: $('headJawLengthVal'),
+    headJawAngleWidth: $('headJawAngleWidth'), headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
-    // Торс
-    torsoNeckWidth: $('torsoNeckWidth'),
-    torsoNeckWidthVal: $('torsoNeckWidthVal'),
-    torsoChestWidth: $('torsoChestWidth'),
-    torsoChestWidthVal: $('torsoChestWidthVal'),
-    torsoChestHeightCorr: $('torsoChestHeightCorr'),
-    torsoChestHeightCorrVal: $('torsoChestHeightCorrVal'),
-    torsoChestTop: $('torsoChestTop'),
-    torsoChestTopVal: $('torsoChestTopVal'),
-    torsoChestBottom: $('torsoChestBottom'),
-    torsoChestBottomVal: $('torsoChestBottomVal'),
-    torsoPelvisWidthCorr: $('torsoPelvisWidthCorr'),
-    torsoPelvisWidthCorrVal: $('torsoPelvisWidthCorrVal'),
-    torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'),
-    torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
-    torsoPelvisRounding: $('torsoPelvisRounding'),
-    torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
+    torsoNeckWidth: $('torsoNeckWidth'), torsoNeckWidthVal: $('torsoNeckWidthVal'),
+    torsoChestWidth: $('torsoChestWidth'), torsoChestWidthVal: $('torsoChestWidthVal'),
+    torsoChestHeightCorr: $('torsoChestHeightCorr'), torsoChestHeightCorrVal: $('torsoChestHeightCorrVal'),
+    torsoChestTop: $('torsoChestTop'), torsoChestTopVal: $('torsoChestTopVal'),
+    torsoChestBottom: $('torsoChestBottom'), torsoChestBottomVal: $('torsoChestBottomVal'),
+    torsoPelvisWidthCorr: $('torsoPelvisWidthCorr'), torsoPelvisWidthCorrVal: $('torsoPelvisWidthCorrVal'),
+    torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'), torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
+    torsoPelvisRounding: $('torsoPelvisRounding'), torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
-    // Руки
-    armShoulderRadius: $('armShoulderRadius'),
-    armShoulderRadiusVal: $('armShoulderRadiusVal'),
-    armElbowRadius: $('armElbowRadius'),
-    armElbowRadiusVal: $('armElbowRadiusVal'),
-    armWristRadius: $('armWristRadius'),
-    armWristRadiusVal: $('armWristRadiusVal'),
+    armShoulderRadius: $('armShoulderRadius'), armShoulderRadiusVal: $('armShoulderRadiusVal'),
+    armElbowRadius: $('armElbowRadius'), armElbowRadiusVal: $('armElbowRadiusVal'),
+    armWristRadius: $('armWristRadius'), armWristRadiusVal: $('armWristRadiusVal'),
 
-    armR1: $('armR1'),
-    armR1Val: $('armR1Val'),
-    armR2: $('armR2'),
-    armR2Val: $('armR2Val'),
-    armR3: $('armR3'),
-    armR3Val: $('armR3Val'),
-    armR4: $('armR4'),
-    armR4Val: $('armR4Val'),
+    armWristLeftX: $('armWristLeftX'), armWristLeftXVal: $('armWristLeftXVal'),
+    armWristLeftY: $('armWristLeftY'), armWristLeftYVal: $('armWristLeftYVal'),
+    armWristRightX: $('armWristRightX'), armWristRightXVal: $('armWristRightXVal'),
+    armWristRightY: $('armWristRightY'), armWristRightYVal: $('armWristRightYVal'),
 
-    armWristLeftX: $('armWristLeftX'),
-    armWristLeftXVal: $('armWristLeftXVal'),
-    armWristLeftY: $('armWristLeftY'),
-    armWristLeftYVal: $('armWristLeftYVal'),
-    armWristRightX: $('armWristRightX'),
-    armWristRightXVal: $('armWristRightXVal'),
-    armWristRightY: $('armWristRightY'),
-    armWristRightYVal: $('armWristRightYVal'),
+    underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
+    scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
 
-    // Подложка
-    underlayFile: $('underlayFile'),
-    opacityRange: $('opacityRange'),
-    opacityVal: $('opacityVal'),
-    scaleRange: $('scaleRange'),
-    scaleVal: $('scaleVal'),
-    removeUnderlay: $('removeUnderlay'),
-
-    presetName: $('presetName'),
-    savePreset: $('savePreset'),
-    presetList: $('presetList'),
-
-    exportSvg: $('exportSvg'),
-    exportPng: $('exportPng'),
+    presetName: $('presetName'), savePreset: $('savePreset'), presetList: $('presetList'),
+    exportSvg: $('exportSvg'), exportPng: $('exportPng'),
   };
 
   function computeGeometry() {
@@ -120,19 +64,8 @@
     const usableBottom = CANVAS - marginPx;
     const usableHeight = usableBottom - usableTop;
     const headHeight = usableHeight / state.heads;
-
-    return {
-      canvas: CANVAS,
-      dpi: DPI,
-      marginPx,
-      usableTop,
-      usableBottom,
-      usableHeight,
-      headHeight,
-      heads: state.heads,
-      centerX: CANVAS / 2,
-      topY: usableTop,
-    };
+    return { canvas: CANVAS, dpi: DPI, marginPx, usableTop, usableBottom, usableHeight, headHeight,
+             heads: state.heads, centerX: CANVAS / 2, topY: usableTop };
   }
 
   function renderHeadsGrid(geo) {
@@ -172,15 +105,10 @@
 
   function renderUnderlay(geo) {
     const u = state.underlay;
-    if (!u.src) {
-      dom.underlayImage.style.display = 'none';
-      dom.removeUnderlay.disabled = true;
-      return;
-    }
+    if (!u.src) { dom.underlayImage.style.display = 'none'; dom.removeUnderlay.disabled = true; return; }
     dom.underlayImage.style.display = 'block';
     dom.underlayImage.setAttribute('href', u.src);
     dom.underlayImage.setAttribute('opacity', String(u.opacity));
-
     const box = CANVAS;
     const iw = u.naturalWidth || box;
     const ih = u.naturalHeight || box;
@@ -190,7 +118,6 @@
     const drawH = ih * k;
     const x = (box - drawW) / 2;
     const y = (box - drawH) / 2;
-
     dom.underlayImage.setAttribute('x', x);
     dom.underlayImage.setAttribute('y', y);
     dom.underlayImage.setAttribute('width', drawW);
@@ -199,44 +126,24 @@
     dom.removeUnderlay.disabled = false;
   }
 
-  dom.headsRange.addEventListener('input', (e) => {
-    state.heads = parseFloat(e.target.value);
-    applyState();
-  });
+  dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); applyState(); });
+  dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); applyState(); });
 
-  dom.marginRange.addEventListener('input', (e) => {
-    state.margin = parseInt(e.target.value, 10);
-    applyState();
-  });
-
-  function fmtSignedPercent(v) {
-    const p = Math.round(v * 1000) / 10;
-    return p > 0 ? `+${p}` : String(p);
-  }
+  function fmtSignedPercent(v) { const p = Math.round(v * 1000) / 10; return p > 0 ? `+${p}` : String(p); }
 
   // --- Голова ---
   function syncHeadUIFromParams() {
     if (!window.Head) return;
     const p = window.Head.getParams();
-
-    dom.headTopShift.value = p.topShift;
-    dom.headTopShiftVal.textContent = fmtSignedPercent(p.topShift);
-    dom.headBottomShift.value = p.bottomShift;
-    dom.headBottomShiftVal.textContent = fmtSignedPercent(p.bottomShift);
-    dom.headWidthMul.value = p.widthMul;
-    dom.headWidthMulVal.textContent = Math.round(p.widthMul * 100);
-    dom.headRadiusMul.value = p.radiusMul;
-    dom.headRadiusMulVal.textContent = Math.round(p.radiusMul * 100);
-    dom.headChinShift.value = p.chinHeightShift;
-    dom.headChinShiftVal.textContent = fmtSignedPercent(p.chinHeightShift);
-    dom.headChinWidth.value = p.chinWidth;
-    dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
-    dom.headJawAttach.value = p.jawAttach;
-    dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttach);
-    dom.headJawLength.value = p.jawLength;
-    dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
-    dom.headJawAngleWidth.value = p.jawAngleWidth;
-    dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
+    dom.headTopShift.value = p.topShift; dom.headTopShiftVal.textContent = fmtSignedPercent(p.topShift);
+    dom.headBottomShift.value = p.bottomShift; dom.headBottomShiftVal.textContent = fmtSignedPercent(p.bottomShift);
+    dom.headWidthMul.value = p.widthMul; dom.headWidthMulVal.textContent = Math.round(p.widthMul * 100);
+    dom.headRadiusMul.value = p.radiusMul; dom.headRadiusMulVal.textContent = Math.round(p.radiusMul * 100);
+    dom.headChinShift.value = p.chinHeightShift; dom.headChinShiftVal.textContent = fmtSignedPercent(p.chinHeightShift);
+    dom.headChinWidth.value = p.chinWidth; dom.headChinWidthVal.textContent = Math.round(p.chinWidth * 100);
+    dom.headJawAttach.value = p.jawAttach; dom.headJawAttachVal.textContent = fmtSignedPercent(p.jawAttach);
+    dom.headJawLength.value = p.jawLength; dom.headJawLengthVal.textContent = Math.round(p.jawLength * 100);
+    dom.headJawAngleWidth.value = p.jawAngleWidth; dom.headJawAngleWidthVal.textContent = fmtSignedPercent(p.jawAngleWidth);
   }
 
   function bindHeadInput(input, valEl, key, format) {
@@ -264,23 +171,14 @@
   function syncTorsoUIFromParams() {
     if (!window.Torso) return;
     const p = window.Torso.getParams();
-
-    dom.torsoNeckWidth.value = p.neckWidth;
-    dom.torsoNeckWidthVal.textContent = Math.round(p.neckWidth * 100);
-    dom.torsoChestWidth.value = p.chestWidth;
-    dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
-    dom.torsoChestHeightCorr.value = p.chestHeightCorr;
-    dom.torsoChestHeightCorrVal.textContent = fmtSignedPercent(p.chestHeightCorr);
-    dom.torsoChestTop.value = p.topNarrow;
-    dom.torsoChestTopVal.textContent = Math.round(p.topNarrow * 100);
-    dom.torsoChestBottom.value = p.bottomWide;
-    dom.torsoChestBottomVal.textContent = Math.round(p.bottomWide * 100);
-    dom.torsoPelvisWidthCorr.value = p.pelvisWidthCorr;
-    dom.torsoPelvisWidthCorrVal.textContent = fmtSignedPercent(p.pelvisWidthCorr);
-    dom.torsoPelvisHeightCorr.value = p.pelvisHeightCorr;
-    dom.torsoPelvisHeightCorrVal.textContent = fmtSignedPercent(p.pelvisHeightCorr);
-    dom.torsoPelvisRounding.value = p.pelvisRounding;
-    dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
+    dom.torsoNeckWidth.value = p.neckWidth; dom.torsoNeckWidthVal.textContent = Math.round(p.neckWidth * 100);
+    dom.torsoChestWidth.value = p.chestWidth; dom.torsoChestWidthVal.textContent = Math.round(p.chestWidth * 100);
+    dom.torsoChestHeightCorr.value = p.chestHeightCorr; dom.torsoChestHeightCorrVal.textContent = fmtSignedPercent(p.chestHeightCorr);
+    dom.torsoChestTop.value = p.topNarrow; dom.torsoChestTopVal.textContent = Math.round(p.topNarrow * 100);
+    dom.torsoChestBottom.value = p.bottomWide; dom.torsoChestBottomVal.textContent = Math.round(p.bottomWide * 100);
+    dom.torsoPelvisWidthCorr.value = p.pelvisWidthCorr; dom.torsoPelvisWidthCorrVal.textContent = fmtSignedPercent(p.pelvisWidthCorr);
+    dom.torsoPelvisHeightCorr.value = p.pelvisHeightCorr; dom.torsoPelvisHeightCorrVal.textContent = fmtSignedPercent(p.pelvisHeightCorr);
+    dom.torsoPelvisRounding.value = p.pelvisRounding; dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
   }
 
   function bindTorsoInput(input, valEl, key, format) {
@@ -307,31 +205,13 @@
   function syncArmUIFromParams() {
     if (!window.Arm) return;
     const p = window.Arm.getParams();
-
-    dom.armShoulderRadius.value = p.shoulderRadiusMul;
-    dom.armShoulderRadiusVal.textContent = Math.round(p.shoulderRadiusMul * 100);
-    dom.armElbowRadius.value = p.elbowRadius;
-    dom.armElbowRadiusVal.textContent = Math.round(p.elbowRadius * 1000) / 10;
-    dom.armWristRadius.value = p.wristRadius;
-    dom.armWristRadiusVal.textContent = Math.round(p.wristRadius * 1000) / 10;
-
-    dom.armR1.value = p.r1;
-    dom.armR1Val.textContent = Math.round(p.r1 * 1000) / 10;
-    dom.armR2.value = p.r2;
-    dom.armR2Val.textContent = Math.round(p.r2 * 1000) / 10;
-    dom.armR3.value = p.r3;
-    dom.armR3Val.textContent = Math.round(p.r3 * 1000) / 10;
-    dom.armR4.value = p.r4;
-    dom.armR4Val.textContent = Math.round(p.r4 * 1000) / 10;
-
-    dom.armWristLeftX.value = p.wristLeftX;
-    dom.armWristLeftXVal.textContent = fmtSignedPercent(p.wristLeftX);
-    dom.armWristLeftY.value = p.wristLeftY;
-    dom.armWristLeftYVal.textContent = fmtSignedPercent(p.wristLeftY);
-    dom.armWristRightX.value = p.wristRightX;
-    dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
-    dom.armWristRightY.value = p.wristRightY;
-    dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
+    dom.armShoulderRadius.value = p.shoulderRadiusMul; dom.armShoulderRadiusVal.textContent = Math.round(p.shoulderRadiusMul * 100);
+    dom.armElbowRadius.value = p.elbowRadius; dom.armElbowRadiusVal.textContent = Math.round(p.elbowRadius * 1000) / 10;
+    dom.armWristRadius.value = p.wristRadius; dom.armWristRadiusVal.textContent = Math.round(p.wristRadius * 1000) / 10;
+    dom.armWristLeftX.value = p.wristLeftX; dom.armWristLeftXVal.textContent = fmtSignedPercent(p.wristLeftX);
+    dom.armWristLeftY.value = p.wristLeftY; dom.armWristLeftYVal.textContent = fmtSignedPercent(p.wristLeftY);
+    dom.armWristRightX.value = p.wristRightX; dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
+    dom.armWristRightY.value = p.wristRightY; dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
   }
 
   function bindArmInput(input, valEl, key, format) {
@@ -348,12 +228,6 @@
   bindArmInput(dom.armShoulderRadius, dom.armShoulderRadiusVal, 'shoulderRadiusMul', (v) => Math.round(v * 100));
   bindArmInput(dom.armElbowRadius, dom.armElbowRadiusVal, 'elbowRadius', (v) => Math.round(v * 1000) / 10);
   bindArmInput(dom.armWristRadius, dom.armWristRadiusVal, 'wristRadius', (v) => Math.round(v * 1000) / 10);
-  
-  bindArmInput(dom.armR1, dom.armR1Val, 'r1', (v) => Math.round(v * 1000) / 10);
-  bindArmInput(dom.armR2, dom.armR2Val, 'r2', (v) => Math.round(v * 1000) / 10);
-  bindArmInput(dom.armR3, dom.armR3Val, 'r3', (v) => Math.round(v * 1000) / 10);
-  bindArmInput(dom.armR4, dom.armR4Val, 'r4', (v) => Math.round(v * 1000) / 10);
-
   bindArmInput(dom.armWristLeftX, dom.armWristLeftXVal, 'wristLeftX', fmtSignedPercent);
   bindArmInput(dom.armWristLeftY, dom.armWristLeftYVal, 'wristLeftY', fmtSignedPercent);
   bindArmInput(dom.armWristRightX, dom.armWristRightXVal, 'wristRightX', fmtSignedPercent);
@@ -382,55 +256,23 @@
     e.target.value = '';
   });
 
-  dom.opacityRange.addEventListener('input', (e) => {
-    state.underlay.opacity = parseInt(e.target.value, 10) / 100;
-    dom.opacityVal.textContent = e.target.value;
-    applyState();
-  });
-
-  dom.scaleRange.addEventListener('input', (e) => {
-    state.underlay.scale = parseInt(e.target.value, 10) / 100;
-    dom.scaleVal.textContent = e.target.value;
-    applyState();
-  });
-
+  dom.opacityRange.addEventListener('input', (e) => { state.underlay.opacity = parseInt(e.target.value, 10) / 100; dom.opacityVal.textContent = e.target.value; applyState(); });
+  dom.scaleRange.addEventListener('input', (e) => { state.underlay.scale = parseInt(e.target.value, 10) / 100; dom.scaleVal.textContent = e.target.value; applyState(); });
   dom.removeUnderlay.addEventListener('click', () => {
-    state.underlay.src = null;
-    state.underlay.naturalWidth = 0;
-    state.underlay.naturalHeight = 0;
-    state.underlay.scale = 1.0;
-    state.underlay.opacity = 0.5;
-    dom.opacityRange.value = 50;
-    dom.opacityVal.textContent = 50;
-    dom.scaleRange.value = 100;
-    dom.scaleVal.textContent = 100;
+    state.underlay.src = null; state.underlay.naturalWidth = 0; state.underlay.naturalHeight = 0;
+    state.underlay.scale = 1.0; state.underlay.opacity = 0.5;
+    dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
+    dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
     applyState();
   });
 
   // --- Пресеты ---
-  function loadPresets() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-      const obj = JSON.parse(raw);
-      return obj && typeof obj === 'object' ? obj : {};
-    } catch (_) {
-      return {};
-    }
-  }
-
-  function savePresets(presets) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
-    } catch (err) {
-      console.error('Не удалось сохранить пресеты:', err);
-    }
-  }
+  function loadPresets() { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return {}; const obj = JSON.parse(raw); return obj && typeof obj === 'object' ? obj : {}; } catch (_) { return {}; } }
+  function savePresets(presets) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(presets)); } catch (err) { console.error('Не удалось сохранить пресеты:', err); } }
 
   function snapshotState() {
     return {
-      heads: state.heads,
-      margin: state.margin,
+      heads: state.heads, margin: state.margin,
       head: window.Head ? window.Head.getParams() : null,
       torso: window.Torso ? window.Torso.getParams() : null,
       arm: window.Arm ? window.Arm.getParams() : null,
@@ -439,46 +281,11 @@
 
   function applySnapshot(snap) {
     if (!snap) return;
-
-    if (typeof snap.heads === 'number') {
-      state.heads = snap.heads;
-      dom.headsRange.value = snap.heads;
-    }
-    if (typeof snap.margin === 'number') {
-      state.margin = snap.margin;
-      dom.marginRange.value = snap.margin;
-    }
-
-    if (window.Head) {
-      if (snap.head && typeof snap.head === 'object') {
-        window.Head.resetParams();
-        window.Head.setParams(snap.head);
-      } else {
-        window.Head.resetParams();
-      }
-      syncHeadUIFromParams();
-    }
-
-    if (window.Torso) {
-      if (snap.torso && typeof snap.torso === 'object') {
-        window.Torso.resetParams();
-        window.Torso.setParams(snap.torso);
-      } else {
-        window.Torso.resetParams();
-      }
-      syncTorsoUIFromParams();
-    }
-
-    if (window.Arm) {
-      if (snap.arm && typeof snap.arm === 'object') {
-        window.Arm.resetParams();
-        window.Arm.setParams(snap.arm);
-      } else {
-        window.Arm.resetParams();
-      }
-      syncArmUIFromParams();
-    }
-
+    if (typeof snap.heads === 'number') { state.heads = snap.heads; dom.headsRange.value = snap.heads; }
+    if (typeof snap.margin === 'number') { state.margin = snap.margin; dom.marginRange.value = snap.margin; }
+    if (window.Head) { if (snap.head && typeof snap.head === 'object') { window.Head.resetParams(); window.Head.setParams(snap.head); } else { window.Head.resetParams(); } syncHeadUIFromParams(); }
+    if (window.Torso) { if (snap.torso && typeof snap.torso === 'object') { window.Torso.resetParams(); window.Torso.setParams(snap.torso); } else { window.Torso.resetParams(); } syncTorsoUIFromParams(); }
+    if (window.Arm) { if (snap.arm && typeof snap.arm === 'object') { window.Arm.resetParams(); window.Arm.setParams(snap.arm); } else { window.Arm.resetParams(); } syncArmUIFromParams(); }
     applyState();
   }
 
@@ -486,51 +293,21 @@
     const presets = loadPresets();
     const names = Object.keys(presets);
     dom.presetList.innerHTML = '';
-    if (names.length === 0) {
-      const li = document.createElement('li');
-      li.className = 'preset-empty';
-      li.textContent = 'Пресетов нет';
-      dom.presetList.appendChild(li);
-      return;
-    }
+    if (names.length === 0) { const li = document.createElement('li'); li.className = 'preset-empty'; li.textContent = 'Пресетов нет'; dom.presetList.appendChild(li); return; }
     names.sort((a, b) => a.localeCompare(b, 'ru'));
     for (const name of names) {
       const li = document.createElement('li');
-      const span = document.createElement('span');
-      span.className = 'preset-name';
-      span.textContent = name;
-      span.title = name;
-
-      const applyBtn = document.createElement('button');
-      applyBtn.className = 'preset-btn';
-      applyBtn.textContent = 'Применить';
-      applyBtn.addEventListener('click', () => applySnapshot(presets[name]));
-
-      const delBtn = document.createElement('button');
-      delBtn.className = 'preset-btn remove';
-      delBtn.textContent = 'Удалить';
-      delBtn.addEventListener('click', () => {
-        const all = loadPresets();
-        delete all[name];
-        savePresets(all);
-        renderPresets();
-      });
-
-      li.appendChild(span);
-      li.appendChild(applyBtn);
-      li.appendChild(delBtn);
-      dom.presetList.appendChild(li);
+      const span = document.createElement('span'); span.className = 'preset-name'; span.textContent = name; span.title = name;
+      const applyBtn = document.createElement('button'); applyBtn.className = 'preset-btn'; applyBtn.textContent = 'Применить'; applyBtn.addEventListener('click', () => applySnapshot(presets[name]));
+      const delBtn = document.createElement('button'); delBtn.className = 'preset-btn remove'; delBtn.textContent = 'Удалить'; delBtn.addEventListener('click', () => { const all = loadPresets(); delete all[name]; savePresets(all); renderPresets(); });
+      li.appendChild(span); li.appendChild(applyBtn); li.appendChild(delBtn); dom.presetList.appendChild(li);
     }
   }
 
   dom.savePreset.addEventListener('click', () => {
     const name = (dom.presetName.value || '').trim();
     if (!name) { alert('Введите название пресета'); return; }
-    const all = loadPresets();
-    all[name] = snapshotState();
-    savePresets(all);
-    dom.presetName.value = '';
-    renderPresets();
+    const all = loadPresets(); all[name] = snapshotState(); savePresets(all); dom.presetName.value = ''; renderPresets();
   });
 
   // --- Экспорт ---
@@ -540,46 +317,26 @@
     const g = clone.querySelector('#gridRect'); if (g) g.remove();
     const h = clone.querySelector('#headsLayer'); if (h) h.remove();
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    clone.setAttribute('width', String(CANVAS));
-    clone.setAttribute('height', String(CANVAS));
-    clone.setAttribute('viewBox', `0 0 ${CANVAS} ${CANVAS}`);
+    clone.setAttribute('width', String(CANVAS)); clone.setAttribute('height', String(CANVAS)); clone.setAttribute('viewBox', `0 0 ${CANVAS} ${CANVAS}`);
     return clone;
   }
 
-  function serializeSvg(svgEl) {
-    return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svgEl);
-  }
-
+  function serializeSvg(svgEl) { return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svgEl); }
   function downloadBlob(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  dom.exportSvg.addEventListener('click', () => {
-    const xml = serializeSvg(buildExportSvg());
-    downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg');
-  });
-
+  dom.exportSvg.addEventListener('click', () => { const xml = serializeSvg(buildExportSvg()); downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8' }), 'figure.svg'); });
   dom.exportPng.addEventListener('click', () => {
     const xml = serializeSvg(buildExportSvg());
     const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = CANVAS;
-      canvas.height = CANVAS;
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, CANVAS, CANVAS);
-      ctx.drawImage(img, 0, 0, CANVAS, CANVAS);
-      URL.revokeObjectURL(svgUrl);
+      const canvas = document.createElement('canvas'); canvas.width = CANVAS; canvas.height = CANVAS;
+      const ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, CANVAS, CANVAS);
+      ctx.drawImage(img, 0, 0, CANVAS, CANVAS); URL.revokeObjectURL(svgUrl);
       canvas.toBlob((blob) => { if (blob) downloadBlob(blob, 'figure.png'); }, 'image/png');
     };
     img.onerror = () => { URL.revokeObjectURL(svgUrl); alert('Не удалось экспортировать PNG'); };
@@ -589,15 +346,11 @@
   function init() {
     dom.headsRange.value = state.heads;
     dom.marginRange.value = state.margin;
-    dom.opacityRange.value = Math.round(state.underlay.opacity * 100);
-    dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
-    dom.scaleRange.value = Math.round(state.underlay.scale * 100);
-    dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
-
+    dom.opacityRange.value = Math.round(state.underlay.opacity * 100); dom.opacityVal.textContent = Math.round(state.underlay.opacity * 100);
+    dom.scaleRange.value = Math.round(state.underlay.scale * 100); dom.scaleVal.textContent = Math.round(state.underlay.scale * 100);
     syncHeadUIFromParams();
     syncTorsoUIFromParams();
     syncArmUIFromParams();
-
     renderPresets();
     applyState();
   }
