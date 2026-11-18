@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (квадратичные кривые) */
+/* js/arm.js — Этап 2: Руки (касательные к окружностям) */
 
 (function () {
   'use strict';
@@ -22,14 +22,6 @@
     rightX: 0,
     rightY: 0,
   };
-
-  const pointNames = ['UA1','UA2','UA3','UA4','UA5','FR1','FR2','FR3','FR4','FR5','FR6','FR7','FR8'];
-  for (const side of ['left', 'right']) {
-    for (const pt of pointNames) {
-      params[`${side}${pt}_dx`] = 0;
-      params[`${side}${pt}_dy`] = 0;
-    }
-  }
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
   let els = null;
@@ -71,31 +63,50 @@
     }
   }
 
-  // Построение плавной кривой через квадратичные Безье (Q)
-  function buildQuadraticPath(points) {
-    if (points.length < 2) return '';
+  // Математика: поиск внешней касательной между двумя окружностями
+  function getOuterTangent(c1, r1, c2, r2) {
+    const dx = c2.x - c1.x;
+    const dy = c2.y - c1.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 1e-6) return null;
     
-    let d = `M ${points[0].x} ${points[0].y}`;
+    // Для внешней касательной радиусы вычитаются
+    const dr = r1 - r2;
+    if (Math.abs(dr) > d) return null; // Одна окружность внутри другой
+
+    const a = Math.atan2(dy, dx);
+    const alpha = Math.acos(dr / d);
     
-    for (let i = 1; i < points.length; i++) {
-      const curr = points[i];
-      const prev = points[i - 1];
-      
-      if (i === 1) {
-        // Первая кривая идет от точки 0 к точке 1
-        // Контрольная точка - сама точка 0 (или середина)
-        d += ` Q ${prev.x} ${prev.y}, ${curr.x} ${curr.y}`;
-      } else {
-        // Для последующих точек используем точку как контрольную для плавного перехода
-        d += ` Q ${prev.x} ${prev.y}, ${curr.x} ${curr.y}`;
-      }
-    }
-    return d;
+    // Точки касания на первой и второй окружности
+    const t1x = c1.x + r1 * Math.cos(a + alpha);
+    const t1y = c1.y + r1 * Math.sin(a + alpha);
+    const t2x = c2.x + r2 * Math.cos(a + alpha);
+    const t2y = c2.y + r2 * Math.sin(a + alpha);
+    
+    return { p1: {x: t1x, y: t1y}, p2: {x: t2x, y: t2y} };
+  }
+
+  // Математика: поиск внутренней касательной (перекрестной)
+  function getInnerTangent(c1, r1, c2, r2) {
+    const dx = c2.x - c1.x;
+    const dy = c2.y - c1.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 1e-6 || d < r1 + r2) return null;
+    
+    const a = Math.atan2(dy, dx);
+    // Для внутренней касательной радиусы складываются
+    const alpha = Math.acos((r1 + r2) / d);
+    
+    const t1x = c1.x + r1 * Math.cos(a + alpha);
+    const t1y = c1.y + r1 * Math.sin(a + alpha);
+    const t2x = c2.x - r2 * Math.cos(a + alpha);
+    const t2y = c2.y - r2 * Math.sin(a + alpha);
+    
+    return { p1: {x: t1x, y: t1y}, p2: {x: t2x, y: t2y} };
   }
 
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
-    const head = window.Head && window.Head.lastGeometry;
     if (!torso) return;
 
     const { armL, armR, grid } = els;
@@ -151,7 +162,7 @@
     const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
     const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
-    // --- РИСУЕМ КРУГИ СУСТАВОВ ---
+    // --- РИСУЕМ КРУГИ СУСТАВОВ (для визуализации) ---
     armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
     armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none' }));
     armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none' }));
@@ -160,108 +171,50 @@
     armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none' }));
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
 
-    function getPt(baseX, baseY, side, ptName) {
-      const keyX = `${side}${ptName}_dx`;
-      const keyY = `${side}${ptName}_dy`;
-      return {
-        x: baseX + (params[keyX] || 0) * headH,
-        y: baseY + (params[keyY] || 0) * headH
-      };
+    // === ЛЕВАЯ РУКА ===
+    const lS = { x: leftCx, y: leftCy };
+    const lE = { x: elbowLeftCx, y: elbowLeftCy };
+    const lW = { x: wristLeftCx, y: wristLeftCy };
+
+    // Внешний контур (слева)
+    const ext1 = getOuterTangent(lS, shoulderRadius, lE, elbowRadius);
+    const ext2 = getOuterTangent(lE, elbowRadius, lW, wristRadius);
+
+    if (ext1 && ext2) {
+      // Проводим дугу по внешней стороне плеча от касательной 1 до касательной 2
+      // Для простоты и стабильности используем прямые линии между касательными точками
+      const d = `M ${ext1.p1.x} ${ext1.p1.y} L ${ext1.p2.x} ${ext1.p2.y} L ${ext2.p2.x} ${ext2.p2.y} L ${ext2.p1.x} ${ext2.p1.y}`;
+      armL.appendChild(svgEl('path', { d, fill: 'none' }));
     }
 
-    function lerp(a, b, t) {
-      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    // Внутренний контур (справа)
+    const int1 = getInnerTangent(lS, shoulderRadius, lE, elbowRadius);
+    const int2 = getInnerTangent(lE, elbowRadius, lW, wristRadius);
+
+    if (int1 && int2) {
+      const d = `M ${int1.p1.x} ${int1.p1.y} L ${int1.p2.x} ${int1.p2.y} L ${int2.p2.x} ${int2.p2.y} L ${int2.p1.x} ${int2.p1.y}`;
+      armL.appendChild(svgEl('path', { d, fill: 'none' }));
     }
 
-    // ==========================================
-    // ЛЕВАЯ РУКА
-    // ==========================================
-    const l_UA1 = getPt(leftCx - shoulderRadius, leftCy + shoulderRadius * 0.6, 'left', 'UA1');
-    const l_UA2 = getPt(leftCx - shoulderRadius, leftCy, 'left', 'UA2');
-    const l_UA3 = getPt(leftCx - shoulderRadius * 0.5, leftCy - shoulderRadius, 'left', 'UA3');
-    const l_UA4 = getPt(leftCx + shoulderRadius * 0.5, leftCy + shoulderRadius, 'left', 'UA4');
-    const l_UA5 = getPt(leftCx + shoulderRadius, leftCy, 'left', 'UA5');
+    // === ПРАВАЯ РУКА ===
+    const rS = { x: rightCx, y: rightCy };
+    const rE = { x: elbowRightCx, y: elbowRightCy };
+    const rW = { x: wristRightCx, y: wristRightCy };
 
-    const l_elbowOuter = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
-    const l_wristOuter = { x: wristLeftCx - wristRadius, y: wristLeftCy };
-    const l_elbowInner = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
-    const l_wristInner = { x: wristLeftCx + wristRadius, y: wristLeftCy };
+    const rExt1 = getOuterTangent(rS, shoulderRadius, rE, elbowRadius);
+    const rExt2 = getOuterTangent(rE, elbowRadius, rW, wristRadius);
 
-    const l_FR4 = getPt(l_elbowOuter.x, l_elbowOuter.y, 'left', 'FR4');
-    const l_FR3 = getPt(lerp(l_elbowOuter, l_wristOuter, 1/3).x, lerp(l_elbowOuter, l_wristOuter, 1/3).y, 'left', 'FR3');
-    const l_FR2 = getPt(lerp(l_elbowOuter, l_wristOuter, 2/3).x, lerp(l_elbowOuter, l_wristOuter, 2/3).y, 'left', 'FR2');
-    const l_FR1 = getPt(l_wristOuter.x, l_wristOuter.y, 'left', 'FR1');
+    if (rExt1 && rExt2) {
+      const d = `M ${rExt1.p1.x} ${rExt1.p1.y} L ${rExt1.p2.x} ${rExt1.p2.y} L ${rExt2.p2.x} ${rExt2.p2.y} L ${rExt2.p1.x} ${rExt2.p1.y}`;
+      armR.appendChild(svgEl('path', { d, fill: 'none' }));
+    }
 
-    const l_FR8 = getPt(l_elbowInner.x, l_elbowInner.y, 'left', 'FR8');
-    const l_FR7 = getPt(lerp(l_elbowInner, l_wristInner, 1/3).x, lerp(l_elbowInner, l_wristInner, 1/3).y, 'left', 'FR7');
-    const l_FR6 = getPt(lerp(l_elbowInner, l_wristInner, 2/3).x, lerp(l_elbowInner, l_wristInner, 2/3).y, 'left', 'FR6');
-    const l_FR5 = getPt(l_wristInner.x, l_wristInner.y, 'left', 'FR5');
+    const rInt1 = getInnerTangent(rS, shoulderRadius, rE, elbowRadius);
+    const rInt2 = getInnerTangent(rE, elbowRadius, rW, wristRadius);
 
-    // Контуры левой руки (Квадратичные Безье)
-    // Внимание: для Q-кривой используются пары (контрольная, конечная)
-    let leftOuter = `M ${l_UA3.x} ${l_UA3.y}`;
-    leftOuter += ` Q ${l_UA2.x} ${l_UA2.y}, ${l_UA1.x} ${l_UA1.y}`;
-    leftOuter += ` Q ${l_FR4.x} ${l_FR4.y}, ${l_FR3.x} ${l_FR3.y}`;
-    leftOuter += ` Q ${l_FR2.x} ${l_FR2.y}, ${l_FR1.x} ${l_FR1.y}`;
-    armL.appendChild(svgEl('path', { d: leftOuter, fill: 'none' }));
-
-    let leftInner = `M ${l_UA5.x} ${l_UA5.y}`;
-    leftInner += ` Q ${l_UA4.x} ${l_UA4.y}, ${l_FR8.x} ${l_FR8.y}`;
-    leftInner += ` Q ${l_FR7.x} ${l_FR7.y}, ${l_FR6.x} ${l_FR6.y}`;
-    leftInner += ` Q ${l_FR5.x} ${l_FR5.y}, ${l_FR5.x} ${l_FR5.y}`; // Упрощение для последней точки
-    armL.appendChild(svgEl('path', { d: leftInner, fill: 'none' }));
-
-    // ==========================================
-    // ПРАВАЯ РУКА
-    // ==========================================
-    const r_UA1 = getPt(rightCx + shoulderRadius, rightCy + shoulderRadius * 0.6, 'right', 'UA1');
-    const r_UA2 = getPt(rightCx + shoulderRadius, rightCy, 'right', 'UA2');
-    const r_UA3 = getPt(rightCx + shoulderRadius * 0.5, rightCy - shoulderRadius, 'right', 'UA3');
-    const r_UA4 = getPt(rightCx - shoulderRadius * 0.5, rightCy + shoulderRadius, 'right', 'UA4');
-    const r_UA5 = getPt(rightCx - shoulderRadius, rightCy, 'right', 'UA5');
-
-    const r_elbowOuter = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
-    const r_wristOuter = { x: wristRightCx + wristRadius, y: wristRightCy };
-    const r_elbowInner = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
-    const r_wristInner = { x: wristRightCx - wristRadius, y: wristRightCy };
-
-    const r_FR4 = getPt(r_elbowOuter.x, r_elbowOuter.y, 'right', 'FR4');
-    const r_FR3 = getPt(lerp(r_elbowOuter, r_wristOuter, 1/3).x, lerp(r_elbowOuter, r_wristOuter, 1/3).y, 'right', 'FR3');
-    const r_FR2 = getPt(lerp(r_elbowOuter, r_wristOuter, 2/3).x, lerp(r_elbowOuter, r_wristOuter, 2/3).y, 'right', 'FR2');
-    const r_FR1 = getPt(r_wristOuter.x, r_wristOuter.y, 'right', 'FR1');
-
-    const r_FR8 = getPt(r_elbowInner.x, r_elbowInner.y, 'right', 'FR8');
-    const r_FR7 = getPt(lerp(r_elbowInner, r_wristInner, 1/3).x, lerp(r_elbowInner, r_wristInner, 1/3).y, 'right', 'FR7');
-    const r_FR6 = getPt(lerp(r_elbowInner, r_wristInner, 2/3).x, lerp(r_elbowInner, r_wristInner, 2/3).y, 'right', 'FR6');
-    const r_FR5 = getPt(r_wristInner.x, r_wristInner.y, 'right', 'FR5');
-
-    let rightOuter = `M ${r_UA3.x} ${r_UA3.y}`;
-    rightOuter += ` Q ${r_UA2.x} ${r_UA2.y}, ${r_UA1.x} ${r_UA1.y}`;
-    rightOuter += ` Q ${r_FR4.x} ${r_FR4.y}, ${r_FR3.x} ${r_FR3.y}`;
-    rightOuter += ` Q ${r_FR2.x} ${r_FR2.y}, ${r_FR1.x} ${r_FR1.y}`;
-    armR.appendChild(svgEl('path', { d: rightOuter, fill: 'none' }));
-
-    let rightInner = `M ${r_UA5.x} ${r_UA5.y}`;
-    rightInner += ` Q ${r_UA4.x} ${r_UA4.y}, ${r_FR8.x} ${r_FR8.y}`;
-    rightInner += ` Q ${r_FR7.x} ${r_FR7.y}, ${r_FR6.x} ${r_FR6.y}`;
-    rightInner += ` Q ${r_FR5.x} ${r_FR5.y}, ${r_FR5.x} ${r_FR5.y}`;
-    armR.appendChild(svgEl('path', { d: rightInner, fill: 'none' }));
-
-    // === ОТЛАДОЧНЫЕ ТОЧКИ ===
-    const tinyR = headH * 0.01;
-    const debugPoints = [
-      { p: l_UA1, name: 'lUA1' }, { p: l_UA2, name: 'lUA2' }, { p: l_UA3, name: 'lUA3' }, { p: l_UA4, name: 'lUA4' }, { p: l_UA5, name: 'lUA5' },
-      { p: l_FR1, name: 'lFR1' }, { p: l_FR2, name: 'lFR2' }, { p: l_FR3, name: 'lFR3' }, { p: l_FR4, name: 'lFR4' },
-      { p: l_FR5, name: 'lFR5' }, { p: l_FR6, name: 'lFR6' }, { p: l_FR7, name: 'lFR7' }, { p: l_FR8, name: 'lFR8' },
-      
-      { p: r_UA1, name: 'rUA1' }, { p: r_UA2, name: 'rUA2' }, { p: r_UA3, name: 'rUA3' }, { p: r_UA4, name: 'rUA4' }, { p: r_UA5, name: 'rUA5' },
-      { p: r_FR1, name: 'rFR1' }, { p: r_FR2, name: 'rFR2' }, { p: r_FR3, name: 'rFR3' }, { p: r_FR4, name: 'rFR4' },
-      { p: r_FR5, name: 'rFR5' }, { p: r_FR6, name: 'rFR6' }, { p: r_FR7, name: 'rFR7' }, { p: r_FR8, name: 'rFR8' },
-    ];
-    for (const item of debugPoints) {
-      grid.appendChild(svgEl('circle', {
-        cx: item.p.x, cy: item.p.y, r: tinyR, fill: '#2563eb', opacity: 0.8
-      }));
+    if (rInt1 && rInt2) {
+      const d = `M ${rInt1.p1.x} ${rInt1.p1.y} L ${rInt1.p2.x} ${rInt1.p2.y} L ${rInt2.p2.x} ${rInt2.p2.y} L ${rInt2.p1.x} ${rInt2.p1.y}`;
+      armR.appendChild(svgEl('path', { d, fill: 'none' }));
     }
   }
 
