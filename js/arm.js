@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (7 кругов: П, 4, Л, 3, 2, 1, З) */
+/* js/arm.js — Этап 2: Только суставы (плечи, локти, запястья) */
 
 (function () {
   'use strict';
@@ -9,13 +9,6 @@
     shoulderRadiusMul: 1.0,
     elbowRadius: 0.08,
     wristRadius: 0.08,
-    
-    // Радиусы дополнительных кругов
-    r4: 0.07, // круг 4 (между плечом и локтем)
-    r3: 0.06, // круг 3 (между локтем и запястьем, верхний)
-    r2: 0.055, // круг 2 (середина)
-    r1: 0.05, // круг 1 (нижний)
-
     wristLeftX: -0.20,
     wristLeftY: 0,
     wristRightX: 0.20,
@@ -80,7 +73,7 @@
     const chestRx = torso.chestRx;
     const topNarrow = torso.cpTopX / chestRx;
 
-    // === БАЗОВЫЕ ЦЕНТРЫ ===
+    // === ПЛЕЧИ ===
     const baseShoulderRadius = (chestH / 3) / 2;
     const shoulderRadius = baseShoulderRadius * params.shoulderRadiusMul;
 
@@ -98,6 +91,7 @@
     const leftCy = shoulderCy + leftOffsetY;
     const rightCy = shoulderCy + rightOffsetY;
 
+    // === ЗАПЯСТЬЯ ===
     const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
     const wristRadius = params.wristRadius * headH;
 
@@ -111,80 +105,36 @@
     const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
     const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
+    // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
-    
+
     const elbowLeftCx = (leftCx + wristLeftCx) / 2;
     const elbowLeftCy = (leftCy + wristLeftCy) / 2;
     const elbowRightCx = (rightCx + wristRightCx) / 2;
     const elbowRightCy = (rightCy + wristRightCy) / 2;
 
-    // === ЛЕВАЯ РУКА (7 кругов) ===
-    const lCircles = [
-      { cx: leftCx, cy: leftCy, r: shoulderRadius }, // П (0)
-      { cx: (leftCx + elbowLeftCx) / 2, cy: (leftCy + elbowLeftCy) / 2, r: params.r4 * headH }, // 4 (1)
-      { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius }, // Л (2)
-      { cx: elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.25, cy: elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.25, r: params.r3 * headH }, // 3 (3)
-      { cx: elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.50, cy: elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.50, r: params.r2 * headH }, // 2 (4)
-      { cx: elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.75, cy: elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.75, r: params.r1 * headH }, // 1 (5)
-      { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius }, // З (6)
+    // === ОТРИСОВКА КРУГОВ ===
+    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
+    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none' }));
+    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none' }));
+
+    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none' }));
+    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none' }));
+    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
+
+    // === МАРКЕРЫ ЦЕНТРОВ ===
+    const mR = headH * 0.012;
+    const markers = [
+      { x: leftCx, y: leftCy, c: '#2563eb' },
+      { x: rightCx, y: rightCy, c: '#2563eb' },
+      { x: elbowLeftCx, y: elbowLeftCy, c: '#f59e0b' },
+      { x: elbowRightCx, y: elbowRightCy, c: '#f59e0b' },
+      { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' },
+      { x: wristRightCx, y: wristRightCy, c: '#16a34a' },
     ];
-
-    // === ПРАВАЯ РУКА (7 кругов) ===
-    const rCircles = [
-      { cx: rightCx, cy: rightCy, r: shoulderRadius },
-      { cx: (rightCx + elbowRightCx) / 2, cy: (rightCy + elbowRightCy) / 2, r: params.r4 * headH },
-      { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius },
-      { cx: elbowRightCx + (wristRightCx - elbowRightCx) * 0.25, cy: elbowRightCy + (wristRightCy - elbowRightCy) * 0.25, r: params.r3 * headH },
-      { cx: elbowRightCx + (wristRightCx - elbowRightCx) * 0.50, cy: elbowRightCy + (wristRightCy - elbowRightCy) * 0.50, r: params.r2 * headH },
-      { cx: elbowRightCx + (wristRightCx - elbowRightCx) * 0.75, cy: elbowRightCy + (wristRightCy - elbowRightCy) * 0.75, r: params.r1 * headH },
-      { cx: wristRightCx, cy: wristRightCy, r: wristRadius },
-    ];
-
-    // Рисуем круги (полупрозрачные)
-    for (const c of lCircles) {
-      armL.appendChild(svgEl('circle', { cx: c.cx, cy: c.cy, r: c.r, fill: 'none', 'stroke-opacity': 0.3 }));
-    }
-    for (const c of rCircles) {
-      armR.appendChild(svgEl('circle', { cx: c.cx, cy: c.cy, r: c.r, fill: 'none', 'stroke-opacity': 0.3 }));
-    }
-
-    // === КОНТУРЫ ===
-    function buildOuterPath(circles, sign) {
-      let path = '';
-      for (let i = 0; i < circles.length - 1; i++) {
-        const c1 = circles[i];
-        const c2 = circles[i + 1];
-        
-        const x1 = c1.cx + sign * c1.r;
-        const y1 = c1.cy;
-        const x2 = c2.cx + sign * c2.r;
-        const y2 = c2.cy;
-        
-        if (i === 0) path += `M ${x1} ${y1}`;
-        
-        // Контрольная точка для плавности
-        const midX = (x1 + x2) / 2 + sign * (c1.r + c2.r) * 0.1;
-        const midY = (y1 + y2) / 2;
-        
-        path += ` Q ${midX} ${midY}, ${x2} ${y2}`;
-      }
-      return path;
-    }
-
-    // Левая рука: внешняя (sign=-1), внутренняя (sign=1)
-    armL.appendChild(svgEl('path', { d: buildOuterPath(lCircles, -1), fill: 'none' }));
-    armL.appendChild(svgEl('path', { d: buildOuterPath(lCircles, 1), fill: 'none' }));
-
-    // Правая рука: внешняя (sign=1), внутренняя (sign=-1)
-    armR.appendChild(svgEl('path', { d: buildOuterPath(rCircles, 1), fill: 'none' }));
-    armR.appendChild(svgEl('path', { d: buildOuterPath(rCircles, -1), fill: 'none' }));
-
-    // === ОТЛАДОЧНЫЕ ЦЕНТРЫ ===
-    const tinyR = headH * 0.012;
-    const allCenters = [...lCircles, ...rCircles];
-    for (const c of allCenters) {
+    for (const pt of markers) {
       grid.appendChild(svgEl('circle', {
-        cx: c.cx, cy: c.cy, r: tinyR, fill: '#2563eb', opacity: 0.8
+        cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85
       }));
     }
   }
