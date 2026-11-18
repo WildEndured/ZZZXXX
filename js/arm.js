@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Руки (касательные к окружностям) */
+/* js/arm.js — Этап 2: Руки (окружности и касательные) */
 
 (function () {
   'use strict';
@@ -8,11 +8,15 @@
   const params = {
     shoulderRadiusMul: 1.0,
     elbowRadius: 0.08,
-    elbowLeftX: 0,
-    elbowLeftY: 0,
-    elbowRightX: 0,
-    elbowRightY: 0,
     wristRadius: 0.08,
+    
+    // Радиусы дополнительных кругов (в долях от headH)
+    r4: 0.07, // круг 4 (между плечом и локтем)
+    r3: 0.06, // круг 3 (между локтем и запястьем, верхний)
+    r2: 0.055, // круг 2
+    r1: 0.05, // круг 1 (ближе к запястью)
+
+    // Позиционирование (как было)
     wristLeftX: -0.20,
     wristLeftY: 0,
     wristRightX: 0.20,
@@ -63,50 +67,9 @@
     }
   }
 
-  // Математика: поиск внешней касательной между двумя окружностями
-  function getOuterTangent(c1, r1, c2, r2) {
-    const dx = c2.x - c1.x;
-    const dy = c2.y - c1.y;
-    const d = Math.hypot(dx, dy);
-    if (d < 1e-6) return null;
-    
-    // Для внешней касательной радиусы вычитаются
-    const dr = r1 - r2;
-    if (Math.abs(dr) > d) return null; // Одна окружность внутри другой
-
-    const a = Math.atan2(dy, dx);
-    const alpha = Math.acos(dr / d);
-    
-    // Точки касания на первой и второй окружности
-    const t1x = c1.x + r1 * Math.cos(a + alpha);
-    const t1y = c1.y + r1 * Math.sin(a + alpha);
-    const t2x = c2.x + r2 * Math.cos(a + alpha);
-    const t2y = c2.y + r2 * Math.sin(a + alpha);
-    
-    return { p1: {x: t1x, y: t1y}, p2: {x: t2x, y: t2y} };
-  }
-
-  // Математика: поиск внутренней касательной (перекрестной)
-  function getInnerTangent(c1, r1, c2, r2) {
-    const dx = c2.x - c1.x;
-    const dy = c2.y - c1.y;
-    const d = Math.hypot(dx, dy);
-    if (d < 1e-6 || d < r1 + r2) return null;
-    
-    const a = Math.atan2(dy, dx);
-    // Для внутренней касательной радиусы складываются
-    const alpha = Math.acos((r1 + r2) / d);
-    
-    const t1x = c1.x + r1 * Math.cos(a + alpha);
-    const t1y = c1.y + r1 * Math.sin(a + alpha);
-    const t2x = c2.x - r2 * Math.cos(a + alpha);
-    const t2y = c2.y - r2 * Math.sin(a + alpha);
-    
-    return { p1: {x: t1x, y: t1y}, p2: {x: t2x, y: t2y} };
-  }
-
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
+    const head = window.Head && window.Head.lastGeometry;
     if (!torso) return;
 
     const { armL, armR, grid } = els;
@@ -152,70 +115,82 @@
 
     const elbowRadius = params.elbowRadius * headH;
 
-    const elbowLeftOffsetX = params.elbowLeftX * headH;
-    const elbowLeftOffsetY = params.elbowLeftY * headH;
-    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
-    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowLeftOffsetY;
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2;
+    const elbowRightCx = (rightCx + wristRightCx) / 2;
+    const elbowRightCy = (rightCy + wristRightCy) / 2;
 
-    const elbowRightOffsetX = params.elbowRightX * headH;
-    const elbowRightOffsetY = params.elbowRightY * headH;
-    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
-    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
-
-    // --- РИСУЕМ КРУГИ СУСТАВОВ (для визуализации) ---
-    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
-    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none' }));
-    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none' }));
-
-    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none' }));
-    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none' }));
-    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
+    // Вспомогательная функция: рисуем круги и возвращаем их данные
+    function drawJoints(cxList, cyList, rList, group) {
+      for (let i = 0; i < cxList.length; i++) {
+        group.appendChild(svgEl('circle', { cx: cxList[i], cy: cyList[i], r: rList[i], fill: 'none', 'stroke-opacity': 0.3 }));
+      }
+    }
 
     // === ЛЕВАЯ РУКА ===
-    const lS = { x: leftCx, y: leftCy };
-    const lE = { x: elbowLeftCx, y: elbowLeftCy };
-    const lW = { x: wristLeftCx, y: wristLeftCy };
+    // Круги: П (0), 4 (1), Л (2), 3 (3), 2 (4), 1 (5), З (6)
+    const lR = [shoulderRadius, params.r4 * headH, elbowRadius, params.r3 * headH, params.r2 * headH, params.r1 * headH, wristRadius];
+    const lCx = [leftCx, (leftCx + elbowLeftCx) / 2, elbowLeftCx, (elbowLeftCx + wristLeftCx) / 2, elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.66, elbowLeftCx + (wristLeftCx - elbowLeftCx) * 0.33, wristLeftCx];
+    const lCy = [leftCy, (leftCy + elbowLeftCy) / 2, elbowLeftCy, (elbowLeftCy + wristLeftCy) / 2, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.66, elbowLeftCy + (wristLeftCy - elbowLeftCy) * 0.33, wristLeftCy];
 
-    // Внешний контур (слева)
-    const ext1 = getOuterTangent(lS, shoulderRadius, lE, elbowRadius);
-    const ext2 = getOuterTangent(lE, elbowRadius, lW, wristRadius);
-
-    if (ext1 && ext2) {
-      // Проводим дугу по внешней стороне плеча от касательной 1 до касательной 2
-      // Для простоты и стабильности используем прямые линии между касательными точками
-      const d = `M ${ext1.p1.x} ${ext1.p1.y} L ${ext1.p2.x} ${ext1.p2.y} L ${ext2.p2.x} ${ext2.p2.y} L ${ext2.p1.x} ${ext2.p1.y}`;
-      armL.appendChild(svgEl('path', { d, fill: 'none' }));
-    }
-
-    // Внутренний контур (справа)
-    const int1 = getInnerTangent(lS, shoulderRadius, lE, elbowRadius);
-    const int2 = getInnerTangent(lE, elbowRadius, lW, wristRadius);
-
-    if (int1 && int2) {
-      const d = `M ${int1.p1.x} ${int1.p1.y} L ${int1.p2.x} ${int1.p2.y} L ${int2.p2.x} ${int2.p2.y} L ${int2.p1.x} ${int2.p1.y}`;
-      armL.appendChild(svgEl('path', { d, fill: 'none' }));
-    }
+    drawJoints(lCx, lCy, lR, armL);
 
     // === ПРАВАЯ РУКА ===
-    const rS = { x: rightCx, y: rightCy };
-    const rE = { x: elbowRightCx, y: elbowRightCy };
-    const rW = { x: wristRightCx, y: wristRightCy };
+    const rR = [shoulderRadius, params.r4 * headH, elbowRadius, params.r3 * headH, params.r2 * headH, params.r1 * headH, wristRadius];
+    const rCx = [rightCx, (rightCx + elbowRightCx) / 2, elbowRightCx, (elbowRightCx + wristRightCx) / 2, elbowRightCx + (wristRightCx - elbowRightCx) * 0.66, elbowRightCx + (wristRightCx - elbowRightCx) * 0.33, wristRightCx];
+    const rCy = [rightCy, (rightCy + elbowRightCy) / 2, elbowRightCy, (elbowRightCy + wristRightCy) / 2, elbowRightCy + (wristRightCy - elbowRightCy) * 0.66, elbowRightCy + (wristRightCy - elbowRightCy) * 0.33, wristRightCy];
 
-    const rExt1 = getOuterTangent(rS, shoulderRadius, rE, elbowRadius);
-    const rExt2 = getOuterTangent(rE, elbowRadius, rW, wristRadius);
+    drawJoints(rCx, rCy, rR, armR);
 
-    if (rExt1 && rExt2) {
-      const d = `M ${rExt1.p1.x} ${rExt1.p1.y} L ${rExt1.p2.x} ${rExt1.p2.y} L ${rExt2.p2.x} ${rExt2.p2.y} L ${rExt2.p1.x} ${rExt2.p1.y}`;
-      armR.appendChild(svgEl('path', { d, fill: 'none' }));
+    // --- ФУНКЦИЯ ДЛЯ ПОСТРОЕНИЯ КАСАТЕЛЬНЫХ ---
+    function buildTangentPath(cxList, cyList, rList, isLeft) {
+      let path = '';
+      
+      // Внешняя сторона (для левой руки - это левая сторона, для правой - правая)
+      const sign = isLeft ? -1 : 1;
+      
+      // Верхняя касательная (внешняя)
+      for (let i = 0; i < cxList.length - 1; i++) {
+        const x1 = cxList[i] + sign * rList[i];
+        const y1 = cyList[i];
+        const x2 = cxList[i+1] + sign * rList[i+1];
+        const y2 = cyList[i+1];
+        
+        if (i === 0) path += `M ${x1} ${y1}`;
+        // Квадратичная кривая для плавности (контрольная точка между ними)
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        // Для плавности используем Q с контрольной точкой посередине
+        path += ` Q ${midX + sign * rList[i]*0.2} ${midY}, ${x2} ${y2}`;
+      }
+      return path;
     }
 
-    const rInt1 = getInnerTangent(rS, shoulderRadius, rE, elbowRadius);
-    const rInt2 = getInnerTangent(rE, elbowRadius, rW, wristRadius);
+    // Рисуем внешние контуры
+    armL.appendChild(svgEl('path', { d: buildTangentPath(lCx, lCy, lR, true), fill: 'none' }));
+    armR.appendChild(svgEl('path', { d: buildTangentPath(rCx, rCy, rR, false), fill: 'none' }));
 
-    if (rInt1 && rInt2) {
-      const d = `M ${rInt1.p1.x} ${rInt1.p1.y} L ${rInt1.p2.x} ${rInt1.p2.y} L ${rInt2.p2.x} ${rInt2.p2.y} L ${rInt2.p1.x} ${rInt2.p1.y}`;
-      armR.appendChild(svgEl('path', { d, fill: 'none' }));
+    // Рисуем внутренние контуры (просто зеркально)
+    function buildInnerTangentPath(cxList, cyList, rList, isLeft) {
+      let path = '';
+      const sign = isLeft ? 1 : -1;
+      
+      for (let i = 0; i < cxList.length - 1; i++) {
+        const x1 = cxList[i] + sign * rList[i];
+        const y1 = cyList[i];
+        const x2 = cxList[i+1] + sign * rList[i+1];
+        const y2 = cyList[i+1];
+        
+        if (i === 0) path += `M ${x1} ${y1}`;
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        path += ` Q ${midX + sign * rList[i]*0.2} ${midY}, ${x2} ${y2}`;
+      }
+      return path;
     }
+
+    armL.appendChild(svgEl('path', { d: buildInnerTangentPath(lCx, lCy, lR, true), fill: 'none' }));
+    armR.appendChild(svgEl('path', { d: buildInnerTangentPath(rCx, rCy, rR, false), fill: 'none' }));
   }
 
   function update(geo) {
