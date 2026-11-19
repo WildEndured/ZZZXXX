@@ -9,9 +9,7 @@
     heads: 5,
     margin: 0,
     underlay: { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 },
-    head: null,
-    torso: null,
-    arm: null,
+    head: null, torso: null, arm: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -94,14 +92,14 @@
     if (window.Leg) window.Leg.update(geo);
   }
 
-  function applyState() {
+  window.applyState = function() {
     const geo = computeGeometry();
     renderHeadsGrid(geo);
     syncFigureModules(geo);
     renderUnderlay(geo);
     dom.headsVal.textContent = state.heads;
     dom.marginVal.textContent = state.margin;
-  }
+  };
 
   function renderUnderlay(geo) {
     const u = state.underlay;
@@ -126,8 +124,8 @@
     dom.removeUnderlay.disabled = false;
   }
 
-  dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); applyState(); });
-  dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); applyState(); });
+  dom.headsRange.addEventListener('input', (e) => { state.heads = parseFloat(e.target.value); window.applyState(); });
+  dom.marginRange.addEventListener('input', (e) => { state.margin = parseInt(e.target.value, 10); window.applyState(); });
 
   function fmtSignedPercent(v) { const p = Math.round(v * 1000) / 10; return p > 0 ? `+${p}` : String(p); }
 
@@ -153,7 +151,7 @@
       if (!window.Head) return;
       window.Head.setParams({ [key]: v });
       valEl.textContent = format(v);
-      applyState();
+      window.applyState();
     });
   }
 
@@ -188,7 +186,7 @@
       if (!window.Torso) return;
       window.Torso.setParams({ [key]: v });
       valEl.textContent = format(v);
-      applyState();
+      window.applyState();
     });
   }
 
@@ -221,7 +219,7 @@
       if (!window.Arm) return;
       window.Arm.setParams({ [key]: v });
       valEl.textContent = format(v);
-      applyState();
+      window.applyState();
     });
   }
 
@@ -248,7 +246,7 @@
         state.underlay.scale = 1.0;
         dom.scaleRange.value = 100;
         dom.scaleVal.textContent = 100;
-        applyState();
+        window.applyState();
       };
       img.src = dataUrl;
     };
@@ -256,14 +254,14 @@
     e.target.value = '';
   });
 
-  dom.opacityRange.addEventListener('input', (e) => { state.underlay.opacity = parseInt(e.target.value, 10) / 100; dom.opacityVal.textContent = e.target.value; applyState(); });
-  dom.scaleRange.addEventListener('input', (e) => { state.underlay.scale = parseInt(e.target.value, 10) / 100; dom.scaleVal.textContent = e.target.value; applyState(); });
+  dom.opacityRange.addEventListener('input', (e) => { state.underlay.opacity = parseInt(e.target.value, 10) / 100; dom.opacityVal.textContent = e.target.value; window.applyState(); });
+  dom.scaleRange.addEventListener('input', (e) => { state.underlay.scale = parseInt(e.target.value, 10) / 100; dom.scaleVal.textContent = e.target.value; window.applyState(); });
   dom.removeUnderlay.addEventListener('click', () => {
     state.underlay.src = null; state.underlay.naturalWidth = 0; state.underlay.naturalHeight = 0;
     state.underlay.scale = 1.0; state.underlay.opacity = 0.5;
     dom.opacityRange.value = 50; dom.opacityVal.textContent = 50;
     dom.scaleRange.value = 100; dom.scaleVal.textContent = 100;
-    applyState();
+    window.applyState();
   });
 
   // --- Пресеты ---
@@ -286,7 +284,7 @@
     if (window.Head) { if (snap.head && typeof snap.head === 'object') { window.Head.resetParams(); window.Head.setParams(snap.head); } else { window.Head.resetParams(); } syncHeadUIFromParams(); }
     if (window.Torso) { if (snap.torso && typeof snap.torso === 'object') { window.Torso.resetParams(); window.Torso.setParams(snap.torso); } else { window.Torso.resetParams(); } syncTorsoUIFromParams(); }
     if (window.Arm) { if (snap.arm && typeof snap.arm === 'object') { window.Arm.resetParams(); window.Arm.setParams(snap.arm); } else { window.Arm.resetParams(); } syncArmUIFromParams(); }
-    applyState();
+    window.applyState();
   }
 
   function renderPresets() {
@@ -352,7 +350,7 @@
     syncTorsoUIFromParams();
     syncArmUIFromParams();
     renderPresets();
-    applyState();
+    window.applyState();
   }
 
   init();
