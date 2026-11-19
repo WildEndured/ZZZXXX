@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + редактор Безье */
+/* js/arm.js — Этап 2: Только суставы (с учётом ползунков) */
 
 (function () {
   'use strict';
@@ -14,7 +14,6 @@
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
   };
 
-  const editor = { points: [] };
   const DEFAULT_PARAMS = Object.freeze({ ...params });
   let els = null;
 
@@ -53,24 +52,6 @@
     }
   }
 
-  // Плавная кривая через все точки (Catmull-Rom)
-  function buildSmoothPath(points) {
-    if (points.length < 2) return '';
-    let d = `M ${points[0].x} ${points[0].y}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i > 0 ? i - 1 : i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
-      const cp1x = p1.x + (p2.x - p0.x) / 6;
-      const cp1y = p1.y + (p2.y - p0.y) / 6;
-      const cp2x = p2.x - (p3.x - p1.x) / 6;
-      const cp2y = p2.y - (p3.y - p1.y) / 6;
-      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
-    }
-    return d;
-  }
-
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
     if (!torso) return;
@@ -85,147 +66,69 @@
     const chestRx = torso.chestRx;
     const topNarrow = torso.cpTopX / chestRx;
 
-    // === СУСТАВЫ ===
+    // Смещения всей руки
+    const leftOffsetX = params.leftX * headH;
+    const leftOffsetY = params.leftY * headH;
+    const rightOffsetX = params.rightX * headH;
+    const rightOffsetY = params.rightY * headH;
+
+    // === ПЛЕЧИ ===
     const baseShoulderRadius = (chestH / 3) / 2;
     const shoulderRadius = baseShoulderRadius * params.shoulderRadiusMul;
+
     const shoulderCy = torso.chestY0 + shoulderRadius;
     const t = (shoulderCy - torso.chestY0) / chestH;
     const curveWidth = getChestCurveWidth(t, chestRx, topNarrow);
 
-    const leftCx = torso.cx - curveWidth - shoulderRadius;
-    const rightCx = torso.cx + curveWidth + shoulderRadius;
-    const leftCy = shoulderCy;
-    const rightCy = shoulderCy;
+    const leftCx = torso.cx - curveWidth - shoulderRadius + leftOffsetX;
+    const rightCx = torso.cx + curveWidth + shoulderRadius + rightOffsetX;
+    const leftCy = shoulderCy + leftOffsetY;
+    const rightCy = shoulderCy + rightOffsetY;
 
+    // === ЗАПЯСТЬЯ ===
     const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
     const wristRadius = params.wristRadius * headH;
-    const wristLeftCy = pelvisBottomY - wristRadius;
-    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5;
-    const wristRightCy = pelvisBottomY - wristRadius;
-    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5;
 
+    const wristLeftOffsetX = params.wristLeftX * headH;
+    const wristLeftOffsetY = params.wristLeftY * headH;
+    const wristLeftCy = pelvisBottomY - wristRadius + wristLeftOffsetY + leftOffsetY;
+    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
+
+    const wristRightOffsetX = params.wristRightX * headH;
+    const wristRightOffsetY = params.wristRightY * headH;
+    const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
+    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
+
+    // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
+
     const elbowLeftCx = (leftCx + wristLeftCx) / 2;
     const elbowLeftCy = (leftCy + wristLeftCy) / 2;
     const elbowRightCx = (rightCx + wristRightCx) / 2;
     const elbowRightCy = (rightCy + wristRightCy) / 2;
 
-    // Рисуем суставы (видимые, не полупрозрачные, чтобы было видно)
-    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none', 'stroke-width': 3 }));
-    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none', 'stroke-width': 3 }));
-    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none', 'stroke-width': 3 }));
+    // === ОТРИСОВКА ===
+    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
+    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none' }));
+    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none' }));
 
-    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none', 'stroke-width': 3 }));
-    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-width': 3 }));
-    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-width': 3 }));
+    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none' }));
+    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none' }));
+    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
 
-    // === КРИВАЯ БЕЗЬЕ ===
-    const canvasW = geo.canvas;
-    const canvasH = geo.canvas;
-
-    if (editor.points.length > 0) {
-      const pixels = editor.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
-
-      if (pixels.length >= 2) {
-        armL.appendChild(svgEl('path', {
-          d: buildSmoothPath(pixels),
-          fill: 'none',
-          stroke: '#dc2626',
-          'stroke-width': 4,
-        }));
-      }
-
-      pixels.forEach((p, i) => {
-        armL.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 10, fill: '#f59e0b', stroke: '#dc2626', 'stroke-width': 2 }));
-        const text = svgEl('text', { x: p.x + 14, y: p.y - 14, 'font-size': 20, fill: '#dc2626', 'font-family': 'monospace' });
-        text.textContent = `P${i}`;
-        armL.appendChild(text);
-      });
+    // Маркеры центров
+    const mR = headH * 0.012;
+    const markers = [
+      { x: leftCx, y: leftCy, c: '#2563eb' },
+      { x: rightCx, y: rightCy, c: '#2563eb' },
+      { x: elbowLeftCx, y: elbowLeftCy, c: '#f59e0b' },
+      { x: elbowRightCx, y: elbowRightCy, c: '#f59e0b' },
+      { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' },
+      { x: wristRightCx, y: wristRightCy, c: '#16a34a' },
+    ];
+    for (const pt of markers) {
+      grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
     }
-  }
-
-  function renderPointsList() {
-    const container = document.getElementById('bezierPointsList');
-    if (!container) return;
-    container.innerHTML = '';
-
-    editor.points.forEach((pt, i) => {
-      const div = document.createElement('div');
-      div.style.padding = '6px';
-      div.style.border = '1px solid #eee';
-      div.style.borderRadius = '4px';
-      div.style.fontSize = '12px';
-      div.style.display = 'flex';
-      div.style.justifyContent = 'space-between';
-      div.style.alignItems = 'center';
-      
-      const info = document.createElement('div');
-      info.innerHTML = `<b style="color:#dc2626">P${i}</b> &nbsp; X: ${pt.x.toFixed(4)}, Y: ${pt.y.toFixed(4)}`;
-      
-      const delBtn = document.createElement('button');
-      delBtn.textContent = '×';
-      delBtn.style.padding = '2px 6px';
-      delBtn.style.background = '#dc2626';
-      delBtn.style.color = 'white';
-      delBtn.style.border = 'none';
-      delBtn.style.borderRadius = '4px';
-      delBtn.style.cursor = 'pointer';
-      delBtn.onclick = () => {
-        editor.points.splice(i, 1);
-        renderPointsList();
-        if (window.applyState) window.applyState();
-      };
-
-      div.appendChild(info);
-      div.appendChild(delBtn);
-      container.appendChild(div);
-    });
-
-    if (editor.points.length === 0) {
-      const p = document.createElement('p');
-      p.textContent = 'Точки не заданы. Кликните по холсту.';
-      p.style.color = '#999';
-      p.style.fontSize = '12px';
-      container.appendChild(p);
-    }
-  }
-
-  function handleCanvasClick(e) {
-    const svg = document.getElementById('svg');
-    const rect = svg.getBoundingClientRect();
-    // Учитываем preserveAspectRatio (xMidYMid meet)
-    const scale = Math.min(rect.width / 4096, rect.height / 4096);
-    const offsetX = (rect.width - 4096 * scale) / 2;
-    const offsetY = (rect.height - 4096 * scale) / 2;
-
-    const x = (e.clientX - rect.left - offsetX) / (4096 * scale);
-    const y = (e.clientY - rect.top - offsetY) / (4096 * scale);
-
-    if (x < 0 || x > 1 || y < 0 || y > 1) return; // Клик вне холста
-
-    editor.points.push({ x, y });
-    renderPointsList();
-    if (window.applyState) window.applyState();
-  }
-
-  function resetEditor() {
-    editor.points = [];
-    renderPointsList();
-    if (window.applyState) window.applyState();
-  }
-
-  function initEditor() {
-    const svg = document.getElementById('svg');
-    if (svg) {
-      svg.removeEventListener('click', handleCanvasClick);
-      svg.addEventListener('click', handleCanvasClick);
-    }
-    const resetBtn = document.getElementById('bezierReset');
-    if (resetBtn) {
-      resetBtn.removeEventListener('click', resetEditor);
-      resetBtn.addEventListener('click', resetEditor);
-    }
-    renderPointsList();
   }
 
   function update(geo) {
@@ -242,11 +145,5 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  // Инициализация обработчиков
-  document.addEventListener('DOMContentLoaded', initEditor);
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(initEditor, 0);
-  }
-
-  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, editor, initEditor };
+  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
 })();
