@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Редактор кривой Безье (неограниченно) */
+/* js/arm.js — Этап 2: Суставы + редактор Безье */
 
 (function () {
   'use strict';
@@ -14,10 +14,7 @@
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
   };
 
-  const editor = {
-    points: [], // { x, y }
-  };
-
+  const editor = { points: [] };
   const DEFAULT_PARAMS = Object.freeze({ ...params });
   let els = null;
 
@@ -47,7 +44,16 @@
     return node;
   }
 
-  // Построение плавной кривой через все точки (Catmull-Rom -> Bezier)
+  function getChestCurveWidth(t, chestRx, topNarrow) {
+    if (t <= 0.6) {
+      const tNorm = t / 0.6;
+      return (chestRx * topNarrow) + (chestRx - (chestRx * topNarrow)) * Math.sin(tNorm * Math.PI / 2);
+    } else {
+      return chestRx;
+    }
+  }
+
+  // Плавная кривая через все точки (Catmull-Rom)
   function buildSmoothPath(points) {
     if (points.length < 2) return '';
     let d = `M ${points[0].x} ${points[0].y}`;
@@ -56,12 +62,10 @@
       const p1 = points[i];
       const p2 = points[i + 1];
       const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
-      
       const cp1x = p1.x + (p2.x - p0.x) / 6;
       const cp1y = p1.y + (p2.y - p0.y) / 6;
       const cp2x = p2.x - (p3.x - p1.x) / 6;
       const cp2y = p2.y - (p3.y - p1.y) / 6;
-      
       d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
     }
     return d;
@@ -76,30 +80,70 @@
     clear(armR);
     clear(grid);
 
+    const headH = torso.headH;
+    const chestH = torso.chestHeightPx;
+    const chestRx = torso.chestRx;
+    const topNarrow = torso.cpTopX / chestRx;
+
+    // === СУСТАВЫ ===
+    const baseShoulderRadius = (chestH / 3) / 2;
+    const shoulderRadius = baseShoulderRadius * params.shoulderRadiusMul;
+    const shoulderCy = torso.chestY0 + shoulderRadius;
+    const t = (shoulderCy - torso.chestY0) / chestH;
+    const curveWidth = getChestCurveWidth(t, chestRx, topNarrow);
+
+    const leftCx = torso.cx - curveWidth - shoulderRadius;
+    const rightCx = torso.cx + curveWidth + shoulderRadius;
+    const leftCy = shoulderCy;
+    const rightCy = shoulderCy;
+
+    const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
+    const wristRadius = params.wristRadius * headH;
+    const wristLeftCy = pelvisBottomY - wristRadius;
+    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5;
+    const wristRightCy = pelvisBottomY - wristRadius;
+    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5;
+
+    const elbowRadius = params.elbowRadius * headH;
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2;
+    const elbowRightCx = (rightCx + wristRightCx) / 2;
+    const elbowRightCy = (rightCy + wristRightCy) / 2;
+
+    // Рисуем суставы (видимые, не полупрозрачные, чтобы было видно)
+    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none', 'stroke-width': 3 }));
+    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none', 'stroke-width': 3 }));
+    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none', 'stroke-width': 3 }));
+
+    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none', 'stroke-width': 3 }));
+    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-width': 3 }));
+    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-width': 3 }));
+
+    // === КРИВАЯ БЕЗЬЕ ===
     const canvasW = geo.canvas;
     const canvasH = geo.canvas;
 
-    // Отрисовка кривой по всем точкам
     if (editor.points.length > 0) {
       const pixels = editor.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
 
-      // Рисуем плавную кривую
       if (pixels.length >= 2) {
-        const pathData = buildSmoothPath(pixels);
-        armL.appendChild(svgEl('path', { d: pathData, fill: 'none', stroke: '#dc2626', 'stroke-width': 3 }));
+        armL.appendChild(svgEl('path', {
+          d: buildSmoothPath(pixels),
+          fill: 'none',
+          stroke: '#dc2626',
+          'stroke-width': 4,
+        }));
       }
 
-      // Рисуем точки и подписи
       pixels.forEach((p, i) => {
-        armL.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 8, fill: '#f59e0b', stroke: '#dc2626', 'stroke-width': 2 }));
-        const text = svgEl('text', { x: p.x + 12, y: p.y - 12, 'font-size': 16, fill: '#dc2626', 'font-family': 'monospace' });
+        armL.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 10, fill: '#f59e0b', stroke: '#dc2626', 'stroke-width': 2 }));
+        const text = svgEl('text', { x: p.x + 14, y: p.y - 14, 'font-size': 20, fill: '#dc2626', 'font-family': 'monospace' });
         text.textContent = `P${i}`;
         armL.appendChild(text);
       });
     }
   }
 
-  // --- ОБНОВЛЕНИЕ UI СПИСКА ТОЧЕК ---
   function renderPointsList() {
     const container = document.getElementById('bezierPointsList');
     if (!container) return;
@@ -116,7 +160,7 @@
       div.style.alignItems = 'center';
       
       const info = document.createElement('div');
-      info.innerHTML = `<b style="color:#f59e0b">P${i}</b> &nbsp; X: ${pt.x.toFixed(4)}, Y: ${pt.y.toFixed(4)}`;
+      info.innerHTML = `<b style="color:#dc2626">P${i}</b> &nbsp; X: ${pt.x.toFixed(4)}, Y: ${pt.y.toFixed(4)}`;
       
       const delBtn = document.createElement('button');
       delBtn.textContent = '×';
@@ -146,19 +190,24 @@
     }
   }
 
-  // --- ОБРАБОТКА КЛИКОВ ---
   function handleCanvasClick(e) {
     const svg = document.getElementById('svg');
     const rect = svg.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
+    // Учитываем preserveAspectRatio (xMidYMid meet)
+    const scale = Math.min(rect.width / 4096, rect.height / 4096);
+    const offsetX = (rect.width - 4096 * scale) / 2;
+    const offsetY = (rect.height - 4096 * scale) / 2;
+
+    const x = (e.clientX - rect.left - offsetX) / (4096 * scale);
+    const y = (e.clientY - rect.top - offsetY) / (4096 * scale);
+
+    if (x < 0 || x > 1 || y < 0 || y > 1) return; // Клик вне холста
 
     editor.points.push({ x, y });
     renderPointsList();
     if (window.applyState) window.applyState();
   }
 
-  // --- СБРОС ---
   function resetEditor() {
     editor.points = [];
     renderPointsList();
@@ -193,10 +242,11 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
+  // Инициализация обработчиков
   document.addEventListener('DOMContentLoaded', initEditor);
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(initEditor, 0);
   }
 
-  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, editor };
+  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, editor, initEditor };
 })();
