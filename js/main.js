@@ -54,6 +54,11 @@
     armWristRightX: $('armWristRightX'), armWristRightXVal: $('armWristRightXVal'),
     armWristRightY: $('armWristRightY'), armWristRightYVal: $('armWristRightYVal'),
 
+    armForearmElbowAngle: $('armForearmElbowAngle'), armForearmElbowAngleVal: $('armForearmElbowAngleVal'),
+    armForearmWristAngle: $('armForearmWristAngle'), armForearmWristAngleVal: $('armForearmWristAngleVal'),
+    armForearmP1X: $('armForearmP1X'), armForearmP1XVal: $('armForearmP1XVal'),
+    armForearmP1Y: $('armForearmP1Y'), armForearmP1YVal: $('armForearmP1YVal'),
+
     underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
     scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
 
@@ -102,6 +107,7 @@
     renderHeadsGrid(geo);
     syncFigureModules(geo);
     renderUnderlay(geo);
+    if (window.Editor) window.Editor.drawEditor();
     dom.headsVal.textContent = state.heads;
     dom.marginVal.textContent = state.margin;
   };
@@ -221,6 +227,15 @@
     dom.armWristLeftY.value = p.wristLeftY; dom.armWristLeftYVal.textContent = fmtSignedPercent(p.wristLeftY);
     dom.armWristRightX.value = p.wristRightX; dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
     dom.armWristRightY.value = p.wristRightY; dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
+
+    dom.armForearmElbowAngle.value = p.forearmElbowAttachAngle;
+    dom.armForearmElbowAngleVal.textContent = Math.round(p.forearmElbowAttachAngle);
+    dom.armForearmWristAngle.value = p.forearmWristAttachAngle;
+    dom.armForearmWristAngleVal.textContent = Math.round(p.forearmWristAttachAngle);
+    dom.armForearmP1X.value = p.forearmP1OffsetX;
+    dom.armForearmP1XVal.textContent = fmtSignedPercent(p.forearmP1OffsetX);
+    dom.armForearmP1Y.value = p.forearmP1OffsetY;
+    dom.armForearmP1YVal.textContent = fmtSignedPercent(p.forearmP1OffsetY);
   }
 
   function bindArmInput(input, valEl, key, format) {
@@ -247,6 +262,11 @@
   bindArmInput(dom.armWristLeftY, dom.armWristLeftYVal, 'wristLeftY', fmtSignedPercent);
   bindArmInput(dom.armWristRightX, dom.armWristRightXVal, 'wristRightX', fmtSignedPercent);
   bindArmInput(dom.armWristRightY, dom.armWristRightYVal, 'wristRightY', fmtSignedPercent);
+
+  bindArmInput(dom.armForearmElbowAngle, dom.armForearmElbowAngleVal, 'forearmElbowAttachAngle', (v) => Math.round(v));
+  bindArmInput(dom.armForearmWristAngle, dom.armForearmWristAngleVal, 'forearmWristAttachAngle', (v) => Math.round(v));
+  bindArmInput(dom.armForearmP1X, dom.armForearmP1XVal, 'forearmP1OffsetX', fmtSignedPercent);
+  bindArmInput(dom.armForearmP1Y, dom.armForearmP1YVal, 'forearmP1OffsetY', fmtSignedPercent);
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
