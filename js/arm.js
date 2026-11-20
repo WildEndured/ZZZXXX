@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контур предплечья (по точкам P0-P2) */
+/* js/arm.js — Этап 2: Суставы + редактируемый контур предплечья */
 
 (function () {
   'use strict';
@@ -18,8 +18,11 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
-    // Коэффициент выпуклости предплечья
-    forearmCurvature: 1.0, 
+    // Новые параметры для предплечья
+    forearmElbowAttachAngle: 0, // Угол на локте (градусы)
+    forearmWristAttachAngle: 0, // Угол на запястье (градусы)
+    forearmP1OffsetX: 0,        // Смещение P1 по X (доли headH)
+    forearmP1OffsetY: 0,        // Смещение P1 по Y (доли headH)
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -60,9 +63,19 @@
     }
   }
 
-  // Функция для рисования контура предплечья по правилу P0 -> P1 -> P2
+  // Находит точку на окружности по углу (в градусах)
+  // 0° = правая крайняя точка, 90° = верхняя, -90° = нижняя
+  function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
+    const rad = (angleDeg * Math.PI) / 180;
+    // Для левой руки зеркалим угол (чтобы 0° был слева)
+    const sign = isLeftSide ? -1 : 1;
+    return {
+      x: cx + sign * r * Math.cos(rad),
+      y: cy - r * Math.sin(rad) // В SVG ось Y вниз, поэтому минус
+    };
+  }
+
   function drawForearmContour(group, p0, p1, p2) {
-    // Строим квадратичную кривую Безье
     const d = `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`;
     group.appendChild(svgEl('path', { d, fill: 'none' }));
   }
@@ -135,47 +148,29 @@
     armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    // === КОНТУР ПРЕДПЛЕЧЬЯ (ПО ТВОИМ ТОЧКАМ) ===
-    // Правая рука
-    const rightP0 = { x: wristRightCx + wristRadius, y: wristRightCy };
-    const rightP2 = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
+    // === КОНТУР ПРЕДПЛЕЧЬЯ (С ПЛАВАЮЩИМИ ТОЧКАМИ) ===
     
-    const midX = (rightP0.x + rightP2.x) / 2;
-    const midY = (rightP0.y + rightP2.y) / 2;
+    // ПРАВАЯ РУКА
+    // P0 на запястье (угол из ползунка)
+    const rightP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
+    // P2 на локте (угол из ползунка)
+    const rightP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
     
-    const dx = rightP2.x - rightP0.x;
-    const dy = rightP2.y - rightP0.y;
-    
-    const len = Math.sqrt(dx*dx + dy*dy);
-    const nx = -dy / len;
-    const ny = dx / len;
-    
-    const curveOffset = len * 0.15 * params.forearmCurvature;
-    
+    // P1 = середина P0-P2 + смещение
     const rightP1 = {
-      x: midX + nx * curveOffset,
-      y: midY + ny * curveOffset
+      x: (rightP0.x + rightP2.x) / 2 + params.forearmP1OffsetX * headH,
+      y: (rightP0.y + rightP2.y) / 2 + params.forearmP1OffsetY * headH
     };
 
     drawForearmContour(armR, rightP0, rightP1, rightP2);
 
-    // Левая рука (симметрично, нормаль инвертирована для выгиба наружу)
-    const leftP0 = { x: wristLeftCx - wristRadius, y: wristLeftCy };
-    const leftP2 = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
+    // ЛЕВАЯ РУКА (симметрично)
+    const leftP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
+    const leftP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
     
-    const midLeftX = (leftP0.x + leftP2.x) / 2;
-    const midLeftY = (leftP0.y + leftP2.y) / 2;
-    
-    const dxL = leftP2.x - leftP0.x;
-    const dyL = leftP2.y - leftP0.y;
-    const lenL = Math.sqrt(dxL*dxL + dyL*dyL);
-    const nxL = -dyL / lenL;
-    const nyL = dxL / lenL;
-    
-    // ИЗМЕНЕНИЕ ЗДЕСЬ: знаки '+' заменены на '-' для разворота выпуклости наружу
     const leftP1 = {
-      x: midLeftX - nxL * (lenL * 0.15 * params.forearmCurvature),
-      y: midLeftY - nyL * (lenL * 0.15 * params.forearmCurvature)
+      x: (leftP0.x + leftP2.x) / 2 - params.forearmP1OffsetX * headH, // Зеркально по X
+      y: (leftP0.y + leftP2.y) / 2 + params.forearmP1OffsetY * headH
     };
 
     drawForearmContour(armL, leftP0, leftP1, leftP2);
