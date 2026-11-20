@@ -173,7 +173,7 @@
     // ==========================================
     // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (C-кривая)
     // ==========================================
-    // Правая рука
+    // ПРАВАЯ РУКА
     const rInP0 = { x: wristRightCx - wristRadius, y: wristRightCy };
     const rInP3 = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
     const rDx = rInP3.x - rInP0.x;
@@ -193,7 +193,7 @@
       fill: 'none'
     }));
 
-    // Левая рука
+    // ЛЕВАЯ РУКА (симметрично, без инверсии пропорций)
     const lInP0 = { x: wristLeftCx + wristRadius, y: wristLeftCy };
     const lInP3 = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     
@@ -201,11 +201,11 @@
     const lDy = lInP3.y - lInP0.y;
     
     const lInP1 = { 
-      x: lInP0.x + lDx * (1 - params.innerP1X), 
+      x: lInP0.x + lDx * params.innerP1X, 
       y: lInP0.y + lDy * params.innerP1Y 
     };
     const lInP2 = { 
-      x: lInP0.x + lDx * (1 - params.innerP2X), 
+      x: lInP0.x + lDx * params.innerP2X, 
       y: lInP0.y + lDy * params.innerP2Y 
     };
 
