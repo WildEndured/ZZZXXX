@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + редактируемые контуры предплечья */
+/* js/arm.js — Этап 2: Суставы + контуры предплечья */
 
 (function () {
   'use strict';
@@ -25,8 +25,8 @@
     forearmP1OffsetY: 0,
 
     // Внутренняя линия
-    forearmInnerWristAngle: 180,  // Угол на запястье (180° = внутренняя сторона)
-    forearmInnerElbowAngle: 180,  // Угол на локте
+    forearmInnerWristAngle: 180,
+    forearmInnerElbowAngle: 180,
     forearmInnerP1OffsetX: 0,
     forearmInnerP1OffsetY: 0,
     forearmInnerP2OffsetX: 0,
@@ -71,8 +71,7 @@
     }
   }
 
-  // Угол от 0° (внешняя сторона) до 180° (внутренняя сторона)
-  // 90° - верх, -90° - низ (или 270°)
+  // Угол от 0° (внешняя) до 180° (внутренняя)
   function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
     const rad = (angleDeg * Math.PI) / 180;
     const sign = isLeftSide ? -1 : 1;
@@ -184,7 +183,6 @@
     const rInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
     const rInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
     
-    // Смещение P1 и P2 относительно третей пути
     const rDx = rInP3.x - rInP0.x;
     const rDy = rInP3.y - rInP0.y;
     
@@ -210,7 +208,7 @@
     const lDy = lInP3.y - lInP0.y;
     
     const lInP1 = { 
-      x: lInP0.x + lDx * 0.33 - params.forearmInnerP1OffsetX * headH, // Зеркально по X
+      x: lInP0.x + lDx * 0.33 - params.forearmInnerP1OffsetX * headH, 
       y: lInP0.y + lDy * 0.33 + params.forearmInnerP1OffsetY * headH 
     };
     const lInP2 = { 
