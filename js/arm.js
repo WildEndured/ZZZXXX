@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + внешний и внутренний контуры предплечья */
+/* js/arm.js — Этап 2: Суставы + внешняя и внутренняя линии предплечья */
 
 (function () {
   'use strict';
@@ -18,16 +18,14 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
-    // Внешняя сторона (используем угол крепления и смещение P1)
-    forearmElbowAttachAngle: 0, 
-    forearmWristAttachAngle: 0, 
-    forearmP1OffsetX: 0,        
-    forearmP1OffsetY: 0,        
+    forearmElbowAttachAngle: 0,
+    forearmWristAttachAngle: 0,
+    forearmP1OffsetX: 0,
+    forearmP1OffsetY: 0,
 
-    // Внутренняя сторона (коэффициенты для кубической кривой)
-    // Мы будем использовать твои точки как пропорции от длины предплечья
-    innerP1X: 0.25, innerP1Y: 0.3, // Относительное положение P1
-    innerP2X: 0.6, innerP2Y: 0.7,  // Относительное положение P2
+    // Пропорции для внутренней линии (0..1)
+    innerP1X: 0.25, innerP1Y: 0.3,
+    innerP2X: 0.6, innerP2Y: 0.7,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -146,7 +144,7 @@
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
-    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (P0 -> P1 -> P2)
+    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Q-кривая)
     // ==========================================
     // Правая рука
     const rightOuterP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
@@ -164,7 +162,7 @@
     const leftOuterP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
     const leftOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
     const leftOuterP1 = {
-      x: (leftOuterP0.x + leftOuterP2.x) / 2 - params.forearmP1OffsetX * headH, // Зеркально
+      x: (leftOuterP0.x + leftOuterP2.x) / 2 - params.forearmP1OffsetX * headH,
       y: (leftOuterP0.y + leftOuterP2.y) / 2 + params.forearmP1OffsetY * headH
     };
     armL.appendChild(svgEl('path', {
@@ -173,15 +171,11 @@
     }));
 
     // ==========================================
-    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Кубическая кривая)
+    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (C-кривая)
     // ==========================================
-    // Для внутренней стороны используем кубическую кривую (C).
-    // P0 - на запястье (внутренняя грань), P3 - на локте (внутренняя грань).
-    
-    // Правая рука (внутренняя грань - слева от центра круга)
+    // Правая рука
     const rInP0 = { x: wristRightCx - wristRadius, y: wristRightCy };
     const rInP3 = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
-    // P1 и P2 берем как пропорции от длины (используем твои относительные координаты)
     const rDx = rInP3.x - rInP0.x;
     const rDy = rInP3.y - rInP0.y;
     
@@ -199,14 +193,13 @@
       fill: 'none'
     }));
 
-    // Левая рука (внутренняя грань - справа от центра круга)
+    // Левая рука
     const lInP0 = { x: wristLeftCx + wristRadius, y: wristLeftCy };
     const lInP3 = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     
     const lDx = lInP3.x - lInP0.x;
     const lDy = lInP3.y - lInP0.y;
     
-    // Для левой руки зеркалим смещение по X
     const lInP1 = { 
       x: lInP0.x + lDx * (1 - params.innerP1X), 
       y: lInP0.y + lDy * params.innerP1Y 
