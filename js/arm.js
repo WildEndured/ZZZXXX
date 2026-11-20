@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + внешняя и внутренняя линии предплечья */
+/* js/arm.js — Этап 2: Суставы + редактируемые контуры предплечья */
 
 (function () {
   'use strict';
@@ -18,14 +18,19 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
+    // Внешняя линия
     forearmElbowAttachAngle: 0,
     forearmWristAttachAngle: 0,
     forearmP1OffsetX: 0,
     forearmP1OffsetY: 0,
 
-    // Пропорции для внутренней линии (0..1)
-    innerP1X: 0.25, innerP1Y: 0.3,
-    innerP2X: 0.6, innerP2Y: 0.7,
+    // Внутренняя линия
+    forearmInnerWristAngle: 180,  // Угол на запястье (180° = внутренняя сторона)
+    forearmInnerElbowAngle: 180,  // Угол на локте
+    forearmInnerP1OffsetX: 0,
+    forearmInnerP1OffsetY: 0,
+    forearmInnerP2OffsetX: 0,
+    forearmInnerP2OffsetY: 0,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -66,6 +71,8 @@
     }
   }
 
+  // Угол от 0° (внешняя сторона) до 180° (внутренняя сторона)
+  // 90° - верх, -90° - низ (или 270°)
   function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
     const rad = (angleDeg * Math.PI) / 180;
     const sign = isLeftSide ? -1 : 1;
@@ -144,7 +151,7 @@
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
-    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Q-кривая)
+    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Q)
     // ==========================================
     // Правая рука
     const rightOuterP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
@@ -171,21 +178,23 @@
     }));
 
     // ==========================================
-    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (C-кривая)
+    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (C)
     // ==========================================
-    // ПРАВАЯ РУКА
-    const rInP0 = { x: wristRightCx - wristRadius, y: wristRightCy };
-    const rInP3 = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
+    // Правая рука
+    const rInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
+    const rInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
+    
+    // Смещение P1 и P2 относительно третей пути
     const rDx = rInP3.x - rInP0.x;
     const rDy = rInP3.y - rInP0.y;
     
     const rInP1 = { 
-      x: rInP0.x + rDx * params.innerP1X, 
-      y: rInP0.y + rDy * params.innerP1Y 
+      x: rInP0.x + rDx * 0.33 + params.forearmInnerP1OffsetX * headH, 
+      y: rInP0.y + rDy * 0.33 + params.forearmInnerP1OffsetY * headH 
     };
     const rInP2 = { 
-      x: rInP0.x + rDx * params.innerP2X, 
-      y: rInP0.y + rDy * params.innerP2Y 
+      x: rInP0.x + rDx * 0.66 + params.forearmInnerP2OffsetX * headH, 
+      y: rInP0.y + rDy * 0.66 + params.forearmInnerP2OffsetY * headH 
     };
 
     armR.appendChild(svgEl('path', {
@@ -193,20 +202,20 @@
       fill: 'none'
     }));
 
-    // ЛЕВАЯ РУКА (симметрично, без инверсии пропорций)
-    const lInP0 = { x: wristLeftCx + wristRadius, y: wristLeftCy };
-    const lInP3 = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
+    // Левая рука
+    const lInP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmInnerWristAngle, true);
+    const lInP3 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmInnerElbowAngle, true);
     
     const lDx = lInP3.x - lInP0.x;
     const lDy = lInP3.y - lInP0.y;
     
     const lInP1 = { 
-      x: lInP0.x + lDx * params.innerP1X, 
-      y: lInP0.y + lDy * params.innerP1Y 
+      x: lInP0.x + lDx * 0.33 - params.forearmInnerP1OffsetX * headH, // Зеркально по X
+      y: lInP0.y + lDy * 0.33 + params.forearmInnerP1OffsetY * headH 
     };
     const lInP2 = { 
-      x: lInP0.x + lDx * params.innerP2X, 
-      y: lInP0.y + lDy * params.innerP2Y 
+      x: lInP0.x + lDx * 0.66 - params.forearmInnerP2OffsetX * headH, 
+      y: lInP0.y + lDy * 0.66 + params.forearmInnerP2OffsetY * headH 
     };
 
     armL.appendChild(svgEl('path', {
