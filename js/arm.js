@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Только суставы (с учётом ползунков) */
+/* js/arm.js — Этап 2: Суставы (локоть = середина + смещение) */
 
 (function () {
   'use strict';
@@ -9,8 +9,16 @@
     shoulderRadiusMul: 1.0,
     elbowRadius: 0.08,
     wristRadius: 0.08,
+
+    // Смещения запястий (±40%)
     wristLeftX: -0.20, wristLeftY: 0,
     wristRightX: 0.20, wristRightY: 0,
+
+    // Смещения локтей (±40%)
+    elbowLeftX: 0, elbowLeftY: 0,
+    elbowRightX: 0, elbowRightY: 0,
+
+    // Смещения рук целиком (±40%)
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
   };
 
@@ -99,13 +107,18 @@
     const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
     const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
-    // === ЛОКТИ ===
+    // === ЛОКТИ (ПРАВИЛО: ровно посередине между плечом и запястьем + смещение) ===
     const elbowRadius = params.elbowRadius * headH;
 
-    const elbowLeftCx = (leftCx + wristLeftCx) / 2;
-    const elbowLeftCy = (leftCy + wristLeftCy) / 2;
-    const elbowRightCx = (rightCx + wristRightCx) / 2;
-    const elbowRightCy = (rightCy + wristRightCy) / 2;
+    const elbowLeftOffsetX = params.elbowLeftX * headH;
+    const elbowLeftOffsetY = params.elbowLeftY * headH;
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowLeftOffsetY;
+
+    const elbowRightOffsetX = params.elbowRightX * headH;
+    const elbowRightOffsetY = params.elbowRightY * headH;
+    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
+    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
     // === ОТРИСОВКА ===
     armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
