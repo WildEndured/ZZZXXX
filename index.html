@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=49" />
+  <link rel="stylesheet" href="style.css?v=52" />
 </head>
 <body>
   <div class="app">
@@ -195,6 +195,26 @@
         </section>
 
         <section class="block">
+          <h2>Предплечье (контур)</h2>
+          <label class="row">
+            <span>Высота крепления к локтю: <b id="armForearmElbowAngleVal">0</b>°</span>
+            <input type="range" id="armForearmElbowAngle" min="-90" max="90" step="1" value="0" />
+          </label>
+          <label class="row">
+            <span>Высота крепления к запястью: <b id="armForearmWristAngleVal">0</b>°</span>
+            <input type="range" id="armForearmWristAngle" min="-90" max="90" step="1" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 по X: <b id="armForearmP1XVal">0</b>%</span>
+            <input type="range" id="armForearmP1X" min="-0.2" max="0.2" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 по Y: <b id="armForearmP1YVal">0</b>%</span>
+            <input type="range" id="armForearmP1Y" min="-0.2" max="0.2" step="0.01" value="0" />
+          </label>
+        </section>
+
+        <section class="block">
           <h2>Кривая Безье (редактор)</h2>
           <p style="font-size: 12px; color: #888; margin-bottom: 8px;">
             Кликайте по холсту, чтобы добавлять точки. Кривая строится по всем точкам.
@@ -244,11 +264,11 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=49"></script>
-  <script src="js/torso.js?v=49"></script>
-  <script src="js/arm.js?v=49"></script>
-  <script src="js/leg.js?v=49"></script>
-  <script src="js/editor.js?v=49"></script>
-  <script src="js/main.js?v=49"></script>
+  <script src="js/head.js?v=52"></script>
+  <script src="js/torso.js?v=52"></script>
+  <script src="js/arm.js?v=52"></script>
+  <script src="js/leg.js?v=52"></script>
+  <script src="js/editor.js?v=52"></script>
+  <script src="js/main.js?v=52"></script>
 </body>
 </html>
