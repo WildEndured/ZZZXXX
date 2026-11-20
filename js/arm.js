@@ -136,34 +136,20 @@
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // === КОНТУР ПРЕДПЛЕЧЬЯ (ПО ТВОИМ ТОЧКАМ) ===
-    // Твои координаты были заданы для холста 4096x4096.
-    // P0: (0.6783, 0.4887) - внешняя грань запястья
-    // P1: (0.6707, 0.4075) - контрольная
-    // P2: (0.6351, 0.3492) - внешняя грань локтя
-
-    // Вычисляем координаты P0 и P2 динамически, исходя из наших суставов.
-    // Для правой руки внешняя грань запястья (справа от центра) — это wristRightCx + wristRadius
+    // Правая рука
     const rightP0 = { x: wristRightCx + wristRadius, y: wristRightCy };
     const rightP2 = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
     
-    // Контрольная точка P1: берем твою пропорцию смещения.
-    // В твоих координатах P1 смещена от линии P0-P2 вправо.
-    // Вычислим вектор P0->P2 и отложим от середины смещение.
     const midX = (rightP0.x + rightP2.x) / 2;
     const midY = (rightP0.y + rightP2.y) / 2;
     
-    // Вектор от P0 к P2
     const dx = rightP2.x - rightP0.x;
     const dy = rightP2.y - rightP0.y;
     
-    // Нормаль (перпендикуляр) к вектору
     const len = Math.sqrt(dx*dx + dy*dy);
     const nx = -dy / len;
     const ny = dx / len;
     
-    // Смещение (коэффициент). Подбираем так, чтобы было похоже на твой референс.
-    // У тебя P1 смещена примерно на 0.04 от прямой (в долях холста).
-    // В пикселях это ~160px. При длине предплечья ~800px, коэффициент ~0.2.
     const curveOffset = len * 0.15 * params.forearmCurvature;
     
     const rightP1 = {
@@ -171,10 +157,9 @@
       y: midY + ny * curveOffset
     };
 
-    // Рисуем правую внешнюю линию
     drawForearmContour(armR, rightP0, rightP1, rightP2);
 
-    // Левая рука (симметрично, но нормаль направлена в другую сторону)
+    // Левая рука (симметрично, нормаль инвертирована для выгиба наружу)
     const leftP0 = { x: wristLeftCx - wristRadius, y: wristLeftCy };
     const leftP2 = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
     
@@ -187,9 +172,10 @@
     const nxL = -dyL / lenL;
     const nyL = dxL / lenL;
     
+    // ИЗМЕНЕНИЕ ЗДЕСЬ: знаки '+' заменены на '-' для разворота выпуклости наружу
     const leftP1 = {
-      x: midLeftX + nxL * (lenL * 0.15 * params.forearmCurvature),
-      y: midLeftY + nyL * (lenL * 0.15 * params.forearmCurvature)
+      x: midLeftX - nxL * (lenL * 0.15 * params.forearmCurvature),
+      y: midLeftY - nyL * (lenL * 0.15 * params.forearmCurvature)
     };
 
     drawForearmContour(armL, leftP0, leftP1, leftP2);
