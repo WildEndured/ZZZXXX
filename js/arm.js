@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + редактируемый контур предплечья */
+/* js/arm.js — Этап 2: Суставы + внешний и внутренний контуры предплечья */
 
 (function () {
   'use strict';
@@ -18,11 +18,16 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
-    // Новые параметры для предплечья
-    forearmElbowAttachAngle: 0, // Угол на локте (градусы)
-    forearmWristAttachAngle: 0, // Угол на запястье (градусы)
-    forearmP1OffsetX: 0,        // Смещение P1 по X (доли headH)
-    forearmP1OffsetY: 0,        // Смещение P1 по Y (доли headH)
+    // Внешняя сторона (используем угол крепления и смещение P1)
+    forearmElbowAttachAngle: 0, 
+    forearmWristAttachAngle: 0, 
+    forearmP1OffsetX: 0,        
+    forearmP1OffsetY: 0,        
+
+    // Внутренняя сторона (коэффициенты для кубической кривой)
+    // Мы будем использовать твои точки как пропорции от длины предплечья
+    innerP1X: 0.25, innerP1Y: 0.3, // Относительное положение P1
+    innerP2X: 0.6, innerP2Y: 0.7,  // Относительное положение P2
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -63,21 +68,13 @@
     }
   }
 
-  // Находит точку на окружности по углу (в градусах)
-  // 0° = правая крайняя точка, 90° = верхняя, -90° = нижняя
   function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
     const rad = (angleDeg * Math.PI) / 180;
-    // Для левой руки зеркалим угол (чтобы 0° был слева)
     const sign = isLeftSide ? -1 : 1;
     return {
       x: cx + sign * r * Math.cos(rad),
-      y: cy - r * Math.sin(rad) // В SVG ось Y вниз, поэтому минус
+      y: cy - r * Math.sin(rad)
     };
-  }
-
-  function drawForearmContour(group, p0, p1, p2) {
-    const d = `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`;
-    group.appendChild(svgEl('path', { d, fill: 'none' }));
   }
 
   function drawArms(geo) {
@@ -148,34 +145,83 @@
     armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    // === КОНТУР ПРЕДПЛЕЧЬЯ (С ПЛАВАЮЩИМИ ТОЧКАМИ) ===
+    // ==========================================
+    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (P0 -> P1 -> P2)
+    // ==========================================
+    // Правая рука
+    const rightOuterP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
+    const rightOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
+    const rightOuterP1 = {
+      x: (rightOuterP0.x + rightOuterP2.x) / 2 + params.forearmP1OffsetX * headH,
+      y: (rightOuterP0.y + rightOuterP2.y) / 2 + params.forearmP1OffsetY * headH
+    };
+    armR.appendChild(svgEl('path', {
+      d: `M ${rightOuterP0.x} ${rightOuterP0.y} Q ${rightOuterP1.x} ${rightOuterP1.y} ${rightOuterP2.x} ${rightOuterP2.y}`,
+      fill: 'none'
+    }));
+
+    // Левая рука
+    const leftOuterP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
+    const leftOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
+    const leftOuterP1 = {
+      x: (leftOuterP0.x + leftOuterP2.x) / 2 - params.forearmP1OffsetX * headH, // Зеркально
+      y: (leftOuterP0.y + leftOuterP2.y) / 2 + params.forearmP1OffsetY * headH
+    };
+    armL.appendChild(svgEl('path', {
+      d: `M ${leftOuterP0.x} ${leftOuterP0.y} Q ${leftOuterP1.x} ${leftOuterP1.y} ${leftOuterP2.x} ${leftOuterP2.y}`,
+      fill: 'none'
+    }));
+
+    // ==========================================
+    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Кубическая кривая)
+    // ==========================================
+    // Для внутренней стороны используем кубическую кривую (C).
+    // P0 - на запястье (внутренняя грань), P3 - на локте (внутренняя грань).
     
-    // ПРАВАЯ РУКА
-    // P0 на запястье (угол из ползунка)
-    const rightP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
-    // P2 на локте (угол из ползунка)
-    const rightP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
+    // Правая рука (внутренняя грань - слева от центра круга)
+    const rInP0 = { x: wristRightCx - wristRadius, y: wristRightCy };
+    const rInP3 = { x: elbowRightCx - elbowRadius, y: elbowRightCy };
+    // P1 и P2 берем как пропорции от длины (используем твои относительные координаты)
+    const rDx = rInP3.x - rInP0.x;
+    const rDy = rInP3.y - rInP0.y;
     
-    // P1 = середина P0-P2 + смещение
-    const rightP1 = {
-      x: (rightP0.x + rightP2.x) / 2 + params.forearmP1OffsetX * headH,
-      y: (rightP0.y + rightP2.y) / 2 + params.forearmP1OffsetY * headH
+    const rInP1 = { 
+      x: rInP0.x + rDx * params.innerP1X, 
+      y: rInP0.y + rDy * params.innerP1Y 
+    };
+    const rInP2 = { 
+      x: rInP0.x + rDx * params.innerP2X, 
+      y: rInP0.y + rDy * params.innerP2Y 
     };
 
-    drawForearmContour(armR, rightP0, rightP1, rightP2);
+    armR.appendChild(svgEl('path', {
+      d: `M ${rInP0.x} ${rInP0.y} C ${rInP1.x} ${rInP1.y}, ${rInP2.x} ${rInP2.y}, ${rInP3.x} ${rInP3.y}`,
+      fill: 'none'
+    }));
 
-    // ЛЕВАЯ РУКА (симметрично)
-    const leftP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
-    const leftP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
+    // Левая рука (внутренняя грань - справа от центра круга)
+    const lInP0 = { x: wristLeftCx + wristRadius, y: wristLeftCy };
+    const lInP3 = { x: elbowLeftCx + elbowRadius, y: elbowLeftCy };
     
-    const leftP1 = {
-      x: (leftP0.x + leftP2.x) / 2 - params.forearmP1OffsetX * headH, // Зеркально по X
-      y: (leftP0.y + leftP2.y) / 2 + params.forearmP1OffsetY * headH
+    const lDx = lInP3.x - lInP0.x;
+    const lDy = lInP3.y - lInP0.y;
+    
+    // Для левой руки зеркалим смещение по X
+    const lInP1 = { 
+      x: lInP0.x + lDx * (1 - params.innerP1X), 
+      y: lInP0.y + lDy * params.innerP1Y 
+    };
+    const lInP2 = { 
+      x: lInP0.x + lDx * (1 - params.innerP2X), 
+      y: lInP0.y + lDy * params.innerP2Y 
     };
 
-    drawForearmContour(armL, leftP0, leftP1, leftP2);
+    armL.appendChild(svgEl('path', {
+      d: `M ${lInP0.x} ${lInP0.y} C ${lInP1.x} ${lInP1.y}, ${lInP2.x} ${lInP2.y}, ${lInP3.x} ${lInP3.y}`,
+      fill: 'none'
+    }));
 
-    // === МАРКЕРЫ ===
+    // === МАРКЕРЫ СУСТАВОВ ===
     const mR = headH * 0.012;
     const markers = [
       { x: leftCx, y: leftCy, c: '#2563eb' },
