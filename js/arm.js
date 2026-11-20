@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы (локоть = середина + смещение) */
+/* js/arm.js — Этап 2: Суставы + контур предплечья (по точкам P0-P2) */
 
 (function () {
   'use strict';
@@ -10,16 +10,16 @@
     elbowRadius: 0.08,
     wristRadius: 0.08,
 
-    // Смещения запястий (±40%)
     wristLeftX: -0.20, wristLeftY: 0,
     wristRightX: 0.20, wristRightY: 0,
 
-    // Смещения локтей (±40%)
     elbowLeftX: 0, elbowLeftY: 0,
     elbowRightX: 0, elbowRightY: 0,
 
-    // Смещения рук целиком (±40%)
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
+
+    // Коэффициент выпуклости предплечья
+    forearmCurvature: 1.0, 
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -60,6 +60,13 @@
     }
   }
 
+  // Функция для рисования контура предплечья по правилу P0 -> P1 -> P2
+  function drawForearmContour(group, p0, p1, p2) {
+    // Строим квадратичную кривую Безье
+    const d = `M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`;
+    group.appendChild(svgEl('path', { d, fill: 'none' }));
+  }
+
   function drawArms(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
     if (!torso) return;
@@ -74,7 +81,7 @@
     const chestRx = torso.chestRx;
     const topNarrow = torso.cpTopX / chestRx;
 
-    // Смещения всей руки
+    // Смещения
     const leftOffsetX = params.leftX * headH;
     const leftOffsetY = params.leftY * headH;
     const rightOffsetX = params.rightX * headH;
@@ -107,9 +114,8 @@
     const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
     const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
-    // === ЛОКТИ (ПРАВИЛО: ровно посередине между плечом и запястьем + смещение) ===
+    // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
-
     const elbowLeftOffsetX = params.elbowLeftX * headH;
     const elbowLeftOffsetY = params.elbowLeftY * headH;
     const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
@@ -120,16 +126,75 @@
     const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
     const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
-    // === ОТРИСОВКА ===
-    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none' }));
-    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none' }));
-    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none' }));
+    // === РИСУЕМ СУСТАВЫ ===
+    armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none' }));
-    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none' }));
-    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none' }));
+    armR.appendChild(svgEl('circle', { cx: rightCx, cy: rightCy, r: shoulderRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    // Маркеры центров
+    // === КОНТУР ПРЕДПЛЕЧЬЯ (ПО ТВОИМ ТОЧКАМ) ===
+    // Твои координаты были заданы для холста 4096x4096.
+    // P0: (0.6783, 0.4887) - внешняя грань запястья
+    // P1: (0.6707, 0.4075) - контрольная
+    // P2: (0.6351, 0.3492) - внешняя грань локтя
+
+    // Вычисляем координаты P0 и P2 динамически, исходя из наших суставов.
+    // Для правой руки внешняя грань запястья (справа от центра) — это wristRightCx + wristRadius
+    const rightP0 = { x: wristRightCx + wristRadius, y: wristRightCy };
+    const rightP2 = { x: elbowRightCx + elbowRadius, y: elbowRightCy };
+    
+    // Контрольная точка P1: берем твою пропорцию смещения.
+    // В твоих координатах P1 смещена от линии P0-P2 вправо.
+    // Вычислим вектор P0->P2 и отложим от середины смещение.
+    const midX = (rightP0.x + rightP2.x) / 2;
+    const midY = (rightP0.y + rightP2.y) / 2;
+    
+    // Вектор от P0 к P2
+    const dx = rightP2.x - rightP0.x;
+    const dy = rightP2.y - rightP0.y;
+    
+    // Нормаль (перпендикуляр) к вектору
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const nx = -dy / len;
+    const ny = dx / len;
+    
+    // Смещение (коэффициент). Подбираем так, чтобы было похоже на твой референс.
+    // У тебя P1 смещена примерно на 0.04 от прямой (в долях холста).
+    // В пикселях это ~160px. При длине предплечья ~800px, коэффициент ~0.2.
+    const curveOffset = len * 0.15 * params.forearmCurvature;
+    
+    const rightP1 = {
+      x: midX + nx * curveOffset,
+      y: midY + ny * curveOffset
+    };
+
+    // Рисуем правую внешнюю линию
+    drawForearmContour(armR, rightP0, rightP1, rightP2);
+
+    // Левая рука (симметрично, но нормаль направлена в другую сторону)
+    const leftP0 = { x: wristLeftCx - wristRadius, y: wristLeftCy };
+    const leftP2 = { x: elbowLeftCx - elbowRadius, y: elbowLeftCy };
+    
+    const midLeftX = (leftP0.x + leftP2.x) / 2;
+    const midLeftY = (leftP0.y + leftP2.y) / 2;
+    
+    const dxL = leftP2.x - leftP0.x;
+    const dyL = leftP2.y - leftP0.y;
+    const lenL = Math.sqrt(dxL*dxL + dyL*dyL);
+    const nxL = -dyL / lenL;
+    const nyL = dxL / lenL;
+    
+    const leftP1 = {
+      x: midLeftX + nxL * (lenL * 0.15 * params.forearmCurvature),
+      y: midLeftY + nyL * (lenL * 0.15 * params.forearmCurvature)
+    };
+
+    drawForearmContour(armL, leftP0, leftP1, leftP2);
+
+    // === МАРКЕРЫ ===
     const mR = headH * 0.012;
     const markers = [
       { x: leftCx, y: leftCy, c: '#2563eb' },
