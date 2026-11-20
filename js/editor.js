@@ -1,4 +1,4 @@
-/* js/editor.js — Инструмент "Кривая Безье" */
+/* js/editor.js — Инструмент "Кривая Безье" (устойчивый к перерисовкам) */
 
 (function () {
   'use strict';
@@ -32,7 +32,6 @@
     const svg = document.getElementById('svg');
     if (!svg) return;
 
-    // Группа для редактора (не экспортируется)
     let layer = document.getElementById('editorLayer');
     if (!layer) {
       layer = document.createElementNS(NS, 'g');
@@ -40,6 +39,7 @@
       layer.setAttribute('class', 'no-export');
       svg.appendChild(layer);
     }
+    
     while (layer.firstChild) layer.removeChild(layer.firstChild);
 
     const canvasW = 4096;
@@ -48,7 +48,6 @@
     if (editor.points.length > 0) {
       const pixels = editor.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }));
 
-      // Кривая
       if (pixels.length >= 2) {
         const pathData = buildSmoothPath(pixels);
         const path = document.createElementNS(NS, 'path');
@@ -59,7 +58,6 @@
         layer.appendChild(path);
       }
 
-      // Точки
       pixels.forEach((p, i) => {
         const circle = document.createElementNS(NS, 'circle');
         circle.setAttribute('cx', p.x);
@@ -128,8 +126,15 @@
     }
   }
 
+  // Обработчик кликов через делегирование (вешается один раз на document)
   function handleCanvasClick(e) {
     const svg = document.getElementById('svg');
+    if (!svg) return;
+    if (!svg.contains(e.target)) return; // Клик не по SVG
+
+    // Игнорируем клики по панели
+    if (e.target.closest('.panel')) return;
+
     const rect = svg.getBoundingClientRect();
     const scale = Math.min(rect.width / 4096, rect.height / 4096);
     const offsetX = (rect.width - 4096 * scale) / 2;
@@ -152,11 +157,10 @@
   }
 
   function init() {
-    const svg = document.getElementById('svg');
-    if (svg) {
-      svg.removeEventListener('click', handleCanvasClick);
-      svg.addEventListener('click', handleCanvasClick);
-    }
+    // Вешаем обработчик на document (делегирование)
+    document.removeEventListener('click', handleCanvasClick);
+    document.addEventListener('click', handleCanvasClick);
+
     const resetBtn = document.getElementById('bezierReset');
     if (resetBtn) {
       resetBtn.removeEventListener('click', resetEditor);
@@ -166,10 +170,11 @@
     drawEditor();
   }
 
+  // Запуск после полной загрузки DOM
   document.addEventListener('DOMContentLoaded', init);
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(init, 0);
   }
 
-  window.Editor = { editor, drawEditor, renderPointsList };
+  window.Editor = { editor, drawEditor, renderPointsList, resetEditor };
 })();
