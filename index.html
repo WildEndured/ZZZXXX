@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=55" />
+  <link rel="stylesheet" href="style.css?v=57" />
 </head>
 <body>
   <div class="app">
@@ -159,8 +159,8 @@
             <input type="range" id="armElbowLeftX" min="-0.4" max="0.4" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="armElbowLeftYVal">0</b>%</span>
-            <input type="range" id="armElbowLeftY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armElbowLeftYVal">-5</b>%</span>
+            <input type="range" id="armElbowLeftY" min="-0.4" max="0.4" step="0.01" value="-0.05" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правый локоть</div>
@@ -169,28 +169,28 @@
             <input type="range" id="armElbowRightX" min="-0.4" max="0.4" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="armElbowRightYVal">0</b>%</span>
-            <input type="range" id="armElbowRightY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armElbowRightYVal">-5</b>%</span>
+            <input type="range" id="armElbowRightY" min="-0.4" max="0.4" step="0.01" value="-0.05" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Левое запястье</div>
           <label class="row">
-            <span>Смещение X: <b id="armWristLeftXVal">-20</b>%</span>
-            <input type="range" id="armWristLeftX" min="-0.4" max="0.4" step="0.01" value="-0.20" />
+            <span>Смещение X: <b id="armWristLeftXVal">-25</b>%</span>
+            <input type="range" id="armWristLeftX" min="-0.4" max="0.4" step="0.01" value="-0.25" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="armWristLeftYVal">0</b>%</span>
-            <input type="range" id="armWristLeftY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armWristLeftYVal">+5</b>%</span>
+            <input type="range" id="armWristLeftY" min="-0.4" max="0.4" step="0.01" value="0.05" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правое запястье</div>
           <label class="row">
-            <span>Смещение X: <b id="armWristRightXVal">+20</b>%</span>
-            <input type="range" id="armWristRightX" min="-0.4" max="0.4" step="0.01" value="0.20" />
+            <span>Смещение X: <b id="armWristRightXVal">+25</b>%</span>
+            <input type="range" id="armWristRightX" min="-0.4" max="0.4" step="0.01" value="0.25" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="armWristRightYVal">0</b>%</span>
-            <input type="range" id="armWristRightY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="armWristRightYVal">+5</b>%</span>
+            <input type="range" id="armWristRightY" min="-0.4" max="0.4" step="0.01" value="0.05" />
           </label>
         </section>
 
@@ -205,12 +205,12 @@
             <input type="range" id="armForearmWristAngle" min="-90" max="90" step="1" value="0" />
           </label>
           <label class="row">
-            <span>Смещение P1 X: <b id="armForearmP1XVal">0</b>%</span>
-            <input type="range" id="armForearmP1X" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение P1 X: <b id="armForearmP1XVal">+10</b>%</span>
+            <input type="range" id="armForearmP1X" min="-0.4" max="0.4" step="0.01" value="0.10" />
           </label>
           <label class="row">
-            <span>Смещение P1 Y: <b id="armForearmP1YVal">0</b>%</span>
-            <input type="range" id="armForearmP1Y" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение P1 Y: <b id="armForearmP1YVal">-20</b>%</span>
+            <input type="range" id="armForearmP1Y" min="-0.4" max="0.4" step="0.01" value="-0.20" />
           </label>
         </section>
 
@@ -221,24 +221,24 @@
             <input type="range" id="armForearmInnerElbowAngle" min="90" max="270" step="1" value="180" />
           </label>
           <label class="row">
-            <span>Угол на запястье: <b id="armForearmInnerWristAngleVal">180</b>°</span>
-            <input type="range" id="armForearmInnerWristAngle" min="90" max="270" step="1" value="180" />
+            <span>Угол на запястье: <b id="armForearmInnerWristAngleVal">125</b>°</span>
+            <input type="range" id="armForearmInnerWristAngle" min="90" max="270" step="1" value="125" />
           </label>
           <label class="row">
             <span>Смещение P1 X: <b id="armForearmInnerP1XVal">0</b>%</span>
-            <input type="range" id="armForearmInnerP1X" min="-0.2" max="0.2" step="0.01" value="0" />
+            <input type="range" id="armForearmInnerP1X" min="-0.4" max="0.4" step="0.01" value="0" />
           </label>
           <label class="row">
-            <span>Смещение P1 Y: <b id="armForearmInnerP1YVal">0</b>%</span>
-            <input type="range" id="armForearmInnerP1Y" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение P1 Y: <b id="armForearmInnerP1YVal">-20</b>%</span>
+            <input type="range" id="armForearmInnerP1Y" min="-0.4" max="0.4" step="0.01" value="-0.20" />
           </label>
           <label class="row">
-            <span>Смещение P2 X: <b id="armForearmInnerP2XVal">0</b>%</span>
-            <input type="range" id="armForearmInnerP2X" min="-0.2" max="0.2" step="0.01" value="0" />
+            <span>Смещение P2 X: <b id="armForearmInnerP2XVal">-20</b>%</span>
+            <input type="range" id="armForearmInnerP2X" min="-0.4" max="0.4" step="0.01" value="-0.20" />
           </label>
           <label class="row">
             <span>Смещение P2 Y: <b id="armForearmInnerP2YVal">0</b>%</span>
-            <input type="range" id="armForearmInnerP2Y" min="-0.2" max="0.2" step="0.01" value="0" />
+            <input type="range" id="armForearmInnerP2Y" min="-0.4" max="0.4" step="0.01" value="0" />
           </label>
         </section>
 
@@ -292,11 +292,11 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=55"></script>
-  <script src="js/torso.js?v=55"></script>
-  <script src="js/arm.js?v=55"></script>
-  <script src="js/leg.js?v=55"></script>
-  <script src="js/editor.js?v=55"></script>
-  <script src="js/main.js?v=55"></script>
+  <script src="js/head.js?v=57"></script>
+  <script src="js/torso.js?v=57"></script>
+  <script src="js/arm.js?v=57"></script>
+  <script src="js/leg.js?v=57"></script>
+  <script src="js/editor.js?v=57"></script>
+  <script src="js/main.js?v=57"></script>
 </body>
 </html>
