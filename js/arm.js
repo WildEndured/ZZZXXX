@@ -10,26 +10,26 @@
     elbowRadius: 0.08,
     wristRadius: 0.08,
 
-    wristLeftX: -0.20, wristLeftY: 0,
-    wristRightX: 0.20, wristRightY: 0,
+    wristLeftX: -0.25, wristLeftY: 0.05,
+    wristRightX: 0.25, wristRightY: 0.05,
 
-    elbowLeftX: 0, elbowLeftY: 0,
-    elbowRightX: 0, elbowRightY: 0,
+    elbowLeftX: 0, elbowLeftY: -0.05,
+    elbowRightX: 0, elbowRightY: -0.05,
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
     // Внешняя линия
     forearmElbowAttachAngle: 0,
     forearmWristAttachAngle: 0,
-    forearmP1OffsetX: 0,
-    forearmP1OffsetY: 0,
+    forearmP1OffsetX: 0.10,
+    forearmP1OffsetY: -0.20,
 
     // Внутренняя линия
-    forearmInnerWristAngle: 180,
+    forearmInnerWristAngle: 125,
     forearmInnerElbowAngle: 180,
     forearmInnerP1OffsetX: 0,
-    forearmInnerP1OffsetY: 0,
-    forearmInnerP2OffsetX: 0,
+    forearmInnerP1OffsetY: -0.20,
+    forearmInnerP2OffsetX: -0.20,
     forearmInnerP2OffsetY: 0,
   };
 
@@ -71,7 +71,6 @@
     }
   }
 
-  // Угол от 0° (внешняя) до 180° (внутренняя)
   function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
     const rad = (angleDeg * Math.PI) / 180;
     const sign = isLeftSide ? -1 : 1;
