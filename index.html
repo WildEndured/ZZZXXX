@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=61" />
+  <link rel="stylesheet" href="style.css?v=63" />
 </head>
 <body>
   <div class="app">
@@ -247,8 +247,8 @@
           
           <div style="font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase;">Размеры суставов</div>
           <label class="row">
-            <span>Радиус коленей: <b id="legKneeRadiusVal">9</b>%</span>
-            <input type="range" id="legKneeRadius" min="0.01" max="0.20" step="0.001" value="0.09" />
+            <span>Радиус коленей: <b id="legKneeRadiusVal">15</b>%</span>
+            <input type="range" id="legKneeRadius" min="0.01" max="0.20" step="0.001" value="0.15" />
           </label>
           <label class="row">
             <span>Радиус лодыжек: <b id="legAnkleRadiusVal">6</b>%</span>
@@ -257,60 +257,80 @@
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Левое колено</div>
           <label class="row">
-            <span>Смещение X: <b id="legLeftKneeXVal">0</b>%</span>
-            <input type="range" id="legLeftKneeX" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение X: <b id="legLeftKneeXVal">-7</b>%</span>
+            <input type="range" id="legLeftKneeX" min="-0.4" max="0.4" step="0.01" value="-0.07" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="legLeftKneeYVal">0</b>%</span>
-            <input type="range" id="legLeftKneeY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="legLeftKneeYVal">+3</b>%</span>
+            <input type="range" id="legLeftKneeY" min="-0.4" max="0.4" step="0.01" value="0.03" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Левая лодыжка</div>
           <label class="row">
-            <span>Смещение X: <b id="legLeftAnkleXVal">0</b>%</span>
-            <input type="range" id="legLeftAnkleX" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение X: <b id="legLeftAnkleXVal">-15</b>%</span>
+            <input type="range" id="legLeftAnkleX" min="-0.4" max="0.4" step="0.01" value="-0.15" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="legLeftAnkleYVal">0</b>%</span>
-            <input type="range" id="legLeftAnkleY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="legLeftAnkleYVal">-10</b>%</span>
+            <input type="range" id="legLeftAnkleY" min="-0.4" max="0.4" step="0.01" value="-0.10" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правое колено</div>
           <label class="row">
-            <span>Смещение X: <b id="legRightKneeXVal">0</b>%</span>
-            <input type="range" id="legRightKneeX" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение X: <b id="legRightKneeXVal">+7</b>%</span>
+            <input type="range" id="legRightKneeX" min="-0.4" max="0.4" step="0.01" value="0.07" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="legRightKneeYVal">0</b>%</span>
-            <input type="range" id="legRightKneeY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="legRightKneeYVal">+3</b>%</span>
+            <input type="range" id="legRightKneeY" min="-0.4" max="0.4" step="0.01" value="0.03" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase;">Правая лодыжка</div>
           <label class="row">
-            <span>Смещение X: <b id="legRightAnkleXVal">0</b>%</span>
-            <input type="range" id="legRightAnkleX" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение X: <b id="legRightAnkleXVal">+15</b>%</span>
+            <input type="range" id="legRightAnkleX" min="-0.4" max="0.4" step="0.01" value="0.15" />
           </label>
           <label class="row">
-            <span>Смещение Y: <b id="legRightAnkleYVal">0</b>%</span>
-            <input type="range" id="legRightAnkleY" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение Y: <b id="legRightAnkleYVal">-10</b>%</span>
+            <input type="range" id="legRightAnkleY" min="-0.4" max="0.4" step="0.01" value="-0.10" />
           </label>
 
           <div style="font-size: 12px; color: #888; margin-top: 12px; margin-bottom: 8px; text-transform: uppercase; border-top: 1px solid #eee; padding-top: 12px;">Внешнее бедро</div>
           <label class="row">
-            <span>Угол на тазе: <b id="legOuterThighAttachVal">0</b>%</span>
-            <input type="range" id="legOuterThighAttach" min="-50" max="50" step="1" value="0" />
+            <span>Угол на тазе: <b id="legOuterThighAttachVal">-20</b>%</span>
+            <input type="range" id="legOuterThighAttach" min="-50" max="50" step="1" value="-20" />
           </label>
           <label class="row">
             <span>Угол на колене: <b id="legOuterThighKneeVal">0</b>°</span>
             <input type="range" id="legOuterThighKnee" min="-90" max="90" step="1" value="0" />
           </label>
           <label class="row">
-            <span>Смещение P1 X: <b id="legOuterThighP1XVal">0</b>%</span>
-            <input type="range" id="legOuterThighP1X" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение P1 X: <b id="legOuterThighP1XVal">-40</b>%</span>
+            <input type="range" id="legOuterThighP1X" min="-0.4" max="0.4" step="0.01" value="-0.40" />
           </label>
           <label class="row">
-            <span>Смещение P1 Y: <b id="legOuterThighP1YVal">0</b>%</span>
-            <input type="range" id="legOuterThighP1Y" min="-0.4" max="0.4" step="0.01" value="0" />
+            <span>Смещение P1 Y: <b id="legOuterThighP1YVal">-25</b>%</span>
+            <input type="range" id="legOuterThighP1Y" min="-0.4" max="0.4" step="0.01" value="-0.25" />
+          </label>
+        </section>
+
+        <section class="block">
+          <h2>Ноги: внешняя икра</h2>
+          <label class="row">
+            <span>Угол на колене: <b id="legOuterCalfKneeVal">0</b>°</span>
+            <input type="range" id="legOuterCalfKnee" min="-90" max="90" step="1" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 X: <b id="legOuterCalfP1XVal">0</b>%</span>
+            <input type="range" id="legOuterCalfP1X" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 Y: <b id="legOuterCalfP1YVal">0</b>%</span>
+            <input type="range" id="legOuterCalfP1Y" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Угол на лодыжке: <b id="legOuterCalfAnkleVal">0</b>°</span>
+            <input type="range" id="legOuterCalfAnkle" min="-90" max="90" step="1" value="0" />
           </label>
         </section>
 
@@ -364,11 +384,11 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=61"></script>
-  <script src="js/torso.js?v=61"></script>
-  <script src="js/arm.js?v=61"></script>
-  <script src="js/leg.js?v=61"></script>
-  <script src="js/editor.js?v=61"></script>
-  <script src="js/main.js?v=61"></script>
+  <script src="js/head.js?v=63"></script>
+  <script src="js/torso.js?v=63"></script>
+  <script src="js/arm.js?v=63"></script>
+  <script src="js/leg.js?v=63"></script>
+  <script src="js/editor.js?v=63"></script>
+  <script src="js/main.js?v=63"></script>
 </body>
 </html>
