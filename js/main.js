@@ -88,6 +88,11 @@
     legOuterThighP1X: $('legOuterThighP1X'), legOuterThighP1XVal: $('legOuterThighP1XVal'),
     legOuterThighP1Y: $('legOuterThighP1Y'), legOuterThighP1YVal: $('legOuterThighP1YVal'),
 
+    legOuterCalfKnee: $('legOuterCalfKnee'), legOuterCalfKneeVal: $('legOuterCalfKneeVal'),
+    legOuterCalfP1X: $('legOuterCalfP1X'), legOuterCalfP1XVal: $('legOuterCalfP1XVal'),
+    legOuterCalfP1Y: $('legOuterCalfP1Y'), legOuterCalfP1YVal: $('legOuterCalfP1YVal'),
+    legOuterCalfAnkle: $('legOuterCalfAnkle'), legOuterCalfAnkleVal: $('legOuterCalfAnkleVal'),
+
     // Подложка
     underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
     scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
@@ -340,6 +345,15 @@
     dom.legOuterThighP1XVal.textContent = fmtSignedPercent(p.outerThighP1X);
     dom.legOuterThighP1Y.value = p.outerThighP1Y;
     dom.legOuterThighP1YVal.textContent = fmtSignedPercent(p.outerThighP1Y);
+
+    dom.legOuterCalfKnee.value = p.outerCalfKneeAngle;
+    dom.legOuterCalfKneeVal.textContent = Math.round(p.outerCalfKneeAngle);
+    dom.legOuterCalfP1X.value = p.outerCalfP1X;
+    dom.legOuterCalfP1XVal.textContent = fmtSignedPercent(p.outerCalfP1X);
+    dom.legOuterCalfP1Y.value = p.outerCalfP1Y;
+    dom.legOuterCalfP1YVal.textContent = fmtSignedPercent(p.outerCalfP1Y);
+    dom.legOuterCalfAnkle.value = p.outerCalfAnkleAngle;
+    dom.legOuterCalfAnkleVal.textContent = Math.round(p.outerCalfAnkleAngle);
   }
 
   function bindLegInput(input, valEl, key, format) {
@@ -370,6 +384,11 @@
   bindLegInput(dom.legOuterThighKnee, dom.legOuterThighKneeVal, 'outerThighKneeAngle', (v) => Math.round(v));
   bindLegInput(dom.legOuterThighP1X, dom.legOuterThighP1XVal, 'outerThighP1X', fmtSignedPercent);
   bindLegInput(dom.legOuterThighP1Y, dom.legOuterThighP1YVal, 'outerThighP1Y', fmtSignedPercent);
+
+  bindLegInput(dom.legOuterCalfKnee, dom.legOuterCalfKneeVal, 'outerCalfKneeAngle', (v) => Math.round(v));
+  bindLegInput(dom.legOuterCalfP1X, dom.legOuterCalfP1XVal, 'outerCalfP1X', fmtSignedPercent);
+  bindLegInput(dom.legOuterCalfP1Y, dom.legOuterCalfP1YVal, 'outerCalfP1Y', fmtSignedPercent);
+  bindLegInput(dom.legOuterCalfAnkle, dom.legOuterCalfAnkleVal, 'outerCalfAnkleAngle', (v) => Math.round(v));
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
