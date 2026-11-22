@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=57" />
+  <link rel="stylesheet" href="style.css?v=60" />
 </head>
 <body>
   <div class="app">
@@ -137,9 +137,9 @@
         </section>
 
         <section class="block">
-          <h2>Руки</h2>
+          <h2>Руки (суставы)</h2>
           
-          <div style="font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase;">Размеры суставов</div>
+          <div style="font-size: 12px; color: #888; margin-bottom: 8px; text-transform: uppercase;">Размеры</div>
           <label class="row">
             <span>Радиус плеч: <b id="armShoulderRadiusVal">100</b>%</span>
             <input type="range" id="armShoulderRadius" min="0.1" max="2.0" step="0.01" value="1.0" />
@@ -243,6 +243,26 @@
         </section>
 
         <section class="block">
+          <h2>Ноги: внешнее бедро</h2>
+          <label class="row">
+            <span>Угол на тазе: <b id="legOuterThighAttachVal">0</b>%</span>
+            <input type="range" id="legOuterThighAttach" min="-50" max="50" step="1" value="0" />
+          </label>
+          <label class="row">
+            <span>Угол на колене: <b id="legOuterThighKneeVal">0</b>°</span>
+            <input type="range" id="legOuterThighKnee" min="-90" max="90" step="1" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 X: <b id="legOuterThighP1XVal">0</b>%</span>
+            <input type="range" id="legOuterThighP1X" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 Y: <b id="legOuterThighP1YVal">0</b>%</span>
+            <input type="range" id="legOuterThighP1Y" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+        </section>
+
+        <section class="block">
           <h2>Кривая Безье (редактор)</h2>
           <p style="font-size: 12px; color: #888; margin-bottom: 8px;">
             Кликайте по холсту, чтобы добавлять точки. Кривая строится по всем точкам.
@@ -292,11 +312,11 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=57"></script>
-  <script src="js/torso.js?v=57"></script>
-  <script src="js/arm.js?v=57"></script>
-  <script src="js/leg.js?v=57"></script>
-  <script src="js/editor.js?v=57"></script>
-  <script src="js/main.js?v=57"></script>
+  <script src="js/head.js?v=60"></script>
+  <script src="js/torso.js?v=60"></script>
+  <script src="js/arm.js?v=60"></script>
+  <script src="js/leg.js?v=60"></script>
+  <script src="js/editor.js?v=60"></script>
+  <script src="js/main.js?v=60"></script>
 </body>
 </html>
