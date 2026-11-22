@@ -70,6 +70,19 @@
     armForearmInnerP2Y: $('armForearmInnerP2Y'), armForearmInnerP2YVal: $('armForearmInnerP2YVal'),
 
     // Ноги
+    legKneeRadius: $('legKneeRadius'), legKneeRadiusVal: $('legKneeRadiusVal'),
+    legAnkleRadius: $('legAnkleRadius'), legAnkleRadiusVal: $('legAnkleRadiusVal'),
+
+    legLeftKneeX: $('legLeftKneeX'), legLeftKneeXVal: $('legLeftKneeXVal'),
+    legLeftKneeY: $('legLeftKneeY'), legLeftKneeYVal: $('legLeftKneeYVal'),
+    legLeftAnkleX: $('legLeftAnkleX'), legLeftAnkleXVal: $('legLeftAnkleXVal'),
+    legLeftAnkleY: $('legLeftAnkleY'), legLeftAnkleYVal: $('legLeftAnkleYVal'),
+
+    legRightKneeX: $('legRightKneeX'), legRightKneeXVal: $('legRightKneeXVal'),
+    legRightKneeY: $('legRightKneeY'), legRightKneeYVal: $('legRightKneeYVal'),
+    legRightAnkleX: $('legRightAnkleX'), legRightAnkleXVal: $('legRightAnkleXVal'),
+    legRightAnkleY: $('legRightAnkleY'), legRightAnkleYVal: $('legRightAnkleYVal'),
+
     legOuterThighAttach: $('legOuterThighAttach'), legOuterThighAttachVal: $('legOuterThighAttachVal'),
     legOuterThighKnee: $('legOuterThighKnee'), legOuterThighKneeVal: $('legOuterThighKneeVal'),
     legOuterThighP1X: $('legOuterThighP1X'), legOuterThighP1XVal: $('legOuterThighP1XVal'),
@@ -306,6 +319,19 @@
     if (!window.Leg) return;
     const p = window.Leg.getParams();
     
+    dom.legKneeRadius.value = p.kneeRadius; dom.legKneeRadiusVal.textContent = Math.round(p.kneeRadius * 1000) / 10;
+    dom.legAnkleRadius.value = p.ankleRadius; dom.legAnkleRadiusVal.textContent = Math.round(p.ankleRadius * 1000) / 10;
+
+    dom.legLeftKneeX.value = p.leftKneeX; dom.legLeftKneeXVal.textContent = fmtSignedPercent(p.leftKneeX);
+    dom.legLeftKneeY.value = p.leftKneeY; dom.legLeftKneeYVal.textContent = fmtSignedPercent(p.leftKneeY);
+    dom.legLeftAnkleX.value = p.leftAnkleX; dom.legLeftAnkleXVal.textContent = fmtSignedPercent(p.leftAnkleX);
+    dom.legLeftAnkleY.value = p.leftAnkleY; dom.legLeftAnkleYVal.textContent = fmtSignedPercent(p.leftAnkleY);
+
+    dom.legRightKneeX.value = p.rightKneeX; dom.legRightKneeXVal.textContent = fmtSignedPercent(p.rightKneeX);
+    dom.legRightKneeY.value = p.rightKneeY; dom.legRightKneeYVal.textContent = fmtSignedPercent(p.rightKneeY);
+    dom.legRightAnkleX.value = p.rightAnkleX; dom.legRightAnkleXVal.textContent = fmtSignedPercent(p.rightAnkleX);
+    dom.legRightAnkleY.value = p.rightAnkleY; dom.legRightAnkleYVal.textContent = fmtSignedPercent(p.rightAnkleY);
+
     dom.legOuterThighAttach.value = p.outerThighAttachAngle;
     dom.legOuterThighAttachVal.textContent = Math.round(p.outerThighAttachAngle);
     dom.legOuterThighKnee.value = p.outerThighKneeAngle;
@@ -326,6 +352,19 @@
       window.applyState();
     });
   }
+
+  bindLegInput(dom.legKneeRadius, dom.legKneeRadiusVal, 'kneeRadius', (v) => Math.round(v * 1000) / 10);
+  bindLegInput(dom.legAnkleRadius, dom.legAnkleRadiusVal, 'ankleRadius', (v) => Math.round(v * 1000) / 10);
+
+  bindLegInput(dom.legLeftKneeX, dom.legLeftKneeXVal, 'leftKneeX', fmtSignedPercent);
+  bindLegInput(dom.legLeftKneeY, dom.legLeftKneeYVal, 'leftKneeY', fmtSignedPercent);
+  bindLegInput(dom.legLeftAnkleX, dom.legLeftAnkleXVal, 'leftAnkleX', fmtSignedPercent);
+  bindLegInput(dom.legLeftAnkleY, dom.legLeftAnkleYVal, 'leftAnkleY', fmtSignedPercent);
+
+  bindLegInput(dom.legRightKneeX, dom.legRightKneeXVal, 'rightKneeX', fmtSignedPercent);
+  bindLegInput(dom.legRightKneeY, dom.legRightKneeYVal, 'rightKneeY', fmtSignedPercent);
+  bindLegInput(dom.legRightAnkleX, dom.legRightAnkleXVal, 'rightAnkleX', fmtSignedPercent);
+  bindLegInput(dom.legRightAnkleY, dom.legRightAnkleYVal, 'rightAnkleY', fmtSignedPercent);
 
   bindLegInput(dom.legOuterThighAttach, dom.legOuterThighAttachVal, 'outerThighAttachAngle', (v) => Math.round(v));
   bindLegInput(dom.legOuterThighKnee, dom.legOuterThighKneeVal, 'outerThighKneeAngle', (v) => Math.round(v));
