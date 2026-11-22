@@ -7,24 +7,24 @@
 
   const params = {
     // Радиусы
-    kneeRadius: 0.09,
+    kneeRadius: 0.15,
     ankleRadius: 0.06,
 
     // Смещения суставов
-    leftKneeX: 0, leftKneeY: 0,
-    leftAnkleX: 0, leftAnkleY: 0,
-    rightKneeX: 0, rightKneeY: 0,
-    rightAnkleX: 0, rightAnkleY: 0,
+    leftKneeX: -0.07, leftKneeY: 0.03,
+    leftAnkleX: -0.15, leftAnkleY: -0.10,
+    rightKneeX: 0.07, rightKneeY: 0.03,
+    rightAnkleX: 0.15, rightAnkleY: -0.10,
 
     // --- ВНЕШНЕЕ БЕДРО ---
-    outerThighAttachAngle: 0,
-    outerThighP1X: 0, outerThighP1Y: 0,
+    outerThighAttachAngle: -20,
+    outerThighP1X: -0.40, outerThighP1Y: -0.25,
     outerThighKneeAngle: 0,
 
     // --- ВНЕШНЯЯ ИКРА ---
-    outerCalfKneeAngle: 0,    // Угол на колене
-    outerCalfP1X: 0, outerCalfP1Y: 0, // Смещение P1
-    outerCalfAnkleAngle: 0,   // Угол на лодыжке
+    outerCalfKneeAngle: 0,
+    outerCalfP1X: 0, outerCalfP1Y: 0,
+    outerCalfAnkleAngle: 0,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
