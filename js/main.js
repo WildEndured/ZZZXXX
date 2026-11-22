@@ -9,7 +9,7 @@
     heads: 5,
     margin: 0,
     underlay: { src: null, opacity: 0.5, scale: 1.0, naturalWidth: 0, naturalHeight: 0 },
-    head: null, torso: null, arm: null,
+    head: null, torso: null, arm: null, leg: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -21,6 +21,7 @@
     headsRange: $('headsRange'), headsVal: $('headsVal'),
     marginRange: $('marginRange'), marginVal: $('marginVal'),
 
+    // Голова
     headTopShift: $('headTopShift'), headTopShiftVal: $('headTopShiftVal'),
     headBottomShift: $('headBottomShift'), headBottomShiftVal: $('headBottomShiftVal'),
     headWidthMul: $('headWidthMul'), headWidthMulVal: $('headWidthMulVal'),
@@ -31,6 +32,7 @@
     headJawLength: $('headJawLength'), headJawLengthVal: $('headJawLengthVal'),
     headJawAngleWidth: $('headJawAngleWidth'), headJawAngleWidthVal: $('headJawAngleWidthVal'),
 
+    // Торс
     torsoNeckWidth: $('torsoNeckWidth'), torsoNeckWidthVal: $('torsoNeckWidthVal'),
     torsoChestWidth: $('torsoChestWidth'), torsoChestWidthVal: $('torsoChestWidthVal'),
     torsoChestHeightCorr: $('torsoChestHeightCorr'), torsoChestHeightCorrVal: $('torsoChestHeightCorrVal'),
@@ -40,6 +42,7 @@
     torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'), torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
     torsoPelvisRounding: $('torsoPelvisRounding'), torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
+    // Руки
     armShoulderRadius: $('armShoulderRadius'), armShoulderRadiusVal: $('armShoulderRadiusVal'),
     armElbowRadius: $('armElbowRadius'), armElbowRadiusVal: $('armElbowRadiusVal'),
     armWristRadius: $('armWristRadius'), armWristRadiusVal: $('armWristRadiusVal'),
@@ -66,6 +69,13 @@
     armForearmInnerP2X: $('armForearmInnerP2X'), armForearmInnerP2XVal: $('armForearmInnerP2XVal'),
     armForearmInnerP2Y: $('armForearmInnerP2Y'), armForearmInnerP2YVal: $('armForearmInnerP2YVal'),
 
+    // Ноги
+    legOuterThighAttach: $('legOuterThighAttach'), legOuterThighAttachVal: $('legOuterThighAttachVal'),
+    legOuterThighKnee: $('legOuterThighKnee'), legOuterThighKneeVal: $('legOuterThighKneeVal'),
+    legOuterThighP1X: $('legOuterThighP1X'), legOuterThighP1XVal: $('legOuterThighP1XVal'),
+    legOuterThighP1Y: $('legOuterThighP1Y'), legOuterThighP1YVal: $('legOuterThighP1YVal'),
+
+    // Подложка
     underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
     scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
 
@@ -291,6 +301,37 @@
   bindArmInput(dom.armForearmInnerP2X, dom.armForearmInnerP2XVal, 'forearmInnerP2OffsetX', fmtSignedPercent);
   bindArmInput(dom.armForearmInnerP2Y, dom.armForearmInnerP2YVal, 'forearmInnerP2OffsetY', fmtSignedPercent);
 
+  // --- Ноги ---
+  function syncLegUIFromParams() {
+    if (!window.Leg) return;
+    const p = window.Leg.getParams();
+    
+    dom.legOuterThighAttach.value = p.outerThighAttachAngle;
+    dom.legOuterThighAttachVal.textContent = Math.round(p.outerThighAttachAngle);
+    dom.legOuterThighKnee.value = p.outerThighKneeAngle;
+    dom.legOuterThighKneeVal.textContent = Math.round(p.outerThighKneeAngle);
+    dom.legOuterThighP1X.value = p.outerThighP1X;
+    dom.legOuterThighP1XVal.textContent = fmtSignedPercent(p.outerThighP1X);
+    dom.legOuterThighP1Y.value = p.outerThighP1Y;
+    dom.legOuterThighP1YVal.textContent = fmtSignedPercent(p.outerThighP1Y);
+  }
+
+  function bindLegInput(input, valEl, key, format) {
+    if (!input || !valEl) return;
+    input.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!window.Leg) return;
+      window.Leg.setParams({ [key]: v });
+      valEl.textContent = format(v);
+      window.applyState();
+    });
+  }
+
+  bindLegInput(dom.legOuterThighAttach, dom.legOuterThighAttachVal, 'outerThighAttachAngle', (v) => Math.round(v));
+  bindLegInput(dom.legOuterThighKnee, dom.legOuterThighKneeVal, 'outerThighKneeAngle', (v) => Math.round(v));
+  bindLegInput(dom.legOuterThighP1X, dom.legOuterThighP1XVal, 'outerThighP1X', fmtSignedPercent);
+  bindLegInput(dom.legOuterThighP1Y, dom.legOuterThighP1YVal, 'outerThighP1Y', fmtSignedPercent);
+
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
     const file = e.target.files && e.target.files[0];
@@ -334,6 +375,7 @@
       head: window.Head ? window.Head.getParams() : null,
       torso: window.Torso ? window.Torso.getParams() : null,
       arm: window.Arm ? window.Arm.getParams() : null,
+      leg: window.Leg ? window.Leg.getParams() : null,
     };
   }
 
@@ -344,6 +386,7 @@
     if (window.Head) { if (snap.head && typeof snap.head === 'object') { window.Head.resetParams(); window.Head.setParams(snap.head); } else { window.Head.resetParams(); } syncHeadUIFromParams(); }
     if (window.Torso) { if (snap.torso && typeof snap.torso === 'object') { window.Torso.resetParams(); window.Torso.setParams(snap.torso); } else { window.Torso.resetParams(); } syncTorsoUIFromParams(); }
     if (window.Arm) { if (snap.arm && typeof snap.arm === 'object') { window.Arm.resetParams(); window.Arm.setParams(snap.arm); } else { window.Arm.resetParams(); } syncArmUIFromParams(); }
+    if (window.Leg) { if (snap.leg && typeof snap.leg === 'object') { window.Leg.resetParams(); window.Leg.setParams(snap.leg); } else { window.Leg.resetParams(); } syncLegUIFromParams(); }
     window.applyState();
   }
 
@@ -409,6 +452,7 @@
     syncHeadUIFromParams();
     syncTorsoUIFromParams();
     syncArmUIFromParams();
+    syncLegUIFromParams();
     renderPresets();
     window.applyState();
   }
