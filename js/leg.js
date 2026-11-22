@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Внешнее и внутреннее бедро (стабильно) */
+/* js/leg.js — Этап 2: Ноги (гарантированная отрисовка) */
 
 (function () {
   'use strict';
@@ -8,17 +8,13 @@
   const params = {
     kneeRadius: 0.09,
     ankleRadius: 0.06,
-
-    // Внешнее бедро
-    outerThighAttachAngle: 0, 
+    outerThighAttachAngle: 0,
     outerThighP1X: 0, outerThighP1Y: 0,
-    outerThighKneeAngle: 0, 
-
-    // Внутреннее бедро
-    innerThighAttachAngle: 0, 
+    outerThighKneeAngle: 0,
+    innerThighAttachAngle: 0,
     innerThighP1X: 0, innerThighP1Y: 0,
     innerThighP2X: 0, innerThighP2Y: 0,
-    innerThighKneeAngle: 180, 
+    innerThighKneeAngle: 180,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -28,17 +24,11 @@
     if (els) return els;
     const legL = document.getElementById('legLeftGroup');
     const legR = document.getElementById('legRightGroup');
-    const headsLayer = document.getElementById('headsLayer');
-    if (!legL || !legR || !headsLayer) return null;
-
-    let grid = document.getElementById('legGridLayer');
-    if (!grid) {
-      grid = document.createElementNS(NS, 'g');
-      grid.setAttribute('id', 'legGridLayer');
-      grid.setAttribute('class', 'no-export');
-      headsLayer.appendChild(grid);
+    if (!legL || !legR) {
+      console.error('[Leg] Не найдены группы legLeftGroup или legRightGroup');
+      return null;
     }
-    els = { legL, legR, headsLayer, grid };
+    els = { legL, legR };
     return els;
   }
 
@@ -61,44 +51,43 @@
 
   function drawLegs(geo) {
     const torso = window.Torso && window.Torso.lastGeometry;
-    if (!torso) return;
+    if (!torso) {
+      console.warn('[Leg] Нет данных о торсе');
+      return;
+    }
 
-    const { legL, legR, grid } = els;
+    const { legL, legR } = els;
     clear(legL);
     clear(legR);
-    clear(grid);
 
     const headH = torso.headH;
-    const pelvis = {
-      x0: torso.pelvisX0,
-      y0: torso.pelvisY0,
-      w: torso.pelvisW,
-      h: torso.pelvisH,
-      cx: torso.cx
-    };
+    const cx = geo.centerX || 2048;
+    
+    // Берем таз из torso
+    const pelvisX0 = torso.pelvisX0 || (cx - headH * 0.5);
+    const pelvisY0 = torso.pelvisY0 || (geo.topY + headH * 2.5);
+    const pelvisW = torso.pelvisW || headH;
+    const pelvisH = torso.pelvisH || headH * 0.5;
 
-    // Суставы (колени)
-    const leftKneeX = torso.cx - headH * 0.25;
-    const leftKneeY = pelvis.y0 + pelvis.h + headH * 0.8; 
-    const rightKneeX = torso.cx + headH * 0.25;
+    // Суставы (колени) - примерное положение
+    const leftKneeX = cx - headH * 0.25;
+    const leftKneeY = pelvisY0 + pelvisH + headH * 0.8;
+    const rightKneeX = cx + headH * 0.25;
     const rightKneeY = leftKneeY;
     const kneeRadius = params.kneeRadius * headH;
 
-    // Рисуем суставы (полупрозрачно)
-    legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
-    legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
+    // Рисуем колени (полупрозрачно)
+    legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
     // ЛЕВАЯ НОГА
     // ==========================================
-    // Внешнее бедро (P0 на тазе, P2 на колене)
+    // Внешнее бедро
     const p0OuterThigh = { 
-      x: pelvis.x0, 
-      y: (pelvis.y0 + pelvis.h) + (params.outerThighAttachAngle / 100) * headH 
+      x: pelvisX0, 
+      y: (pelvisY0 + pelvisH) + (params.outerThighAttachAngle / 100) * headH 
     };
-    if (p0OuterThigh.y < pelvis.y0) p0OuterThigh.y = pelvis.y0;
-    if (p0OuterThigh.y > pelvis.y0 + pelvis.h) p0OuterThigh.y = pelvis.y0 + pelvis.h;
-
     const p2OuterThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.outerThighKneeAngle, true);
     const p1OuterThigh = {
       x: (p0OuterThigh.x + p2OuterThigh.x) / 2 + params.outerThighP1X * headH,
@@ -110,11 +99,11 @@
       fill: 'none'
     }));
 
-    // Внутреннее бедро (P3 на тазе, P0 на колене)
+    // Внутреннее бедро
     const p0InnerThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.innerThighKneeAngle, true);
     const p3InnerThigh = { 
-      x: pelvis.cx - headH * 0.05, 
-      y: (pelvis.y0 + pelvis.h) + (params.innerThighAttachAngle / 100) * headH 
+      x: cx - headH * 0.05, 
+      y: (pelvisY0 + pelvisH) + (params.innerThighAttachAngle / 100) * headH 
     };
 
     const iDx = p0InnerThigh.x - p3InnerThigh.x;
@@ -138,7 +127,7 @@
     // ПРАВАЯ НОГА (ЗЕРКАЛЬНО)
     // ==========================================
     // Внешнее бедро
-    const p0OuterThighR = { x: pelvis.x0 + pelvis.w, y: p0OuterThigh.y };
+    const p0OuterThighR = { x: pelvisX0 + pelvisW, y: p0OuterThigh.y };
     const p2OuterThighR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.outerThighKneeAngle, false);
     const p1OuterThighR = {
       x: (p0OuterThighR.x + p2OuterThighR.x) / 2 - params.outerThighP1X * headH,
@@ -152,7 +141,7 @@
     // Внутреннее бедро
     const p0InnerThighR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.innerThighKneeAngle, false);
     const p3InnerThighR = { 
-      x: pelvis.cx + headH * 0.05, 
+      x: cx + headH * 0.05, 
       y: p3InnerThigh.y 
     };
     const iDxR = p0InnerThighR.x - p3InnerThighR.x;
@@ -170,16 +159,6 @@
       d: `M ${p3InnerThighR.x} ${p3InnerThighR.y} C ${p1InnerThighR.x} ${p1InnerThighR.y}, ${p2InnerThighR.x} ${p2InnerThighR.y}, ${p0InnerThighR.x} ${p0InnerThighR.y}`,
       fill: 'none'
     }));
-
-    // === МАРКЕРЫ ===
-    const mR = headH * 0.012;
-    const markers = [
-      { x: leftKneeX, y: leftKneeY, c: '#f59e0b' },
-      { x: rightKneeX, y: rightKneeY, c: '#f59e0b' },
-    ];
-    for (const pt of markers) {
-      grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
-    }
   }
 
   function update(geo) {
