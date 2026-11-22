@@ -23,7 +23,7 @@
 
     // --- ВНЕШНЯЯ ИКРА ---
     outerCalfKneeAngle: 0,
-    outerCalfP1X: 0, outerCalfP1Y: 0,
+    outerCalfP1X: -0.30, outerCalfP1Y: -0.20,
     outerCalfAnkleAngle: 0,
   };
 
