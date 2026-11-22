@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Внешнее и внутреннее бедро */
+/* js/leg.js — Этап 2: Внешнее и внутреннее бедро (стабильно) */
 
 (function () {
   'use strict';
@@ -9,16 +9,16 @@
     kneeRadius: 0.09,
     ankleRadius: 0.06,
 
-    // --- ВНЕШНЕЕ БЕДРО ---
-    outerThighAttachAngle: 0, // Угол на тазе (сдвиг по Y)
+    // Внешнее бедро
+    outerThighAttachAngle: 0, 
     outerThighP1X: 0, outerThighP1Y: 0,
-    outerThighKneeAngle: 0, // Угол на колене
+    outerThighKneeAngle: 0, 
 
-    // --- ВНУТРЕННЕЕ БЕДРО ---
-    innerThighAttachAngle: 0, // Угол на тазе (сдвиг по Y, 0 = центр дна таза)
+    // Внутреннее бедро
+    innerThighAttachAngle: 0, 
     innerThighP1X: 0, innerThighP1Y: 0,
     innerThighP2X: 0, innerThighP2Y: 0,
-    innerThighKneeAngle: 180, // Угол на колене (180 = внутренняя сторона)
+    innerThighKneeAngle: 180, 
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -77,37 +77,29 @@
       cx: torso.cx
     };
 
-    // === ПОЗИЦИИ СУСТАВОВ ===
-    // Левое колено
+    // Суставы (колени)
     const leftKneeX = torso.cx - headH * 0.25;
     const leftKneeY = pelvis.y0 + pelvis.h + headH * 0.8; 
-    
-    // Правое колено
     const rightKneeX = torso.cx + headH * 0.25;
     const rightKneeY = leftKneeY;
-
     const kneeRadius = params.kneeRadius * headH;
 
-    // === РИСУЕМ СУСТАВЫ (полупрозрачно) ===
+    // Рисуем суставы (полупрозрачно)
     legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
     legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
 
     // ==========================================
-    // ВНЕШНЕЕ БЕДРО (ЛЕВАЯ НОГА)
+    // ЛЕВАЯ НОГА
     // ==========================================
-    // P0 на левом боку таза (сдвигаем по Y ползунком)
+    // Внешнее бедро (P0 на тазе, P2 на колене)
     const p0OuterThigh = { 
       x: pelvis.x0, 
       y: (pelvis.y0 + pelvis.h) + (params.outerThighAttachAngle / 100) * headH 
     };
-    // Клип по тазу
     if (p0OuterThigh.y < pelvis.y0) p0OuterThigh.y = pelvis.y0;
     if (p0OuterThigh.y > pelvis.y0 + pelvis.h) p0OuterThigh.y = pelvis.y0 + pelvis.h;
 
-    // P2 на внешней стороне колена
     const p2OuterThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.outerThighKneeAngle, true);
-
-    // P1
     const p1OuterThigh = {
       x: (p0OuterThigh.x + p2OuterThigh.x) / 2 + params.outerThighP1X * headH,
       y: (p0OuterThigh.y + p2OuterThigh.y) / 2 + params.outerThighP1Y * headH
@@ -118,19 +110,13 @@
       fill: 'none'
     }));
 
-    // ==========================================
-    // ВНУТРЕННЕЕ БЕДРО (ЛЕВАЯ НОГА)
-    // ==========================================
-    // P0 крепится к внутреннему контуру колена (правая сторона колена)
+    // Внутреннее бедро (P3 на тазе, P0 на колене)
     const p0InnerThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.innerThighKneeAngle, true);
-
-    // P3 крепится к дну таза (центр дна + сдвиг)
     const p3InnerThigh = { 
-      x: pelvis.cx - headH * 0.05, // Чуть левее центра таза
-      y: pelvis.y0 + pelvis.h + (params.innerThighAttachAngle / 100) * headH 
+      x: pelvis.cx - headH * 0.05, 
+      y: (pelvis.y0 + pelvis.h) + (params.innerThighAttachAngle / 100) * headH 
     };
 
-    // P1 и P2 (смещения относительно третей пути)
     const iDx = p0InnerThigh.x - p3InnerThigh.x;
     const iDy = p0InnerThigh.y - p3InnerThigh.y;
     
