@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Внешнее бедро + суставы коленей и лодыжек */
+/* js/leg.js — Этап 2: Суставы + внешнее бедро + внешняя икра */
 
 (function () {
   'use strict';
@@ -10,18 +10,21 @@
     kneeRadius: 0.09,
     ankleRadius: 0.06,
 
-    // Смещения для левой ноги (в долях headH)
+    // Смещения суставов
     leftKneeX: 0, leftKneeY: 0,
     leftAnkleX: 0, leftAnkleY: 0,
-
-    // Смещения для правой ноги
     rightKneeX: 0, rightKneeY: 0,
     rightAnkleX: 0, rightAnkleY: 0,
 
     // --- ВНЕШНЕЕ БЕДРО ---
-    outerThighAttachAngle: 0, // Угол на тазе
-    outerThighP1X: 0, outerThighP1Y: 0, // Смещение P1
-    outerThighKneeAngle: 0, // Угол на колене
+    outerThighAttachAngle: 0,
+    outerThighP1X: 0, outerThighP1Y: 0,
+    outerThighKneeAngle: 0,
+
+    // --- ВНЕШНЯЯ ИКРА ---
+    outerCalfKneeAngle: 0,    // Угол на колене
+    outerCalfP1X: 0, outerCalfP1Y: 0, // Смещение P1
+    outerCalfAnkleAngle: 0,   // Угол на лодыжке
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -53,7 +56,6 @@
     return node;
   }
 
-  // Точка на окружности
   function getPointOnCircle(cx, cy, r, angleDeg, isLeftSide) {
     const rad = (angleDeg * Math.PI) / 180;
     const sign = isLeftSide ? -1 : 1;
@@ -83,19 +85,16 @@
     };
 
     // === ПОЗИЦИИ СУСТАВОВ ===
-    // Левое колено (примерное положение под тазом + смещение)
     const leftKneeBaseX = torso.cx - headH * 0.25;
     const leftKneeBaseY = pelvis.y0 + pelvis.h + headH * 0.8; 
     const leftKneeX = leftKneeBaseX + params.leftKneeX * headH;
     const leftKneeY = leftKneeBaseY + params.leftKneeY * headH;
 
-    // Левая лодыжка (ниже колена + смещение)
     const leftAnkleBaseX = leftKneeBaseX;
     const leftAnkleBaseY = leftKneeBaseY + headH * 1.2;
     const leftAnkleX = leftAnkleBaseX + params.leftAnkleX * headH;
     const leftAnkleY = leftAnkleBaseY + params.leftAnkleY * headH;
 
-    // Правое колено и лодыжка (симметрично)
     const rightKneeX = torso.cx + headH * 0.25 + params.rightKneeX * headH;
     const rightKneeY = leftKneeBaseY + params.rightKneeY * headH;
     const rightAnkleX = torso.cx + headH * 0.25 + params.rightAnkleX * headH;
@@ -104,16 +103,15 @@
     const kneeRadius = params.kneeRadius * headH;
     const ankleRadius = params.ankleRadius * headH;
 
-    // === РИСУЕМ СУСТАВЫ ===
+    // === СУСТАВЫ ===
     legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     legL.appendChild(svgEl('circle', { cx: leftAnkleX, cy: leftAnkleY, r: ankleRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     legR.appendChild(svgEl('circle', { cx: rightAnkleX, cy: rightAnkleY, r: ankleRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
-    // ВНЕШНЕЕ БЕДРО (ЛЕВАЯ НОГА)
+    // ВНЕШНЕЕ БЕДРО (ЛЕВАЯ)
     // ==========================================
-    // P0 на левом боку таза
     const p0OuterThigh = { 
       x: pelvis.x0, 
       y: pelvis.y0 + pelvis.h - pelvis.rad + (params.outerThighAttachAngle / 100) * headH 
@@ -121,10 +119,7 @@
     if (p0OuterThigh.y < pelvis.y0) p0OuterThigh.y = pelvis.y0;
     if (p0OuterThigh.y > pelvis.y0 + pelvis.h) p0OuterThigh.y = pelvis.y0 + pelvis.h;
 
-    // P2 на внешней стороне колена
     const p2OuterThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.outerThighKneeAngle, true);
-
-    // P1 посередине + смещение
     const p1OuterThigh = {
       x: (p0OuterThigh.x + p2OuterThigh.x) / 2 + params.outerThighP1X * headH,
       y: (p0OuterThigh.y + p2OuterThigh.y) / 2 + params.outerThighP1Y * headH
@@ -135,11 +130,8 @@
       fill: 'none'
     }));
 
-    // === ПРАВАЯ НОГА (ЗЕРКАЛЬНО) ===
-    const p0OuterThighR = { 
-      x: pelvis.x0 + pelvis.w, 
-      y: p0OuterThigh.y 
-    };
+    // Внешнее бедро (ПРАВАЯ)
+    const p0OuterThighR = { x: pelvis.x0 + pelvis.w, y: p0OuterThigh.y };
     const p2OuterThighR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.outerThighKneeAngle, false);
     const p1OuterThighR = {
       x: (p0OuterThighR.x + p2OuterThighR.x) / 2 - params.outerThighP1X * headH,
@@ -148,6 +140,34 @@
 
     legR.appendChild(svgEl('path', {
       d: `M ${p0OuterThighR.x} ${p0OuterThighR.y} Q ${p1OuterThighR.x} ${p1OuterThighR.y} ${p2OuterThighR.x} ${p2OuterThighR.y}`,
+      fill: 'none'
+    }));
+
+    // ==========================================
+    // ВНЕШНЯЯ ИКРА (ЛЕВАЯ)
+    // ==========================================
+    const p0OuterCalf = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.outerCalfKneeAngle, true);
+    const p2OuterCalf = getPointOnCircle(leftAnkleX, leftAnkleY, ankleRadius, params.outerCalfAnkleAngle, true);
+    const p1OuterCalf = {
+      x: (p0OuterCalf.x + p2OuterCalf.x) / 2 + params.outerCalfP1X * headH,
+      y: (p0OuterCalf.y + p2OuterCalf.y) / 2 + params.outerCalfP1Y * headH
+    };
+
+    legL.appendChild(svgEl('path', {
+      d: `M ${p0OuterCalf.x} ${p0OuterCalf.y} Q ${p1OuterCalf.x} ${p1OuterCalf.y} ${p2OuterCalf.x} ${p2OuterCalf.y}`,
+      fill: 'none'
+    }));
+
+    // Внешняя икра (ПРАВАЯ)
+    const p0OuterCalfR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.outerCalfKneeAngle, false);
+    const p2OuterCalfR = getPointOnCircle(rightAnkleX, rightAnkleY, ankleRadius, params.outerCalfAnkleAngle, false);
+    const p1OuterCalfR = {
+      x: (p0OuterCalfR.x + p2OuterCalfR.x) / 2 - params.outerCalfP1X * headH,
+      y: (p0OuterCalfR.y + p2OuterCalfR.y) / 2 + params.outerCalfP1Y * headH
+    };
+
+    legR.appendChild(svgEl('path', {
+      d: `M ${p0OuterCalfR.x} ${p0OuterCalfR.y} Q ${p1OuterCalfR.x} ${p1OuterCalfR.y} ${p2OuterCalfR.x} ${p2OuterCalfR.y}`,
       fill: 'none'
     }));
 
