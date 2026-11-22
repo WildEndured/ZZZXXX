@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Внешнее бедро (с нуля) */
+/* js/leg.js — Этап 2: Внешнее бедро + суставы коленей и лодыжек */
 
 (function () {
   'use strict';
@@ -6,18 +6,22 @@
   const NS = 'http://www.w3.org/2000/svg';
 
   const params = {
-    // Радиус колена (для визуализации)
+    // Радиусы
     kneeRadius: 0.09,
-    // Радиус лодыжки (пока не используется, но пусть будет)
     ankleRadius: 0.06,
 
+    // Смещения для левой ноги (в долях headH)
+    leftKneeX: 0, leftKneeY: 0,
+    leftAnkleX: 0, leftAnkleY: 0,
+
+    // Смещения для правой ноги
+    rightKneeX: 0, rightKneeY: 0,
+    rightAnkleX: 0, rightAnkleY: 0,
+
     // --- ВНЕШНЕЕ БЕДРО ---
-    // Угол крепления к тазу (0° = бок, отрицательные = вниз)
-    outerThighAttachAngle: 0,
-    // Смещение P1
-    outerThighP1X: 0, outerThighP1Y: 0,
-    // Угол крепления к колену
-    outerThighKneeAngle: 0,
+    outerThighAttachAngle: 0, // Угол на тазе
+    outerThighP1X: 0, outerThighP1Y: 0, // Смещение P1
+    outerThighKneeAngle: 0, // Угол на колене
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -74,58 +78,58 @@
       y0: torso.pelvisY0,
       w: torso.pelvisW,
       h: torso.pelvisH,
-      cx: torso.cx
+      cx: torso.cx,
+      rad: torso.rad || 0
     };
 
     // === ПОЗИЦИИ СУСТАВОВ ===
-    // Левое колено (пока примерное положение, позже добавим ползунки)
-    const leftKneeX = torso.cx - headH * 0.25;
-    const leftKneeY = pelvis.y0 + pelvis.h + headH * 0.8; 
-    
-    // Правое колено
-    const rightKneeX = torso.cx + headH * 0.25;
-    const rightKneeY = leftKneeY;
+    // Левое колено (примерное положение под тазом + смещение)
+    const leftKneeBaseX = torso.cx - headH * 0.25;
+    const leftKneeBaseY = pelvis.y0 + pelvis.h + headH * 0.8; 
+    const leftKneeX = leftKneeBaseX + params.leftKneeX * headH;
+    const leftKneeY = leftKneeBaseY + params.leftKneeY * headH;
+
+    // Левая лодыжка (ниже колена + смещение)
+    const leftAnkleBaseX = leftKneeBaseX;
+    const leftAnkleBaseY = leftKneeBaseY + headH * 1.2;
+    const leftAnkleX = leftAnkleBaseX + params.leftAnkleX * headH;
+    const leftAnkleY = leftAnkleBaseY + params.leftAnkleY * headH;
+
+    // Правое колено и лодыжка (симметрично)
+    const rightKneeX = torso.cx + headH * 0.25 + params.rightKneeX * headH;
+    const rightKneeY = leftKneeBaseY + params.rightKneeY * headH;
+    const rightAnkleX = torso.cx + headH * 0.25 + params.rightAnkleX * headH;
+    const rightAnkleY = leftAnkleBaseY + params.rightAnkleY * headH;
 
     const kneeRadius = params.kneeRadius * headH;
+    const ankleRadius = params.ankleRadius * headH;
 
-    // === РИСУЕМ СУСТАВЫ (полупрозрачно, для контекста) ===
-    legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
-    legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.2 }));
+    // === РИСУЕМ СУСТАВЫ ===
+    legL.appendChild(svgEl('circle', { cx: leftKneeX, cy: leftKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    legL.appendChild(svgEl('circle', { cx: leftAnkleX, cy: leftAnkleY, r: ankleRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    legR.appendChild(svgEl('circle', { cx: rightKneeX, cy: rightKneeY, r: kneeRadius, fill: 'none', 'stroke-opacity': 0.3 }));
+    legR.appendChild(svgEl('circle', { cx: rightAnkleX, cy: rightAnkleY, r: ankleRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
     // ВНЕШНЕЕ БЕДРО (ЛЕВАЯ НОГА)
     // ==========================================
-    // P0: на левом боку таза
-    // Берем точку на левой границе таза. 
-    // Чтобы она "плавала" по дуге, используем угол (0° - центр бока, 90° - верх, -90° - низ)
-    // Но так как таз - это скругленный прямоугольник, мы просто сдвигаем Y от нижнего левого угла.
-    
-    // Центр левого скругления таза:
-    const pelvisLeftArcCx = pelvis.x0 + (torso.rad || 0); 
-    const pelvisLeftArcCy = pelvis.y0 + pelvis.h - (torso.rad || 0); // Нижнее скругление
-    const pelvisRadius = torso.rad || 0;
-
-    // P0: Угол 180° = левый бок. 
-    // Но нам нужен низ таза. Поэтому угол будет где-то 225° (низ-лево) или мы просто берем точку на нижней границе.
-    // Для простоты: берем левый нижний угол таза и сдвигаем по Y ползунком.
+    // P0 на левом боку таза
     const p0OuterThigh = { 
       x: pelvis.x0, 
-      y: pelvis.y0 + pelvis.h - (torso.rad || 0) + (params.outerThighAttachAngle / 100) * headH 
+      y: pelvis.y0 + pelvis.h - pelvis.rad + (params.outerThighAttachAngle / 100) * headH 
     };
-    // Ограничим, чтобы не вылезал за таз
     if (p0OuterThigh.y < pelvis.y0) p0OuterThigh.y = pelvis.y0;
     if (p0OuterThigh.y > pelvis.y0 + pelvis.h) p0OuterThigh.y = pelvis.y0 + pelvis.h;
 
-    // P2: на внешней стороне колена
+    // P2 на внешней стороне колена
     const p2OuterThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.outerThighKneeAngle, true);
 
-    // P1: посередине + смещение
+    // P1 посередине + смещение
     const p1OuterThigh = {
       x: (p0OuterThigh.x + p2OuterThigh.x) / 2 + params.outerThighP1X * headH,
       y: (p0OuterThigh.y + p2OuterThigh.y) / 2 + params.outerThighP1Y * headH
     };
 
-    // Рисуем кривую
     legL.appendChild(svgEl('path', {
       d: `M ${p0OuterThigh.x} ${p0OuterThigh.y} Q ${p1OuterThigh.x} ${p1OuterThigh.y} ${p2OuterThigh.x} ${p2OuterThigh.y}`,
       fill: 'none'
@@ -138,7 +142,7 @@
     };
     const p2OuterThighR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.outerThighKneeAngle, false);
     const p1OuterThighR = {
-      x: (p0OuterThighR.x + p2OuterThighR.x) / 2 - params.outerThighP1X * headH, // Зеркально
+      x: (p0OuterThighR.x + p2OuterThighR.x) / 2 - params.outerThighP1X * headH,
       y: (p0OuterThighR.y + p2OuterThighR.y) / 2 + params.outerThighP1Y * headH
     };
 
@@ -151,11 +155,9 @@
     const mR = headH * 0.012;
     const markers = [
       { x: leftKneeX, y: leftKneeY, c: '#f59e0b' },
+      { x: leftAnkleX, y: leftAnkleY, c: '#16a34a' },
       { x: rightKneeX, y: rightKneeY, c: '#f59e0b' },
-      // Маркеры P0, P1, P2 для левой ноги
-      { x: p0OuterThigh.x, y: p0OuterThigh.y, c: '#dc2626' }, // P0
-      { x: p1OuterThigh.x, y: p1OuterThigh.y, c: '#2563eb' }, // P1
-      { x: p2OuterThigh.x, y: p2OuterThigh.y, c: '#16a34a' }, // P2
+      { x: rightAnkleX, y: rightAnkleY, c: '#16a34a' },
     ];
     for (const pt of markers) {
       grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
