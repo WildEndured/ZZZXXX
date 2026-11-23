@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Суставы + внешнее бедро + внешняя икра + внутреннее бедро */
+/* js/leg.js — Этап 2: Суставы + контуры ног (бедро, икра) */
 
 (function () {
   'use strict';
@@ -27,11 +27,16 @@
     outerCalfAnkleAngle: 0,
 
     // --- ВНУТРЕННЕЕ БЕДРО ---
-    // P0 на дне таза (сдвиг по X в долях ширины таза, 0 = центр, 1 = край)
-    innerThighAttachX: 0.5, 
+    innerThighAttachX: 0.5,
     innerThighP1X: 0, innerThighP1Y: 0,
     innerThighP2X: 0, innerThighP2Y: 0,
     innerThighKneeAngle: 180,
+
+    // --- ВНУТРЕННЯЯ ИКРА ---
+    innerCalfKneeAngle: 180,
+    innerCalfP1X: 0, innerCalfP1Y: 0,
+    innerCalfP2X: 0, innerCalfP2Y: 0,
+    innerCalfAnkleAngle: 180,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -181,7 +186,6 @@
     // ==========================================
     // ВНУТРЕННЕЕ БЕДРО (ЛЕВАЯ)
     // ==========================================
-    // P0 на дне таза, сдвигается по X от центра к левому краю
     const p0InnerThigh = {
       x: pelvis.cx - (pelvis.w / 2) * params.innerThighAttachX,
       y: pelvis.y0 + pelvis.h
@@ -228,6 +232,51 @@
 
     legR.appendChild(svgEl('path', {
       d: `M ${p0InnerThighR.x} ${p0InnerThighR.y} C ${p1InnerThighR.x} ${p1InnerThighR.y}, ${p2InnerThighR.x} ${p2InnerThighR.y}, ${p3InnerThighR.x} ${p3InnerThighR.y}`,
+      fill: 'none'
+    }));
+
+    // ==========================================
+    // ВНУТРЕННЯЯ ИКРА (ЛЕВАЯ)
+    // ==========================================
+    // P0 на колене, P3 на лодыжке (согласно скриншоту)
+    const p0InnerCalf = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.innerCalfKneeAngle, true);
+    const p3InnerCalf = getPointOnCircle(leftAnkleX, leftAnkleY, ankleRadius, params.innerCalfAnkleAngle, true);
+    
+    const cDx = p3InnerCalf.x - p0InnerCalf.x;
+    const cDy = p3InnerCalf.y - p0InnerCalf.y;
+    
+    const p1InnerCalf = { 
+      x: p0InnerCalf.x + cDx * 0.33 + params.innerCalfP1X * headH, 
+      y: p0InnerCalf.y + cDy * 0.33 + params.innerCalfP1Y * headH 
+    };
+    const p2InnerCalf = { 
+      x: p0InnerCalf.x + cDx * 0.66 + params.innerCalfP2X * headH, 
+      y: p0InnerCalf.y + cDy * 0.66 + params.innerCalfP2Y * headH 
+    };
+
+    legL.appendChild(svgEl('path', {
+      d: `M ${p0InnerCalf.x} ${p0InnerCalf.y} C ${p1InnerCalf.x} ${p1InnerCalf.y}, ${p2InnerCalf.x} ${p2InnerCalf.y}, ${p3InnerCalf.x} ${p3InnerCalf.y}`,
+      fill: 'none'
+    }));
+
+    // Внутренняя икра (ПРАВАЯ)
+    const p0InnerCalfR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.innerCalfKneeAngle, false);
+    const p3InnerCalfR = getPointOnCircle(rightAnkleX, rightAnkleY, ankleRadius, params.innerCalfAnkleAngle, false);
+    
+    const cDxR = p3InnerCalfR.x - p0InnerCalfR.x;
+    const cDyR = p3InnerCalfR.y - p0InnerCalfR.y;
+    
+    const p1InnerCalfR = { 
+      x: p0InnerCalfR.x + cDxR * 0.33 - params.innerCalfP1X * headH, 
+      y: p0InnerCalfR.y + cDyR * 0.33 + params.innerCalfP1Y * headH 
+    };
+    const p2InnerCalfR = { 
+      x: p0InnerCalfR.x + cDxR * 0.66 - params.innerCalfP2X * headH, 
+      y: p0InnerCalfR.y + cDyR * 0.66 + params.innerCalfP2Y * headH 
+    };
+
+    legR.appendChild(svgEl('path', {
+      d: `M ${p0InnerCalfR.x} ${p0InnerCalfR.y} C ${p1InnerCalfR.x} ${p1InnerCalfR.y}, ${p2InnerCalfR.x} ${p2InnerCalfR.y}, ${p3InnerCalfR.x} ${p3InnerCalfR.y}`,
       fill: 'none'
     }));
 
