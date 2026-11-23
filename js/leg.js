@@ -8,13 +8,13 @@
   const params = {
     // Радиусы
     kneeRadius: 0.15,
-    ankleRadius: 0.06,
+    ankleRadius: 0.075,
 
     // Смещения суставов
-    leftKneeX: -0.07, leftKneeY: 0.03,
-    leftAnkleX: -0.15, leftAnkleY: -0.10,
-    rightKneeX: 0.07, rightKneeY: 0.03,
-    rightAnkleX: 0.15, rightAnkleY: -0.10,
+    leftKneeX: 0.07, leftKneeY: 0.03,
+    leftAnkleX: 0.15, leftAnkleY: -0.10,
+    rightKneeX: -0.07, rightKneeY: 0.03,
+    rightAnkleX: -0.15, rightAnkleY: -0.10,
 
     // --- ВНЕШНЕЕ БЕДРО ---
     outerThighAttachAngle: -20,
