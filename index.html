@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Фигура — Этап 2</title>
-  <link rel="stylesheet" href="style.css?v=65" />
+  <link rel="stylesheet" href="style.css?v=66" />
 </head>
 <body>
   <div class="app">
@@ -335,6 +335,34 @@
         </section>
 
         <section class="block">
+          <h2>Ноги: внутреннее бедро</h2>
+          <label class="row">
+            <span>Крепление к тазу: <b id="legInnerThighAttachVal">50</b>%</span>
+            <input type="range" id="legInnerThighAttach" min="0" max="100" step="1" value="50" />
+          </label>
+          <label class="row">
+            <span>Угол на колене: <b id="legInnerThighKneeVal">180</b>°</span>
+            <input type="range" id="legInnerThighKnee" min="90" max="270" step="1" value="180" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 X: <b id="legInnerThighP1XVal">0</b>%</span>
+            <input type="range" id="legInnerThighP1X" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P1 Y: <b id="legInnerThighP1YVal">0</b>%</span>
+            <input type="range" id="legInnerThighP1Y" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P2 X: <b id="legInnerThighP2XVal">0</b>%</span>
+            <input type="range" id="legInnerThighP2X" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+          <label class="row">
+            <span>Смещение P2 Y: <b id="legInnerThighP2YVal">0</b>%</span>
+            <input type="range" id="legInnerThighP2Y" min="-0.4" max="0.4" step="0.01" value="0" />
+          </label>
+        </section>
+
+        <section class="block">
           <h2>Кривая Безье (редактор)</h2>
           <p style="font-size: 12px; color: #888; margin-bottom: 8px;">
             Кликайте по холсту, чтобы добавлять точки. Кривая строится по всем точкам.
@@ -384,11 +412,11 @@
     </aside>
   </div>
 
-  <script src="js/head.js?v=65"></script>
-  <script src="js/torso.js?v=65"></script>
-  <script src="js/arm.js?v=65"></script>
-  <script src="js/leg.js?v=65"></script>
-  <script src="js/editor.js?v=65"></script>
-  <script src="js/main.js?v=65"></script>
+  <script src="js/head.js?v=66"></script>
+  <script src="js/torso.js?v=66"></script>
+  <script src="js/arm.js?v=66"></script>
+  <script src="js/leg.js?v=66"></script>
+  <script src="js/editor.js?v=66"></script>
+  <script src="js/main.js?v=66"></script>
 </body>
 </html>
