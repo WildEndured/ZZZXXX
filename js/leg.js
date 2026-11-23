@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Суставы + внешнее бедро + внешняя икра */
+/* js/leg.js — Этап 2: Суставы + внешнее бедро + внешняя икра + внутреннее бедро */
 
 (function () {
   'use strict';
@@ -25,6 +25,13 @@
     outerCalfKneeAngle: 0,
     outerCalfP1X: -0.30, outerCalfP1Y: -0.20,
     outerCalfAnkleAngle: 0,
+
+    // --- ВНУТРЕННЕЕ БЕДРО ---
+    // P0 на дне таза (сдвиг по X в долях ширины таза, 0 = центр, 1 = край)
+    innerThighAttachX: 0.5, 
+    innerThighP1X: 0, innerThighP1Y: 0,
+    innerThighP2X: 0, innerThighP2Y: 0,
+    innerThighKneeAngle: 180,
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -168,6 +175,59 @@
 
     legR.appendChild(svgEl('path', {
       d: `M ${p0OuterCalfR.x} ${p0OuterCalfR.y} Q ${p1OuterCalfR.x} ${p1OuterCalfR.y} ${p2OuterCalfR.x} ${p2OuterCalfR.y}`,
+      fill: 'none'
+    }));
+
+    // ==========================================
+    // ВНУТРЕННЕЕ БЕДРО (ЛЕВАЯ)
+    // ==========================================
+    // P0 на дне таза, сдвигается по X от центра к левому краю
+    const p0InnerThigh = {
+      x: pelvis.cx - (pelvis.w / 2) * params.innerThighAttachX,
+      y: pelvis.y0 + pelvis.h
+    };
+    
+    const p3InnerThigh = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.innerThighKneeAngle, true);
+    
+    const iDx = p3InnerThigh.x - p0InnerThigh.x;
+    const iDy = p3InnerThigh.y - p0InnerThigh.y;
+    
+    const p1InnerThigh = { 
+      x: p0InnerThigh.x + iDx * 0.33 + params.innerThighP1X * headH, 
+      y: p0InnerThigh.y + iDy * 0.33 + params.innerThighP1Y * headH 
+    };
+    const p2InnerThigh = { 
+      x: p0InnerThigh.x + iDx * 0.66 + params.innerThighP2X * headH, 
+      y: p0InnerThigh.y + iDy * 0.66 + params.innerThighP2Y * headH 
+    };
+
+    legL.appendChild(svgEl('path', {
+      d: `M ${p0InnerThigh.x} ${p0InnerThigh.y} C ${p1InnerThigh.x} ${p1InnerThigh.y}, ${p2InnerThigh.x} ${p2InnerThigh.y}, ${p3InnerThigh.x} ${p3InnerThigh.y}`,
+      fill: 'none'
+    }));
+
+    // Внутреннее бедро (ПРАВАЯ)
+    const p0InnerThighR = {
+      x: pelvis.cx + (pelvis.w / 2) * params.innerThighAttachX,
+      y: p0InnerThigh.y
+    };
+    
+    const p3InnerThighR = getPointOnCircle(rightKneeX, rightKneeY, kneeRadius, params.innerThighKneeAngle, false);
+    
+    const iDxR = p3InnerThighR.x - p0InnerThighR.x;
+    const iDyR = p3InnerThighR.y - p0InnerThighR.y;
+    
+    const p1InnerThighR = { 
+      x: p0InnerThighR.x + iDxR * 0.33 - params.innerThighP1X * headH, 
+      y: p0InnerThighR.y + iDyR * 0.33 + params.innerThighP1Y * headH 
+    };
+    const p2InnerThighR = { 
+      x: p0InnerThighR.x + iDxR * 0.66 - params.innerThighP2X * headH, 
+      y: p0InnerThighR.y + iDyR * 0.66 + params.innerThighP2Y * headH 
+    };
+
+    legR.appendChild(svgEl('path', {
+      d: `M ${p0InnerThighR.x} ${p0InnerThighR.y} C ${p1InnerThighR.x} ${p1InnerThighR.y}, ${p2InnerThighR.x} ${p2InnerThighR.y}, ${p3InnerThighR.x} ${p3InnerThighR.y}`,
       fill: 'none'
     }));
 
