@@ -15,9 +15,9 @@
     pelvisHeightCorr: 0,
     pelvisRounding: 0.6,
 
-    // Новые параметры для трапеций
-    trapNeckAttach: 0.5, // 0.5 = середина шеи
-    trapShoulderAttach: 0, // 0 = вершина плеча, -90 = внешняя сторона, 90 = внутренняя
+    // Трапеции
+    trapNeckAttach: 0.5,    // 0 = L4 (верх шеи), 1 = T0 (низ шеи)
+    trapShoulderAttach: 0,  // 0° = верх плеча
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -192,15 +192,14 @@
   }
 
   function drawTorso(h) {
-    const { torsoGroup, grid } = els;
+    const { torsoGroup } = els;
     clear(torsoGroup);
 
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
     // === ШЕЯ ===
-    let neckTopY = 0;
-    let neckBottomY = 0;
+    let neckTopY = 0, neckBottomY = 0;
     if (headGeo) {
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
@@ -290,17 +289,14 @@
     // ==========================================
     // ТРАПЕЦИИ (ШЕЯ -> ПЛЕЧО)
     // ==========================================
-    if (headGeo && window.Arm && window.Arm.lastGeometry) {
+    if (headGeo && window.Arm && window.Arm.lastGeometry && neckBottomY > neckTopY) {
       const armGeo = window.Arm.lastGeometry;
       
-      // --- ЛЕВАЯ ТРАПЕЦИЯ ---
-      // P0: точка на шее (середина боковой грани)
-      // Шея идет от neckTopY (L4) до neckBottomY (верх груди)
+      // Левая трапеция
       const neckLeftX = h.cx - neckHalfW;
       const p0LeftY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
       const p0Left = { x: neckLeftX, y: p0LeftY };
       
-      // P1: точка на плече (верхняя грань круга плеча)
       const shoulderCx = armGeo.leftCx;
       const shoulderCy = armGeo.leftCy;
       const shoulderR = armGeo.shoulderRadius;
@@ -314,7 +310,7 @@
         x1: p0Left.x, y1: p0Left.y, x2: p1Left.x, y2: p1Left.y, fill: 'none',
       }));
 
-      // --- ПРАВАЯ ТРАПЕЦИЯ ---
+      // Правая трапеция
       const neckRightX = h.cx + neckHalfW;
       const p0RightY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
       const p0Right = { x: neckRightX, y: p0RightY };
