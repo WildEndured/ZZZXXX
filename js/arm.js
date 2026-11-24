@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры предплечья */
+/* js/arm.js — Этап 2: Суставы + контуры рук */
 
 (function () {
   'use strict';
@@ -18,13 +18,21 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
+    // --- ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ) ---
     // Внешняя линия
+    outerUpperArmAttachAngle: 0, // Угол на плече
+    outerUpperArmP1X: 0, outerUpperArmP1Y: 0,
+    outerUpperArmElbowAngle: 0, // Угол на локте
+    // Внутренняя линия
+    innerUpperArmAttachAngle: 180, // Угол на плече
+    innerUpperArmP1X: 0, innerUpperArmP1Y: 0,
+    innerUpperArmElbowAngle: 180, // Угол на локте
+
+    // --- ПРЕДПЛЕЧЬЕ (ЛОКОТЬ -> ЗАПЯСТЬЕ) ---
     forearmElbowAttachAngle: 0,
     forearmWristAttachAngle: 0,
-    forearmP1OffsetX: 0.10,
-    forearmP1OffsetY: -0.20,
+    forearmP1OffsetX: 0.10, forearmP1OffsetY: -0.20,
 
-    // Внутренняя линия
     forearmInnerWristAngle: 125,
     forearmInnerElbowAngle: 180,
     forearmInnerP1OffsetX: 0,
@@ -94,7 +102,6 @@
     const chestRx = torso.chestRx;
     const topNarrow = torso.cpTopX / chestRx;
 
-    // Смещения
     const leftOffsetX = params.leftX * headH;
     const leftOffsetY = params.leftY * headH;
     const rightOffsetX = params.rightX * headH;
@@ -139,7 +146,7 @@
     const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
     const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
-    // === РИСУЕМ СУСТАВЫ ===
+    // === СУСТАВЫ ===
     armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armL.appendChild(svgEl('circle', { cx: wristLeftCx, cy: wristLeftCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
@@ -149,78 +156,121 @@
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
     // ==========================================
-    // ВНЕШНЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (Q)
+    // ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ)
     // ==========================================
-    // Правая рука
-    const rightOuterP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
-    const rightOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
-    const rightOuterP1 = {
-      x: (rightOuterP0.x + rightOuterP2.x) / 2 + params.forearmP1OffsetX * headH,
-      y: (rightOuterP0.y + rightOuterP2.y) / 2 + params.forearmP1OffsetY * headH
+    // ПРАВАЯ РУКА
+    const rOuterP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.outerUpperArmAttachAngle, false);
+    const rOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.outerUpperArmElbowAngle, false);
+    const rOuterP1 = {
+      x: (rOuterP0.x + rOuterP2.x) / 2 + params.outerUpperArmP1X * headH,
+      y: (rOuterP0.y + rOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
     };
     armR.appendChild(svgEl('path', {
-      d: `M ${rightOuterP0.x} ${rightOuterP0.y} Q ${rightOuterP1.x} ${rightOuterP1.y} ${rightOuterP2.x} ${rightOuterP2.y}`,
+      d: `M ${rOuterP0.x} ${rOuterP0.y} Q ${rOuterP1.x} ${rOuterP1.y} ${rOuterP2.x} ${rOuterP2.y}`,
       fill: 'none'
     }));
 
-    // Левая рука
-    const leftOuterP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
-    const leftOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
-    const leftOuterP1 = {
-      x: (leftOuterP0.x + leftOuterP2.x) / 2 - params.forearmP1OffsetX * headH,
-      y: (leftOuterP0.y + leftOuterP2.y) / 2 + params.forearmP1OffsetY * headH
+    // ЛЕВАЯ РУКА
+    const lOuterP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.outerUpperArmAttachAngle, true);
+    const lOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.outerUpperArmElbowAngle, true);
+    const lOuterP1 = {
+      x: (lOuterP0.x + lOuterP2.x) / 2 - params.outerUpperArmP1X * headH,
+      y: (lOuterP0.y + lOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
     };
     armL.appendChild(svgEl('path', {
-      d: `M ${leftOuterP0.x} ${leftOuterP0.y} Q ${leftOuterP1.x} ${leftOuterP1.y} ${leftOuterP2.x} ${leftOuterP2.y}`,
+      d: `M ${lOuterP0.x} ${lOuterP0.y} Q ${lOuterP1.x} ${lOuterP1.y} ${lOuterP2.x} ${lOuterP2.y}`,
       fill: 'none'
     }));
 
-    // ==========================================
-    // ВНУТРЕННЯЯ ЛИНИЯ ПРЕДПЛЕЧЬЯ (C)
-    // ==========================================
-    // Правая рука
-    const rInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
-    const rInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
-    
-    const rDx = rInP3.x - rInP0.x;
-    const rDy = rInP3.y - rInP0.y;
-    
-    const rInP1 = { 
-      x: rInP0.x + rDx * 0.33 + params.forearmInnerP1OffsetX * headH, 
-      y: rInP0.y + rDy * 0.33 + params.forearmInnerP1OffsetY * headH 
+    // ВНУТРЕННЯЯ ЛИНИЯ (верхняя часть)
+    // ПРАВАЯ РУКА
+    const rInnerP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.innerUpperArmAttachAngle, false);
+    const rInnerP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.innerUpperArmElbowAngle, false);
+    const rInnerP1 = {
+      x: (rInnerP0.x + rInnerP2.x) / 2 + params.innerUpperArmP1X * headH,
+      y: (rInnerP0.y + rInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
     };
-    const rInP2 = { 
-      x: rInP0.x + rDx * 0.66 + params.forearmInnerP2OffsetX * headH, 
-      y: rInP0.y + rDy * 0.66 + params.forearmInnerP2OffsetY * headH 
-    };
-
     armR.appendChild(svgEl('path', {
-      d: `M ${rInP0.x} ${rInP0.y} C ${rInP1.x} ${rInP1.y}, ${rInP2.x} ${rInP2.y}, ${rInP3.x} ${rInP3.y}`,
+      d: `M ${rInnerP0.x} ${rInnerP0.y} Q ${rInnerP1.x} ${rInnerP1.y} ${rInnerP2.x} ${rInnerP2.y}`,
       fill: 'none'
     }));
 
-    // Левая рука
-    const lInP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmInnerWristAngle, true);
-    const lInP3 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmInnerElbowAngle, true);
-    
-    const lDx = lInP3.x - lInP0.x;
-    const lDy = lInP3.y - lInP0.y;
-    
-    const lInP1 = { 
-      x: lInP0.x + lDx * 0.33 - params.forearmInnerP1OffsetX * headH, 
-      y: lInP0.y + lDy * 0.33 + params.forearmInnerP1OffsetY * headH 
+    // ЛЕВАЯ РУКА
+    const lInnerP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.innerUpperArmAttachAngle, true);
+    const lInnerP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.innerUpperArmElbowAngle, true);
+    const lInnerP1 = {
+      x: (lInnerP0.x + lInnerP2.x) / 2 - params.innerUpperArmP1X * headH,
+      y: (lInnerP0.y + lInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
     };
-    const lInP2 = { 
-      x: lInP0.x + lDx * 0.66 - params.forearmInnerP2OffsetX * headH, 
-      y: lInP0.y + lDy * 0.66 + params.forearmInnerP2OffsetY * headH 
-    };
-
     armL.appendChild(svgEl('path', {
-      d: `M ${lInP0.x} ${lInP0.y} C ${lInP1.x} ${lInP1.y}, ${lInP2.x} ${lInP2.y}, ${lInP3.x} ${lInP3.y}`,
+      d: `M ${lInnerP0.x} ${lInnerP0.y} Q ${lInnerP1.x} ${lInnerP1.y} ${lInnerP2.x} ${lInnerP2.y}`,
       fill: 'none'
     }));
 
-    // === МАРКЕРЫ СУСТАВОВ ===
+    // ==========================================
+    // ПРЕДПЛЕЧЬЕ (ЛОКОТЬ -> ЗАПЯСТЬЕ)
+    // ==========================================
+    // ПРАВАЯ РУКА (внешняя)
+    const rForeP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
+    const rForeP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
+    const rForeP1 = {
+      x: (rForeP0.x + rForeP2.x) / 2 + params.forearmP1OffsetX * headH,
+      y: (rForeP0.y + rForeP2.y) / 2 + params.forearmP1OffsetY * headH
+    };
+    armR.appendChild(svgEl('path', {
+      d: `M ${rForeP0.x} ${rForeP0.y} Q ${rForeP1.x} ${rForeP1.y} ${rForeP2.x} ${rForeP2.y}`,
+      fill: 'none'
+    }));
+
+    // ЛЕВАЯ РУКА (внешняя)
+    const lForeP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
+    const lForeP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
+    const lForeP1 = {
+      x: (lForeP0.x + lForeP2.x) / 2 - params.forearmP1OffsetX * headH,
+      y: (lForeP0.y + lForeP2.y) / 2 + params.forearmP1OffsetY * headH
+    };
+    armL.appendChild(svgEl('path', {
+      d: `M ${lForeP0.x} ${lForeP0.y} Q ${lForeP1.x} ${lForeP1.y} ${lForeP2.x} ${lForeP2.y}`,
+      fill: 'none'
+    }));
+
+    // ВНУТРЕННЯЯ (ПРАВАЯ)
+    const rForeInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
+    const rForeInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
+    const rForeDx = rForeInP3.x - rForeInP0.x;
+    const rForeDy = rForeInP3.y - rForeInP0.y;
+    const rForeInP1 = { 
+      x: rForeInP0.x + rForeDx * 0.33 + params.forearmInnerP1OffsetX * headH, 
+      y: rForeInP0.y + rForeDy * 0.33 + params.forearmInnerP1OffsetY * headH 
+    };
+    const rForeInP2 = { 
+      x: rForeInP0.x + rForeDx * 0.66 + params.forearmInnerP2OffsetX * headH, 
+      y: rForeInP0.y + rForeDy * 0.66 + params.forearmInnerP2OffsetY * headH 
+    };
+    armR.appendChild(svgEl('path', {
+      d: `M ${rForeInP0.x} ${rForeInP0.y} C ${rForeInP1.x} ${rForeInP1.y}, ${rForeInP2.x} ${rForeInP2.y}, ${rForeInP3.x} ${rForeInP3.y}`,
+      fill: 'none'
+    }));
+
+    // ВНУТРЕННЯЯ (ЛЕВАЯ)
+    const lForeInP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmInnerWristAngle, true);
+    const lForeInP3 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmInnerElbowAngle, true);
+    const lForeDx = lForeInP3.x - lForeInP0.x;
+    const lForeDy = lForeInP3.y - lForeInP0.y;
+    const lForeInP1 = { 
+      x: lForeInP0.x + lForeDx * 0.33 - params.forearmInnerP1OffsetX * headH, 
+      y: lForeInP0.y + lForeDy * 0.33 + params.forearmInnerP1OffsetY * headH 
+    };
+    const lForeInP2 = { 
+      x: lForeInP0.x + lForeDx * 0.66 - params.forearmInnerP2OffsetX * headH, 
+      y: lForeInP0.y + lForeDy * 0.66 + params.forearmInnerP2OffsetY * headH 
+    };
+    armL.appendChild(svgEl('path', {
+      d: `M ${lForeInP0.x} ${lForeInP0.y} C ${lForeInP1.x} ${lForeInP1.y}, ${lForeInP2.x} ${lForeInP2.y}, ${lForeInP3.x} ${lForeInP3.y}`,
+      fill: 'none'
+    }));
+
+    // === МАРКЕРЫ ===
     const mR = headH * 0.012;
     const markers = [
       { x: leftCx, y: leftCy, c: '#2563eb' },
