@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз (с пупком) */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз + Трапеции */
 
 (function () {
   'use strict';
@@ -14,6 +14,10 @@
     pelvisWidthCorr: 0,
     pelvisHeightCorr: 0,
     pelvisRounding: 0.6,
+
+    // Новые параметры для трапеций
+    trapNeckAttach: 0.5, // 0.5 = середина шеи
+    trapShoulderAttach: 0, // 0 = вершина плеча, -90 = внешняя сторона, 90 = внутренняя
   };
 
   const DEFAULT_PARAMS = Object.freeze({ ...params });
@@ -36,9 +40,7 @@
     return els;
   }
 
-  function clear(el) {
-    while (el.firstChild) el.removeChild(el.firstChild);
-  }
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
   function svgEl(name, attrs) {
     const node = document.createElementNS(NS, name);
@@ -190,28 +192,31 @@
   }
 
   function drawTorso(h) {
-    const { torsoGroup } = els;
+    const { torsoGroup, grid } = els;
     clear(torsoGroup);
 
     const headGeo = window.Head && window.Head.lastGeometry;
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
+    // === ШЕЯ ===
+    let neckTopY = 0;
+    let neckBottomY = 0;
     if (headGeo) {
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
-      const topLeftY = findJawYOnSecondSegment(leftX, headGeo);
-      const topRightY = findJawYOnSecondSegment(rightX, headGeo);
-      const botLeftY = findChestYByX(leftX, h);
-      const botRightY = findChestYByX(rightX, h);
+      neckTopY = findJawYOnSecondSegment(leftX, headGeo);
+      neckBottomY = findChestYByX(leftX, h);
 
       torsoGroup.appendChild(svgEl('line', {
-        x1: leftX, y1: topLeftY, x2: leftX, y2: botLeftY, fill: 'none',
+        x1: leftX, y1: neckTopY, x2: leftX, y2: neckBottomY, fill: 'none',
       }));
       torsoGroup.appendChild(svgEl('line', {
-        x1: rightX, y1: topRightY, x2: rightX, y2: botRightY, fill: 'none',
+        x1: rightX, y1: findJawYOnSecondSegment(rightX, headGeo), 
+        x2: rightX, y2: findChestYByX(rightX, h), fill: 'none',
       }));
     }
 
+    // === ГРУДЬ ===
     const x0 = h.cx;
     const y0 = h.chestY0;
     const yMid = y0 + h.chestHeightPx * 0.6;
@@ -232,32 +237,29 @@
       d: dChest.replace(/\s+/g, ' ').trim(), fill: 'none',
     }));
 
-    // Таз
+    // === ТАЗ ===
     torsoGroup.appendChild(svgEl('rect', {
       x: h.pelvisX0, y: h.pelvisY0,
       width: h.pelvisW, height: h.pelvisH,
       rx: h.rad, ry: h.rad, fill: 'none',
     }));
 
-    // --- ЛИНИИ ВНУТРИ ТАЗА ---
+    // === ЛИНИИ ВНУТРИ ТАЗА ===
     const p2x = h.pelvisX0 + h.pelvisW * (2 / 5);
     const p2y = h.pelvisY0 + h.pelvisH;
     const p3x = h.pelvisX0 + h.pelvisW * (3 / 5);
     const p3y = h.pelvisY0 + h.pelvisH;
 
-    // 1. От P2 к верхнему левому углу
     const hitLeft = findPointInsidePelvis(p2x, p2y, h.pelvisX0, h.pelvisY0, h);
     torsoGroup.appendChild(svgEl('line', {
       x1: p2x, y1: p2y, x2: hitLeft.x, y2: hitLeft.y, fill: 'none',
     }));
 
-    // 2. От P3 к верхнему правому углу
     const hitRight = findPointInsidePelvis(p3x, p3y, h.pelvisX0 + h.pelvisW, h.pelvisY0, h);
     torsoGroup.appendChild(svgEl('line', {
       x1: p3x, y1: p3y, x2: hitRight.x, y2: hitRight.y, fill: 'none',
     }));
 
-    // 3. От P2 влево-вверх под 40°
     const tan40 = Math.tan(40 * Math.PI / 180);
     const dx2 = p2x - h.pelvisX0;
     let dy2 = dx2 * tan40;
@@ -268,7 +270,6 @@
       x1: p2x, y1: p2y, x2: leftHitX, y2: leftHitY, fill: 'none',
     }));
 
-    // 4. От P3 вправо-вверх под 40°
     const dx3 = h.pelvisX0 + h.pelvisW - p3x;
     let dy3 = dx3 * tan40;
     if (p3y - dy3 < h.pelvisY0) dy3 = p3y - h.pelvisY0;
@@ -278,16 +279,59 @@
       x1: p3x, y1: p3y, x2: rightHitX, y2: rightHitY, fill: 'none',
     }));
 
-    // --- ПУПОК ---
+    // === ПУПОК ===
     const navelX = h.cx;
     const navelY = h.pelvisY0 + h.pelvisH * 0.1;
     const navelLength = h.pelvisH * 0.15;
-
     torsoGroup.appendChild(svgEl('line', {
-      x1: navelX, y1: navelY,
-      x2: navelX, y2: navelY + navelLength,
-      fill: 'none',
+      x1: navelX, y1: navelY, x2: navelX, y2: navelY + navelLength, fill: 'none',
     }));
+
+    // ==========================================
+    // ТРАПЕЦИИ (ШЕЯ -> ПЛЕЧО)
+    // ==========================================
+    if (headGeo && window.Arm && window.Arm.lastGeometry) {
+      const armGeo = window.Arm.lastGeometry;
+      
+      // --- ЛЕВАЯ ТРАПЕЦИЯ ---
+      // P0: точка на шее (середина боковой грани)
+      // Шея идет от neckTopY (L4) до neckBottomY (верх груди)
+      const neckLeftX = h.cx - neckHalfW;
+      const p0LeftY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
+      const p0Left = { x: neckLeftX, y: p0LeftY };
+      
+      // P1: точка на плече (верхняя грань круга плеча)
+      const shoulderCx = armGeo.leftCx;
+      const shoulderCy = armGeo.leftCy;
+      const shoulderR = armGeo.shoulderRadius;
+      
+      const p1Left = {
+        x: shoulderCx,
+        y: shoulderCy - shoulderR * Math.cos(params.trapShoulderAttach * Math.PI / 180)
+      };
+
+      torsoGroup.appendChild(svgEl('line', {
+        x1: p0Left.x, y1: p0Left.y, x2: p1Left.x, y2: p1Left.y, fill: 'none',
+      }));
+
+      // --- ПРАВАЯ ТРАПЕЦИЯ ---
+      const neckRightX = h.cx + neckHalfW;
+      const p0RightY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
+      const p0Right = { x: neckRightX, y: p0RightY };
+      
+      const shoulderRightCx = armGeo.rightCx;
+      const shoulderRightCy = armGeo.rightCy;
+      const shoulderRightR = armGeo.shoulderRadius;
+      
+      const p1Right = {
+        x: shoulderRightCx,
+        y: shoulderRightCy - shoulderRightR * Math.cos(params.trapShoulderAttach * Math.PI / 180)
+      };
+
+      torsoGroup.appendChild(svgEl('line', {
+        x1: p0Right.x, y1: p0Right.y, x2: p1Right.x, y2: p1Right.y, fill: 'none',
+      }));
+    }
   }
 
   function update(geo) {
