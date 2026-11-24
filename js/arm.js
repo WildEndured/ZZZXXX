@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры рук */
+/* js/arm.js — Этап 2: Суставы + контуры рук (с экспортом геометрии) */
 
 (function () {
   'use strict';
@@ -18,17 +18,15 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
-    // --- ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ) ---
-    // Внешняя линия
-    outerUpperArmAttachAngle: 0, // Угол на плече
+    // Верхняя часть руки
+    outerUpperArmAttachAngle: 0,
     outerUpperArmP1X: 0, outerUpperArmP1Y: 0,
-    outerUpperArmElbowAngle: 0, // Угол на локте
-    // Внутренняя линия
-    innerUpperArmAttachAngle: 180, // Угол на плече
+    outerUpperArmElbowAngle: 0,
+    innerUpperArmAttachAngle: 180,
     innerUpperArmP1X: 0, innerUpperArmP1Y: 0,
-    innerUpperArmElbowAngle: 180, // Угол на локте
+    innerUpperArmElbowAngle: 180,
 
-    // --- ПРЕДПЛЕЧЬЕ (ЛОКОТЬ -> ЗАПЯСТЬЕ) ---
+    // Предплечье
     forearmElbowAttachAngle: 0,
     forearmWristAttachAngle: 0,
     forearmP1OffsetX: 0.10, forearmP1OffsetY: -0.20,
@@ -146,6 +144,14 @@
     const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
     const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
 
+    // === СОХРАНЕНИЕ ГЕОМЕТРИИ ДЛЯ ТРАПЕЦИЙ ===
+    window.Arm.lastGeometry = {
+      leftCx, leftCy, shoulderRadius,
+      rightCx, rightCy,
+      elbowLeftCx, elbowLeftCy, elbowRadius,
+      elbowRightCx, elbowRightCy
+    };
+
     // === СУСТАВЫ ===
     armL.appendChild(svgEl('circle', { cx: leftCx, cy: leftCy, r: shoulderRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armL.appendChild(svgEl('circle', { cx: elbowLeftCx, cy: elbowLeftCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
@@ -155,10 +161,7 @@
     armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    // ==========================================
-    // ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ)
-    // ==========================================
-    // ПРАВАЯ РУКА
+    // === ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ) ===
     const rOuterP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.outerUpperArmAttachAngle, false);
     const rOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.outerUpperArmElbowAngle, false);
     const rOuterP1 = {
@@ -170,7 +173,6 @@
       fill: 'none'
     }));
 
-    // ЛЕВАЯ РУКА
     const lOuterP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.outerUpperArmAttachAngle, true);
     const lOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.outerUpperArmElbowAngle, true);
     const lOuterP1 = {
@@ -183,7 +185,6 @@
     }));
 
     // ВНУТРЕННЯЯ ЛИНИЯ (верхняя часть)
-    // ПРАВАЯ РУКА
     const rInnerP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.innerUpperArmAttachAngle, false);
     const rInnerP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.innerUpperArmElbowAngle, false);
     const rInnerP1 = {
@@ -195,7 +196,6 @@
       fill: 'none'
     }));
 
-    // ЛЕВАЯ РУКА
     const lInnerP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.innerUpperArmAttachAngle, true);
     const lInnerP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.innerUpperArmElbowAngle, true);
     const lInnerP1 = {
@@ -207,10 +207,8 @@
       fill: 'none'
     }));
 
-    // ==========================================
-    // ПРЕДПЛЕЧЬЕ (ЛОКОТЬ -> ЗАПЯСТЬЕ)
-    // ==========================================
-    // ПРАВАЯ РУКА (внешняя)
+    // === ПРЕДПЛЕЧЬЕ ===
+    // Внешняя
     const rForeP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
     const rForeP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
     const rForeP1 = {
@@ -222,7 +220,6 @@
       fill: 'none'
     }));
 
-    // ЛЕВАЯ РУКА (внешняя)
     const lForeP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
     const lForeP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
     const lForeP1 = {
@@ -234,7 +231,7 @@
       fill: 'none'
     }));
 
-    // ВНУТРЕННЯЯ (ПРАВАЯ)
+    // Внутренняя
     const rForeInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
     const rForeInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
     const rForeDx = rForeInP3.x - rForeInP0.x;
@@ -252,7 +249,6 @@
       fill: 'none'
     }));
 
-    // ВНУТРЕННЯЯ (ЛЕВАЯ)
     const lForeInP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmInnerWristAngle, true);
     const lForeInP3 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmInnerElbowAngle, true);
     const lForeDx = lForeInP3.x - lForeInP0.x;
@@ -299,5 +295,5 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS };
+  window.Arm = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, lastGeometry: null };
 })();
