@@ -100,6 +100,13 @@
     legInnerThighP2X: $('legInnerThighP2X'), legInnerThighP2XVal: $('legInnerThighP2XVal'),
     legInnerThighP2Y: $('legInnerThighP2Y'), legInnerThighP2YVal: $('legInnerThighP2YVal'),
 
+    legInnerCalfKnee: $('legInnerCalfKnee'), legInnerCalfKneeVal: $('legInnerCalfKneeVal'),
+    legInnerCalfAnkle: $('legInnerCalfAnkle'), legInnerCalfAnkleVal: $('legInnerCalfAnkleVal'),
+    legInnerCalfP1X: $('legInnerCalfP1X'), legInnerCalfP1XVal: $('legInnerCalfP1XVal'),
+    legInnerCalfP1Y: $('legInnerCalfP1Y'), legInnerCalfP1YVal: $('legInnerCalfP1YVal'),
+    legInnerCalfP2X: $('legInnerCalfP2X'), legInnerCalfP2XVal: $('legInnerCalfP2XVal'),
+    legInnerCalfP2Y: $('legInnerCalfP2Y'), legInnerCalfP2YVal: $('legInnerCalfP2YVal'),
+
     // Подложка
     underlayFile: $('underlayFile'), opacityRange: $('opacityRange'), opacityVal: $('opacityVal'),
     scaleRange: $('scaleRange'), scaleVal: $('scaleVal'), removeUnderlay: $('removeUnderlay'),
@@ -374,6 +381,19 @@
     dom.legInnerThighP2XVal.textContent = fmtSignedPercent(p.innerThighP2X);
     dom.legInnerThighP2Y.value = p.innerThighP2Y;
     dom.legInnerThighP2YVal.textContent = fmtSignedPercent(p.innerThighP2Y);
+
+    dom.legInnerCalfKnee.value = p.innerCalfKneeAngle;
+    dom.legInnerCalfKneeVal.textContent = Math.round(p.innerCalfKneeAngle);
+    dom.legInnerCalfAnkle.value = p.innerCalfAnkleAngle;
+    dom.legInnerCalfAnkleVal.textContent = Math.round(p.innerCalfAnkleAngle);
+    dom.legInnerCalfP1X.value = p.innerCalfP1X;
+    dom.legInnerCalfP1XVal.textContent = fmtSignedPercent(p.innerCalfP1X);
+    dom.legInnerCalfP1Y.value = p.innerCalfP1Y;
+    dom.legInnerCalfP1YVal.textContent = fmtSignedPercent(p.innerCalfP1Y);
+    dom.legInnerCalfP2X.value = p.innerCalfP2X;
+    dom.legInnerCalfP2XVal.textContent = fmtSignedPercent(p.innerCalfP2X);
+    dom.legInnerCalfP2Y.value = p.innerCalfP2Y;
+    dom.legInnerCalfP2YVal.textContent = fmtSignedPercent(p.innerCalfP2Y);
   }
 
   function bindLegInput(input, valEl, key, format) {
@@ -410,12 +430,19 @@
   bindLegInput(dom.legOuterCalfP1Y, dom.legOuterCalfP1YVal, 'outerCalfP1Y', fmtSignedPercent);
   bindLegInput(dom.legOuterCalfAnkle, dom.legOuterCalfAnkleVal, 'outerCalfAnkleAngle', (v) => Math.round(v));
 
-  bindLegInput(dom.legInnerThighAttach, dom.legInnerThighAttachVal, 'innerThighAttachX', (v) => Math.round(v / 100 * 1000) / 1000); // v от 0 до 100 -> 0..1
+  bindLegInput(dom.legInnerThighAttach, dom.legInnerThighAttachVal, 'innerThighAttachX', (v) => Math.round(v / 100 * 1000) / 1000);
   bindLegInput(dom.legInnerThighKnee, dom.legInnerThighKneeVal, 'innerThighKneeAngle', (v) => Math.round(v));
   bindLegInput(dom.legInnerThighP1X, dom.legInnerThighP1XVal, 'innerThighP1X', fmtSignedPercent);
   bindLegInput(dom.legInnerThighP1Y, dom.legInnerThighP1YVal, 'innerThighP1Y', fmtSignedPercent);
   bindLegInput(dom.legInnerThighP2X, dom.legInnerThighP2XVal, 'innerThighP2X', fmtSignedPercent);
   bindLegInput(dom.legInnerThighP2Y, dom.legInnerThighP2YVal, 'innerThighP2Y', fmtSignedPercent);
+
+  bindLegInput(dom.legInnerCalfKnee, dom.legInnerCalfKneeVal, 'innerCalfKneeAngle', (v) => Math.round(v));
+  bindLegInput(dom.legInnerCalfAnkle, dom.legInnerCalfAnkleVal, 'innerCalfAnkleAngle', (v) => Math.round(v));
+  bindLegInput(dom.legInnerCalfP1X, dom.legInnerCalfP1XVal, 'innerCalfP1X', fmtSignedPercent);
+  bindLegInput(dom.legInnerCalfP1Y, dom.legInnerCalfP1YVal, 'innerCalfP1Y', fmtSignedPercent);
+  bindLegInput(dom.legInnerCalfP2X, dom.legInnerCalfP2XVal, 'innerCalfP2X', fmtSignedPercent);
+  bindLegInput(dom.legInnerCalfP2Y, dom.legInnerCalfP2YVal, 'innerCalfP2Y', fmtSignedPercent);
 
   // --- Подложка ---
   dom.underlayFile.addEventListener('change', (e) => {
