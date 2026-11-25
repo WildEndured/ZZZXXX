@@ -42,6 +42,10 @@
     torsoPelvisHeightCorr: $('torsoPelvisHeightCorr'), torsoPelvisHeightCorrVal: $('torsoPelvisHeightCorrVal'),
     torsoPelvisRounding: $('torsoPelvisRounding'), torsoPelvisRoundingVal: $('torsoPelvisRoundingVal'),
 
+    // Трапеции
+    torsoTrapNeckAttach: $('torsoTrapNeckAttach'), torsoTrapNeckAttachVal: $('torsoTrapNeckAttachVal'),
+    torsoTrapShoulderAttach: $('torsoTrapShoulderAttach'), torsoTrapShoulderAttachVal: $('torsoTrapShoulderAttachVal'),
+
     // Руки
     armShoulderRadius: $('armShoulderRadius'), armShoulderRadiusVal: $('armShoulderRadiusVal'),
     armElbowRadius: $('armElbowRadius'), armElbowRadiusVal: $('armElbowRadiusVal'),
@@ -57,6 +61,18 @@
     armWristRightX: $('armWristRightX'), armWristRightXVal: $('armWristRightXVal'),
     armWristRightY: $('armWristRightY'), armWristRightYVal: $('armWristRightYVal'),
 
+    // Верхняя часть руки
+    armOuterUpperArmAttach: $('armOuterUpperArmAttach'), armOuterUpperArmAttachVal: $('armOuterUpperArmAttachVal'),
+    armOuterUpperArmElbow: $('armOuterUpperArmElbow'), armOuterUpperArmElbowVal: $('armOuterUpperArmElbowVal'),
+    armOuterUpperArmP1X: $('armOuterUpperArmP1X'), armOuterUpperArmP1XVal: $('armOuterUpperArmP1XVal'),
+    armOuterUpperArmP1Y: $('armOuterUpperArmP1Y'), armOuterUpperArmP1YVal: $('armOuterUpperArmP1YVal'),
+    
+    armInnerUpperArmAttach: $('armInnerUpperArmAttach'), armInnerUpperArmAttachVal: $('armInnerUpperArmAttachVal'),
+    armInnerUpperArmElbow: $('armInnerUpperArmElbow'), armInnerUpperArmElbowVal: $('armInnerUpperArmElbowVal'),
+    armInnerUpperArmP1X: $('armInnerUpperArmP1X'), armInnerUpperArmP1XVal: $('armInnerUpperArmP1XVal'),
+    armInnerUpperArmP1Y: $('armInnerUpperArmP1Y'), armInnerUpperArmP1YVal: $('armInnerUpperArmP1YVal'),
+
+    // Предплечье
     armForearmElbowAngle: $('armForearmElbowAngle'), armForearmElbowAngleVal: $('armForearmElbowAngleVal'),
     armForearmWristAngle: $('armForearmWristAngle'), armForearmWristAngleVal: $('armForearmWristAngleVal'),
     armForearmP1X: $('armForearmP1X'), armForearmP1XVal: $('armForearmP1XVal'),
@@ -237,6 +253,11 @@
     dom.torsoPelvisWidthCorr.value = p.pelvisWidthCorr; dom.torsoPelvisWidthCorrVal.textContent = fmtSignedPercent(p.pelvisWidthCorr);
     dom.torsoPelvisHeightCorr.value = p.pelvisHeightCorr; dom.torsoPelvisHeightCorrVal.textContent = fmtSignedPercent(p.pelvisHeightCorr);
     dom.torsoPelvisRounding.value = p.pelvisRounding; dom.torsoPelvisRoundingVal.textContent = Math.round(p.pelvisRounding * 100);
+
+    dom.torsoTrapNeckAttach.value = p.trapNeckAttach;
+    dom.torsoTrapNeckAttachVal.textContent = Math.round(p.trapNeckAttach * 100);
+    dom.torsoTrapShoulderAttach.value = p.trapShoulderAttach;
+    dom.torsoTrapShoulderAttachVal.textContent = Math.round(p.trapShoulderAttach);
   }
 
   function bindTorsoInput(input, valEl, key, format) {
@@ -258,6 +279,8 @@
   bindTorsoInput(dom.torsoPelvisWidthCorr, dom.torsoPelvisWidthCorrVal, 'pelvisWidthCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisHeightCorr, dom.torsoPelvisHeightCorrVal, 'pelvisHeightCorr', fmtSignedPercent);
   bindTorsoInput(dom.torsoPelvisRounding, dom.torsoPelvisRoundingVal, 'pelvisRounding', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoTrapNeckAttach, dom.torsoTrapNeckAttachVal, 'trapNeckAttach', (v) => Math.round(v * 100));
+  bindTorsoInput(dom.torsoTrapShoulderAttach, dom.torsoTrapShoulderAttachVal, 'trapShoulderAttach', (v) => Math.round(v));
 
   // --- Руки ---
   function syncArmUIFromParams() {
@@ -277,23 +300,27 @@
     dom.armWristRightX.value = p.wristRightX; dom.armWristRightXVal.textContent = fmtSignedPercent(p.wristRightX);
     dom.armWristRightY.value = p.wristRightY; dom.armWristRightYVal.textContent = fmtSignedPercent(p.wristRightY);
 
+    dom.armOuterUpperArmAttach.value = p.outerUpperArmAttachAngle; dom.armOuterUpperArmAttachVal.textContent = Math.round(p.outerUpperArmAttachAngle);
+    dom.armOuterUpperArmElbow.value = p.outerUpperArmElbowAngle; dom.armOuterUpperArmElbowVal.textContent = Math.round(p.outerUpperArmElbowAngle);
+    dom.armOuterUpperArmP1X.value = p.outerUpperArmP1X; dom.armOuterUpperArmP1XVal.textContent = fmtSignedPercent(p.outerUpperArmP1X);
+    dom.armOuterUpperArmP1Y.value = p.outerUpperArmP1Y; dom.armOuterUpperArmP1YVal.textContent = fmtSignedPercent(p.outerUpperArmP1Y);
+
+    dom.armInnerUpperArmAttach.value = p.innerUpperArmAttachAngle; dom.armInnerUpperArmAttachVal.textContent = Math.round(p.innerUpperArmAttachAngle);
+    dom.armInnerUpperArmElbow.value = p.innerUpperArmElbowAngle; dom.armInnerUpperArmElbowVal.textContent = Math.round(p.innerUpperArmElbowAngle);
+    dom.armInnerUpperArmP1X.value = p.innerUpperArmP1X; dom.armInnerUpperArmP1XVal.textContent = fmtSignedPercent(p.innerUpperArmP1X);
+    dom.armInnerUpperArmP1Y.value = p.innerUpperArmP1Y; dom.armInnerUpperArmP1YVal.textContent = fmtSignedPercent(p.innerUpperArmP1Y);
+
     dom.armForearmElbowAngle.value = p.forearmElbowAttachAngle; dom.armForearmElbowAngleVal.textContent = Math.round(p.forearmElbowAttachAngle);
     dom.armForearmWristAngle.value = p.forearmWristAttachAngle; dom.armForearmWristAngleVal.textContent = Math.round(p.forearmWristAttachAngle);
     dom.armForearmP1X.value = p.forearmP1OffsetX; dom.armForearmP1XVal.textContent = fmtSignedPercent(p.forearmP1OffsetX);
     dom.armForearmP1Y.value = p.forearmP1OffsetY; dom.armForearmP1YVal.textContent = fmtSignedPercent(p.forearmP1OffsetY);
 
-    dom.armForearmInnerElbowAngle.value = p.forearmInnerElbowAngle;
-    dom.armForearmInnerElbowAngleVal.textContent = Math.round(p.forearmInnerElbowAngle);
-    dom.armForearmInnerWristAngle.value = p.forearmInnerWristAngle;
-    dom.armForearmInnerWristAngleVal.textContent = Math.round(p.forearmInnerWristAngle);
-    dom.armForearmInnerP1X.value = p.forearmInnerP1OffsetX;
-    dom.armForearmInnerP1XVal.textContent = fmtSignedPercent(p.forearmInnerP1OffsetX);
-    dom.armForearmInnerP1Y.value = p.forearmInnerP1OffsetY;
-    dom.armForearmInnerP1YVal.textContent = fmtSignedPercent(p.forearmInnerP1OffsetY);
-    dom.armForearmInnerP2X.value = p.forearmInnerP2OffsetX;
-    dom.armForearmInnerP2XVal.textContent = fmtSignedPercent(p.forearmInnerP2OffsetX);
-    dom.armForearmInnerP2Y.value = p.forearmInnerP2OffsetY;
-    dom.armForearmInnerP2YVal.textContent = fmtSignedPercent(p.forearmInnerP2OffsetY);
+    dom.armForearmInnerElbowAngle.value = p.forearmInnerElbowAngle; dom.armForearmInnerElbowAngleVal.textContent = Math.round(p.forearmInnerElbowAngle);
+    dom.armForearmInnerWristAngle.value = p.forearmInnerWristAngle; dom.armForearmInnerWristAngleVal.textContent = Math.round(p.forearmInnerWristAngle);
+    dom.armForearmInnerP1X.value = p.forearmInnerP1OffsetX; dom.armForearmInnerP1XVal.textContent = fmtSignedPercent(p.forearmInnerP1OffsetX);
+    dom.armForearmInnerP1Y.value = p.forearmInnerP1OffsetY; dom.armForearmInnerP1YVal.textContent = fmtSignedPercent(p.forearmInnerP1OffsetY);
+    dom.armForearmInnerP2X.value = p.forearmInnerP2OffsetX; dom.armForearmInnerP2XVal.textContent = fmtSignedPercent(p.forearmInnerP2OffsetX);
+    dom.armForearmInnerP2Y.value = p.forearmInnerP2OffsetY; dom.armForearmInnerP2YVal.textContent = fmtSignedPercent(p.forearmInnerP2OffsetY);
   }
 
   function bindArmInput(input, valEl, key, format) {
@@ -320,6 +347,16 @@
   bindArmInput(dom.armWristLeftY, dom.armWristLeftYVal, 'wristLeftY', fmtSignedPercent);
   bindArmInput(dom.armWristRightX, dom.armWristRightXVal, 'wristRightX', fmtSignedPercent);
   bindArmInput(dom.armWristRightY, dom.armWristRightYVal, 'wristRightY', fmtSignedPercent);
+
+  bindArmInput(dom.armOuterUpperArmAttach, dom.armOuterUpperArmAttachVal, 'outerUpperArmAttachAngle', (v) => Math.round(v));
+  bindArmInput(dom.armOuterUpperArmElbow, dom.armOuterUpperArmElbowVal, 'outerUpperArmElbowAngle', (v) => Math.round(v));
+  bindArmInput(dom.armOuterUpperArmP1X, dom.armOuterUpperArmP1XVal, 'outerUpperArmP1X', fmtSignedPercent);
+  bindArmInput(dom.armOuterUpperArmP1Y, dom.armOuterUpperArmP1YVal, 'outerUpperArmP1Y', fmtSignedPercent);
+
+  bindArmInput(dom.armInnerUpperArmAttach, dom.armInnerUpperArmAttachVal, 'innerUpperArmAttachAngle', (v) => Math.round(v));
+  bindArmInput(dom.armInnerUpperArmElbow, dom.armInnerUpperArmElbowVal, 'innerUpperArmElbowAngle', (v) => Math.round(v));
+  bindArmInput(dom.armInnerUpperArmP1X, dom.armInnerUpperArmP1XVal, 'innerUpperArmP1X', fmtSignedPercent);
+  bindArmInput(dom.armInnerUpperArmP1Y, dom.armInnerUpperArmP1YVal, 'innerUpperArmP1Y', fmtSignedPercent);
 
   bindArmInput(dom.armForearmElbowAngle, dom.armForearmElbowAngleVal, 'forearmElbowAttachAngle', (v) => Math.round(v));
   bindArmInput(dom.armForearmWristAngle, dom.armForearmWristAngleVal, 'forearmWristAttachAngle', (v) => Math.round(v));
@@ -351,49 +388,30 @@
     dom.legRightAnkleX.value = p.rightAnkleX; dom.legRightAnkleXVal.textContent = fmtSignedPercent(p.rightAnkleX);
     dom.legRightAnkleY.value = p.rightAnkleY; dom.legRightAnkleYVal.textContent = fmtSignedPercent(p.rightAnkleY);
 
-    dom.legOuterThighAttach.value = p.outerThighAttachAngle;
-    dom.legOuterThighAttachVal.textContent = Math.round(p.outerThighAttachAngle);
-    dom.legOuterThighKnee.value = p.outerThighKneeAngle;
-    dom.legOuterThighKneeVal.textContent = Math.round(p.outerThighKneeAngle);
-    dom.legOuterThighP1X.value = p.outerThighP1X;
-    dom.legOuterThighP1XVal.textContent = fmtSignedPercent(p.outerThighP1X);
-    dom.legOuterThighP1Y.value = p.outerThighP1Y;
-    dom.legOuterThighP1YVal.textContent = fmtSignedPercent(p.outerThighP1Y);
+    dom.legOuterThighAttach.value = p.outerThighAttachAngle; dom.legOuterThighAttachVal.textContent = Math.round(p.outerThighAttachAngle);
+    dom.legOuterThighKnee.value = p.outerThighKneeAngle; dom.legOuterThighKneeVal.textContent = Math.round(p.outerThighKneeAngle);
+    dom.legOuterThighP1X.value = p.outerThighP1X; dom.legOuterThighP1XVal.textContent = fmtSignedPercent(p.outerThighP1X);
+    dom.legOuterThighP1Y.value = p.outerThighP1Y; dom.legOuterThighP1YVal.textContent = fmtSignedPercent(p.outerThighP1Y);
 
-    dom.legOuterCalfKnee.value = p.outerCalfKneeAngle;
-    dom.legOuterCalfKneeVal.textContent = Math.round(p.outerCalfKneeAngle);
-    dom.legOuterCalfP1X.value = p.outerCalfP1X;
-    dom.legOuterCalfP1XVal.textContent = fmtSignedPercent(p.outerCalfP1X);
-    dom.legOuterCalfP1Y.value = p.outerCalfP1Y;
-    dom.legOuterCalfP1YVal.textContent = fmtSignedPercent(p.outerCalfP1Y);
-    dom.legOuterCalfAnkle.value = p.outerCalfAnkleAngle;
-    dom.legOuterCalfAnkleVal.textContent = Math.round(p.outerCalfAnkleAngle);
+    dom.legOuterCalfKnee.value = p.outerCalfKneeAngle; dom.legOuterCalfKneeVal.textContent = Math.round(p.outerCalfKneeAngle);
+    dom.legOuterCalfP1X.value = p.outerCalfP1X; dom.legOuterCalfP1XVal.textContent = fmtSignedPercent(p.outerCalfP1X);
+    dom.legOuterCalfP1Y.value = p.outerCalfP1Y; dom.legOuterCalfP1YVal.textContent = fmtSignedPercent(p.outerCalfP1Y);
+    dom.legOuterCalfAnkle.value = p.outerCalfAnkleAngle; dom.legOuterCalfAnkleVal.textContent = Math.round(p.outerCalfAnkleAngle);
 
     dom.legInnerThighAttach.value = p.innerThighAttachX * 100;
     dom.legInnerThighAttachVal.textContent = Math.round(p.innerThighAttachX * 100);
-    dom.legInnerThighKnee.value = p.innerThighKneeAngle;
-    dom.legInnerThighKneeVal.textContent = Math.round(p.innerThighKneeAngle);
-    dom.legInnerThighP1X.value = p.innerThighP1X;
-    dom.legInnerThighP1XVal.textContent = fmtSignedPercent(p.innerThighP1X);
-    dom.legInnerThighP1Y.value = p.innerThighP1Y;
-    dom.legInnerThighP1YVal.textContent = fmtSignedPercent(p.innerThighP1Y);
-    dom.legInnerThighP2X.value = p.innerThighP2X;
-    dom.legInnerThighP2XVal.textContent = fmtSignedPercent(p.innerThighP2X);
-    dom.legInnerThighP2Y.value = p.innerThighP2Y;
-    dom.legInnerThighP2YVal.textContent = fmtSignedPercent(p.innerThighP2Y);
+    dom.legInnerThighKnee.value = p.innerThighKneeAngle; dom.legInnerThighKneeVal.textContent = Math.round(p.innerThighKneeAngle);
+    dom.legInnerThighP1X.value = p.innerThighP1X; dom.legInnerThighP1XVal.textContent = fmtSignedPercent(p.innerThighP1X);
+    dom.legInnerThighP1Y.value = p.innerThighP1Y; dom.legInnerThighP1YVal.textContent = fmtSignedPercent(p.innerThighP1Y);
+    dom.legInnerThighP2X.value = p.innerThighP2X; dom.legInnerThighP2XVal.textContent = fmtSignedPercent(p.innerThighP2X);
+    dom.legInnerThighP2Y.value = p.innerThighP2Y; dom.legInnerThighP2YVal.textContent = fmtSignedPercent(p.innerThighP2Y);
 
-    dom.legInnerCalfKnee.value = p.innerCalfKneeAngle;
-    dom.legInnerCalfKneeVal.textContent = Math.round(p.innerCalfKneeAngle);
-    dom.legInnerCalfAnkle.value = p.innerCalfAnkleAngle;
-    dom.legInnerCalfAnkleVal.textContent = Math.round(p.innerCalfAnkleAngle);
-    dom.legInnerCalfP1X.value = p.innerCalfP1X;
-    dom.legInnerCalfP1XVal.textContent = fmtSignedPercent(p.innerCalfP1X);
-    dom.legInnerCalfP1Y.value = p.innerCalfP1Y;
-    dom.legInnerCalfP1YVal.textContent = fmtSignedPercent(p.innerCalfP1Y);
-    dom.legInnerCalfP2X.value = p.innerCalfP2X;
-    dom.legInnerCalfP2XVal.textContent = fmtSignedPercent(p.innerCalfP2X);
-    dom.legInnerCalfP2Y.value = p.innerCalfP2Y;
-    dom.legInnerCalfP2YVal.textContent = fmtSignedPercent(p.innerCalfP2Y);
+    dom.legInnerCalfKnee.value = p.innerCalfKneeAngle; dom.legInnerCalfKneeVal.textContent = Math.round(p.innerCalfKneeAngle);
+    dom.legInnerCalfAnkle.value = p.innerCalfAnkleAngle; dom.legInnerCalfAnkleVal.textContent = Math.round(p.innerCalfAnkleAngle);
+    dom.legInnerCalfP1X.value = p.innerCalfP1X; dom.legInnerCalfP1XVal.textContent = fmtSignedPercent(p.innerCalfP1X);
+    dom.legInnerCalfP1Y.value = p.innerCalfP1Y; dom.legInnerCalfP1YVal.textContent = fmtSignedPercent(p.innerCalfP1Y);
+    dom.legInnerCalfP2X.value = p.innerCalfP2X; dom.legInnerCalfP2XVal.textContent = fmtSignedPercent(p.innerCalfP2X);
+    dom.legInnerCalfP2Y.value = p.innerCalfP2Y; dom.legInnerCalfP2YVal.textContent = fmtSignedPercent(p.innerCalfP2Y);
   }
 
   function bindLegInput(input, valEl, key, format) {
