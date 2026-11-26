@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры рук */
+/* js/arm.js — Этап 2: Суставы + контуры рук (использует Torso.lastGeometry) */
 
 (function () {
   'use strict';
@@ -84,24 +84,9 @@
     };
   }
 
-  function getTorsoParams(geo) {
-    const headH = geo.headHeight;
-    const chestH = headH * (1 - 0.15);
-    const chestRx = (headH * 0.7) / 2;
-    const chestY0 = geo.topY + headH;
-    const topNarrow = 0.6;
-
-    // Восстанавливаем параметры таза, как в torso.js
-    const pelvisH = (chestRx * 2) * (1 + 0); // pelvisHeightCorr = 0
-    const pelvisW = chestH * (1 + 0);        // pelvisWidthCorr = 0
-    const pelvisY0 = chestY0 + chestH;
-    const pelvisBottomY = pelvisY0 + pelvisH;
-
-    return { headH, chestH, chestRx, chestY0, topNarrow, pelvisBottomY };
-  }
-
   function drawArms(geo) {
-    const torso = getTorsoParams(geo);
+    const torso = window.Torso && window.Torso.lastGeometry;
+    if (!torso) return;
 
     const { armL, armR, grid } = els;
     clear(armL);
@@ -109,11 +94,11 @@
     clear(grid);
 
     const headH = torso.headH;
-    const chestH = torso.chestH;
+    const chestH = torso.chestHeightPx;
     const chestRx = torso.chestRx;
     const chestY0 = torso.chestY0;
-    const topNarrow = torso.topNarrow;
-    const pelvisBottomY = torso.pelvisBottomY;
+    const topNarrow = torso.cpTopX / chestRx;
+    const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
 
     const leftOffsetX = params.leftX * headH;
     const leftOffsetY = params.leftY * headH;
@@ -133,7 +118,7 @@
     const leftCy = shoulderCy + leftOffsetY;
     const rightCy = shoulderCy + rightOffsetY;
 
-    // === ЗАПЯСТЬЯ (привязаны к низу таза) ===
+    // === ЗАПЯСТЬЯ ===
     const wristRadius = params.wristRadius * headH;
 
     const wristLeftOffsetX = params.wristLeftX * headH;
