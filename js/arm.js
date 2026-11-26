@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры рук */
+/* js/arm.js — Этап 2: Суставы + контуры рук (независим от Torso) */
 
 (function () {
   'use strict';
@@ -84,9 +84,18 @@
     };
   }
 
+  // Вычисляем параметры груди локально (без Torso.lastGeometry)
+  function getTorsoParams(geo) {
+    const headH = geo.headHeight;
+    const chestH = headH * (1 - 0.15); // chestHeightCorr = -0.15
+    const chestRx = (headH * 0.7) / 2;
+    const chestY0 = geo.topY + headH;
+    const topNarrow = 0.6;
+    return { headH, chestH, chestRx, chestY0, topNarrow };
+  }
+
   function drawArms(geo) {
-    const torso = window.Torso && window.Torso.lastGeometry;
-    if (!torso) return;
+    const torso = getTorsoParams(geo);
 
     const { armL, armR, grid } = els;
     clear(armL);
@@ -94,9 +103,10 @@
     clear(grid);
 
     const headH = torso.headH;
-    const chestH = torso.chestHeightPx;
+    const chestH = torso.chestH;
     const chestRx = torso.chestRx;
-    const topNarrow = torso.cpTopX / chestRx;
+    const chestY0 = torso.chestY0;
+    const topNarrow = torso.topNarrow;
 
     const leftOffsetX = params.leftX * headH;
     const leftOffsetY = params.leftY * headH;
@@ -107,42 +117,37 @@
     const baseShoulderRadius = (chestH / 3) / 2;
     const shoulderRadius = baseShoulderRadius * params.shoulderRadiusMul;
 
-    const shoulderCy = torso.chestY0 + shoulderRadius;
-    const t = (shoulderCy - torso.chestY0) / chestH;
+    const shoulderCy = chestY0 + shoulderRadius;
+    const t = (shoulderCy - chestY0) / chestH;
     const curveWidth = getChestCurveWidth(t, chestRx, topNarrow);
 
-    const leftCx = torso.cx - curveWidth - shoulderRadius + leftOffsetX;
-    const rightCx = torso.cx + curveWidth + shoulderRadius + rightOffsetX;
+    const leftCx = geo.centerX - curveWidth - shoulderRadius + leftOffsetX;
+    const rightCx = geo.centerX + curveWidth + shoulderRadius + rightOffsetX;
     const leftCy = shoulderCy + leftOffsetY;
     const rightCy = shoulderCy + rightOffsetY;
 
     // === ЗАПЯСТЬЯ ===
-    const pelvisBottomY = torso.pelvisY0 + torso.pelvisH;
+    const pelvisBottomY = chestY0 + chestH; // Примерно, но для рук сойдет
     const wristRadius = params.wristRadius * headH;
 
     const wristLeftOffsetX = params.wristLeftX * headH;
     const wristLeftOffsetY = params.wristLeftY * headH;
-    const wristLeftCy = pelvisBottomY - wristRadius + wristLeftOffsetY + leftOffsetY;
-    const wristLeftCx = torso.cx - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
+    const wristLeftCy = chestY0 + chestH + headH * 1.2 + wristLeftOffsetY + leftOffsetY;
+    const wristLeftCx = geo.centerX - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
 
     const wristRightOffsetX = params.wristRightX * headH;
     const wristRightOffsetY = params.wristRightY * headH;
-    const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
-    const wristRightCx = torso.cx + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
+    const wristRightCy = chestY0 + chestH + headH * 1.2 + wristRightOffsetY + rightOffsetY;
+    const wristRightCx = geo.centerX + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
     // === ЛОКТИ ===
     const elbowRadius = params.elbowRadius * headH;
-    const elbowLeftOffsetX = params.elbowLeftX * headH;
-    const elbowLeftOffsetY = params.elbowLeftY * headH;
-    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + elbowLeftOffsetX;
-    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + elbowLeftOffsetY;
+    const elbowLeftCx = (leftCx + wristLeftCx) / 2 + params.elbowLeftX * headH;
+    const elbowLeftCy = (leftCy + wristLeftCy) / 2 + params.elbowLeftY * headH;
+    const elbowRightCx = (rightCx + wristRightCx) / 2 + params.elbowRightX * headH;
+    const elbowRightCy = (rightCy + wristRightCy) / 2 + params.elbowRightY * headH;
 
-    const elbowRightOffsetX = params.elbowRightX * headH;
-    const elbowRightOffsetY = params.elbowRightY * headH;
-    const elbowRightCx = (rightCx + wristRightCx) / 2 + elbowRightOffsetX;
-    const elbowRightCy = (rightCy + wristRightCy) / 2 + elbowRightOffsetY;
-
-    // === СОХРАНЕНИЕ ГЕОМЕТРИИ ДЛЯ ТРАПЕЦИЙ ===
+    // === СОХРАНЯЕМ ГЕОМЕТРИЮ ДЛЯ ТРАПЕЦИЙ ===
     window.Arm.lastGeometry = {
       leftCx, leftCy, shoulderRadius,
       rightCx, rightCy,
