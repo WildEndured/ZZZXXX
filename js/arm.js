@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры рук (независим от Torso) */
+/* js/arm.js — Этап 2: Суставы + контуры рук */
 
 (function () {
   'use strict';
@@ -84,14 +84,20 @@
     };
   }
 
-  // Вычисляем параметры груди локально (без Torso.lastGeometry)
   function getTorsoParams(geo) {
     const headH = geo.headHeight;
-    const chestH = headH * (1 - 0.15); // chestHeightCorr = -0.15
+    const chestH = headH * (1 - 0.15);
     const chestRx = (headH * 0.7) / 2;
     const chestY0 = geo.topY + headH;
     const topNarrow = 0.6;
-    return { headH, chestH, chestRx, chestY0, topNarrow };
+
+    // Восстанавливаем параметры таза, как в torso.js
+    const pelvisH = (chestRx * 2) * (1 + 0); // pelvisHeightCorr = 0
+    const pelvisW = chestH * (1 + 0);        // pelvisWidthCorr = 0
+    const pelvisY0 = chestY0 + chestH;
+    const pelvisBottomY = pelvisY0 + pelvisH;
+
+    return { headH, chestH, chestRx, chestY0, topNarrow, pelvisBottomY };
   }
 
   function drawArms(geo) {
@@ -107,6 +113,7 @@
     const chestRx = torso.chestRx;
     const chestY0 = torso.chestY0;
     const topNarrow = torso.topNarrow;
+    const pelvisBottomY = torso.pelvisBottomY;
 
     const leftOffsetX = params.leftX * headH;
     const leftOffsetY = params.leftY * headH;
@@ -126,18 +133,17 @@
     const leftCy = shoulderCy + leftOffsetY;
     const rightCy = shoulderCy + rightOffsetY;
 
-    // === ЗАПЯСТЬЯ ===
-    const pelvisBottomY = chestY0 + chestH; // Примерно, но для рук сойдет
+    // === ЗАПЯСТЬЯ (привязаны к низу таза) ===
     const wristRadius = params.wristRadius * headH;
 
     const wristLeftOffsetX = params.wristLeftX * headH;
     const wristLeftOffsetY = params.wristLeftY * headH;
-    const wristLeftCy = chestY0 + chestH + headH * 1.2 + wristLeftOffsetY + leftOffsetY;
+    const wristLeftCy = pelvisBottomY - wristRadius + wristLeftOffsetY + leftOffsetY;
     const wristLeftCx = geo.centerX - chestRx - shoulderRadius * 1.5 + wristLeftOffsetX + leftOffsetX;
 
     const wristRightOffsetX = params.wristRightX * headH;
     const wristRightOffsetY = params.wristRightY * headH;
-    const wristRightCy = chestY0 + chestH + headH * 1.2 + wristRightOffsetY + rightOffsetY;
+    const wristRightCy = pelvisBottomY - wristRadius + wristRightOffsetY + rightOffsetY;
     const wristRightCx = geo.centerX + chestRx + shoulderRadius * 1.5 + wristRightOffsetX + rightOffsetX;
 
     // === ЛОКТИ ===
@@ -147,7 +153,7 @@
     const elbowRightCx = (rightCx + wristRightCx) / 2 + params.elbowRightX * headH;
     const elbowRightCy = (rightCy + wristRightCy) / 2 + params.elbowRightY * headH;
 
-    // === СОХРАНЯЕМ ГЕОМЕТРИЮ ДЛЯ ТРАПЕЦИЙ ===
+    // === СОХРАНЕНИЕ ДЛЯ ТРАПЕЦИЙ ===
     window.Arm.lastGeometry = {
       leftCx, leftCy, shoulderRadius,
       rightCx, rightCy,
@@ -167,51 +173,33 @@
     // === ВЕРХНЯЯ ЧАСТЬ РУКИ ===
     const rOuterP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.outerUpperArmAttachAngle, false);
     const rOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.outerUpperArmElbowAngle, false);
-    const rOuterP1 = {
-      x: (rOuterP0.x + rOuterP2.x) / 2 + params.outerUpperArmP1X * headH,
-      y: (rOuterP0.y + rOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
-    };
+    const rOuterP1 = { x: (rOuterP0.x + rOuterP2.x) / 2 + params.outerUpperArmP1X * headH, y: (rOuterP0.y + rOuterP2.y) / 2 + params.outerUpperArmP1Y * headH };
     armR.appendChild(svgEl('path', { d: `M ${rOuterP0.x} ${rOuterP0.y} Q ${rOuterP1.x} ${rOuterP1.y} ${rOuterP2.x} ${rOuterP2.y}`, fill: 'none' }));
 
     const lOuterP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.outerUpperArmAttachAngle, true);
     const lOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.outerUpperArmElbowAngle, true);
-    const lOuterP1 = {
-      x: (lOuterP0.x + lOuterP2.x) / 2 - params.outerUpperArmP1X * headH,
-      y: (lOuterP0.y + lOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
-    };
+    const lOuterP1 = { x: (lOuterP0.x + lOuterP2.x) / 2 - params.outerUpperArmP1X * headH, y: (lOuterP0.y + lOuterP2.y) / 2 + params.outerUpperArmP1Y * headH };
     armL.appendChild(svgEl('path', { d: `M ${lOuterP0.x} ${lOuterP0.y} Q ${lOuterP1.x} ${lOuterP1.y} ${lOuterP2.x} ${lOuterP2.y}`, fill: 'none' }));
 
     const rInnerP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.innerUpperArmAttachAngle, false);
     const rInnerP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.innerUpperArmElbowAngle, false);
-    const rInnerP1 = {
-      x: (rInnerP0.x + rInnerP2.x) / 2 + params.innerUpperArmP1X * headH,
-      y: (rInnerP0.y + rInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
-    };
+    const rInnerP1 = { x: (rInnerP0.x + rInnerP2.x) / 2 + params.innerUpperArmP1X * headH, y: (rInnerP0.y + rInnerP2.y) / 2 + params.innerUpperArmP1Y * headH };
     armR.appendChild(svgEl('path', { d: `M ${rInnerP0.x} ${rInnerP0.y} Q ${rInnerP1.x} ${rInnerP1.y} ${rInnerP2.x} ${rInnerP2.y}`, fill: 'none' }));
 
     const lInnerP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.innerUpperArmAttachAngle, true);
     const lInnerP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.innerUpperArmElbowAngle, true);
-    const lInnerP1 = {
-      x: (lInnerP0.x + lInnerP2.x) / 2 - params.innerUpperArmP1X * headH,
-      y: (lInnerP0.y + lInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
-    };
+    const lInnerP1 = { x: (lInnerP0.x + lInnerP2.x) / 2 - params.innerUpperArmP1X * headH, y: (lInnerP0.y + lInnerP2.y) / 2 + params.innerUpperArmP1Y * headH };
     armL.appendChild(svgEl('path', { d: `M ${lInnerP0.x} ${lInnerP0.y} Q ${lInnerP1.x} ${lInnerP1.y} ${lInnerP2.x} ${lInnerP2.y}`, fill: 'none' }));
 
     // === ПРЕДПЛЕЧЬЕ ===
     const rForeP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
     const rForeP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
-    const rForeP1 = {
-      x: (rForeP0.x + rForeP2.x) / 2 + params.forearmP1OffsetX * headH,
-      y: (rForeP0.y + rForeP2.y) / 2 + params.forearmP1OffsetY * headH
-    };
+    const rForeP1 = { x: (rForeP0.x + rForeP2.x) / 2 + params.forearmP1OffsetX * headH, y: (rForeP0.y + rForeP2.y) / 2 + params.forearmP1OffsetY * headH };
     armR.appendChild(svgEl('path', { d: `M ${rForeP0.x} ${rForeP0.y} Q ${rForeP1.x} ${rForeP1.y} ${rForeP2.x} ${rForeP2.y}`, fill: 'none' }));
 
     const lForeP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
     const lForeP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
-    const lForeP1 = {
-      x: (lForeP0.x + lForeP2.x) / 2 - params.forearmP1OffsetX * headH,
-      y: (lForeP0.y + lForeP2.y) / 2 + params.forearmP1OffsetY * headH
-    };
+    const lForeP1 = { x: (lForeP0.x + lForeP2.x) / 2 - params.forearmP1OffsetX * headH, y: (lForeP0.y + lForeP2.y) / 2 + params.forearmP1OffsetY * headH };
     armL.appendChild(svgEl('path', { d: `M ${lForeP0.x} ${lForeP0.y} Q ${lForeP1.x} ${lForeP1.y} ${lForeP2.x} ${lForeP2.y}`, fill: 'none' }));
 
     const rForeInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
@@ -233,12 +221,9 @@
     // === МАРКЕРЫ ===
     const mR = headH * 0.012;
     const markers = [
-      { x: leftCx, y: leftCy, c: '#2563eb' },
-      { x: rightCx, y: rightCy, c: '#2563eb' },
-      { x: elbowLeftCx, y: elbowLeftCy, c: '#f59e0b' },
-      { x: elbowRightCx, y: elbowRightCy, c: '#f59e0b' },
-      { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' },
-      { x: wristRightCx, y: wristRightCy, c: '#16a34a' },
+      { x: leftCx, y: leftCy, c: '#2563eb' }, { x: rightCx, y: rightCy, c: '#2563eb' },
+      { x: elbowLeftCx, y: elbowLeftCy, c: '#f59e0b' }, { x: elbowRightCx, y: elbowRightCy, c: '#f59e0b' },
+      { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' }, { x: wristRightCx, y: wristRightCy, c: '#16a34a' },
     ];
     for (const pt of markers) grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
   }
