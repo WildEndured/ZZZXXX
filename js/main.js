@@ -162,8 +162,8 @@
 
   function syncFigureModules(geo) {
     if (window.Head) window.Head.update(geo);
-    if (window.Torso) window.Torso.update(geo);
-    if (window.Arm) window.Arm.update(geo);
+    if (window.Arm) window.Arm.update(geo);   // Сначала руки (для lastGeometry)
+    if (window.Torso) window.Torso.update(geo); // Потом торс (читает lastGeometry)
     if (window.Leg) window.Leg.update(geo);
   }
 
@@ -398,7 +398,7 @@
     dom.legOuterCalfP1Y.value = p.outerCalfP1Y; dom.legOuterCalfP1YVal.textContent = fmtSignedPercent(p.outerCalfP1Y);
     dom.legOuterCalfAnkle.value = p.outerCalfAnkleAngle; dom.legOuterCalfAnkleVal.textContent = Math.round(p.outerCalfAnkleAngle);
 
-    dom.legInnerThighAttach.value = p.innerThighAttachX * 100;
+    dom.legInnerThighAttach.value = p.innerThighAttachX;
     dom.legInnerThighAttachVal.textContent = Math.round(p.innerThighAttachX * 100);
     dom.legInnerThighKnee.value = p.innerThighKneeAngle; dom.legInnerThighKneeVal.textContent = Math.round(p.innerThighKneeAngle);
     dom.legInnerThighP1X.value = p.innerThighP1X; dom.legInnerThighP1XVal.textContent = fmtSignedPercent(p.innerThighP1X);
@@ -448,7 +448,7 @@
   bindLegInput(dom.legOuterCalfP1Y, dom.legOuterCalfP1YVal, 'outerCalfP1Y', fmtSignedPercent);
   bindLegInput(dom.legOuterCalfAnkle, dom.legOuterCalfAnkleVal, 'outerCalfAnkleAngle', (v) => Math.round(v));
 
-  bindLegInput(dom.legInnerThighAttach, dom.legInnerThighAttachVal, 'innerThighAttachX', (v) => Math.round(v / 100 * 1000) / 1000);
+  bindLegInput(dom.legInnerThighAttach, dom.legInnerThighAttachVal, 'innerThighAttachX', (v) => v);
   bindLegInput(dom.legInnerThighKnee, dom.legInnerThighKneeVal, 'innerThighKneeAngle', (v) => Math.round(v));
   bindLegInput(dom.legInnerThighP1X, dom.legInnerThighP1XVal, 'innerThighP1X', fmtSignedPercent);
   bindLegInput(dom.legInnerThighP1Y, dom.legInnerThighP1YVal, 'innerThighP1Y', fmtSignedPercent);
