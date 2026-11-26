@@ -1,4 +1,4 @@
-/* js/torso.js — Этап 2: Шея + Грудь + Таз + Трапеции */
+/* js/torso.js — Этап 2: Шея + Грудь + Таз + Трапеции (с drawTraps) */
 
 (function () {
   'use strict';
@@ -145,12 +145,11 @@
     const neckHalfW = (h.headH * params.neckWidth) / 2;
 
     // === ШЕЯ ===
-    let neckTopY = 0, neckBottomY = 0;
     if (headGeo) {
       const leftX = h.cx - neckHalfW;
       const rightX = h.cx + neckHalfW;
-      neckTopY = findJawYOnSecondSegment(leftX, headGeo);
-      neckBottomY = findChestYByX(leftX, h);
+      const neckTopY = findJawYOnSecondSegment(leftX, headGeo);
+      const neckBottomY = findChestYByX(leftX, h);
       torsoGroup.appendChild(svgEl('line', { x1: leftX, y1: neckTopY, x2: leftX, y2: neckBottomY, fill: 'none' }));
       torsoGroup.appendChild(svgEl('line', { x1: rightX, y1: findJawYOnSecondSegment(rightX, headGeo), x2: rightX, y2: findChestYByX(rightX, h), fill: 'none' }));
     }
@@ -181,25 +180,30 @@
 
     // === ПУПОК ===
     torsoGroup.appendChild(svgEl('line', { x1: h.cx, y1: h.pelvisY0 + h.pelvisH * 0.1, x2: h.cx, y2: h.pelvisY0 + h.pelvisH * 0.25, fill: 'none' }));
+  }
 
-    // ==========================================
-    // ТРАПЕЦИИ
-    // ==========================================
-    if (headGeo && window.Arm && window.Arm.lastGeometry && neckBottomY > neckTopY) {
-      const armGeo = window.Arm.lastGeometry;
-      
-      // Левая
-      const neckLeftX = h.cx - neckHalfW;
-      const p0LeftY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
-      const p1Left = { x: armGeo.leftCx, y: armGeo.leftCy - armGeo.shoulderRadius * Math.cos(params.trapShoulderAttach * Math.PI / 180) };
-      torsoGroup.appendChild(svgEl('line', { x1: neckLeftX, y1: p0LeftY, x2: p1Left.x, y2: p1Left.y, fill: 'none' }));
+  function drawTraps() {
+    if (!els) return;
+    const { torsoGroup } = els;
+    const h = window.Torso.lastGeometry;
+    const headGeo = window.Head && window.Head.lastGeometry;
+    const armGeo = window.Arm && window.Arm.lastGeometry;
+    if (!h || !headGeo || !armGeo) return;
 
-      // Правая
-      const neckRightX = h.cx + neckHalfW;
-      const p0RightY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
-      const p1Right = { x: armGeo.rightCx, y: armGeo.rightCy - armGeo.shoulderRadius * Math.cos(params.trapShoulderAttach * Math.PI / 180) };
-      torsoGroup.appendChild(svgEl('line', { x1: neckRightX, y1: p0RightY, x2: p1Right.x, y2: p1Right.y, fill: 'none' }));
-    }
+    const neckHalfW = (h.headH * params.neckWidth) / 2;
+    const neckLeftX = h.cx - neckHalfW;
+    const neckRightX = h.cx + neckHalfW;
+    const neckTopY = findJawYOnSecondSegment(neckLeftX, headGeo);
+    const neckBottomY = findChestYByX(neckLeftX, h);
+    if (neckBottomY <= neckTopY) return;
+
+    const p0LeftY = neckTopY + (neckBottomY - neckTopY) * params.trapNeckAttach;
+    const p1Left = { x: armGeo.leftCx, y: armGeo.leftCy - armGeo.shoulderRadius * Math.cos(params.trapShoulderAttach * Math.PI / 180) };
+    torsoGroup.appendChild(svgEl('line', { x1: neckLeftX, y1: p0LeftY, x2: p1Left.x, y2: p1Left.y, fill: 'none' }));
+
+    const p0RightY = p0LeftY;
+    const p1Right = { x: armGeo.rightCx, y: armGeo.rightCy - armGeo.shoulderRadius * Math.cos(params.trapShoulderAttach * Math.PI / 180) };
+    torsoGroup.appendChild(svgEl('line', { x1: neckRightX, y1: p0RightY, x2: p1Right.x, y2: p1Right.y, fill: 'none' }));
   }
 
   function update(geo) {
@@ -219,5 +223,5 @@
   }
   function resetParams() { Object.assign(params, DEFAULT_PARAMS); }
 
-  window.Torso = { update, getParams, setParams, resetParams, DEFAULT_PARAMS, lastGeometry: null };
+  window.Torso = { update, drawTraps, getParams, setParams, resetParams, DEFAULT_PARAMS, lastGeometry: null };
 })();
