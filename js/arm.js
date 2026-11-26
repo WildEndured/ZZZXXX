@@ -1,4 +1,4 @@
-/* js/arm.js — Этап 2: Суставы + контуры рук (с экспортом геометрии) */
+/* js/arm.js — Этап 2: Суставы + контуры рук */
 
 (function () {
   'use strict';
@@ -18,7 +18,6 @@
 
     leftX: 0, leftY: 0, rightX: 0, rightY: 0,
 
-    // Верхняя часть руки
     outerUpperArmAttachAngle: 0,
     outerUpperArmP1X: 0, outerUpperArmP1Y: 0,
     outerUpperArmElbowAngle: 0,
@@ -26,7 +25,6 @@
     innerUpperArmP1X: 0, innerUpperArmP1Y: 0,
     innerUpperArmElbowAngle: 180,
 
-    // Предплечье
     forearmElbowAttachAngle: 0,
     forearmWristAttachAngle: 0,
     forearmP1OffsetX: 0.10, forearmP1OffsetY: -0.20,
@@ -161,17 +159,14 @@
     armR.appendChild(svgEl('circle', { cx: elbowRightCx, cy: elbowRightCy, r: elbowRadius, fill: 'none', 'stroke-opacity': 0.3 }));
     armR.appendChild(svgEl('circle', { cx: wristRightCx, cy: wristRightCy, r: wristRadius, fill: 'none', 'stroke-opacity': 0.3 }));
 
-    // === ВЕРХНЯЯ ЧАСТЬ РУКИ (ПЛЕЧО -> ЛОКОТЬ) ===
+    // === ВЕРХНЯЯ ЧАСТЬ РУКИ ===
     const rOuterP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.outerUpperArmAttachAngle, false);
     const rOuterP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.outerUpperArmElbowAngle, false);
     const rOuterP1 = {
       x: (rOuterP0.x + rOuterP2.x) / 2 + params.outerUpperArmP1X * headH,
       y: (rOuterP0.y + rOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
     };
-    armR.appendChild(svgEl('path', {
-      d: `M ${rOuterP0.x} ${rOuterP0.y} Q ${rOuterP1.x} ${rOuterP1.y} ${rOuterP2.x} ${rOuterP2.y}`,
-      fill: 'none'
-    }));
+    armR.appendChild(svgEl('path', { d: `M ${rOuterP0.x} ${rOuterP0.y} Q ${rOuterP1.x} ${rOuterP1.y} ${rOuterP2.x} ${rOuterP2.y}`, fill: 'none' }));
 
     const lOuterP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.outerUpperArmAttachAngle, true);
     const lOuterP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.outerUpperArmElbowAngle, true);
@@ -179,22 +174,15 @@
       x: (lOuterP0.x + lOuterP2.x) / 2 - params.outerUpperArmP1X * headH,
       y: (lOuterP0.y + lOuterP2.y) / 2 + params.outerUpperArmP1Y * headH
     };
-    armL.appendChild(svgEl('path', {
-      d: `M ${lOuterP0.x} ${lOuterP0.y} Q ${lOuterP1.x} ${lOuterP1.y} ${lOuterP2.x} ${lOuterP2.y}`,
-      fill: 'none'
-    }));
+    armL.appendChild(svgEl('path', { d: `M ${lOuterP0.x} ${lOuterP0.y} Q ${lOuterP1.x} ${lOuterP1.y} ${lOuterP2.x} ${lOuterP2.y}`, fill: 'none' }));
 
-    // ВНУТРЕННЯЯ ЛИНИЯ (верхняя часть)
     const rInnerP0 = getPointOnCircle(rightCx, rightCy, shoulderRadius, params.innerUpperArmAttachAngle, false);
     const rInnerP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.innerUpperArmElbowAngle, false);
     const rInnerP1 = {
       x: (rInnerP0.x + rInnerP2.x) / 2 + params.innerUpperArmP1X * headH,
       y: (rInnerP0.y + rInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
     };
-    armR.appendChild(svgEl('path', {
-      d: `M ${rInnerP0.x} ${rInnerP0.y} Q ${rInnerP1.x} ${rInnerP1.y} ${rInnerP2.x} ${rInnerP2.y}`,
-      fill: 'none'
-    }));
+    armR.appendChild(svgEl('path', { d: `M ${rInnerP0.x} ${rInnerP0.y} Q ${rInnerP1.x} ${rInnerP1.y} ${rInnerP2.x} ${rInnerP2.y}`, fill: 'none' }));
 
     const lInnerP0 = getPointOnCircle(leftCx, leftCy, shoulderRadius, params.innerUpperArmAttachAngle, true);
     const lInnerP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.innerUpperArmElbowAngle, true);
@@ -202,23 +190,16 @@
       x: (lInnerP0.x + lInnerP2.x) / 2 - params.innerUpperArmP1X * headH,
       y: (lInnerP0.y + lInnerP2.y) / 2 + params.innerUpperArmP1Y * headH
     };
-    armL.appendChild(svgEl('path', {
-      d: `M ${lInnerP0.x} ${lInnerP0.y} Q ${lInnerP1.x} ${lInnerP1.y} ${lInnerP2.x} ${lInnerP2.y}`,
-      fill: 'none'
-    }));
+    armL.appendChild(svgEl('path', { d: `M ${lInnerP0.x} ${lInnerP0.y} Q ${lInnerP1.x} ${lInnerP1.y} ${lInnerP2.x} ${lInnerP2.y}`, fill: 'none' }));
 
     // === ПРЕДПЛЕЧЬЕ ===
-    // Внешняя
     const rForeP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmWristAttachAngle, false);
     const rForeP2 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmElbowAttachAngle, false);
     const rForeP1 = {
       x: (rForeP0.x + rForeP2.x) / 2 + params.forearmP1OffsetX * headH,
       y: (rForeP0.y + rForeP2.y) / 2 + params.forearmP1OffsetY * headH
     };
-    armR.appendChild(svgEl('path', {
-      d: `M ${rForeP0.x} ${rForeP0.y} Q ${rForeP1.x} ${rForeP1.y} ${rForeP2.x} ${rForeP2.y}`,
-      fill: 'none'
-    }));
+    armR.appendChild(svgEl('path', { d: `M ${rForeP0.x} ${rForeP0.y} Q ${rForeP1.x} ${rForeP1.y} ${rForeP2.x} ${rForeP2.y}`, fill: 'none' }));
 
     const lForeP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmWristAttachAngle, true);
     const lForeP2 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmElbowAttachAngle, true);
@@ -226,45 +207,23 @@
       x: (lForeP0.x + lForeP2.x) / 2 - params.forearmP1OffsetX * headH,
       y: (lForeP0.y + lForeP2.y) / 2 + params.forearmP1OffsetY * headH
     };
-    armL.appendChild(svgEl('path', {
-      d: `M ${lForeP0.x} ${lForeP0.y} Q ${lForeP1.x} ${lForeP1.y} ${lForeP2.x} ${lForeP2.y}`,
-      fill: 'none'
-    }));
+    armL.appendChild(svgEl('path', { d: `M ${lForeP0.x} ${lForeP0.y} Q ${lForeP1.x} ${lForeP1.y} ${lForeP2.x} ${lForeP2.y}`, fill: 'none' }));
 
-    // Внутренняя
     const rForeInP0 = getPointOnCircle(wristRightCx, wristRightCy, wristRadius, params.forearmInnerWristAngle, false);
     const rForeInP3 = getPointOnCircle(elbowRightCx, elbowRightCy, elbowRadius, params.forearmInnerElbowAngle, false);
     const rForeDx = rForeInP3.x - rForeInP0.x;
     const rForeDy = rForeInP3.y - rForeInP0.y;
-    const rForeInP1 = { 
-      x: rForeInP0.x + rForeDx * 0.33 + params.forearmInnerP1OffsetX * headH, 
-      y: rForeInP0.y + rForeDy * 0.33 + params.forearmInnerP1OffsetY * headH 
-    };
-    const rForeInP2 = { 
-      x: rForeInP0.x + rForeDx * 0.66 + params.forearmInnerP2OffsetX * headH, 
-      y: rForeInP0.y + rForeDy * 0.66 + params.forearmInnerP2OffsetY * headH 
-    };
-    armR.appendChild(svgEl('path', {
-      d: `M ${rForeInP0.x} ${rForeInP0.y} C ${rForeInP1.x} ${rForeInP1.y}, ${rForeInP2.x} ${rForeInP2.y}, ${rForeInP3.x} ${rForeInP3.y}`,
-      fill: 'none'
-    }));
+    const rForeInP1 = { x: rForeInP0.x + rForeDx * 0.33 + params.forearmInnerP1OffsetX * headH, y: rForeInP0.y + rForeDy * 0.33 + params.forearmInnerP1OffsetY * headH };
+    const rForeInP2 = { x: rForeInP0.x + rForeDx * 0.66 + params.forearmInnerP2OffsetX * headH, y: rForeInP0.y + rForeDy * 0.66 + params.forearmInnerP2OffsetY * headH };
+    armR.appendChild(svgEl('path', { d: `M ${rForeInP0.x} ${rForeInP0.y} C ${rForeInP1.x} ${rForeInP1.y}, ${rForeInP2.x} ${rForeInP2.y}, ${rForeInP3.x} ${rForeInP3.y}`, fill: 'none' }));
 
     const lForeInP0 = getPointOnCircle(wristLeftCx, wristLeftCy, wristRadius, params.forearmInnerWristAngle, true);
     const lForeInP3 = getPointOnCircle(elbowLeftCx, elbowLeftCy, elbowRadius, params.forearmInnerElbowAngle, true);
     const lForeDx = lForeInP3.x - lForeInP0.x;
     const lForeDy = lForeInP3.y - lForeInP0.y;
-    const lForeInP1 = { 
-      x: lForeInP0.x + lForeDx * 0.33 - params.forearmInnerP1OffsetX * headH, 
-      y: lForeInP0.y + lForeDy * 0.33 + params.forearmInnerP1OffsetY * headH 
-    };
-    const lForeInP2 = { 
-      x: lForeInP0.x + lForeDx * 0.66 - params.forearmInnerP2OffsetX * headH, 
-      y: lForeInP0.y + lForeDy * 0.66 + params.forearmInnerP2OffsetY * headH 
-    };
-    armL.appendChild(svgEl('path', {
-      d: `M ${lForeInP0.x} ${lForeInP0.y} C ${lForeInP1.x} ${lForeInP1.y}, ${lForeInP2.x} ${lForeInP2.y}, ${lForeInP3.x} ${lForeInP3.y}`,
-      fill: 'none'
-    }));
+    const lForeInP1 = { x: lForeInP0.x + lForeDx * 0.33 - params.forearmInnerP1OffsetX * headH, y: lForeInP0.y + lForeDy * 0.33 + params.forearmInnerP1OffsetY * headH };
+    const lForeInP2 = { x: lForeInP0.x + lForeDx * 0.66 - params.forearmInnerP2OffsetX * headH, y: lForeInP0.y + lForeDy * 0.66 + params.forearmInnerP2OffsetY * headH };
+    armL.appendChild(svgEl('path', { d: `M ${lForeInP0.x} ${lForeInP0.y} C ${lForeInP1.x} ${lForeInP1.y}, ${lForeInP2.x} ${lForeInP2.y}, ${lForeInP3.x} ${lForeInP3.y}`, fill: 'none' }));
 
     // === МАРКЕРЫ ===
     const mR = headH * 0.012;
@@ -276,9 +235,7 @@
       { x: wristLeftCx, y: wristLeftCy, c: '#16a34a' },
       { x: wristRightCx, y: wristRightCy, c: '#16a34a' },
     ];
-    for (const pt of markers) {
-      grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
-    }
+    for (const pt of markers) grid.appendChild(svgEl('circle', { cx: pt.x, cy: pt.y, r: mR, fill: pt.c, opacity: 0.85 }));
   }
 
   function update(geo) {
