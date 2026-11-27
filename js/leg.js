@@ -1,4 +1,4 @@
-/* js/leg.js — Этап 2: Суставы + контуры ног (бедро, икра) */
+/* js/leg.js — Этап 2: Суставы + контуры ног */
 
 (function () {
   'use strict';
@@ -27,15 +27,18 @@
     outerCalfAnkleAngle: 0,
 
     // --- ВНУТРЕННЕЕ БЕДРО ---
-    innerThighAttachX: 0.5,
-    innerThighP1X: 0, innerThighP1Y: 0,
-    innerThighP2X: 0, innerThighP2Y: 0,
+    innerThighAttachX: 0.2,
+    innerThighP1X: 0.15,
+    innerThighP1Y: 0,
+    innerThighP2X: 0,
+    innerThighP2Y: 0,
     innerThighKneeAngle: 180,
 
     // --- ВНУТРЕННЯЯ ИКРА ---
     innerCalfKneeAngle: 180,
     innerCalfP1X: 0, innerCalfP1Y: 0,
-    innerCalfP2X: 0, innerCalfP2Y: 0,
+    innerCalfP2X: -0.10,
+    innerCalfP2Y: 0,
     innerCalfAnkleAngle: 180,
   };
 
@@ -238,7 +241,6 @@
     // ==========================================
     // ВНУТРЕННЯЯ ИКРА (ЛЕВАЯ)
     // ==========================================
-    // P0 на колене, P3 на лодыжке (согласно скриншоту)
     const p0InnerCalf = getPointOnCircle(leftKneeX, leftKneeY, kneeRadius, params.innerCalfKneeAngle, true);
     const p3InnerCalf = getPointOnCircle(leftAnkleX, leftAnkleY, ankleRadius, params.innerCalfAnkleAngle, true);
     
