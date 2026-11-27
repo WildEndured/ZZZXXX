@@ -162,8 +162,9 @@
 
   function syncFigureModules(geo) {
     if (window.Head) window.Head.update(geo);
-    if (window.Arm) window.Arm.update(geo);   // Сначала руки (для lastGeometry)
-    if (window.Torso) window.Torso.update(geo); // Потом торс (читает lastGeometry)
+    if (window.Torso) window.Torso.update(geo);
+    if (window.Arm) window.Arm.update(geo);
+    if (window.Torso && window.Torso.drawTraps) window.Torso.drawTraps();
     if (window.Leg) window.Leg.update(geo);
   }
 
